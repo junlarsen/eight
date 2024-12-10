@@ -96,4 +96,5 @@ pub enum TokenType {
     Colon,
     ColonColon,
     Comma,
+    Arrow,
 }

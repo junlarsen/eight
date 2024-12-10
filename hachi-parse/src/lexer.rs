@@ -37,7 +37,6 @@ impl Lexer<'_> {
             ';' => Ok(Token::new(TokenType::Semicolon, Span::pos(pos))),
             ',' => Ok(Token::new(TokenType::Comma, Span::pos(pos))),
             '+' => Ok(Token::new(TokenType::Plus, Span::pos(pos))),
-            '-' => Ok(Token::new(TokenType::Minus, Span::pos(pos))),
             '*' => Ok(Token::new(TokenType::Star, Span::pos(pos))),
             '/' => Ok(Token::new(TokenType::Slash, Span::pos(pos))),
             '%' => Ok(Token::new(TokenType::Percent, Span::pos(pos))),
@@ -60,6 +59,10 @@ impl Lexer<'_> {
             }),
             ':' => self.select_peek(pos, TokenType::Colon, |ch| match ch {
                 ':' => Some(TokenType::ColonColon),
+                _ => None,
+            }),
+            '-' => self.select_peek(pos, TokenType::Minus, |ch| match ch {
+                '>' => Some(TokenType::Arrow),
                 _ => None,
             }),
             // Bracket pairs
@@ -289,5 +292,6 @@ mod tests {
             Token::new(TokenType::Colon, Span::new(0..1)),
             Token::new(TokenType::Colon, Span::new(2..3))
         );
+        assert_lexer_parse!("->", Token::new(TokenType::Arrow, Span::new(0..2)));
     }
 }
