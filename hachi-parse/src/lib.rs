@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 pub mod lexer;
+pub mod parser;
 pub mod syntax;
 
 /// Compact index of a character in the source code.
@@ -98,4 +99,6 @@ pub enum TokenType {
     ColonColon,
     Comma,
     Arrow,
+
+    Eof,
 }

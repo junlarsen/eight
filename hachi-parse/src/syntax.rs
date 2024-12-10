@@ -2,7 +2,7 @@ use crate::Span;
 
 #[derive(Debug)]
 pub struct TranslationUnit {
-    pub items: Vec<Item>,
+    pub items: Vec<Box<Item>>,
 }
 
 /// An item in the translation unit.
@@ -11,8 +11,8 @@ pub struct TranslationUnit {
 /// currently means either functions or types.
 #[derive(Debug)]
 pub enum Item {
-    Function(FunctionItem),
-    Type(TypeItem),
+    Function(Box<FunctionItem>),
+    Type(Box<TypeItem>),
 }
 
 #[derive(Debug)]
@@ -40,12 +40,12 @@ pub struct TypeMemberItem {
 
 #[derive(Debug)]
 pub enum Stmt {
-    Let(LetStmt),
-    Return(ReturnStmt),
-    For(ForStmt),
-    Break(BreakStmt),
-    Continue(ContinueStmt),
-    If(IfStmt),
+    Let(Box<LetStmt>),
+    Return(Box<ReturnStmt>),
+    For(Box<ForStmt>),
+    Break(Box<BreakStmt>),
+    Continue(Box<ContinueStmt>),
+    If(Box<IfStmt>),
 }
 
 #[derive(Debug)]
@@ -93,14 +93,14 @@ pub struct IfStmt {
 
 #[derive(Debug)]
 pub enum Expr {
-    Assign(AssignExpr),
-    BinaryOp(BinaryOpExpr),
-    UnaryOp(UnaryOpExpr),
-    Literal(LiteralExpr),
-    DotIndex(DotIndexExpr),
-    BracketIndex(BracketIndexExpr),
-    Reference(ReferenceExpr),
-    Call(CallExpr),
+    Assign(Box<AssignExpr>),
+    BinaryOp(Box<BinaryOpExpr>),
+    UnaryOp(Box<UnaryOpExpr>),
+    Literal(Box<LiteralExpr>),
+    DotIndex(Box<DotIndexExpr>),
+    BracketIndex(Box<BracketIndexExpr>),
+    Reference(Box<ReferenceExpr>),
+    Call(Box<CallExpr>),
 }
 
 #[derive(Debug)]
