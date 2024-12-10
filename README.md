@@ -22,11 +22,11 @@ fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
     buf: malloc(a.r * b.c * sizeof::<i32>),
   };
 
-  for i in 0..a.r {
-    for j in 0..b.c {
+  for let i = 0; i < a.r; i = i + 1 {
+    for let j = 0; j < b.c; j = j + 1 {
       let sum = 0;
-      for k in 0..a.c {
-        sum += a.buf[i * a.c + k] * b.buf[k * b.c + j];
+      for let k = 0; k < a.c; k = k + 1 {
+        sum = sum + a.buf[i * a.c + k] * b.buf[k * b.c + j];
       }
       c.buf[i * b.c + j] = sum;
     }
