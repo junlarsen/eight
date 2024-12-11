@@ -1,0 +1,26 @@
+fn quicksort(xs: *i32, l: i32, r: i32) {
+  if (l < r) {
+    let p = partition(xs, l, r);
+    quicksort(xs, l, p - 1);
+    quicksort(xs, p + 1, r);
+  }
+}
+
+fn partition(xs: *i32, l: i32, r: i32) -> i32 {
+  let x = xs[r];
+  let i = l - 1;
+  for (let j = l; j < r; j = j + 1) {
+    if (xs[j] <= x) {
+      i = i + 1;
+      swap(&xs[i], &xs[j]);
+    }
+  }
+  swap(&xs[i + 1], &xs[r]);
+  return i + 1;
+}
+
+fn swap(a: *i32, b: *i32) {
+  let tmp = *a;
+  *a = *b;
+  *b = tmp;
+}

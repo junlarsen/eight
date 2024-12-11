@@ -1,0 +1,242 @@
+---
+source: hachi-parse/tests/parser_tests.rs
+expression: "*translation_unit"
+input_file: hachi-parse/tests/data/quicksort.test
+snapshot_kind: text
+---
+TranslationUnit(
+  items: [
+    Function(FunctionItem(
+      span: Span(
+        low: 0,
+        high: 152,
+      ),
+      name: Identifier(
+        name: "quicksort",
+        span: Span(
+          low: 3,
+          high: 12,
+        ),
+      ),
+      parameters: [
+        FunctionParameterItem(
+          span: Span(
+            low: 13,
+            high: 21,
+          ),
+          name: Identifier(
+            name: "xs",
+            span: Span(
+              low: 13,
+              high: 15,
+            ),
+          ),
+          type: Pointer(PointerType(
+            span: Span(
+              low: 17,
+              high: 21,
+            ),
+            inner: Integer32(Integer32Type(
+              span: Span(
+                low: 18,
+                high: 21,
+              ),
+            )),
+          )),
+        ),
+        FunctionParameterItem(
+          span: Span(
+            low: 23,
+            high: 29,
+          ),
+          name: Identifier(
+            name: "l",
+            span: Span(
+              low: 23,
+              high: 24,
+            ),
+          ),
+          type: Integer32(Integer32Type(
+            span: Span(
+              low: 26,
+              high: 29,
+            ),
+          )),
+        ),
+        FunctionParameterItem(
+          span: Span(
+            low: 31,
+            high: 37,
+          ),
+          name: Identifier(
+            name: "r",
+            span: Span(
+              low: 31,
+              high: 32,
+            ),
+          ),
+          type: Integer32(Integer32Type(
+            span: Span(
+              low: 34,
+              high: 37,
+            ),
+          )),
+        ),
+      ],
+      return_type: None,
+      body: [],
+    )),
+    Function(FunctionItem(
+      span: Span(
+        low: 154,
+        high: 396,
+      ),
+      name: Identifier(
+        name: "partition",
+        span: Span(
+          low: 157,
+          high: 166,
+        ),
+      ),
+      parameters: [
+        FunctionParameterItem(
+          span: Span(
+            low: 167,
+            high: 175,
+          ),
+          name: Identifier(
+            name: "xs",
+            span: Span(
+              low: 167,
+              high: 169,
+            ),
+          ),
+          type: Pointer(PointerType(
+            span: Span(
+              low: 171,
+              high: 175,
+            ),
+            inner: Integer32(Integer32Type(
+              span: Span(
+                low: 172,
+                high: 175,
+              ),
+            )),
+          )),
+        ),
+        FunctionParameterItem(
+          span: Span(
+            low: 177,
+            high: 183,
+          ),
+          name: Identifier(
+            name: "l",
+            span: Span(
+              low: 177,
+              high: 178,
+            ),
+          ),
+          type: Integer32(Integer32Type(
+            span: Span(
+              low: 180,
+              high: 183,
+            ),
+          )),
+        ),
+        FunctionParameterItem(
+          span: Span(
+            low: 185,
+            high: 191,
+          ),
+          name: Identifier(
+            name: "r",
+            span: Span(
+              low: 185,
+              high: 186,
+            ),
+          ),
+          type: Integer32(Integer32Type(
+            span: Span(
+              low: 188,
+              high: 191,
+            ),
+          )),
+        ),
+      ],
+      return_type: Some(Integer32(Integer32Type(
+        span: Span(
+          low: 196,
+          high: 199,
+        ),
+      ))),
+      body: [],
+    )),
+    Function(FunctionItem(
+      span: Span(
+        low: 398,
+        high: 466,
+      ),
+      name: Identifier(
+        name: "swap",
+        span: Span(
+          low: 401,
+          high: 405,
+        ),
+      ),
+      parameters: [
+        FunctionParameterItem(
+          span: Span(
+            low: 406,
+            high: 413,
+          ),
+          name: Identifier(
+            name: "a",
+            span: Span(
+              low: 406,
+              high: 407,
+            ),
+          ),
+          type: Pointer(PointerType(
+            span: Span(
+              low: 409,
+              high: 413,
+            ),
+            inner: Integer32(Integer32Type(
+              span: Span(
+                low: 410,
+                high: 413,
+              ),
+            )),
+          )),
+        ),
+        FunctionParameterItem(
+          span: Span(
+            low: 415,
+            high: 422,
+          ),
+          name: Identifier(
+            name: "b",
+            span: Span(
+              low: 415,
+              high: 416,
+            ),
+          ),
+          type: Pointer(PointerType(
+            span: Span(
+              low: 418,
+              high: 422,
+            ),
+            inner: Integer32(Integer32Type(
+              span: Span(
+                low: 419,
+                high: 422,
+              ),
+            )),
+          )),
+        ),
+      ],
+      return_type: None,
+      body: [],
+    )),
+  ],
+)
