@@ -65,6 +65,11 @@ impl Lexer<'_> {
                 '>' => Some(TokenType::Arrow),
                 _ => None,
             }),
+            '&' => self.select_peek(pos, TokenType::Deref, |ch| match ch {
+                '&' => Some(TokenType::LogicalAnd),
+                _ => None,
+            }),
+            '|' => self.expect_peek(pos, '|', TokenType::LogicalOr),
             // Bracket pairs
             '(' => Ok(Token::new(TokenType::OpenParen, Span::pos(pos))),
             ')' => Ok(Token::new(TokenType::CloseParen, Span::pos(pos))),
@@ -141,7 +146,41 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Expect the next character to be the given one, otherwise fail the lexer.
+    ///
+    /// This is useful for parsing two-character tokens that do not have a production on their own,
+    /// such as '||'.
+    pub fn expect_peek(
+        &mut self,
+        pos: usize,
+        expected: char,
+        production: TokenType,
+    ) -> Result<Token, LexerError> {
+        let (next_pos, ch) = self.input.peek().ok_or(LexerError::UnexpectedEndOfInput {
+            span: Span::pos(pos),
+        })?;
+        // Copy the characters out of the reference so that we can re-borrow self as mutable in
+        // the match arm.
+        let ch = *ch;
+        let next_pos = *next_pos;
+        match ch {
+            c if c == expected => {
+                self.input.next();
+                Ok(Token::new(production, Span::new(pos..next_pos + 1)))
+            }
+            _ => Err(LexerError::UnexpectedCharacter {
+                ch,
+                // We are only reporting the position of the next character
+                span: Span::pos(next_pos),
+            }),
+        }
+    }
+
     /// Select the next token based on the current and next character
+    ///
+    /// This is useful for parsing tokens that may have a wider production based on the next
+    /// character in the input stream. For example, the '&' character means dereference on its own,
+    /// but may also be used as a logical and when followed by another '&'.
     pub fn select_peek<F>(
         &mut self,
         pos: usize,
@@ -293,5 +332,25 @@ mod tests {
             Token::new(TokenType::Colon, Span::new(2..3))
         );
         assert_lexer_parse!("->", Token::new(TokenType::Arrow, Span::new(0..2)));
+    }
+
+    #[test]
+    fn test_parse_singular_term() {
+        assert_lexer_parse!("&", Token::new(TokenType::Deref, Span::new(0..1)));
+        assert_lexer_parse!("||", Token::new(TokenType::LogicalOr, Span::new(0..2)));
+
+        assert_failure!(
+            "|-",
+            LexerError::UnexpectedCharacter {
+                ch: '-',
+                span: Span::new(1..2)
+            }
+        );
+        assert_failure!(
+            "|",
+            LexerError::UnexpectedEndOfInput {
+                span: Span::new(0..1)
+            }
+        );
     }
 }

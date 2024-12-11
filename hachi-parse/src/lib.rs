@@ -75,6 +75,7 @@ pub enum TokenType {
     IntegerLiteral(i32),
     Comment(String),
 
+    Deref,
     Bang,
     Dot,
     Plus,
@@ -102,6 +103,8 @@ pub enum TokenType {
     ColonColon,
     Comma,
     Arrow,
+    LogicalAnd,
+    LogicalOr,
 
     Eof,
 }
