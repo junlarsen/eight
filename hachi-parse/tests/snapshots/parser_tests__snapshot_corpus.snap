@@ -1,0 +1,169 @@
+---
+source: hachi-parse/tests/parser_tests.rs
+expression: "*translation_unit"
+input_file: hachi-parse/tests/data/matmul.test
+snapshot_kind: text
+---
+TranslationUnit(
+  items: [
+    Type(TypeItem(
+      span: Span(
+        low: 5,
+        high: 11,
+      ),
+      name: Identifier(
+        name: "Matrix",
+        span: Span(
+          low: 5,
+          high: 11,
+        ),
+      ),
+      members: [
+        TypeMemberItem(
+          span: Span(
+            low: 18,
+            high: 19,
+          ),
+          name: Identifier(
+            name: "r",
+            span: Span(
+              low: 18,
+              high: 19,
+            ),
+          ),
+          type: Integer32(Integer32Type(
+            span: Span(
+              low: 21,
+              high: 24,
+            ),
+          )),
+        ),
+        TypeMemberItem(
+          span: Span(
+            low: 28,
+            high: 29,
+          ),
+          name: Identifier(
+            name: "c",
+            span: Span(
+              low: 28,
+              high: 29,
+            ),
+          ),
+          type: Integer32(Integer32Type(
+            span: Span(
+              low: 31,
+              high: 34,
+            ),
+          )),
+        ),
+        TypeMemberItem(
+          span: Span(
+            low: 38,
+            high: 41,
+          ),
+          name: Identifier(
+            name: "buf",
+            span: Span(
+              low: 38,
+              high: 41,
+            ),
+          ),
+          type: Pointer(PointerType(
+            span: Span(
+              low: 43,
+              high: 44,
+            ),
+            inner: Integer32(Integer32Type(
+              span: Span(
+                low: 44,
+                high: 47,
+              ),
+            )),
+          )),
+        ),
+      ],
+    )),
+    Function(FunctionItem(
+      span: Span(
+        low: 55,
+        high: 77,
+      ),
+      name: Identifier(
+        name: "matrix_matrix_multiply",
+        span: Span(
+          low: 55,
+          high: 77,
+        ),
+      ),
+      parameters: [
+        FunctionParameterItem(
+          span: Span(
+            low: 78,
+            high: 79,
+          ),
+          name: Identifier(
+            name: "a",
+            span: Span(
+              low: 78,
+              high: 79,
+            ),
+          ),
+          type: Named(NamedType(
+            span: Span(
+              low: 81,
+              high: 87,
+            ),
+            name: Identifier(
+              name: "Matrix",
+              span: Span(
+                low: 81,
+                high: 87,
+              ),
+            ),
+          )),
+        ),
+        FunctionParameterItem(
+          span: Span(
+            low: 89,
+            high: 90,
+          ),
+          name: Identifier(
+            name: "b",
+            span: Span(
+              low: 89,
+              high: 90,
+            ),
+          ),
+          type: Named(NamedType(
+            span: Span(
+              low: 92,
+              high: 98,
+            ),
+            name: Identifier(
+              name: "Matrix",
+              span: Span(
+                low: 92,
+                high: 98,
+              ),
+            ),
+          )),
+        ),
+      ],
+      return_type: Some(Named(NamedType(
+        span: Span(
+          low: 103,
+          high: 109,
+        ),
+        name: Identifier(
+          name: "Matrix",
+          span: Span(
+            low: 103,
+            high: 109,
+          ),
+        ),
+      ))),
+      body: [],
+    )),
+  ],
+)
