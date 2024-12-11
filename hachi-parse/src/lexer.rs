@@ -20,7 +20,6 @@ pub enum LexerError {
 }
 
 /// A lexer for source to token stream conversion.
-#[derive(Debug)]
 pub struct Lexer<'a> {
     input: Peekable<CharIndices<'a>>,
 }
@@ -210,7 +209,6 @@ impl<'a> Lexer<'a> {
     }
 }
 
-#[derive(Debug)]
 pub struct LexerIter<'a> {
     l: Lexer<'a>,
 }
