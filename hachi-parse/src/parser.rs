@@ -1,8 +1,8 @@
-use crate::lexer::{Lexer, LexerError, LexerIter};
-use crate::syntax::{
+use crate::ast::{
     FunctionItem, Identifier, Integer32Type, Item, NamedType, PointerType, TranslationUnit, Type,
     TypeItem, TypeMemberItem, UnitType,
 };
+use crate::lexer::{Lexer, LexerError, LexerIter};
 use crate::{Token, TokenType};
 use miette::Diagnostic;
 use std::iter::Peekable;
@@ -228,9 +228,9 @@ impl Parser<'_> {
 #[cfg(test)]
 mod tests {
     use crate::assert_ok;
+    use crate::ast::Type;
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-    use crate::syntax::Type;
 
     fn assert_parse<T>(input: &str, rule: impl FnOnce(&mut Parser) -> T) -> T {
         let mut p = Parser::new(Lexer::new(input));
