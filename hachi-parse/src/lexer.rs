@@ -30,7 +30,7 @@ impl Lexer<'_> {
     pub fn produce(&mut self) -> Result<Token, LexerError> {
         let (pos, ch) = self.input.next().ok_or(LexerError::SourceExhausted)?;
         match ch {
-            '1'..='9' => self.produce_integer_literal(ch, pos),
+            '0'..='9' => self.produce_integer_literal(ch, pos),
             'a'..='z' | 'A'..='Z' | '_' => self.produce_keyword_or_identifier(ch, pos),
             // Single-character operators
             '.' => Ok(Token::new(TokenType::Dot, Span::pos(pos))),
@@ -96,6 +96,13 @@ impl Lexer<'_> {
         }
         let len = buf.len();
         let value = String::from_iter(buf);
+        if value.starts_with('0') && value.len() > 1 {
+            return Err(LexerError::InvalidIntegerLiteral {
+                buf: value,
+                span: Span::new(pos..pos + len),
+            });
+        }
+
         let integer =
             value
                 .clone()
@@ -262,12 +269,13 @@ mod tests {
             Token::new(TokenType::IntegerLiteral(123), Span::new(0..3)),
             Token::new(TokenType::IntegerLiteral(123), Span::new(4..7))
         );
-        // Cannot start with a zero in the current implementation.
+        assert_lexer_parse!("0", Token::new(TokenType::IntegerLiteral(0), Span::new(0..1)));
+        // Cannot use octal syntax in the current implementation.
         assert_failure!(
             "0123",
-            LexerError::UnexpectedCharacter {
-                ch: '0',
-                span: Span::new(0..1)
+            LexerError::InvalidIntegerLiteral {
+                buf: "0123".to_string(),
+                span: Span::new(0..4)
             }
         );
         // Cannot be unparsable by rust's i32 parser
