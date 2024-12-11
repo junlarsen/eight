@@ -1,8 +1,9 @@
 use crate::ast::{
-    AssignExpr, BinaryOp, BinaryOpExpr, BracketIndexExpr, CallExpr, DotIndexExpr, Expr,
-    FunctionItem, FunctionParameterItem, GroupExpr, Identifier, Integer32Type, IntegerLiteralExpr,
-    Item, LetStmt, NamedType, PointerType, ReferenceExpr, Stmt, TranslationUnit, Type, TypeItem,
-    TypeMemberItem, UnaryOp, UnaryOpExpr, UnitType,
+    AssignExpr, BinaryOp, BinaryOpExpr, BracketIndexExpr, BreakStmt, CallExpr, ContinueStmt,
+    DotIndexExpr, Expr, ExprStmt, ForStmt, FunctionItem, FunctionParameterItem, GroupExpr,
+    Identifier, IfStmt, Integer32Type, IntegerLiteralExpr, Item, LetStmt, NamedType, PointerType,
+    ReferenceExpr, ReturnStmt, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem, UnaryOp,
+    UnaryOpExpr, UnitType,
 };
 use crate::lexer::{Lexer, LexerError, LexerIter};
 use crate::{Token, TokenType};
@@ -215,8 +216,18 @@ impl Parser<'_> {
     ///        | expr_stmt
     /// ```
     pub fn parse_stmt(&mut self) -> ParseResult<Box<Stmt>> {
-        let _ = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
-        todo!()
+        let next = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        match next.ty {
+            TokenType::KeywordLet => self.parse_let_stmt().map(|v| Box::new(Stmt::Let(v))),
+            TokenType::KeywordReturn => self.parse_return_stmt().map(|v| Box::new(Stmt::Return(v))),
+            TokenType::KeywordFor => self.parse_for_stmt().map(|v| Box::new(Stmt::For(v))),
+            TokenType::KeywordBreak => self.parse_break_stmt().map(|v| Box::new(Stmt::Break(v))),
+            TokenType::KeywordContinue => self
+                .parse_continue_stmt()
+                .map(|v| Box::new(Stmt::Continue(v))),
+            TokenType::KeywordIf => self.parse_if_stmt().map(|v| Box::new(Stmt::If(v))),
+            _ => self.parse_expr_stmt().map(|v| Box::new(Stmt::Expr(v))),
+        }
     }
 
     /// Parse a let statement.
@@ -243,6 +254,30 @@ impl Parser<'_> {
             r#type: ty,
             value: expr,
         }))
+    }
+
+    pub fn parse_return_stmt(&mut self) -> ParseResult<Box<ReturnStmt>> {
+        todo!()
+    }
+
+    pub fn parse_for_stmt(&mut self) -> ParseResult<Box<ForStmt>> {
+        todo!()
+    }
+
+    pub fn parse_break_stmt(&mut self) -> ParseResult<Box<BreakStmt>> {
+        todo!()
+    }
+
+    pub fn parse_continue_stmt(&mut self) -> ParseResult<Box<ContinueStmt>> {
+        todo!()
+    }
+
+    pub fn parse_if_stmt(&mut self) -> ParseResult<Box<IfStmt>> {
+        todo!()
+    }
+
+    pub fn parse_expr_stmt(&mut self) -> ParseResult<Box<ExprStmt>> {
+        todo!()
     }
 
     /// Parse an expression
@@ -865,6 +900,24 @@ mod tests {
 
         let parameters = prod.parameters.as_slice();
         assert_eq!(parameters.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_let_stmt() {
+        let prod = assert_parse("let x = 1;", |p| p.parse_let_stmt());
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        let initializer = prod.value.as_ref();
+        let r#type = prod.r#type.as_ref();
+        assert_eq!(name.name, "x");
+        assert!(matches!(initializer, Expr::IntegerLiteral(_)));
+        assert_none!(r#type);
+
+        let prod = assert_parse("let x: i32 = 1;", |p| p.parse_let_stmt());
+        let prod = assert_ok!(prod);
+        let r#type = prod.r#type;
+        let r#type = assert_some!(r#type);
+        assert!(matches!(*r#type, Type::Integer32(_)));
     }
 
     #[test]
