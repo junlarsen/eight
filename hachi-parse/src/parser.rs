@@ -228,7 +228,7 @@ impl Parser<'_> {
 #[cfg(test)]
 mod tests {
     use crate::assert_ok;
-    use crate::ast::Type;
+    use crate::ast::{Identifier, Type};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
 
@@ -290,5 +290,50 @@ mod tests {
             let inner = ptr.inner.as_ref();
             assert!(matches!(inner, Type::Named(name) if name.name.name == "vec2"));
         }
+    }
+
+    #[test]
+    fn test_parse_type_member_item() {
+        let prod = assert_parse("x: i32,", |p| p.parse_type_member_item());
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        let r#type = prod.r#type.as_ref();
+
+        assert!(matches!(name, Identifier { name, .. } if name == "x"));
+        assert!(matches!(*r#type, Type::Integer32(_)));
+
+        let prod = assert_parse("x: *matrix,", |p| p.parse_type_member_item());
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        let r#type = prod.r#type.as_ref();
+
+        assert!(matches!(name, Identifier { name, .. } if name == "x"));
+        assert!(matches!(*r#type, Type::Pointer(_)));
+        if let Type::Pointer(ptr) = &*r#type {
+            assert!(matches!(*ptr.inner.as_ref(), Type::Named(_)));
+            let inner = ptr.inner.as_ref();
+            assert!(matches!(inner, Type::Named(name) if name.name.name == "matrix"));
+        }
+    }
+
+    #[test]
+    fn test_parse_type_item() {
+        let prod = assert_parse("type Matrix = { x: i32, y: i32, }", |p| p.parse_type_item());
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        let members = prod.members.as_slice();
+
+        assert!(matches!(name, Identifier { name, .. } if name == "Matrix"));
+        assert_eq!(members.len(), 2);
+
+        let prod = assert_parse("type Matrix = { x: i32, y: i32, z: *vec2, }", |p| {
+            p.parse_type_item()
+        });
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        let members = prod.members.as_slice();
+
+        assert!(matches!(name, Identifier { name, .. } if name == "Matrix"));
+        assert_eq!(members.len(), 3);
     }
 }
