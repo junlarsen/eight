@@ -5,7 +5,7 @@ use std::str::CharIndices;
 use thiserror::Error;
 
 #[cfg_attr(test, derive(PartialEq))]
-#[derive(Error, Diagnostic, Debug)]
+#[derive(Error, Diagnostic, Debug, Clone)]
 pub enum LexerError {
     #[error("invalid integer literal: {buf}")]
     InvalidIntegerLiteral { buf: String, span: Span },

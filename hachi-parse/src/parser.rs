@@ -1,5 +1,8 @@
 use crate::lexer::{Lexer, LexerError, LexerIter};
-use crate::syntax::{FunctionItem, Item, TranslationUnit, TypeItem};
+use crate::syntax::{
+    FunctionItem, Identifier, Integer32Type, Item, NamedType, PointerType, TranslationUnit, Type,
+    TypeItem, TypeMemberItem, UnitType,
+};
 use crate::{Token, TokenType};
 use miette::Diagnostic;
 use std::iter::Peekable;
@@ -28,15 +31,44 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Check if there are any more tokens in the source.
     pub fn has_next_token(&mut self) -> bool {
         self.lex.peek().is_none()
     }
 
+    /// Advance the lexer iterator by one, and return the advanced token.
     pub fn next_token(&mut self) -> ParseResult<Token> {
         self.lex
             .next()
             .ok_or(ParseError::UnexpectedEndOfFile)?
             .map_err(ParseError::LexerError)
+    }
+
+    /// Peek at the next token in the source without consuming it.
+    pub fn peek_token(&mut self) -> ParseResult<Option<&Token>> {
+        let tok = self.lex.peek();
+        let tok = tok.map_or(Ok(None), |t| t.as_ref().map(Some));
+        tok.map_err(|v| ParseError::LexerError(v.clone()))
+    }
+
+    /// Determine if the next token in the token stream matches the given type.
+    pub fn peek_token_match(&mut self, ty: TokenType) -> ParseResult<bool> {
+        let token = self.peek_token()?;
+        match token {
+            Some(token) if token.ty == ty => Ok(true),
+            _ => Ok(false),
+        }
+    }
+
+    /// Consume the next token from the token stream and ensure it matches the given type.
+    ///
+    /// If the token doesn't match, the entire parser fails.
+    pub fn expect_token(&mut self, ty: TokenType) -> ParseResult<Token> {
+        let token = self.next_token()?;
+        match token {
+            token if token.ty == ty => Ok(token),
+            _ => Err(ParseError::UnexpectedToken { token }),
+        }
     }
 }
 
@@ -54,19 +86,96 @@ impl Parser<'_> {
     }
 
     pub fn parse_item(&mut self) -> ParseResult<Box<Item>> {
-        let fut = self.next_token()?;
-        match fut.ty {
-            TokenType::KeywordFn => self.parse_fn().map(|v| Box::new(Item::Function(v))),
-            TokenType::KeywordType => self.parse_type().map(|v| Box::new(Item::Type(v))),
-            _ => Err(ParseError::UnexpectedToken { token: fut }),
+        let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        match token.ty {
+            TokenType::KeywordFn => self.parse_fn_item().map(|v| Box::new(Item::Function(v))),
+            TokenType::KeywordType => self.parse_type_item().map(|v| Box::new(Item::Type(v))),
+            _ => Err(ParseError::UnexpectedToken {
+                token: self.next_token()?,
+            }),
         }
     }
 
-    pub fn parse_fn(&mut self) -> ParseResult<Box<FunctionItem>> {
+    pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
         todo!()
     }
 
-    pub fn parse_type(&mut self) -> ParseResult<Box<TypeItem>> {
-        todo!()
+    pub fn parse_type_item(&mut self) -> ParseResult<Box<TypeItem>> {
+        self.expect_token(TokenType::KeywordType)?;
+        let id = self.parse_identifier()?;
+        self.expect_token(TokenType::Equal)?;
+        self.expect_token(TokenType::OpenBrace)?;
+        let mut members = Vec::new();
+        while !self.peek_token_match(TokenType::CloseBrace)? {
+            members.push(self.parse_type_member_item()?);
+        }
+        self.expect_token(TokenType::CloseBrace)?;
+        Ok(Box::new(TypeItem {
+            span: id.span.clone(),
+            name: id,
+            members,
+        }))
+    }
+
+    pub fn parse_type_member_item(&mut self) -> ParseResult<Box<TypeMemberItem>> {
+        let id = self.parse_identifier()?;
+        self.expect_token(TokenType::Colon)?;
+        let ty = self.parse_type()?;
+        self.expect_token(TokenType::Comma)?;
+        Ok(Box::new(TypeMemberItem {
+            span: id.span.clone(),
+            name: id,
+            r#type: ty,
+        }))
+    }
+
+    pub fn parse_identifier(&mut self) -> ParseResult<Box<Identifier>> {
+        let token = self.next_token()?;
+        match token {
+            Token {
+                ty: TokenType::Identifier(id),
+                span,
+            } => Ok(Box::new(Identifier { name: id, span })),
+            _ => Err(ParseError::UnexpectedToken { token }),
+        }
+    }
+
+    pub fn parse_type(&mut self) -> ParseResult<Box<Type>> {
+        let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        match &token.ty {
+            // If it is a named type, we can test if it's matching one of the builtin types.
+            TokenType::Identifier(v) => match v.as_str() {
+                "i32" => Ok(Box::new(Type::Integer32(Box::new(Integer32Type {
+                    span: token.span.clone(),
+                })))),
+                "void" => Ok(Box::new(Type::Unit(Box::new(UnitType {
+                    span: token.span.clone(),
+                })))),
+                _ => Ok(Box::new(Type::Named(self.parse_named_type()?))),
+            },
+            TokenType::Star => Ok(Box::new(Type::Pointer(self.parse_pointer_type()?))),
+            _ => {
+                Err(ParseError::UnexpectedToken {
+                    token: self.next_token()?,
+                })
+            }
+        }
+    }
+
+    pub fn parse_named_type(&mut self) -> ParseResult<Box<NamedType>> {
+        let id = self.parse_identifier()?;
+        Ok(Box::new(NamedType {
+            span: id.span.clone(),
+            name: id,
+        }))
+    }
+
+    pub fn parse_pointer_type(&mut self) -> ParseResult<Box<PointerType>> {
+        let indirection = self.expect_token(TokenType::Star)?;
+        let inner = self.parse_type()?;
+        Ok(Box::new(PointerType {
+            span: indirection.span.clone(),
+            inner,
+        }))
     }
 }

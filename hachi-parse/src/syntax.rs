@@ -164,19 +164,38 @@ pub struct CallExpr {
 /// extract them from the AST, as we don't care for storing token types in the AST.
 #[derive(Debug)]
 pub struct Identifier {
+    pub name: String,
     pub span: Span,
 }
 
 #[derive(Debug)]
 pub enum Type {
-    /// The unit type, implying that no value is returned from a function.
-    ///
-    /// This type can only be used to mark the return types.
-    Unit { span: Span },
-    /// The builtin i32 integer type.
-    Integer32 { span: Span },
-    /// A pointer type to an inner value.
-    Pointer { span: Span, inner: Box<Type> },
+    Unit(Box<UnitType>),
+    Integer32(Box<Integer32Type>),
+    Pointer(Box<PointerType>),
+    Named(Box<NamedType>),
+}
+
+#[derive(Debug)]
+pub struct UnitType {
+    pub span: Span,
+}
+
+#[derive(Debug)]
+pub struct Integer32Type {
+    pub span: Span,
+}
+
+#[derive(Debug)]
+pub struct PointerType {
+    pub span: Span,
+    pub inner: Box<Type>,
+}
+
+#[derive(Debug)]
+pub struct NamedType {
+    pub span: Span,
+    pub name: Box<Identifier>,
 }
 
 #[derive(Debug)]
