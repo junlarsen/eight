@@ -145,20 +145,22 @@ impl Parser<'_> {
         match &token.ty {
             // If it is a named type, we can test if it's matching one of the builtin types.
             TokenType::Identifier(v) => match v.as_str() {
-                "i32" => Ok(Box::new(Type::Integer32(Box::new(Integer32Type {
-                    span: token.span.clone(),
-                })))),
-                "void" => Ok(Box::new(Type::Unit(Box::new(UnitType {
-                    span: token.span.clone(),
-                })))),
+                "i32" => {
+                    let id = self.parse_identifier()?;
+                    Ok(Box::new(Type::Integer32(Box::new(Integer32Type {
+                        span: id.span,
+                    }))))
+                }
+                "void" => {
+                    let id = self.parse_identifier()?;
+                    Ok(Box::new(Type::Unit(Box::new(UnitType { span: id.span }))))
+                }
                 _ => Ok(Box::new(Type::Named(self.parse_named_type()?))),
             },
             TokenType::Star => Ok(Box::new(Type::Pointer(self.parse_pointer_type()?))),
-            _ => {
-                Err(ParseError::UnexpectedToken {
-                    token: self.next_token()?,
-                })
-            }
+            _ => Err(ParseError::UnexpectedToken {
+                token: self.next_token()?,
+            }),
         }
     }
 
@@ -177,5 +179,73 @@ impl Parser<'_> {
             span: indirection.span.clone(),
             inner,
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::assert_ok;
+    use crate::lexer::Lexer;
+    use crate::parser::Parser;
+    use crate::syntax::Type;
+
+    fn assert_parse<T>(input: &str, rule: impl FnOnce(&mut Parser) -> T) -> T {
+        let mut p = Parser::new(Lexer::new(input));
+        let production = rule(&mut p);
+        let next = assert_ok!(p.peek_token());
+        if let Some(next) = next {
+            assert!(false, "expected end of stream, got {:?}", next);
+        }
+        production
+    }
+
+    #[test]
+    fn test_parse_builtin_type() {
+        let prod = assert_parse("i32", |p| p.parse_type());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Type::Integer32(_)));
+
+        let prod = assert_parse("void", |p| p.parse_type());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Type::Unit(_)));
+    }
+
+    #[test]
+    fn test_parse_named_type() {
+        let prod = assert_parse("Matrix", |p| p.parse_type());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Type::Named(inner) if inner.name.name == "Matrix"));
+    }
+
+    #[test]
+    fn test_parse_pointer_type() {
+        let prod = assert_parse("*i32", |p| p.parse_type());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Type::Pointer(_)));
+        if let Type::Pointer(ptr) = *prod {
+            let inner = ptr.inner.as_ref();
+            assert!(matches!(inner, Type::Integer32(_)));
+        }
+
+        let prod = assert_parse("**i32", |p| p.parse_type());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Type::Pointer(_)));
+        if let Type::Pointer(ptr) = *prod {
+            assert!(matches!(*ptr.inner.as_ref(), Type::Pointer(_)));
+            let inner = ptr.inner.as_ref();
+            if let Type::Pointer(ptr) = inner {
+                let inner = ptr.inner.as_ref();
+                assert!(matches!(inner, Type::Integer32(_)));
+            }
+        }
+
+        let prod = assert_parse("*vec2", |p| p.parse_type());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Type::Pointer(_)));
+        if let Type::Pointer(ptr) = *prod {
+            assert!(matches!(*ptr.inner.as_ref(), Type::Named(_)));
+            let inner = ptr.inner.as_ref();
+            assert!(matches!(inner, Type::Named(name) if name.name.name == "vec2"));
+        }
     }
 }
