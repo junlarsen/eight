@@ -1,9 +1,9 @@
 use crate::ast::{
     AssignExpr, BinaryOp, BinaryOpExpr, BracketIndexExpr, BreakStmt, CallExpr, ContinueStmt,
-    DotIndexExpr, Expr, ExprStmt, ForStmt, FunctionItem, FunctionParameterItem, GroupExpr,
-    Identifier, IfStmt, Integer32Type, IntegerLiteralExpr, Item, LetStmt, NamedType, PointerType,
-    ReferenceExpr, ReturnStmt, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem, UnaryOp,
-    UnaryOpExpr, UnitType,
+    DotIndexExpr, Expr, ExprStmt, ForStmt, ForStmtInitializer, FunctionItem, FunctionParameterItem,
+    GroupExpr, Identifier, IfStmt, Integer32Type, IntegerLiteralExpr, Item, LetStmt, NamedType,
+    PointerType, ReferenceExpr, ReturnStmt, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem,
+    UnaryOp, UnaryOpExpr, UnitType,
 };
 use crate::lexer::{Lexer, LexerError, LexerIter};
 use crate::{Token, TokenType};
@@ -256,28 +256,151 @@ impl Parser<'_> {
         }))
     }
 
+    /// Parses a return statement.
+    ///
+    /// ```text
+    /// return_stmt ::= RETURN expr? SEMICOLON
+    /// ```
     pub fn parse_return_stmt(&mut self) -> ParseResult<Box<ReturnStmt>> {
-        todo!()
+        let tok = self.expect_token(TokenType::KeywordReturn)?;
+        let value = if !self.peek_token_match(TokenType::Semicolon)? {
+            Some(self.parse_expr()?)
+        } else {
+            None
+        };
+        self.expect_token(TokenType::Semicolon)?;
+        Ok(Box::new(ReturnStmt {
+            span: tok.span,
+            value,
+        }))
     }
 
+    /// Parses a for statement.
+    ///
+    /// ```text
+    /// for_stmt ::= FOR LPAREN for_stmt_initializer? SEMICOLON expr? SEMICOLON expr? RPAREN LBRACE stmt* RBRACE
+    /// ```
     pub fn parse_for_stmt(&mut self) -> ParseResult<Box<ForStmt>> {
-        todo!()
+        let tok = self.expect_token(TokenType::KeywordFor)?;
+        self.expect_token(TokenType::OpenParen)?;
+        let initializer = if !self.peek_token_match(TokenType::Semicolon)? {
+            Some(self.parse_for_stmt_initializer()?)
+        } else {
+            None
+        };
+        self.expect_token(TokenType::Semicolon)?;
+        let condition = if !self.peek_token_match(TokenType::Semicolon)? {
+            Some(self.parse_expr()?)
+        } else {
+            None
+        };
+        self.expect_token(TokenType::Semicolon)?;
+        let increment = if !self.peek_token_match(TokenType::CloseParen)? {
+            Some(self.parse_expr()?)
+        } else {
+            None
+        };
+        self.expect_token(TokenType::CloseParen)?;
+        self.expect_token(TokenType::OpenBrace)?;
+        let mut body = Vec::new();
+        while !self.peek_token_match(TokenType::CloseBrace)? {
+            body.push(self.parse_stmt()?);
+        }
+        self.expect_token(TokenType::CloseBrace)?;
+        Ok(Box::new(ForStmt {
+            span: tok.span,
+            initializer,
+            condition,
+            increment,
+            body,
+        }))
     }
 
+    /// Parses a for statement initializer.
+    ///
+    /// ```text
+    /// for_stmt_initializer ::= LET identifier EQUAL expr
+    /// ```
+    pub fn parse_for_stmt_initializer(&mut self) -> ParseResult<Box<ForStmtInitializer>> {
+        let tok = self.expect_token(TokenType::KeywordLet)?;
+        let name = self.parse_identifier()?;
+        self.expect_token(TokenType::Equal)?;
+        let initializer = self.parse_expr()?;
+        Ok(Box::new(ForStmtInitializer {
+            span: tok.span,
+            name,
+            initializer,
+        }))
+    }
+
+    /// Parses a break statement.
+    ///
+    /// ```text
+    /// break_stmt ::= BREAK SEMICOLON
+    /// ```
     pub fn parse_break_stmt(&mut self) -> ParseResult<Box<BreakStmt>> {
-        todo!()
+        let tok = self.expect_token(TokenType::KeywordBreak)?;
+        self.expect_token(TokenType::Semicolon)?;
+        Ok(Box::new(BreakStmt { span: tok.span }))
     }
 
+    /// Parses a continue statement.
+    ///
+    /// ```text
+    /// continue_stmt ::= CONTINUE SEMICOLON
+    /// ```
     pub fn parse_continue_stmt(&mut self) -> ParseResult<Box<ContinueStmt>> {
-        todo!()
+        let tok = self.expect_token(TokenType::KeywordContinue)?;
+        self.expect_token(TokenType::Semicolon)?;
+        Ok(Box::new(ContinueStmt { span: tok.span }))
     }
 
+    /// Parses an if statement.
+    ///
+    /// ```text
+    /// if_stmt ::= IF LPAREN expr RPAREN LBRACE stmt* RBRACE (ELSE LBRACE stmt* RBRACE)?
     pub fn parse_if_stmt(&mut self) -> ParseResult<Box<IfStmt>> {
-        todo!()
+        let tok = self.expect_token(TokenType::KeywordIf)?;
+        self.expect_token(TokenType::OpenParen)?;
+        let condition = self.parse_expr()?;
+        self.expect_token(TokenType::CloseParen)?;
+        self.expect_token(TokenType::OpenBrace)?;
+        let mut body = Vec::new();
+        while !self.peek_token_match(TokenType::CloseBrace)? {
+            body.push(self.parse_stmt()?);
+        }
+        self.expect_token(TokenType::CloseBrace)?;
+        let r#else = if self.peek_token_match(TokenType::KeywordElse)? {
+            self.expect_token(TokenType::KeywordElse)?;
+            self.expect_token(TokenType::OpenBrace)?;
+            let mut r#else = Vec::new();
+            while !self.peek_token_match(TokenType::CloseBrace)? {
+                r#else.push(self.parse_stmt()?);
+            }
+            self.expect_token(TokenType::CloseBrace)?;
+            Some(r#else)
+        } else {
+            None
+        };
+        Ok(Box::new(IfStmt {
+            span: tok.span,
+            condition,
+            happy_path: body,
+            unhappy_path: r#else,
+        }))
     }
 
+    /// Parses an expression statement.
+    ///
+    /// ```text
+    /// expr_stmt ::= expr SEMICOLON
     pub fn parse_expr_stmt(&mut self) -> ParseResult<Box<ExprStmt>> {
-        todo!()
+        let expr = self.parse_expr()?;
+        let tok = self.expect_token(TokenType::Semicolon)?;
+        Ok(Box::new(ExprStmt {
+            span: tok.span,
+            expr,
+        }))
     }
 
     /// Parse an expression
@@ -740,7 +863,7 @@ impl Parser<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{BinaryOp, Expr, Identifier, Type, UnaryOp};
+    use crate::ast::{BinaryOp, BreakStmt, ContinueStmt, Expr, Identifier, Type, UnaryOp};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
     use crate::{assert_none, assert_ok, assert_some};
@@ -918,6 +1041,84 @@ mod tests {
         let r#type = prod.r#type;
         let r#type = assert_some!(r#type);
         assert!(matches!(*r#type, Type::Integer32(_)));
+    }
+
+    #[test]
+    fn test_parse_return_stmt() {
+        let prod = assert_parse("return;", |p| p.parse_return_stmt());
+        let prod = assert_ok!(prod);
+        assert_none!(prod.value);
+
+        let prod = assert_parse("return 1;", |p| p.parse_return_stmt());
+        let prod = assert_ok!(prod);
+        let value = assert_some!(prod.value);
+        assert!(matches!(*value, Expr::IntegerLiteral(_)));
+    }
+
+    #[test]
+    fn test_parse_for_stmt() {
+        let prod = assert_parse("for (;;) {}", |p| p.parse_for_stmt());
+        let prod = assert_ok!(prod);
+        assert_none!(prod.initializer);
+        assert_none!(prod.condition);
+        assert_none!(prod.increment);
+        let body = prod.body.as_slice();
+        assert_eq!(body.len(), 0);
+
+        let prod = assert_parse("for (let x = 1; x < 10; x = x + 1) { x; }", |p| {
+            p.parse_for_stmt()
+        });
+        let prod = assert_ok!(prod);
+        assert_some!(prod.initializer);
+        assert_some!(prod.condition);
+        assert_some!(prod.increment);
+        let body = prod.body.as_slice();
+        assert_eq!(body.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_break_stmt() {
+        let prod = assert_parse("break;", |p| p.parse_break_stmt());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, BreakStmt { .. }));
+    }
+
+    #[test]
+    fn test_parse_continue_stmt() {
+        let prod = assert_parse("continue;", |p| p.parse_continue_stmt());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, ContinueStmt { .. }));
+    }
+
+    #[test]
+    fn test_parse_if_stmt() {
+        let prod = assert_parse("if (x) {}", |p| p.parse_if_stmt());
+        let prod = assert_ok!(prod);
+        let condition = prod.condition.as_ref();
+        let body = prod.happy_path.as_slice();
+        assert!(matches!(condition, Expr::Reference(_)));
+        if let Expr::Reference(condition) = condition {
+            let name = condition.as_ref().name.as_ref();
+            assert!(matches!(name, Identifier { name, .. } if name == "x"));
+        };
+        assert_eq!(body.len(), 0);
+        assert_none!(prod.unhappy_path);
+
+        let prod = assert_parse("if (x) { y(); } else { z(); }", |p| p.parse_if_stmt());
+        let prod = assert_ok!(prod);
+        assert_some!(prod.unhappy_path);
+    }
+
+    #[test]
+    fn test_parse_expr_stmt() {
+        let prod = assert_parse("x;", |p| p.parse_expr_stmt());
+        let prod = assert_ok!(prod);
+        let expr = prod.expr.as_ref();
+        assert!(matches!(expr, Expr::Reference(_)));
+        if let Expr::Reference(expr) = expr {
+            let name = expr.as_ref().name.as_ref();
+            assert!(matches!(name, Identifier { name, .. } if name == "x"));
+        };
     }
 
     #[test]

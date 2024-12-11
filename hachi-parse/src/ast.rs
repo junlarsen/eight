@@ -83,12 +83,18 @@ pub struct ReturnStmt {
 #[derive(Debug)]
 pub struct ForStmt {
     pub span: Span,
-    pub name: Box<Identifier>,
-    pub r#type: Box<Type>,
-    pub initializer: Box<Expr>,
-    pub condition: Box<Expr>,
-    pub increment: Box<Expr>,
+    pub initializer: Option<Box<ForStmtInitializer>>,
+    pub condition: Option<Box<Expr>>,
+    pub increment: Option<Box<Expr>>,
     pub body: Vec<Box<Stmt>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
+pub struct ForStmtInitializer {
+    pub span: Span,
+    pub name: Box<Identifier>,
+    pub initializer: Box<Expr>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
