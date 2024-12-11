@@ -1,6 +1,6 @@
 use crate::ast::{
-    FunctionItem, Identifier, Integer32Type, Item, NamedType, PointerType, TranslationUnit, Type,
-    TypeItem, TypeMemberItem, UnitType,
+    FunctionItem, FunctionParameterItem, Identifier, Integer32Type, Item, NamedType, PointerType,
+    TranslationUnit, Type, TypeItem, TypeMemberItem, UnitType,
 };
 use crate::lexer::{Lexer, LexerError, LexerIter};
 use crate::{Token, TokenType};
@@ -106,8 +106,58 @@ impl Parser<'_> {
         }
     }
 
+    /// Parse a function item.
+    ///
+    /// ```text
+    /// fn_item ::= KEYWORD_FN IDENTIFIER OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
+    /// ```
     pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
-        todo!()
+        self.expect_token(TokenType::KeywordFn)?;
+        let id = self.parse_identifier()?;
+        self.expect_token(TokenType::OpenParen)?;
+        let mut parameters = Vec::new();
+        while !self.peek_token_match(TokenType::CloseParen)? {
+            let parameter = self.parse_fn_parameter_item()?;
+            // Consume commas if we're not matching the end of the parameter list.
+            if !self.peek_token_match(TokenType::CloseParen)? {
+                self.expect_token(TokenType::Comma)?;
+            }
+            parameters.push(parameter);
+        }
+        self.expect_token(TokenType::CloseParen)?;
+        let return_type = if self.peek_token_match(TokenType::Arrow)? {
+            self.expect_token(TokenType::Arrow)?;
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+
+        self.expect_token(TokenType::OpenBrace)?;
+        self.expect_token(TokenType::CloseBrace)?;
+
+        Ok(Box::new(FunctionItem {
+            span: id.span.clone(),
+            name: id,
+            parameters,
+            return_type,
+            body: Vec::new(),
+        }))
+    }
+
+    /// Parse a function parameter item.
+    ///
+    /// ```text
+    /// fn_parameter_item ::= identifier COLON type
+    /// ```
+    pub fn parse_fn_parameter_item(&mut self) -> ParseResult<Box<FunctionParameterItem>> {
+        let id = self.parse_identifier()?;
+        self.expect_token(TokenType::Colon)?;
+        let ty = self.parse_type()?;
+        Ok(Box::new(FunctionParameterItem {
+            span: id.span.clone(),
+            name: id,
+            r#type: ty,
+        }))
     }
 
     /// Parse a type item.
@@ -227,10 +277,10 @@ impl Parser<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_ok;
     use crate::ast::{Identifier, Type};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
+    use crate::{assert_none, assert_ok, assert_some};
 
     fn assert_parse<T>(input: &str, rule: impl FnOnce(&mut Parser) -> T) -> T {
         let mut p = Parser::new(Lexer::new(input));
@@ -335,5 +385,57 @@ mod tests {
 
         assert!(matches!(name, Identifier { name, .. } if name == "Matrix"));
         assert_eq!(members.len(), 3);
+    }
+
+    #[test]
+    fn test_parse_fn_parameter_item() {
+        let prod = assert_parse("x: i32", |p| p.parse_fn_parameter_item());
+        let prod = assert_ok!(prod);
+
+        let name = prod.name.as_ref();
+        let r#type = prod.r#type.as_ref();
+
+        assert!(matches!(name, Identifier { name, .. } if name == "x"));
+        assert!(matches!(*r#type, Type::Integer32(_)));
+    }
+
+    #[test]
+    fn test_parse_fn_item() {
+        let prod = assert_parse("fn x(y: i32) -> i32 {}", |p| p.parse_fn_item());
+        let prod = assert_ok!(prod);
+
+        let name = prod.name.as_ref();
+        let parameters = prod.parameters.as_slice();
+        let return_type = assert_some!(prod.return_type);
+        let body = prod.body.as_slice();
+
+        assert!(matches!(name, Identifier { name, .. } if name == "x"));
+        assert_eq!(parameters.len(), 1);
+        assert!(matches!(*return_type, Type::Integer32(_)));
+        assert_eq!(body.len(), 0);
+
+        let prod = assert_parse("fn zzz(y: *i32) {}", |p| p.parse_fn_item());
+        let prod = assert_ok!(prod);
+
+        let name = prod.name.as_ref();
+        let parameters = prod.parameters.as_slice();
+        assert_none!(prod.return_type.as_ref());
+        let body = prod.body.as_slice();
+
+        assert!(matches!(name, Identifier { name, .. } if name == "zzz"));
+        assert_eq!(parameters.len(), 1);
+        assert_eq!(body.len(), 0);
+
+        let prod = assert_parse("fn v(x: i32, y: i32) {}", |p| p.parse_fn_item());
+        let prod = assert_ok!(prod);
+
+        let parameters = prod.parameters.as_slice();
+        assert_eq!(parameters.len(), 2);
+
+        let prod = assert_parse("fn foo() {}", |p| p.parse_fn_item());
+        let prod = assert_ok!(prod);
+
+        let parameters = prod.parameters.as_slice();
+        assert_eq!(parameters.len(), 0);
     }
 }

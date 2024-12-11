@@ -21,10 +21,18 @@ pub enum Item {
 #[derive(Debug)]
 pub struct FunctionItem {
     pub span: Span,
-    pub parameters: Vec<Box<Type>>,
-    pub arguments: Vec<Box<Identifier>>,
+    pub name: Box<Identifier>,
+    pub parameters: Vec<Box<FunctionParameterItem>>,
     pub return_type: Option<Box<Type>>,
     pub body: Vec<Box<Stmt>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
+pub struct FunctionParameterItem {
+    pub span: Span,
+    pub name: Box<Identifier>,
+    pub r#type: Box<Type>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
