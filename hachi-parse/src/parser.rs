@@ -1,6 +1,8 @@
 use crate::ast::{
-    FunctionItem, FunctionParameterItem, Identifier, Integer32Type, Item, NamedType, PointerType,
-    TranslationUnit, Type, TypeItem, TypeMemberItem, UnitType,
+    AssignExpr, BinaryOp, BinaryOpExpr, BracketIndexExpr, CallExpr, DotIndexExpr, Expr,
+    FunctionItem, FunctionParameterItem, GroupExpr, Identifier, Integer32Type, IntegerLiteralExpr,
+    Item, LetStmt, NamedType, PointerType, ReferenceExpr, Stmt, TranslationUnit, Type, TypeItem,
+    TypeMemberItem, UnaryOp, UnaryOpExpr, UnitType,
 };
 use crate::lexer::{Lexer, LexerError, LexerIter};
 use crate::{Token, TokenType};
@@ -109,7 +111,9 @@ impl Parser<'_> {
     /// Parse a function item.
     ///
     /// ```text
-    /// fn_item ::= KEYWORD_FN IDENTIFIER OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
+    /// fn_item ::= KEYWORD_FN IDENTIFIER OPEN_PAREN
+    ///             ((fn_parameter_item COMMA)+ fn_parameter_item)?
+    ///             CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
     /// ```
     pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
         self.expect_token(TokenType::KeywordFn)?;
@@ -199,6 +203,430 @@ impl Parser<'_> {
         }))
     }
 
+    /// Parse a statement.
+    ///
+    /// ```text
+    /// stmt ::= let_stmt
+    ///        | return_stmt
+    ///        | for_stmt
+    ///        | break_stmt
+    ///        | continue_stmt
+    ///        | if_stmt
+    ///        | expr_stmt
+    /// ```
+    pub fn parse_stmt(&mut self) -> ParseResult<Box<Stmt>> {
+        let _ = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        todo!()
+    }
+
+    /// Parse a let statement.
+    ///
+    /// ```text
+    /// let_stmt ::= KEYWORD_LET IDENTIFIER (COLON type)? EQUAL expr SEMICOLON
+    /// ```
+    pub fn parse_let_stmt(&mut self) -> ParseResult<Box<LetStmt>> {
+        self.expect_token(TokenType::KeywordLet)?;
+        let id = self.parse_identifier()?;
+        let ty = if self.peek_token_match(TokenType::Colon)? {
+            self.expect_token(TokenType::Colon)?;
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+        self.expect_token(TokenType::Equal)?;
+        let expr = self.parse_expr()?;
+        self.expect_token(TokenType::Semicolon)?;
+
+        Ok(Box::new(LetStmt {
+            span: id.span.clone(),
+            name: id,
+            r#type: ty,
+            value: expr,
+        }))
+    }
+
+    /// Parse an expression
+    ///
+    /// ```text
+    /// expr ::=
+    /// ```
+    ///
+    /// Parsing of expressions is implemented using a climbing algorithm as described in this
+    /// [Wikipedia article][precedence_climber].
+    ///
+    /// The order of operator precedence is as follows:
+    ///
+    /// 1. Group Expression
+    /// 2. Reference Expression
+    /// 3. Literal Expression
+    /// 4. DotIndex Expression
+    /// 4. BracketIndex Expression
+    /// 5. Call Expression
+    /// 6. Unary Expression
+    /// 7. Multiplicative Expression
+    /// 8. Additive Expression
+    /// 9. Binary Expression
+    /// 10. Comparison Expression
+    /// 11. Logical And Expression
+    /// 12. Logical Or Expression
+    /// 13. Assign Expression
+    ///
+    /// [precedence_climber]: https://en.wikipedia.org/wiki/Operator-precedence_parser#Precedence_climbing_method
+    pub fn parse_expr(&mut self) -> ParseResult<Box<Expr>> {
+        self.parse_assign_expr()
+    }
+
+    /// Parse an assignment expression.
+    ///
+    /// ```text
+    /// assign_expr ::= logical_expr EQUAL assign_expr
+    /// ```
+    pub fn parse_assign_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let expr = self.parse_logical_or_expr()?;
+
+        if self.peek_token_match(TokenType::Equal)? {
+            let op = self.expect_token(TokenType::Equal)?;
+            let rhs = self.parse_assign_expr()?;
+            return Ok(Box::new(Expr::Assign(Box::new(AssignExpr {
+                span: op.span,
+                lhs: expr,
+                rhs,
+            }))));
+        };
+
+        Ok(expr)
+    }
+
+    /// Parse a logical or expression.
+    ///
+    /// ```text
+    /// logical_or_expr ::= logical_and_expr (OR logical_and_expr)*
+    /// ```
+    pub fn parse_logical_or_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let lhs = self.parse_logical_and_expr()?;
+
+        if self.peek_token_match(TokenType::LogicalOr)? {
+            let op = self.expect_token(TokenType::LogicalOr)?;
+            let rhs = self.parse_logical_or_expr()?;
+            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
+                span: op.span,
+                lhs,
+                rhs,
+                op: BinaryOp::Or,
+            }))));
+        };
+
+        Ok(lhs)
+    }
+
+    /// Parse a logical and expression.
+    ///
+    /// ```text
+    /// logical_and_expr ::= comparison_expr (AND comparison_expr)*
+    /// ```
+    pub fn parse_logical_and_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let lhs = self.parse_comparison_expr()?;
+
+        if self.peek_token_match(TokenType::LogicalAnd)? {
+            let op = self.expect_token(TokenType::LogicalAnd)?;
+            let rhs = self.parse_logical_and_expr()?;
+            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
+                span: op.span,
+                lhs,
+                rhs,
+                op: BinaryOp::And,
+            }))));
+        };
+
+        Ok(lhs)
+    }
+
+    /// Parse a comparison expression.
+    ///
+    /// ```text
+    /// comparison_expr ::= additive_expr (comparison_op additive_expr)*
+    /// comparison_op ::= EQUAL_EQUAL | BANG_EQUAL | LESS_THAN | GREATER_THAN | LESS_THAN_EQUAL | GREATER_THAN_EQUAL
+    /// ```
+    pub fn parse_comparison_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let lhs = self.parse_additive_expr()?;
+        let is_next_comparison = self.peek_token_match(TokenType::EqualEqual)?
+            || self.peek_token_match(TokenType::BangEqual)?
+            || self.peek_token_match(TokenType::OpenAngle)?
+            || self.peek_token_match(TokenType::CloseAngle)?
+            || self.peek_token_match(TokenType::LessThanEqual)?
+            || self.peek_token_match(TokenType::GreaterThanEqual)?;
+
+        if is_next_comparison {
+            let tok = self.next_token()?;
+            let op = match &tok.ty {
+                TokenType::EqualEqual => BinaryOp::Eq,
+                TokenType::BangEqual => BinaryOp::Neq,
+                TokenType::OpenAngle => BinaryOp::Lt,
+                TokenType::CloseAngle => BinaryOp::Gt,
+                TokenType::LessThanEqual => BinaryOp::Lte,
+                TokenType::GreaterThanEqual => BinaryOp::Gte,
+                _ => unreachable!(),
+            };
+            let rhs = self.parse_comparison_expr()?;
+            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
+                span: tok.span,
+                lhs,
+                rhs,
+                op,
+            }))));
+        }
+
+        Ok(lhs)
+    }
+
+    /// Parse an additive expression.
+    ///
+    /// ```text
+    /// additive_expr ::= multiplicative_expr (additive_op multiplicative_expr)*
+    /// additive_op ::= PLUS | MINUS
+    /// ```
+    pub fn parse_additive_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let lhs = self.parse_multiplicative_expr()?;
+        let is_next_additive =
+            self.peek_token_match(TokenType::Plus)? || self.peek_token_match(TokenType::Minus)?;
+
+        if is_next_additive {
+            let tok = self.next_token()?;
+            let op = match &tok.ty {
+                TokenType::Plus => BinaryOp::Add,
+                TokenType::Minus => BinaryOp::Sub,
+                _ => unreachable!(),
+            };
+            let rhs = self.parse_additive_expr()?;
+            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
+                span: tok.span,
+                lhs,
+                rhs,
+                op,
+            }))));
+        }
+
+        Ok(lhs)
+    }
+
+    /// Parse a multiplicative expression.
+    ///
+    /// ```text
+    /// multiplicative_expr ::= unary_expr (multiplicative_op unary_expr)*
+    /// multiplicative_op ::= STAR | SLASH | PERCENT
+    /// ```
+    pub fn parse_multiplicative_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let lhs = self.parse_unary_expr()?;
+        let is_next_multiplicative = self.peek_token_match(TokenType::Star)?
+            || self.peek_token_match(TokenType::Slash)?
+            || self.peek_token_match(TokenType::Percent)?;
+
+        if is_next_multiplicative {
+            let tok = self.next_token()?;
+            let op = match &tok.ty {
+                TokenType::Star => BinaryOp::Mul,
+                TokenType::Slash => BinaryOp::Div,
+                TokenType::Percent => BinaryOp::Rem,
+                _ => unreachable!(),
+            };
+            let rhs = self.parse_multiplicative_expr()?;
+            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
+                span: tok.span,
+                lhs,
+                rhs,
+                op,
+            }))));
+        }
+
+        Ok(lhs)
+    }
+
+    /// Parse an unary expression.
+    ///
+    /// ```text
+    /// unary_expr ::= unary_op unary_expr | group_expr
+    /// unary_op ::= MINUS | BANG | DEREF | STAR
+    /// ```
+    pub fn parse_unary_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        match token.ty {
+            TokenType::Minus => {
+                let op = self.expect_token(TokenType::Minus)?;
+                let rhs = self.parse_unary_expr()?;
+                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
+                    span: op.span,
+                    op: UnaryOp::Neg,
+                    operand: rhs,
+                }))))
+            }
+            TokenType::Bang => {
+                let op = self.expect_token(TokenType::Bang)?;
+                let rhs = self.parse_unary_expr()?;
+                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
+                    span: op.span,
+                    op: UnaryOp::Not,
+                    operand: rhs,
+                }))))
+            }
+            TokenType::Star => {
+                let op = self.expect_token(TokenType::Star)?;
+                let rhs = self.parse_unary_expr()?;
+                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
+                    span: op.span,
+                    op: UnaryOp::Deref,
+                    operand: rhs,
+                }))))
+            }
+            TokenType::AddressOf => {
+                let op = self.expect_token(TokenType::AddressOf)?;
+                let rhs = self.parse_unary_expr()?;
+                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
+                    span: op.span,
+                    op: UnaryOp::AddressOf,
+                    operand: rhs,
+                }))))
+            }
+            _ => self.parse_call_expr(),
+        }
+    }
+
+    /// Parse a call expression.
+    ///
+    /// ```text
+    /// call_expr ::= dot_index_expr (OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)?
+    /// ```
+    pub fn parse_call_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let callee = self.parse_dot_index_expr()?;
+        if self.peek_token_match(TokenType::OpenParen)? {
+            let op = self.expect_token(TokenType::OpenParen)?;
+            let mut arguments = Vec::new();
+            while !self.peek_token_match(TokenType::CloseParen)? {
+                arguments.push(self.parse_expr()?);
+                if !self.peek_token_match(TokenType::CloseParen)? {
+                    self.expect_token(TokenType::Comma)?;
+                }
+            }
+            self.expect_token(TokenType::CloseParen)?;
+            return Ok(Box::new(Expr::Call(Box::new(CallExpr {
+                span: op.span,
+                callee,
+                arguments,
+            }))));
+        };
+
+        Ok(callee)
+    }
+
+    /// Parse a dot index expression.
+    ///
+    /// ```text
+    /// dot_index_expr ::= reference_expr DOT identifier
+    /// ```
+    pub fn parse_dot_index_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let origin = self.parse_bracket_index_expr()?;
+        if self.peek_token_match(TokenType::Dot)? {
+            let op = self.expect_token(TokenType::Dot)?;
+            let index = self.parse_identifier()?;
+            return Ok(Box::new(Expr::DotIndex(Box::new(DotIndexExpr {
+                span: op.span,
+                origin,
+                index,
+            }))));
+        }
+        Ok(origin)
+    }
+
+    /// Parse a bracket index expression.
+    ///
+    /// ```text
+    /// bracket_index_expr ::= reference_expr OPEN_BRACKET expr CLOSE_BRACKET
+    /// ```
+    pub fn parse_bracket_index_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let origin = self.parse_reference_expr()?;
+        if self.peek_token_match(TokenType::OpenBracket)? {
+            let op = self.expect_token(TokenType::OpenBracket)?;
+            let index = self.parse_expr()?;
+            self.expect_token(TokenType::CloseBracket)?;
+            return Ok(Box::new(Expr::BracketIndex(Box::new(BracketIndexExpr {
+                span: op.span,
+                origin,
+                index,
+            }))));
+        }
+        Ok(origin)
+    }
+
+    /// Parse a reference expression.
+    ///
+    /// ```text
+    /// reference_expr ::= identifier | group_expr
+    /// ```
+    pub fn parse_reference_expr(&mut self) -> ParseResult<Box<Expr>> {
+        if matches!(
+            self.peek_token()?,
+            Some(Token {
+                ty: TokenType::Identifier(_),
+                ..
+            })
+        ) {
+            let id = self.parse_identifier()?;
+            return Ok(Box::new(Expr::Reference(Box::new(ReferenceExpr {
+                span: id.span.clone(),
+                name: id,
+            }))));
+        }
+        self.parse_literal_expr()
+    }
+
+    /// Parse an integer literal expression.
+    ///
+    /// ```text
+    /// integer_literal_expr ::= INTEGER_LITERAL
+    /// ```
+    pub fn parse_literal_expr(&mut self) -> ParseResult<Box<Expr>> {
+        if matches!(
+            self.peek_token()?,
+            Some(Token {
+                ty: TokenType::IntegerLiteral(_),
+                ..
+            })
+        ) {
+            let token = self.next_token()?;
+            let value = match token.ty {
+                TokenType::IntegerLiteral(v) => v,
+                _ => unreachable!("the type should have been checked before to be safe to unwrap"),
+            };
+            return Ok(Box::new(Expr::IntegerLiteral(Box::new(
+                IntegerLiteralExpr {
+                    span: token.span,
+                    value,
+                },
+            ))));
+        }
+
+        self.parse_group_expr()
+    }
+
+    /// Parse a group expression.
+    ///
+    /// ```text
+    /// group_expr ::= OPEN_PAREN expr CLOSE_PAREN
+    /// ```
+    pub fn parse_group_expr(&mut self) -> ParseResult<Box<Expr>> {
+        if self.peek_token_match(TokenType::OpenParen)? {
+            let op = self.expect_token(TokenType::OpenParen)?;
+            let inner = self.parse_expr()?;
+            self.expect_token(TokenType::CloseParen)?;
+            return Ok(Box::new(Expr::Group(Box::new(GroupExpr {
+                span: op.span,
+                inner,
+            }))));
+        };
+        Err(ParseError::UnexpectedToken {
+            token: self.next_token()?,
+        })
+    }
+
     /// Parse an identifier.
     ///
     /// ```text
@@ -277,7 +705,7 @@ impl Parser<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::{Identifier, Type};
+    use crate::ast::{BinaryOp, Expr, Identifier, Type, UnaryOp};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
     use crate::{assert_none, assert_ok, assert_some};
@@ -437,5 +865,234 @@ mod tests {
 
         let parameters = prod.parameters.as_slice();
         assert_eq!(parameters.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_group_expr() {
+        let prod = assert_parse("(x)", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Group(_)));
+        if let Expr::Group(inner) = *prod {
+            let inner = inner.as_ref().inner.as_ref();
+            assert!(matches!(inner, Expr::Reference(_)));
+        };
+    }
+
+    #[test]
+    fn test_parse_reference_expr() {
+        let prod = assert_parse("x", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Reference(_)));
+        if let Expr::Reference(inner) = *prod {
+            let name = inner.as_ref().name.as_ref();
+            assert!(matches!(name, Identifier { name, .. } if name == "x"));
+        };
+    }
+
+    #[test]
+    fn test_parse_literal_expr() {
+        let prod = assert_parse("123", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::IntegerLiteral(_)));
+        if let Expr::IntegerLiteral(inner) = *prod {
+            let value = inner.as_ref().value;
+            assert_eq!(value, 123);
+        };
+    }
+
+    #[test]
+    fn test_parse_dot_index_expr() {
+        let prod = assert_parse("x.y", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::DotIndex(_)));
+        if let Expr::DotIndex(inner) = *prod {
+            let origin = inner.as_ref().origin.as_ref();
+            assert!(matches!(origin, Expr::Reference(_)));
+            if let Expr::Reference(origin) = origin {
+                let name = origin.as_ref().name.as_ref();
+                assert!(matches!(name, Identifier { name, .. } if name == "x"));
+            };
+            let index = inner.as_ref().index.as_ref();
+            assert!(matches!(index, Identifier { name, .. } if name == "y"));
+        };
+    }
+
+    #[test]
+    fn test_parse_bracket_index_expr() {
+        let prod = assert_parse("x[y]", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BracketIndex(_)));
+        if let Expr::BracketIndex(inner) = *prod {
+            let origin = inner.as_ref().origin.as_ref();
+            assert!(matches!(origin, Expr::Reference(_)));
+            if let Expr::Reference(origin) = origin {
+                let name = origin.as_ref().name.as_ref();
+                assert!(matches!(name, Identifier { name, .. } if name == "x"));
+            };
+            let index = inner.as_ref().index.as_ref();
+            assert!(matches!(index, Expr::Reference(_)));
+            if let Expr::Reference(index) = index {
+                let name = index.as_ref().name.as_ref();
+                assert!(matches!(name, Identifier { name, .. } if name == "y"));
+            };
+        };
+    }
+
+    #[test]
+    fn test_parse_call_expr() {
+        let prod = assert_parse("x()", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Call(_)));
+        if let Expr::Call(inner) = *prod {
+            let origin = inner.as_ref().callee.as_ref();
+            let count = inner.as_ref().arguments.len();
+            assert_eq!(count, 0);
+            assert!(matches!(origin, Expr::Reference(_)));
+            if let Expr::Reference(origin) = origin {
+                let name = origin.as_ref().name.as_ref();
+                assert!(matches!(name, Identifier { name, .. } if name == "x"));
+            };
+        };
+
+        let prod = assert_parse("x(z)", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Call(_)));
+        if let Expr::Call(inner) = *prod {
+            let count = inner.as_ref().arguments.len();
+            assert_eq!(count, 1);
+        }
+
+        let prod = assert_parse("x(z, foo(bar, baz()))", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Call(_)));
+        if let Expr::Call(inner) = *prod {
+            let count = inner.as_ref().arguments.len();
+            assert_eq!(count, 2);
+        }
+    }
+
+    #[test]
+    fn test_parse_unary_expr() {
+        let prod = assert_parse("-x", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::UnaryOp(_)));
+        if let Expr::UnaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &UnaryOp::Neg);
+        };
+
+        let prod = assert_parse("*x", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::UnaryOp(_)));
+        if let Expr::UnaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &UnaryOp::Deref);
+        };
+
+        let prod = assert_parse("&x", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::UnaryOp(_)));
+        if let Expr::UnaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &UnaryOp::AddressOf);
+        };
+    }
+
+    #[test]
+    fn test_parse_multiplicative_expr() {
+        let prod = assert_parse("x + y", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BinaryOp(_)));
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &BinaryOp::Add);
+        };
+
+        let prod = assert_parse("x * y / z", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BinaryOp(_)));
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &BinaryOp::Mul);
+        };
+    }
+
+    #[test]
+    fn test_parse_additive_expr() {
+        let prod = assert_parse("x - y", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BinaryOp(_)));
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &BinaryOp::Sub);
+        };
+
+        let prod = assert_parse("x + y * z", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BinaryOp(_)));
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            let rhs = inner.as_ref().rhs.as_ref();
+            assert_eq!(op, &BinaryOp::Add);
+
+            assert!(matches!(rhs, Expr::BinaryOp(_)));
+            if let Expr::BinaryOp(inner) = rhs {
+                let op = &inner.as_ref().op;
+                assert_eq!(op, &BinaryOp::Mul);
+            };
+        };
+    }
+
+    #[test]
+    fn test_parse_comparison_expr() {
+        let prod = assert_parse("x < y", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BinaryOp(_)));
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &BinaryOp::Lt);
+        };
+
+        let prod = assert_parse("x < y < z", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BinaryOp(_)));
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &BinaryOp::Lt);
+
+            let rhs = inner.as_ref().rhs.as_ref();
+            assert!(matches!(rhs, Expr::BinaryOp(_)));
+            if let Expr::BinaryOp(inner) = rhs {
+                let op = &inner.as_ref().op;
+                assert_eq!(op, &BinaryOp::Lt);
+            };
+        };
+    }
+
+    #[test]
+    pub fn test_parse_logical_and_expr() {
+        let prod = assert_parse("a + 3 && y", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &BinaryOp::And);
+        };
+    }
+
+    #[test]
+    pub fn test_parse_logical_or_expr() {
+        let prod = assert_parse("a || y()", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        if let Expr::BinaryOp(inner) = *prod {
+            let op = &inner.as_ref().op;
+            assert_eq!(op, &BinaryOp::Or);
+        };
+    }
+
+    #[test]
+    pub fn test_assign_expr() {
+        let prod = assert_parse("a = 3", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Assign(_)));
     }
 }

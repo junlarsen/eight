@@ -60,6 +60,7 @@ pub enum Stmt {
     Break(Box<BreakStmt>),
     Continue(Box<ContinueStmt>),
     If(Box<IfStmt>),
+    Expr(Box<ExprStmt>),
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -113,15 +114,23 @@ pub struct IfStmt {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
+pub struct ExprStmt {
+    pub span: Span,
+    pub expr: Box<Expr>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
 pub enum Expr {
     Assign(Box<AssignExpr>),
     BinaryOp(Box<BinaryOpExpr>),
     UnaryOp(Box<UnaryOpExpr>),
-    Literal(Box<LiteralExpr>),
+    IntegerLiteral(Box<IntegerLiteralExpr>),
     DotIndex(Box<DotIndexExpr>),
     BracketIndex(Box<BracketIndexExpr>),
     Reference(Box<ReferenceExpr>),
     Call(Box<CallExpr>),
+    Group(Box<GroupExpr>),
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -151,7 +160,7 @@ pub struct UnaryOpExpr {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
-pub struct LiteralExpr {
+pub struct IntegerLiteralExpr {
     pub span: Span,
     pub value: i32,
 }
@@ -185,6 +194,13 @@ pub struct CallExpr {
     pub span: Span,
     pub callee: Box<Expr>,
     pub arguments: Vec<Box<Expr>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
+pub struct GroupExpr {
+    pub span: Span,
+    pub inner: Box<Expr>,
 }
 
 /// An identifier.
@@ -234,7 +250,7 @@ pub struct NamedType {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum BinaryOp {
     Add,
     Sub,
@@ -247,11 +263,17 @@ pub enum BinaryOp {
     Gt,
     Le,
     Ge,
+    Lte,
+    Gte,
+    And,
+    Or,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum UnaryOp {
     Not,
     Neg,
+    Deref,
+    AddressOf,
 }

@@ -75,7 +75,7 @@ pub enum TokenType {
     IntegerLiteral(i32),
     Comment(String),
 
-    Deref,
+    AddressOf,
     Bang,
     Dot,
     Plus,

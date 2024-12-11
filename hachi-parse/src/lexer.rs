@@ -65,7 +65,7 @@ impl Lexer<'_> {
                 '>' => Some(TokenType::Arrow),
                 _ => None,
             }),
-            '&' => self.select_peek(pos, TokenType::Deref, |ch| match ch {
+            '&' => self.select_peek(pos, TokenType::AddressOf, |ch| match ch {
                 '&' => Some(TokenType::LogicalAnd),
                 _ => None,
             }),
@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn test_parse_singular_term() {
-        assert_lexer_parse!("&", Token::new(TokenType::Deref, Span::new(0..1)));
+        assert_lexer_parse!("&", Token::new(TokenType::AddressOf, Span::new(0..1)));
         assert_lexer_parse!("||", Token::new(TokenType::LogicalOr, Span::new(0..2)));
 
         assert_failure!(
