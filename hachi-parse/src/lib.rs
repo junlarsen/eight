@@ -1,3 +1,4 @@
+use std::cmp::{max, min};
 use std::ops::Range;
 
 pub mod ast;
@@ -29,6 +30,25 @@ impl Span {
     /// Create a new span from a single position.
     pub fn pos(low: SourcePosition) -> Self {
         Self { low, high: low + 1 }
+    }
+
+    /// Get the union of two spans.
+    ///
+    /// This is equivalent to `min(self.low, other.low)..max(self.high, other.high)`. This method is
+    /// particularly useful when combining spans from two relevant tokens.
+    ///
+    /// ```
+    /// use hachi_parse::Span;
+    ///
+    /// let a = Span::new(0..10);
+    /// let b = Span::new(5..15);
+    /// let c = a.merge(&b);
+    /// assert_eq!(c, Span::new(0..15));
+    /// ```
+    pub fn merge(&self, other: &Self) -> Self {
+        let low = min(self.low, other.low);
+        let high = max(self.high, other.high);
+        Self { low, high }
     }
 }
 
