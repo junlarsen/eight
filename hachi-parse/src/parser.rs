@@ -1,6 +1,6 @@
 use crate::ast::{
-    FunctionItem, FunctionParameterItem, Identifier, Integer32Type, Item, NamedType, PointerType,
-    TranslationUnit, Type, TypeItem, TypeMemberItem, UnitType,
+    Expr, FunctionItem, FunctionParameterItem, Identifier, Integer32Type, Item, LetStmt, NamedType,
+    PointerType, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem, UnitType,
 };
 use crate::lexer::{Lexer, LexerError, LexerIter};
 use crate::{Token, TokenType};
@@ -109,7 +109,9 @@ impl Parser<'_> {
     /// Parse a function item.
     ///
     /// ```text
-    /// fn_item ::= KEYWORD_FN IDENTIFIER OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
+    /// fn_item ::= KEYWORD_FN IDENTIFIER OPEN_PAREN
+    ///             ((fn_parameter_item COMMA)+ fn_parameter_item)?
+    ///             CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
     /// ```
     pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
         self.expect_token(TokenType::KeywordFn)?;
@@ -197,6 +199,55 @@ impl Parser<'_> {
             name: id,
             r#type: ty,
         }))
+    }
+
+    /// Parse a statement.
+    ///
+    /// ```text
+    /// stmt ::= let_stmt
+    ///        | return_stmt
+    ///        | for_stmt
+    ///        | break_stmt
+    ///        | continue_stmt
+    ///        | if_stmt
+    ///        | expr_stmt
+    /// ```
+    pub fn parse_stmt(&mut self) -> ParseResult<Box<Stmt>> {
+        let next = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+    }
+
+    /// Parse a let statement.
+    ///
+    /// ```text
+    /// let_stmt ::= KEYWORD_LET IDENTIFIER (COLON type)? EQUAL expr SEMICOLON
+    /// ```
+    pub fn parse_let_stmt(&mut self) -> ParseResult<Box<LetStmt>> {
+        self.expect_token(TokenType::KeywordLet)?;
+        let id = self.parse_identifier()?;
+        let ty = if self.peek_token_match(TokenType::Colon) {
+            self.expect_token(TokenType::Colon)?;
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+        self.expect_token(TokenType::Equal)?;
+        let expr = self.parse_expr()?;
+        self.expect_token(TokenType::Semicolon)?;
+
+        Ok(Box::new(LetStmt {
+            span: id.span.clone(),
+            name: id,
+            r#type: ty,
+            value: expr,
+        }))
+    }
+
+    /// Parse an expression
+    ///
+    /// ```text
+    /// ```
+    pub fn parse_expr(&mut self) -> ParseResult<Box<Expr>> {
+        todo!()
     }
 
     /// Parse an identifier.

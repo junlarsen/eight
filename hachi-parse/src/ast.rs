@@ -60,6 +60,7 @@ pub enum Stmt {
     Break(Box<BreakStmt>),
     Continue(Box<ContinueStmt>),
     If(Box<IfStmt>),
+    Expr(Box<ExprStmt>),
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -109,6 +110,13 @@ pub struct IfStmt {
     pub condition: Box<Expr>,
     pub happy_path: Vec<Box<Stmt>>,
     pub unhappy_path: Option<Vec<Box<Stmt>>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
+pub struct ExprStmt {
+    pub span: Span,
+    pub expr: Box<Expr>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
