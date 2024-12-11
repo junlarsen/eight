@@ -77,6 +77,11 @@ impl Parser<'_> {
         self.parse_translation_unit()
     }
 
+    /// Parse a translation unit.
+    ///
+    /// ```text
+    /// translation_unit ::= item*
+    /// ```
     pub fn parse_translation_unit(&mut self) -> ParseResult<Box<TranslationUnit>> {
         let mut items = Vec::new();
         while self.has_next_token() {
@@ -85,6 +90,11 @@ impl Parser<'_> {
         Ok(Box::new(TranslationUnit { items }))
     }
 
+    /// Parse an item.
+    ///
+    /// ```text
+    /// item ::= fn_item | type_item
+    /// ```
     pub fn parse_item(&mut self) -> ParseResult<Box<Item>> {
         let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
         match token.ty {
@@ -100,6 +110,11 @@ impl Parser<'_> {
         todo!()
     }
 
+    /// Parse a type item.
+    ///
+    /// ```text
+    /// type_item ::= KEYWORD_TYPE identifier EQUAL OPEN_BRACE type_member_item* CLOSE_BRACE
+    /// ```
     pub fn parse_type_item(&mut self) -> ParseResult<Box<TypeItem>> {
         self.expect_token(TokenType::KeywordType)?;
         let id = self.parse_identifier()?;
@@ -117,6 +132,11 @@ impl Parser<'_> {
         }))
     }
 
+    /// Parse a type member item.
+    ///
+    /// ```text
+    /// type_member_item ::= identifier COLON type COMMA
+    /// ```
     pub fn parse_type_member_item(&mut self) -> ParseResult<Box<TypeMemberItem>> {
         let id = self.parse_identifier()?;
         self.expect_token(TokenType::Colon)?;
@@ -129,6 +149,11 @@ impl Parser<'_> {
         }))
     }
 
+    /// Parse an identifier.
+    ///
+    /// ```text
+    /// identifier ::= IDENTIFIER
+    /// ```
     pub fn parse_identifier(&mut self) -> ParseResult<Box<Identifier>> {
         let token = self.next_token()?;
         match token {
@@ -140,6 +165,14 @@ impl Parser<'_> {
         }
     }
 
+    /// Parse a type.
+    ///
+    /// ```text
+    /// type ::= named_type | pointer_type | builtin_void_type | builtin_integer32_type
+    ///
+    /// builtin_void_type ::= identifier<"void">
+    /// builtin_integer32_type ::= identifier<"i32">
+    /// ```
     pub fn parse_type(&mut self) -> ParseResult<Box<Type>> {
         let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
         match &token.ty {
@@ -164,6 +197,11 @@ impl Parser<'_> {
         }
     }
 
+    /// Parse a named type.
+    ///
+    /// ```text
+    /// named_type ::= identifier
+    /// ```
     pub fn parse_named_type(&mut self) -> ParseResult<Box<NamedType>> {
         let id = self.parse_identifier()?;
         Ok(Box::new(NamedType {
@@ -172,6 +210,11 @@ impl Parser<'_> {
         }))
     }
 
+    /// Parse a pointer type of single indirection.
+    ///
+    /// ```text
+    /// pointer_type ::= STAR type
+    /// ```
     pub fn parse_pointer_type(&mut self) -> ParseResult<Box<PointerType>> {
         let indirection = self.expect_token(TokenType::Star)?;
         let inner = self.parse_type()?;
