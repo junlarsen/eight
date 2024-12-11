@@ -3,6 +3,11 @@ name = "hachi-parse"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
 [dependencies]
 miette = { version = "7.4.0", features = ["derive"] }
+serde = { version = "1.0.216", features = ["derive"], optional = true }
 thiserror = "2.0.6"

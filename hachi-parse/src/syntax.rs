@@ -1,5 +1,6 @@
 use crate::Span;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct TranslationUnit {
     pub items: Vec<Box<Item>>,
@@ -9,12 +10,14 @@ pub struct TranslationUnit {
 ///
 /// An `Item` is anything that can be declared at the top-level scope of a translation unit. This
 /// currently means either functions or types.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub enum Item {
     Function(Box<FunctionItem>),
     Type(Box<TypeItem>),
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct FunctionItem {
     pub span: Span,
@@ -24,6 +27,7 @@ pub struct FunctionItem {
     pub body: Vec<Box<Stmt>>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct TypeItem {
     pub span: Span,
@@ -31,6 +35,7 @@ pub struct TypeItem {
     pub members: Vec<Box<TypeMemberItem>>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct TypeMemberItem {
     pub span: Span,
@@ -38,6 +43,7 @@ pub struct TypeMemberItem {
     pub r#type: Box<Type>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub enum Stmt {
     Let(Box<LetStmt>),
@@ -48,6 +54,7 @@ pub enum Stmt {
     If(Box<IfStmt>),
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct LetStmt {
     pub span: Span,
@@ -56,12 +63,14 @@ pub struct LetStmt {
     pub value: Box<Expr>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct ReturnStmt {
     pub span: Span,
     pub value: Option<Box<Expr>>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct ForStmt {
     pub span: Span,
@@ -73,16 +82,19 @@ pub struct ForStmt {
     pub body: Vec<Box<Stmt>>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct BreakStmt {
     pub span: Span,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct ContinueStmt {
     pub span: Span,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct IfStmt {
     pub span: Span,
@@ -91,6 +103,7 @@ pub struct IfStmt {
     pub unhappy_path: Option<Vec<Box<Stmt>>>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub enum Expr {
     Assign(Box<AssignExpr>),
@@ -103,6 +116,7 @@ pub enum Expr {
     Call(Box<CallExpr>),
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct AssignExpr {
     pub span: Span,
@@ -110,6 +124,7 @@ pub struct AssignExpr {
     pub rhs: Box<Expr>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct BinaryOpExpr {
     pub span: Span,
@@ -118,6 +133,7 @@ pub struct BinaryOpExpr {
     pub op: BinaryOp,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct UnaryOpExpr {
     pub span: Span,
@@ -125,12 +141,14 @@ pub struct UnaryOpExpr {
     pub op: UnaryOp,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct LiteralExpr {
     pub span: Span,
     pub value: i32,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct DotIndexExpr {
     pub span: Span,
@@ -138,6 +156,7 @@ pub struct DotIndexExpr {
     pub index: Box<Identifier>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct BracketIndexExpr {
     pub span: Span,
@@ -145,12 +164,14 @@ pub struct BracketIndexExpr {
     pub index: Box<Expr>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct ReferenceExpr {
     pub span: Span,
     pub name: Box<Identifier>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct CallExpr {
     pub span: Span,
@@ -162,12 +183,14 @@ pub struct CallExpr {
 ///
 /// This is practically a copy of the `TokenType::Identifier` variant, but we want to be able to
 /// extract them from the AST, as we don't care for storing token types in the AST.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Identifier {
     pub name: String,
     pub span: Span,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub enum Type {
     Unit(Box<UnitType>),
@@ -176,28 +199,33 @@ pub enum Type {
     Named(Box<NamedType>),
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct UnitType {
     pub span: Span,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Integer32Type {
     pub span: Span,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct PointerType {
     pub span: Span,
     pub inner: Box<Type>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct NamedType {
     pub span: Span,
     pub name: Box<Identifier>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub enum BinaryOp {
     Add,
@@ -213,6 +241,7 @@ pub enum BinaryOp {
     Ge,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub enum UnaryOp {
     Not,
