@@ -8,8 +8,8 @@ TranslationUnit(
   items: [
     Type(TypeItem(
       span: Span(
-        low: 5,
-        high: 11,
+        low: 0,
+        high: 50,
       ),
       name: Identifier(
         name: "Matrix",
@@ -22,7 +22,7 @@ TranslationUnit(
         TypeMemberItem(
           span: Span(
             low: 18,
-            high: 19,
+            high: 25,
           ),
           name: Identifier(
             name: "r",
@@ -41,7 +41,7 @@ TranslationUnit(
         TypeMemberItem(
           span: Span(
             low: 28,
-            high: 29,
+            high: 35,
           ),
           name: Identifier(
             name: "c",
@@ -60,7 +60,7 @@ TranslationUnit(
         TypeMemberItem(
           span: Span(
             low: 38,
-            high: 41,
+            high: 48,
           ),
           name: Identifier(
             name: "buf",
@@ -72,7 +72,7 @@ TranslationUnit(
           type: Pointer(PointerType(
             span: Span(
               low: 43,
-              high: 44,
+              high: 47,
             ),
             inner: Integer32(Integer32Type(
               span: Span(
@@ -86,8 +86,8 @@ TranslationUnit(
     )),
     Function(FunctionItem(
       span: Span(
-        low: 55,
-        high: 77,
+        low: 52,
+        high: 462,
       ),
       name: Identifier(
         name: "matrix_matrix_multiply",
@@ -100,7 +100,7 @@ TranslationUnit(
         FunctionParameterItem(
           span: Span(
             low: 78,
-            high: 79,
+            high: 87,
           ),
           name: Identifier(
             name: "a",
@@ -126,7 +126,7 @@ TranslationUnit(
         FunctionParameterItem(
           span: Span(
             low: 89,
-            high: 90,
+            high: 98,
           ),
           name: Identifier(
             name: "b",

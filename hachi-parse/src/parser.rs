@@ -7,7 +7,7 @@ use crate::ast::{
     UnitType,
 };
 use crate::lexer::{Lexer, LexerError, LexerIter};
-use crate::{Token, TokenType};
+use crate::{Span, Token, TokenType};
 use miette::Diagnostic;
 use std::iter::Peekable;
 use thiserror::Error;
@@ -113,7 +113,7 @@ impl Parser<'_> {
     ///             CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
     /// ```
     pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
-        self.expect_token(TokenType::KeywordFn)?;
+        let start = self.expect_token(TokenType::KeywordFn)?;
         let id = self.parse_identifier()?;
         self.expect_token(TokenType::OpenParen)?;
         let mut parameters = Vec::new();
@@ -138,10 +138,10 @@ impl Parser<'_> {
         while !self.peek_token_match(TokenType::CloseBrace)? {
             body.push(self.parse_stmt()?);
         }
-        self.expect_token(TokenType::CloseBrace)?;
+        let end = self.expect_token(TokenType::CloseBrace)?;
 
         Ok(Box::new(FunctionItem {
-            span: id.span.clone(),
+            span: Span::from_pair(&start.span, &end.span),
             name: id,
             parameters,
             return_type,
@@ -159,7 +159,7 @@ impl Parser<'_> {
         self.expect_token(TokenType::Colon)?;
         let ty = self.parse_type()?;
         Ok(Box::new(FunctionParameterItem {
-            span: id.span.clone(),
+            span: Span::from_pair(&id.span, ty.span()),
             name: id,
             r#type: ty,
         }))
@@ -171,7 +171,7 @@ impl Parser<'_> {
     /// type_item ::= KEYWORD_TYPE identifier EQUAL OPEN_BRACE type_member_item* CLOSE_BRACE
     /// ```
     pub fn parse_type_item(&mut self) -> ParseResult<Box<TypeItem>> {
-        self.expect_token(TokenType::KeywordType)?;
+        let start = self.expect_token(TokenType::KeywordType)?;
         let id = self.parse_identifier()?;
         self.expect_token(TokenType::Equal)?;
         self.expect_token(TokenType::OpenBrace)?;
@@ -179,9 +179,9 @@ impl Parser<'_> {
         while !self.peek_token_match(TokenType::CloseBrace)? {
             members.push(self.parse_type_member_item()?);
         }
-        self.expect_token(TokenType::CloseBrace)?;
+        let end = self.expect_token(TokenType::CloseBrace)?;
         Ok(Box::new(TypeItem {
-            span: id.span.clone(),
+            span: Span::from_pair(&start.span, &end.span),
             name: id,
             members,
         }))
@@ -196,9 +196,9 @@ impl Parser<'_> {
         let id = self.parse_identifier()?;
         self.expect_token(TokenType::Colon)?;
         let ty = self.parse_type()?;
-        self.expect_token(TokenType::Comma)?;
+        let end = self.expect_token(TokenType::Comma)?;
         Ok(Box::new(TypeMemberItem {
-            span: id.span.clone(),
+            span: Span::from_pair(&id.span, &end.span),
             name: id,
             r#type: ty,
         }))
@@ -236,7 +236,7 @@ impl Parser<'_> {
     /// let_stmt ::= KEYWORD_LET IDENTIFIER (COLON type)? EQUAL expr SEMICOLON
     /// ```
     pub fn parse_let_stmt(&mut self) -> ParseResult<Box<LetStmt>> {
-        self.expect_token(TokenType::KeywordLet)?;
+        let start = self.expect_token(TokenType::KeywordLet)?;
         let id = self.parse_identifier()?;
         let ty = if self.peek_token_match(TokenType::Colon)? {
             self.expect_token(TokenType::Colon)?;
@@ -246,10 +246,10 @@ impl Parser<'_> {
         };
         self.expect_token(TokenType::Equal)?;
         let expr = self.parse_expr()?;
-        self.expect_token(TokenType::Semicolon)?;
+        let end = self.expect_token(TokenType::Semicolon)?;
 
         Ok(Box::new(LetStmt {
-            span: id.span.clone(),
+            span: Span::from_pair(&start.span, &end.span),
             name: id,
             r#type: ty,
             value: expr,
@@ -262,15 +262,15 @@ impl Parser<'_> {
     /// return_stmt ::= RETURN expr? SEMICOLON
     /// ```
     pub fn parse_return_stmt(&mut self) -> ParseResult<Box<ReturnStmt>> {
-        let tok = self.expect_token(TokenType::KeywordReturn)?;
+        let start = self.expect_token(TokenType::KeywordReturn)?;
         let value = if !self.peek_token_match(TokenType::Semicolon)? {
             Some(self.parse_expr()?)
         } else {
             None
         };
-        self.expect_token(TokenType::Semicolon)?;
+        let end = self.expect_token(TokenType::Semicolon)?;
         Ok(Box::new(ReturnStmt {
-            span: tok.span,
+            span: Span::from_pair(&start.span, &end.span),
             value,
         }))
     }
@@ -281,7 +281,7 @@ impl Parser<'_> {
     /// for_stmt ::= FOR LPAREN for_stmt_initializer? SEMICOLON expr? SEMICOLON expr? RPAREN LBRACE stmt* RBRACE
     /// ```
     pub fn parse_for_stmt(&mut self) -> ParseResult<Box<ForStmt>> {
-        let tok = self.expect_token(TokenType::KeywordFor)?;
+        let start = self.expect_token(TokenType::KeywordFor)?;
         self.expect_token(TokenType::OpenParen)?;
         let initializer = if !self.peek_token_match(TokenType::Semicolon)? {
             Some(self.parse_for_stmt_initializer()?)
@@ -306,9 +306,9 @@ impl Parser<'_> {
         while !self.peek_token_match(TokenType::CloseBrace)? {
             body.push(self.parse_stmt()?);
         }
-        self.expect_token(TokenType::CloseBrace)?;
+        let end = self.expect_token(TokenType::CloseBrace)?;
         Ok(Box::new(ForStmt {
-            span: tok.span,
+            span: Span::from_pair(&start.span, &end.span),
             initializer,
             condition,
             increment,
@@ -322,12 +322,12 @@ impl Parser<'_> {
     /// for_stmt_initializer ::= LET identifier EQUAL expr
     /// ```
     pub fn parse_for_stmt_initializer(&mut self) -> ParseResult<Box<ForStmtInitializer>> {
-        let tok = self.expect_token(TokenType::KeywordLet)?;
+        let start = self.expect_token(TokenType::KeywordLet)?;
         let name = self.parse_identifier()?;
         self.expect_token(TokenType::Equal)?;
         let initializer = self.parse_expr()?;
         Ok(Box::new(ForStmtInitializer {
-            span: tok.span,
+            span: Span::from_pair(&start.span, initializer.span()),
             name,
             initializer,
         }))
@@ -339,9 +339,11 @@ impl Parser<'_> {
     /// break_stmt ::= BREAK SEMICOLON
     /// ```
     pub fn parse_break_stmt(&mut self) -> ParseResult<Box<BreakStmt>> {
-        let tok = self.expect_token(TokenType::KeywordBreak)?;
-        self.expect_token(TokenType::Semicolon)?;
-        Ok(Box::new(BreakStmt { span: tok.span }))
+        let start = self.expect_token(TokenType::KeywordBreak)?;
+        let end = self.expect_token(TokenType::Semicolon)?;
+        Ok(Box::new(BreakStmt {
+            span: Span::from_pair(&start.span, &end.span),
+        }))
     }
 
     /// Parses a continue statement.
@@ -350,9 +352,11 @@ impl Parser<'_> {
     /// continue_stmt ::= CONTINUE SEMICOLON
     /// ```
     pub fn parse_continue_stmt(&mut self) -> ParseResult<Box<ContinueStmt>> {
-        let tok = self.expect_token(TokenType::KeywordContinue)?;
-        self.expect_token(TokenType::Semicolon)?;
-        Ok(Box::new(ContinueStmt { span: tok.span }))
+        let start = self.expect_token(TokenType::KeywordContinue)?;
+        let end = self.expect_token(TokenType::Semicolon)?;
+        Ok(Box::new(ContinueStmt {
+            span: Span::from_pair(&start.span, &end.span),
+        }))
     }
 
     /// Parses an if statement.
@@ -360,7 +364,7 @@ impl Parser<'_> {
     /// ```text
     /// if_stmt ::= IF LPAREN expr RPAREN LBRACE stmt* RBRACE (ELSE LBRACE stmt* RBRACE)?
     pub fn parse_if_stmt(&mut self) -> ParseResult<Box<IfStmt>> {
-        let tok = self.expect_token(TokenType::KeywordIf)?;
+        let start = self.expect_token(TokenType::KeywordIf)?;
         self.expect_token(TokenType::OpenParen)?;
         let condition = self.parse_expr()?;
         self.expect_token(TokenType::CloseParen)?;
@@ -369,7 +373,9 @@ impl Parser<'_> {
         while !self.peek_token_match(TokenType::CloseBrace)? {
             body.push(self.parse_stmt()?);
         }
-        self.expect_token(TokenType::CloseBrace)?;
+        // We default to the end of the if statement by its closing brace if it doesn't have an else
+        // block attached. Otherwise, we use the end of the else block.
+        let mut end = self.expect_token(TokenType::CloseBrace)?;
         let r#else = if self.peek_token_match(TokenType::KeywordElse)? {
             self.expect_token(TokenType::KeywordElse)?;
             self.expect_token(TokenType::OpenBrace)?;
@@ -377,13 +383,13 @@ impl Parser<'_> {
             while !self.peek_token_match(TokenType::CloseBrace)? {
                 r#else.push(self.parse_stmt()?);
             }
-            self.expect_token(TokenType::CloseBrace)?;
+            end = self.expect_token(TokenType::CloseBrace)?;
             Some(r#else)
         } else {
             None
         };
         Ok(Box::new(IfStmt {
-            span: tok.span,
+            span: Span::from_pair(&start.span, &end.span),
             condition,
             happy_path: body,
             unhappy_path: r#else,
@@ -396,9 +402,9 @@ impl Parser<'_> {
     /// expr_stmt ::= expr SEMICOLON
     pub fn parse_expr_stmt(&mut self) -> ParseResult<Box<ExprStmt>> {
         let expr = self.parse_expr()?;
-        let tok = self.expect_token(TokenType::Semicolon)?;
+        let end = self.expect_token(TokenType::Semicolon)?;
         Ok(Box::new(ExprStmt {
-            span: tok.span,
+            span: Span::from_pair(expr.span(), &end.span),
             expr,
         }))
     }
@@ -444,10 +450,10 @@ impl Parser<'_> {
         let expr = self.parse_logical_or_expr()?;
 
         if self.peek_token_match(TokenType::Equal)? {
-            let op = self.expect_token(TokenType::Equal)?;
+            self.expect_token(TokenType::Equal)?;
             let rhs = self.parse_assign_expr()?;
             return Ok(Box::new(Expr::Assign(Box::new(AssignExpr {
-                span: op.span,
+                span: Span::from_pair(expr.span(), rhs.span()),
                 lhs: expr,
                 rhs,
             }))));
@@ -465,10 +471,10 @@ impl Parser<'_> {
         let lhs = self.parse_logical_and_expr()?;
 
         if self.peek_token_match(TokenType::LogicalOr)? {
-            let op = self.expect_token(TokenType::LogicalOr)?;
+            self.expect_token(TokenType::LogicalOr)?;
             let rhs = self.parse_logical_or_expr()?;
             return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: op.span,
+                span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op: BinaryOp::Or,
@@ -487,10 +493,10 @@ impl Parser<'_> {
         let lhs = self.parse_comparison_expr()?;
 
         if self.peek_token_match(TokenType::LogicalAnd)? {
-            let op = self.expect_token(TokenType::LogicalAnd)?;
+            self.expect_token(TokenType::LogicalAnd)?;
             let rhs = self.parse_logical_and_expr()?;
             return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: op.span,
+                span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op: BinaryOp::And,
@@ -528,7 +534,7 @@ impl Parser<'_> {
             };
             let rhs = self.parse_comparison_expr()?;
             return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: tok.span,
+                span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op,
@@ -558,7 +564,7 @@ impl Parser<'_> {
             };
             let rhs = self.parse_additive_expr()?;
             return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: tok.span,
+                span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op,
@@ -590,7 +596,7 @@ impl Parser<'_> {
             };
             let rhs = self.parse_multiplicative_expr()?;
             return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: tok.span,
+                span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op,
@@ -613,7 +619,7 @@ impl Parser<'_> {
                 let op = self.expect_token(TokenType::Minus)?;
                 let rhs = self.parse_unary_expr()?;
                 Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: op.span,
+                    span: Span::from_pair(&op.span, rhs.span()),
                     op: UnaryOp::Neg,
                     operand: rhs,
                 }))))
@@ -622,7 +628,7 @@ impl Parser<'_> {
                 let op = self.expect_token(TokenType::Bang)?;
                 let rhs = self.parse_unary_expr()?;
                 Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: op.span,
+                    span: Span::from_pair(&op.span, rhs.span()),
                     op: UnaryOp::Not,
                     operand: rhs,
                 }))))
@@ -631,7 +637,7 @@ impl Parser<'_> {
                 let op = self.expect_token(TokenType::Star)?;
                 let rhs = self.parse_unary_expr()?;
                 Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: op.span,
+                    span: Span::from_pair(&op.span, rhs.span()),
                     op: UnaryOp::Deref,
                     operand: rhs,
                 }))))
@@ -640,7 +646,7 @@ impl Parser<'_> {
                 let op = self.expect_token(TokenType::AddressOf)?;
                 let rhs = self.parse_unary_expr()?;
                 Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: op.span,
+                    span: Span::from_pair(&op.span, rhs.span()),
                     op: UnaryOp::AddressOf,
                     operand: rhs,
                 }))))
@@ -657,7 +663,7 @@ impl Parser<'_> {
     pub fn parse_call_expr(&mut self) -> ParseResult<Box<Expr>> {
         let callee = self.parse_construct_expr()?;
         if self.peek_token_match(TokenType::OpenParen)? {
-            let op = self.expect_token(TokenType::OpenParen)?;
+            self.expect_token(TokenType::OpenParen)?;
             let mut arguments = Vec::new();
             while !self.peek_token_match(TokenType::CloseParen)? {
                 arguments.push(self.parse_expr()?);
@@ -665,9 +671,9 @@ impl Parser<'_> {
                     self.expect_token(TokenType::Comma)?;
                 }
             }
-            self.expect_token(TokenType::CloseParen)?;
+            let end = self.expect_token(TokenType::CloseParen)?;
             return Ok(Box::new(Expr::Call(Box::new(CallExpr {
-                span: op.span,
+                span: Span::from_pair(callee.span(), &end.span),
                 callee,
                 arguments,
             }))));
@@ -685,7 +691,7 @@ impl Parser<'_> {
         let callee = self.parse_bracket_index_expr()?;
 
         if self.peek_token_match(TokenType::OpenBrace)? {
-            let op = self.expect_token(TokenType::OpenBrace)?;
+            self.expect_token(TokenType::OpenBrace)?;
             let mut arguments = Vec::new();
             while !self.peek_token_match(TokenType::CloseBrace)? {
                 arguments.push(self.parse_construct_expr_argument()?);
@@ -693,9 +699,9 @@ impl Parser<'_> {
                     self.expect_token(TokenType::Comma)?;
                 }
             }
-            self.expect_token(TokenType::CloseBrace)?;
+            let end = self.expect_token(TokenType::CloseBrace)?;
             return Ok(Box::new(Expr::Construct(Box::new(ConstructExpr {
-                span: op.span,
+                span: Span::from_pair(callee.span(), &end.span),
                 callee,
                 arguments,
             }))));
@@ -713,7 +719,7 @@ impl Parser<'_> {
         self.expect_token(TokenType::Colon)?;
         let expr = self.parse_expr()?;
         Ok(Box::new(ConstructorExprArgument {
-            span: id.span.clone(),
+            span: Span::from_pair(&id.span, expr.span()),
             field: id,
             expr,
         }))
@@ -727,11 +733,11 @@ impl Parser<'_> {
     pub fn parse_bracket_index_expr(&mut self) -> ParseResult<Box<Expr>> {
         let origin = self.parse_dot_index_expr()?;
         if self.peek_token_match(TokenType::OpenBracket)? {
-            let op = self.expect_token(TokenType::OpenBracket)?;
+            self.expect_token(TokenType::OpenBracket)?;
             let index = self.parse_expr()?;
-            self.expect_token(TokenType::CloseBracket)?;
+            let end = self.expect_token(TokenType::CloseBracket)?;
             return Ok(Box::new(Expr::BracketIndex(Box::new(BracketIndexExpr {
-                span: op.span,
+                span: Span::from_pair(origin.span(), &end.span),
                 origin,
                 index,
             }))));
@@ -747,10 +753,10 @@ impl Parser<'_> {
     pub fn parse_dot_index_expr(&mut self) -> ParseResult<Box<Expr>> {
         let origin = self.parse_reference_expr()?;
         if self.peek_token_match(TokenType::Dot)? {
-            let op = self.expect_token(TokenType::Dot)?;
+            self.expect_token(TokenType::Dot)?;
             let index = self.parse_identifier()?;
             return Ok(Box::new(Expr::DotIndex(Box::new(DotIndexExpr {
-                span: op.span,
+                span: Span::from_pair(origin.span(), &index.span),
                 origin,
                 index,
             }))));
@@ -764,13 +770,14 @@ impl Parser<'_> {
     /// reference_expr ::= identifier | group_expr
     /// ```
     pub fn parse_reference_expr(&mut self) -> ParseResult<Box<Expr>> {
-        if matches!(
+        let is_reference = matches!(
             self.peek_token()?,
             Some(Token {
                 ty: TokenType::Identifier(_),
                 ..
             })
-        ) {
+        );
+        if is_reference {
             let id = self.parse_identifier()?;
             return Ok(Box::new(Expr::Reference(Box::new(ReferenceExpr {
                 span: id.span.clone(),
@@ -816,11 +823,11 @@ impl Parser<'_> {
     /// ```
     pub fn parse_group_expr(&mut self) -> ParseResult<Box<Expr>> {
         if self.peek_token_match(TokenType::OpenParen)? {
-            let op = self.expect_token(TokenType::OpenParen)?;
+            let start = self.expect_token(TokenType::OpenParen)?;
             let inner = self.parse_expr()?;
-            self.expect_token(TokenType::CloseParen)?;
+            let end = self.expect_token(TokenType::CloseParen)?;
             return Ok(Box::new(Expr::Group(Box::new(GroupExpr {
-                span: op.span,
+                span: Span::from_pair(&start.span, &end.span),
                 inner,
             }))));
         };
@@ -899,7 +906,7 @@ impl Parser<'_> {
         let indirection = self.expect_token(TokenType::Star)?;
         let inner = self.parse_type()?;
         Ok(Box::new(PointerType {
-            span: indirection.span.clone(),
+            span: Span::from_pair(&indirection.span, inner.span()),
             inner,
         }))
     }

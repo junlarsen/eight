@@ -32,6 +32,11 @@ impl Span {
         Self { low, high: low + 1 }
     }
 
+    /// Create a new span from two positions.
+    pub fn from_pair(low: &Span, high: &Span) -> Self {
+        low.merge(high)
+    }
+
     /// Get the union of two spans.
     ///
     /// This is equivalent to `min(self.low, other.low)..max(self.high, other.high)`. This method is
