@@ -1,9 +1,10 @@
 use crate::ast::{
-    AssignExpr, BinaryOp, BinaryOpExpr, BracketIndexExpr, BreakStmt, CallExpr, ContinueStmt,
-    DotIndexExpr, Expr, ExprStmt, ForStmt, ForStmtInitializer, FunctionItem, FunctionParameterItem,
-    GroupExpr, Identifier, IfStmt, Integer32Type, IntegerLiteralExpr, Item, LetStmt, NamedType,
-    PointerType, ReferenceExpr, ReturnStmt, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem,
-    UnaryOp, UnaryOpExpr, UnitType,
+    AssignExpr, BinaryOp, BinaryOpExpr, BracketIndexExpr, BreakStmt, CallExpr, ConstructExpr,
+    ConstructorExprArgument, ContinueStmt, DotIndexExpr, Expr, ExprStmt, ForStmt,
+    ForStmtInitializer, FunctionItem, FunctionParameterItem, GroupExpr, Identifier, IfStmt,
+    Integer32Type, IntegerLiteralExpr, Item, LetStmt, NamedType, PointerType, ReferenceExpr,
+    ReturnStmt, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem, UnaryOp, UnaryOpExpr,
+    UnitType,
 };
 use crate::lexer::{Lexer, LexerError, LexerIter};
 use crate::{Token, TokenType};
@@ -32,11 +33,6 @@ impl<'a> Parser<'a> {
         Self {
             lex: lex.into_iter().peekable(),
         }
-    }
-
-    /// Check if there are any more tokens in the source.
-    pub fn has_next_token(&mut self) -> bool {
-        self.lex.peek().is_none()
     }
 
     /// Advance the lexer iterator by one, and return the advanced token.
@@ -87,7 +83,7 @@ impl Parser<'_> {
     /// ```
     pub fn parse_translation_unit(&mut self) -> ParseResult<Box<TranslationUnit>> {
         let mut items = Vec::new();
-        while self.has_next_token() {
+        while self.lex.peek().is_some() {
             items.push(self.parse_item()?);
         }
         Ok(Box::new(TranslationUnit { items }))
@@ -138,6 +134,10 @@ impl Parser<'_> {
         };
 
         self.expect_token(TokenType::OpenBrace)?;
+        let mut body = Vec::new();
+        while !self.peek_token_match(TokenType::CloseBrace)? {
+            body.push(self.parse_stmt()?);
+        }
         self.expect_token(TokenType::CloseBrace)?;
 
         Ok(Box::new(FunctionItem {
@@ -415,19 +415,20 @@ impl Parser<'_> {
     /// The order of operator precedence is as follows:
     ///
     /// 1. Group Expression
-    /// 2. Reference Expression
-    /// 3. Literal Expression
+    /// 2. Literal Expression
+    /// 3. Reference Expression
     /// 4. DotIndex Expression
     /// 4. BracketIndex Expression
     /// 5. Call Expression
-    /// 6. Unary Expression
-    /// 7. Multiplicative Expression
-    /// 8. Additive Expression
-    /// 9. Binary Expression
-    /// 10. Comparison Expression
-    /// 11. Logical And Expression
-    /// 12. Logical Or Expression
-    /// 13. Assign Expression
+    /// 6. Construct Expression
+    /// 7. Unary Expression
+    /// 8. Multiplicative Expression
+    /// 9. Additive Expression
+    /// 10. Binary Expression
+    /// 11. Comparison Expression
+    /// 12. Logical And Expression
+    /// 13. Logical Or Expression
+    /// 14. Assign Expression
     ///
     /// [precedence_climber]: https://en.wikipedia.org/wiki/Operator-precedence_parser#Precedence_climbing_method
     pub fn parse_expr(&mut self) -> ParseResult<Box<Expr>> {
@@ -651,10 +652,10 @@ impl Parser<'_> {
     /// Parse a call expression.
     ///
     /// ```text
-    /// call_expr ::= dot_index_expr (OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)?
+    /// call_expr ::= construct_expr (OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)?
     /// ```
     pub fn parse_call_expr(&mut self) -> ParseResult<Box<Expr>> {
-        let callee = self.parse_dot_index_expr()?;
+        let callee = self.parse_construct_expr()?;
         if self.peek_token_match(TokenType::OpenParen)? {
             let op = self.expect_token(TokenType::OpenParen)?;
             let mut arguments = Vec::new();
@@ -675,23 +676,47 @@ impl Parser<'_> {
         Ok(callee)
     }
 
-    /// Parse a dot index expression.
+    /// Parse a construct expression.
     ///
     /// ```text
-    /// dot_index_expr ::= reference_expr DOT identifier
+    /// construct_expr ::= parse_dot_index_expr OPEN_BRACE (construct_expr_argument (COMMA construct_expr_argument)*)? CLOSE_BRACE
     /// ```
-    pub fn parse_dot_index_expr(&mut self) -> ParseResult<Box<Expr>> {
-        let origin = self.parse_bracket_index_expr()?;
-        if self.peek_token_match(TokenType::Dot)? {
-            let op = self.expect_token(TokenType::Dot)?;
-            let index = self.parse_identifier()?;
-            return Ok(Box::new(Expr::DotIndex(Box::new(DotIndexExpr {
+    pub fn parse_construct_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let callee = self.parse_bracket_index_expr()?;
+
+        if self.peek_token_match(TokenType::OpenBrace)? {
+            let op = self.expect_token(TokenType::OpenBrace)?;
+            let mut arguments = Vec::new();
+            while !self.peek_token_match(TokenType::CloseBrace)? {
+                arguments.push(self.parse_construct_expr_argument()?);
+                if !self.peek_token_match(TokenType::CloseBrace)? {
+                    self.expect_token(TokenType::Comma)?;
+                }
+            }
+            self.expect_token(TokenType::CloseBrace)?;
+            return Ok(Box::new(Expr::Construct(Box::new(ConstructExpr {
                 span: op.span,
-                origin,
-                index,
+                callee,
+                arguments,
             }))));
-        }
-        Ok(origin)
+        };
+
+        Ok(callee)
+    }
+
+    /// Parse a construct expression argument.
+    ///
+    /// ```text
+    /// construct_expr_argument ::= identifier COLON expr
+    pub fn parse_construct_expr_argument(&mut self) -> ParseResult<Box<ConstructorExprArgument>> {
+        let id = self.parse_identifier()?;
+        self.expect_token(TokenType::Colon)?;
+        let expr = self.parse_expr()?;
+        Ok(Box::new(ConstructorExprArgument {
+            span: id.span.clone(),
+            field: id,
+            expr,
+        }))
     }
 
     /// Parse a bracket index expression.
@@ -700,12 +725,31 @@ impl Parser<'_> {
     /// bracket_index_expr ::= reference_expr OPEN_BRACKET expr CLOSE_BRACKET
     /// ```
     pub fn parse_bracket_index_expr(&mut self) -> ParseResult<Box<Expr>> {
-        let origin = self.parse_reference_expr()?;
+        let origin = self.parse_dot_index_expr()?;
         if self.peek_token_match(TokenType::OpenBracket)? {
             let op = self.expect_token(TokenType::OpenBracket)?;
             let index = self.parse_expr()?;
             self.expect_token(TokenType::CloseBracket)?;
             return Ok(Box::new(Expr::BracketIndex(Box::new(BracketIndexExpr {
+                span: op.span,
+                origin,
+                index,
+            }))));
+        }
+        Ok(origin)
+    }
+
+    /// Parse a dot index expression.
+    ///
+    /// ```text
+    /// dot_index_expr ::= reference_expr DOT identifier
+    /// ```
+    pub fn parse_dot_index_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let origin = self.parse_reference_expr()?;
+        if self.peek_token_match(TokenType::Dot)? {
+            let op = self.expect_token(TokenType::Dot)?;
+            let index = self.parse_identifier()?;
+            return Ok(Box::new(Expr::DotIndex(Box::new(DotIndexExpr {
                 span: op.span,
                 origin,
                 index,
@@ -1223,6 +1267,28 @@ mod tests {
             let count = inner.as_ref().arguments.len();
             assert_eq!(count, 2);
         }
+    }
+
+    #[test]
+    fn test_parse_construct_expr() {
+        let prod = assert_parse("x {}", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Construct(_)));
+        if let Expr::Construct(inner) = *prod {
+            let count = inner.as_ref().arguments.len();
+            assert_eq!(count, 0);
+        };
+
+        let prod = assert_parse("x { y: z, }", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Construct(_)));
+        if let Expr::Construct(inner) = *prod {
+            let count = inner.as_ref().arguments.len();
+            assert_eq!(count, 1);
+        }
+
+        let prod = assert_parse("x { y: notrailingcomma }", |p| p.parse_expr());
+        assert_ok!(prod);
     }
 
     #[test]

@@ -136,6 +136,7 @@ pub enum Expr {
     BracketIndex(Box<BracketIndexExpr>),
     Reference(Box<ReferenceExpr>),
     Call(Box<CallExpr>),
+    Construct(Box<ConstructExpr>),
     Group(Box<GroupExpr>),
 }
 
@@ -200,6 +201,22 @@ pub struct CallExpr {
     pub span: Span,
     pub callee: Box<Expr>,
     pub arguments: Vec<Box<Expr>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
+pub struct ConstructExpr {
+    pub span: Span,
+    pub callee: Box<Expr>,
+    pub arguments: Vec<Box<ConstructorExprArgument>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
+pub struct ConstructorExprArgument {
+    pub span: Span,
+    pub field: Box<Identifier>,
+    pub expr: Box<Expr>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

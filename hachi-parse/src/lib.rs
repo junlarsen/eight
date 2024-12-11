@@ -110,7 +110,7 @@ pub enum TokenType {
 }
 
 #[cfg(test)]
-mod assertions {
+pub mod assertions {
     /// Assert that a `Result` is `Ok`, returning the value inside the `Ok` variant.
     #[macro_export]
     macro_rules! assert_ok {

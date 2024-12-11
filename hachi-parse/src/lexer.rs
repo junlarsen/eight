@@ -269,7 +269,10 @@ mod tests {
             Token::new(TokenType::IntegerLiteral(123), Span::new(0..3)),
             Token::new(TokenType::IntegerLiteral(123), Span::new(4..7))
         );
-        assert_lexer_parse!("0", Token::new(TokenType::IntegerLiteral(0), Span::new(0..1)));
+        assert_lexer_parse!(
+            "0",
+            Token::new(TokenType::IntegerLiteral(0), Span::new(0..1))
+        );
         // Cannot use octal syntax in the current implementation.
         assert_failure!(
             "0123",
