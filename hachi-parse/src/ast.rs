@@ -63,6 +63,21 @@ pub enum Stmt {
     Expr(Box<ExprStmt>),
 }
 
+impl Stmt {
+    /// Get the span of the inner statement.
+    pub fn span(&self) -> &Span {
+        match self {
+            Stmt::Let(s) => &s.span,
+            Stmt::Return(s) => &s.span,
+            Stmt::For(s) => &s.span,
+            Stmt::Break(s) => &s.span,
+            Stmt::Continue(s) => &s.span,
+            Stmt::If(s) => &s.span,
+            Stmt::Expr(s) => &s.span,
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct LetStmt {
@@ -138,6 +153,24 @@ pub enum Expr {
     Call(Box<CallExpr>),
     Construct(Box<ConstructExpr>),
     Group(Box<GroupExpr>),
+}
+
+impl Expr {
+    /// Get the span of the inner expression.
+    pub fn span(&self) -> &Span {
+        match self {
+            Expr::Assign(e) => &e.span,
+            Expr::BinaryOp(e) => &e.span,
+            Expr::UnaryOp(e) => &e.span,
+            Expr::IntegerLiteral(e) => &e.span,
+            Expr::DotIndex(e) => &e.span,
+            Expr::BracketIndex(e) => &e.span,
+            Expr::Reference(e) => &e.span,
+            Expr::Call(e) => &e.span,
+            Expr::Construct(e) => &e.span,
+            Expr::Group(e) => &e.span,
+        }
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -244,6 +277,18 @@ pub enum Type {
     Integer32(Box<Integer32Type>),
     Pointer(Box<PointerType>),
     Named(Box<NamedType>),
+}
+
+impl Type {
+    /// Get the span of the inner type.
+    pub fn span(&self) -> &Span {
+        match self {
+            Type::Unit(t) => &t.span,
+            Type::Integer32(t) => &t.span,
+            Type::Pointer(t) => &t.span,
+            Type::Named(t) => &t.span,
+        }
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
