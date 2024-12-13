@@ -1,5 +1,5 @@
-use hachi_parse::lexer::Lexer;
-use hachi_parse::parser::Parser;
+use hachi_parse::Lexer;
+use hachi_parse::Parser;
 use insta::assert_ron_snapshot;
 
 #[test]
