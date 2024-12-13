@@ -89,7 +89,7 @@ TranslationUnit(
     Function(FunctionItem(
       span: Span(
         low: 154,
-        high: 396,
+        high: 394,
       ),
       name: Identifier(
         name: "partition",
@@ -165,71 +165,71 @@ TranslationUnit(
       ],
       return_type: Some(Integer32(Integer32Type(
         span: Span(
-          low: 196,
-          high: 199,
+          low: 195,
+          high: 198,
         ),
       ))),
       body: [],
     )),
     Function(FunctionItem(
       span: Span(
-        low: 398,
-        high: 466,
+        low: 396,
+        high: 464,
       ),
       name: Identifier(
         name: "swap",
         span: Span(
-          low: 401,
-          high: 405,
+          low: 399,
+          high: 403,
         ),
       ),
       parameters: [
         FunctionParameterItem(
           span: Span(
-            low: 406,
-            high: 413,
+            low: 404,
+            high: 411,
           ),
           name: Identifier(
             name: "a",
             span: Span(
-              low: 406,
-              high: 407,
+              low: 404,
+              high: 405,
             ),
           ),
           type: Pointer(PointerType(
             span: Span(
-              low: 409,
-              high: 413,
+              low: 407,
+              high: 411,
             ),
             inner: Integer32(Integer32Type(
               span: Span(
-                low: 410,
-                high: 413,
+                low: 408,
+                high: 411,
               ),
             )),
           )),
         ),
         FunctionParameterItem(
           span: Span(
-            low: 415,
-            high: 422,
+            low: 413,
+            high: 420,
           ),
           name: Identifier(
             name: "b",
             span: Span(
-              low: 415,
-              high: 416,
+              low: 413,
+              high: 414,
             ),
           ),
           type: Pointer(PointerType(
             span: Span(
-              low: 418,
-              high: 422,
+              low: 416,
+              high: 420,
             ),
             inner: Integer32(Integer32Type(
               span: Span(
-                low: 419,
-                high: 422,
+                low: 417,
+                high: 420,
               ),
             )),
           )),

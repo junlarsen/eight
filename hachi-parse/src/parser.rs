@@ -6,18 +6,18 @@ use crate::ast::{
     ReturnStmt, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem, UnaryOp, UnaryOpExpr,
     UnitType,
 };
-use crate::lexer::{Lexer, LexerError, LexerIter};
-use crate::{Span, Token, TokenType};
+use crate::lexer::{Lexer, LexerError};
+use crate::{Span, Token, TokenType, UnexpectedEndOfInput};
 use miette::Diagnostic;
-use std::iter::Peekable;
 use thiserror::Error;
 
 #[derive(Error, Diagnostic, Debug)]
 pub enum ParseError {
     #[error("lexer error: {0}")]
     LexerError(#[from] LexerError),
-    #[error("unexpected end of parse stream")]
-    UnexpectedEndOfFile,
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    UnexpectedEndOfInput(UnexpectedEndOfInput),
     #[error("unexpected token: {token:?}")]
     UnexpectedToken { token: Token },
 }
@@ -25,29 +25,72 @@ pub enum ParseError {
 pub type ParseResult<T> = Result<T, ParseError>;
 
 pub struct Parser<'a> {
-    lex: Peekable<LexerIter<'a>>,
+    input: ParserInput<'a>,
+}
+
+pub struct ParserInput<'a> {
+    lexer: Lexer<'a>,
+    /// Buffer for the next token lookahead.
+    ///
+    /// If the parser for any reason needs more than LL(1) in the future, this can be replaced with
+    /// a stack of tokens.
+    la: Option<Token>,
+}
+
+impl<'a> ParserInput<'a> {
+    pub fn new(lexer: Lexer<'a>) -> Self {
+        Self { lexer, la: None }
+    }
+
+    pub fn peek(&mut self) -> ParseResult<Option<&Token>> {
+        if self.la.is_none() {
+            self.la = match self.lexer.produce() {
+                Ok(tok) => Some(tok),
+                Err(LexerError::UnexpectedEndOfInput(_)) => None,
+                Err(err) => return Err(ParseError::LexerError(err)),
+            };
+        }
+        Ok(self.la.as_ref())
+    }
+
+    pub fn next(&mut self) -> ParseResult<Token> {
+        if let Some(token) = self.la.take() {
+            return Ok(token);
+        }
+        Ok(self.lexer.produce()?)
+    }
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(lex: Lexer<'a>) -> Self {
+    pub fn new(lexer: Lexer<'a>) -> Self {
         Self {
-            lex: lex.into_iter().peekable(),
+            input: ParserInput::new(lexer),
         }
     }
 
     /// Advance the lexer iterator by one, and return the advanced token.
     pub fn next_token(&mut self) -> ParseResult<Token> {
-        self.lex
-            .next()
-            .ok_or(ParseError::UnexpectedEndOfFile)?
-            .map_err(ParseError::LexerError)
+        self.input.next()
     }
 
     /// Peek at the next token in the source without consuming it.
+    ///
+    /// If the lexer fails here, we're just going to silently ignore it and return `None`.
     pub fn peek_token(&mut self) -> ParseResult<Option<&Token>> {
-        let tok = self.lex.peek();
-        let tok = tok.map_or(Ok(None), |t| t.as_ref().map(Some));
-        tok.map_err(|v| ParseError::LexerError(v.clone()))
+        let tok = self.input.peek()?;
+        if let Some(token) = tok {
+            return Ok(Some(token));
+        }
+        Ok(None)
+    }
+
+    pub fn peek_required_token(&mut self) -> ParseResult<&Token> {
+        let span = Span::pos(self.input.lexer.pos());
+        self.input
+            .peek()?
+            .ok_or(ParseError::UnexpectedEndOfInput(UnexpectedEndOfInput {
+                span,
+            }))
     }
 
     /// Determine if the next token in the token stream matches the given type.
@@ -83,7 +126,7 @@ impl Parser<'_> {
     /// ```
     pub fn parse_translation_unit(&mut self) -> ParseResult<Box<TranslationUnit>> {
         let mut items = Vec::new();
-        while self.lex.peek().is_some() {
+        while self.peek_token()?.is_some() {
             items.push(self.parse_item()?);
         }
         Ok(Box::new(TranslationUnit { items }))
@@ -95,7 +138,7 @@ impl Parser<'_> {
     /// item ::= fn_item | type_item
     /// ```
     pub fn parse_item(&mut self) -> ParseResult<Box<Item>> {
-        let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        let token = self.peek_required_token()?;
         match token.ty {
             TokenType::KeywordFn => self.parse_fn_item().map(|v| Box::new(Item::Function(v))),
             TokenType::KeywordType => self.parse_type_item().map(|v| Box::new(Item::Type(v))),
@@ -216,7 +259,7 @@ impl Parser<'_> {
     ///        | expr_stmt
     /// ```
     pub fn parse_stmt(&mut self) -> ParseResult<Box<Stmt>> {
-        let next = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        let next = self.peek_required_token()?;
         match next.ty {
             TokenType::KeywordLet => self.parse_let_stmt().map(|v| Box::new(Stmt::Let(v))),
             TokenType::KeywordReturn => self.parse_return_stmt().map(|v| Box::new(Stmt::Return(v))),
@@ -613,7 +656,7 @@ impl Parser<'_> {
     /// unary_op ::= MINUS | BANG | DEREF | STAR
     /// ```
     pub fn parse_unary_expr(&mut self) -> ParseResult<Box<Expr>> {
-        let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        let token = self.peek_required_token()?;
         match token.ty {
             TokenType::Minus => {
                 let op = self.expect_token(TokenType::Minus)?;
@@ -770,8 +813,9 @@ impl Parser<'_> {
     /// reference_expr ::= identifier | group_expr
     /// ```
     pub fn parse_reference_expr(&mut self) -> ParseResult<Box<Expr>> {
+        let fut = self.peek_token()?;
         let is_reference = matches!(
-            self.peek_token()?,
+            fut,
             Some(Token {
                 ty: TokenType::Identifier(_),
                 ..
@@ -861,7 +905,7 @@ impl Parser<'_> {
     /// builtin_integer32_type ::= identifier<"i32">
     /// ```
     pub fn parse_type(&mut self) -> ParseResult<Box<Type>> {
-        let token = self.peek_token()?.ok_or(ParseError::UnexpectedEndOfFile)?;
+        let token = self.peek_required_token()?;
         match &token.ty {
             // If it is a named type, we can test if it's matching one of the builtin types.
             TokenType::Identifier(v) => match v.as_str() {

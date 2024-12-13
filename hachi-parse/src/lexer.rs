@@ -1,36 +1,135 @@
-use crate::{Span, Token, TokenType};
+use crate::{SourcePosition, Span, Token, TokenType, UnexpectedEndOfInput};
 use miette::Diagnostic;
 use std::iter::Peekable;
-use std::str::CharIndices;
+use std::str::Chars;
 use thiserror::Error;
 
-#[cfg_attr(test, derive(PartialEq))]
-#[derive(Error, Diagnostic, Debug, Clone)]
+#[derive(Error, Diagnostic, Debug)]
 pub enum LexerError {
     #[error("invalid integer literal: {buf}")]
     InvalidIntegerLiteral { buf: String, span: Span },
     #[error("unexpected character")]
     UnexpectedCharacter { ch: char, span: Span },
-    #[error("unexpected end of input")]
-    UnexpectedEndOfInput { span: Span },
-    #[error("called next() on exhausted lexer source")]
-    SourceExhausted,
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    UnexpectedEndOfInput(UnexpectedEndOfInput),
     #[error("invalid state reached")]
     Infallible,
 }
 
+pub type LexerResult<T> = Result<T, LexerError>;
+
 /// A lexer for source to token stream conversion.
 pub struct Lexer<'a> {
-    input: Peekable<CharIndices<'a>>,
+    input: LexerInput<'a>,
 }
 
-impl Lexer<'_> {
+pub struct LexerInput<'a> {
+    input: Peekable<Chars<'a>>,
+    pos: usize,
+}
+
+impl<'a> LexerInput<'a> {
+    /// Create a new lexer from a string.
+    pub fn new(input: &'a str) -> Self {
+        Self {
+            input: input.chars().peekable(),
+            pos: 0,
+        }
+    }
+
+    fn peek(&mut self) -> Option<&char> {
+        self.input.peek()
+    }
+
+    fn next(&mut self) -> LexerResult<char> {
+        let ch = self
+            .input
+            .next()
+            .ok_or(LexerError::UnexpectedEndOfInput(UnexpectedEndOfInput {
+                span: Span::pos(self.pos),
+            }));
+        self.pos += 1;
+        ch
+    }
+
+    pub fn pos(&self) -> usize {
+        self.pos
+    }
+
+    /// Expect the next character to be the given one, otherwise fail the lexer.
+    ///
+    /// This is useful for parsing two-character tokens that do not have a production on their own,
+    /// such as '||'.
+    fn expect_peek(
+        &mut self,
+        expected: char,
+        start: SourcePosition,
+        production: TokenType,
+    ) -> Result<Token, LexerError> {
+        let ch = self
+            .peek()
+            .ok_or(LexerError::UnexpectedEndOfInput(UnexpectedEndOfInput {
+                span: Span::pos(start),
+            }))?;
+        match ch {
+            c if *c == expected => {
+                self.input.next();
+                Ok(Token::new(production, Span::new(start..self.pos + 1)))
+            }
+            _ => Err(LexerError::UnexpectedCharacter {
+                ch: *ch,
+                // We are only reporting the position of the next character
+                span: Span::pos(start + 1),
+            }),
+        }
+    }
+
+    /// Select the next token based on the current and next character
+    ///
+    /// This is useful for parsing tokens that may have a wider production based on the next
+    /// character in the input stream. For example, the '&' character means dereference on its own,
+    /// but may also be used as a logical and when followed by another '&'.
+    fn select_peek<F>(
+        &mut self,
+        default: TokenType,
+        start: SourcePosition,
+        f: F,
+    ) -> Result<Token, LexerError>
+    where
+        F: FnOnce(&char) -> Option<TokenType>,
+    {
+        match self.peek() {
+            Some(ch) => match f(ch) {
+                Some(typ) => {
+                    self.input.next().ok_or(LexerError::Infallible)?;
+                    Ok(Token::new(typ, Span::new(start..self.pos + 1)))
+                }
+                None => Ok(Token::new(default, Span::pos(start))),
+            },
+            _ => Ok(Token::new(default, Span::pos(start))),
+        }
+    }
+}
+
+impl<'a> Lexer<'a> {
+    pub fn new(input: &'a str) -> Self {
+        Self {
+            input: LexerInput::new(input),
+        }
+    }
+
+    pub fn pos(&self) -> usize {
+        self.input.pos()
+    }
+
     /// Produce the next token from the input stream
     pub fn produce(&mut self) -> Result<Token, LexerError> {
-        let (pos, ch) = self.input.next().ok_or(LexerError::SourceExhausted)?;
+        let pos = self.pos();
+        let ch = self.input.next()?;
         match ch {
-            '0'..='9' => self.produce_integer_literal(ch, pos),
-            'a'..='z' | 'A'..='Z' | '_' => self.produce_keyword_or_identifier(ch, pos),
+            '0'..='9' => self.produce_integer_literal(ch),
+            'a'..='z' | 'A'..='Z' | '_' => self.produce_keyword_or_identifier(ch),
             // Single-character operators
             '.' => Ok(Token::new(TokenType::Dot, Span::pos(pos))),
             ';' => Ok(Token::new(TokenType::Semicolon, Span::pos(pos))),
@@ -40,35 +139,47 @@ impl Lexer<'_> {
             '/' => Ok(Token::new(TokenType::Slash, Span::pos(pos))),
             '%' => Ok(Token::new(TokenType::Percent, Span::pos(pos))),
             // Double-character operations
-            '=' => self.select_peek(pos, TokenType::Equal, |ch| match ch {
-                '=' => Some(TokenType::EqualEqual),
-                _ => None,
-            }),
-            '<' => self.select_peek(pos, TokenType::OpenAngle, |ch| match ch {
-                '=' => Some(TokenType::LessThanEqual),
-                _ => None,
-            }),
-            '>' => self.select_peek(pos, TokenType::CloseAngle, |ch| match ch {
-                '=' => Some(TokenType::GreaterThanEqual),
-                _ => None,
-            }),
-            '!' => self.select_peek(pos, TokenType::Bang, |ch| match ch {
+            '=' => self
+                .input
+                .select_peek(TokenType::Equal, pos, |ch| match ch {
+                    '=' => Some(TokenType::EqualEqual),
+                    _ => None,
+                }),
+            '<' => self
+                .input
+                .select_peek(TokenType::OpenAngle, pos, |ch| match ch {
+                    '=' => Some(TokenType::LessThanEqual),
+                    _ => None,
+                }),
+            '>' => self
+                .input
+                .select_peek(TokenType::CloseAngle, pos, |ch| match ch {
+                    '=' => Some(TokenType::GreaterThanEqual),
+                    _ => None,
+                }),
+            '!' => self.input.select_peek(TokenType::Bang, pos, |ch| match ch {
                 '=' => Some(TokenType::BangEqual),
                 _ => None,
             }),
-            ':' => self.select_peek(pos, TokenType::Colon, |ch| match ch {
-                ':' => Some(TokenType::ColonColon),
-                _ => None,
-            }),
-            '-' => self.select_peek(pos, TokenType::Minus, |ch| match ch {
-                '>' => Some(TokenType::Arrow),
-                _ => None,
-            }),
-            '&' => self.select_peek(pos, TokenType::AddressOf, |ch| match ch {
-                '&' => Some(TokenType::LogicalAnd),
-                _ => None,
-            }),
-            '|' => self.expect_peek(pos, '|', TokenType::LogicalOr),
+            ':' => self
+                .input
+                .select_peek(TokenType::Colon, pos, |ch| match ch {
+                    ':' => Some(TokenType::ColonColon),
+                    _ => None,
+                }),
+            '-' => self
+                .input
+                .select_peek(TokenType::Minus, pos, |ch| match ch {
+                    '>' => Some(TokenType::Arrow),
+                    _ => None,
+                }),
+            '&' => self
+                .input
+                .select_peek(TokenType::AddressOf, pos, |ch| match ch {
+                    '&' => Some(TokenType::LogicalAnd),
+                    _ => None,
+                }),
+            '|' => self.input.expect_peek('|', pos, TokenType::LogicalOr),
             // Bracket pairs
             '(' => Ok(Token::new(TokenType::OpenParen, Span::pos(pos))),
             ')' => Ok(Token::new(TokenType::CloseParen, Span::pos(pos))),
@@ -86,19 +197,20 @@ impl Lexer<'_> {
     }
 
     /// Produce an integer literal token from the input stream.
-    fn produce_integer_literal(&mut self, ch: char, pos: usize) -> Result<Token, LexerError> {
+    fn produce_integer_literal(&mut self, ch: char) -> Result<Token, LexerError> {
+        // The incoming ch has already been consumed, so we offset by 1
+        let start = self.input.pos() - 1;
         let mut buf = vec![ch];
         // Consume while we're eating digits
-        while matches!(self.input.peek(), Some((_, ch)) if ch.is_ascii_digit()) {
-            let (_, ch) = self.input.next().ok_or(LexerError::Infallible)?;
-            buf.push(ch);
+        while matches!(self.input.peek(), Some(ch) if ch.is_ascii_digit()) {
+            buf.push(self.input.next()?);
         }
-        let len = buf.len();
         let value = String::from_iter(buf);
+
         if value.starts_with('0') && value.len() > 1 {
             return Err(LexerError::InvalidIntegerLiteral {
                 buf: value,
-                span: Span::new(pos..pos + len),
+                span: Span::new(start..self.pos()),
             });
         }
 
@@ -108,24 +220,24 @@ impl Lexer<'_> {
                 .parse::<i32>()
                 .map_err(|_| LexerError::InvalidIntegerLiteral {
                     buf: value,
-                    span: Span::new(pos..pos + len),
+                    span: Span::new(start..self.pos()),
                 })?;
         Ok(Token::new(
             TokenType::IntegerLiteral(integer),
-            Span::new(pos..pos + len),
+            Span::new(start..self.pos()),
         ))
     }
 
     /// Produce a keyword or identifier token from the input stream.
-    fn produce_keyword_or_identifier(&mut self, ch: char, pos: usize) -> Result<Token, LexerError> {
+    fn produce_keyword_or_identifier(&mut self, ch: char) -> Result<Token, LexerError> {
+        // The incoming ch has already been consumed, so we offset by 1
+        let start = self.input.pos() - 1;
         let mut buf = vec![ch];
         // Consume while we're eating alphanumeric characters
-        while matches!(self.input.peek(), Some((_, ch)) if ch.is_ascii_alphanumeric() || ch == &'_')
-        {
-            let (_, ch) = self.input.next().ok_or(LexerError::Infallible)?;
-            buf.push(ch);
+        while matches!(self.input.peek(), Some(ch) if ch.is_ascii_alphanumeric() || ch == &'_') {
+            buf.push(self.input.next()?);
         }
-        let len = buf.len();
+
         let value = String::from_iter(buf);
         let ty = match value.as_str() {
             "type" => TokenType::KeywordType,
@@ -139,104 +251,15 @@ impl Lexer<'_> {
             "for" => TokenType::KeywordFor,
             _ => TokenType::Identifier(value),
         };
-        let span = Span::new(pos..pos + len);
+        let span = Span::new(start..self.pos());
         Ok(Token::new(ty, span))
-    }
-}
-
-impl<'a> Lexer<'a> {
-    /// Create a new lexer from a string.
-    pub fn new(input: &'a str) -> Self {
-        Self {
-            input: input.char_indices().peekable(),
-        }
-    }
-
-    /// Expect the next character to be the given one, otherwise fail the lexer.
-    ///
-    /// This is useful for parsing two-character tokens that do not have a production on their own,
-    /// such as '||'.
-    pub fn expect_peek(
-        &mut self,
-        pos: usize,
-        expected: char,
-        production: TokenType,
-    ) -> Result<Token, LexerError> {
-        let (next_pos, ch) = self.input.peek().ok_or(LexerError::UnexpectedEndOfInput {
-            span: Span::pos(pos),
-        })?;
-        // Copy the characters out of the reference so that we can re-borrow self as mutable in
-        // the match arm.
-        let ch = *ch;
-        let next_pos = *next_pos;
-        match ch {
-            c if c == expected => {
-                self.input.next();
-                Ok(Token::new(production, Span::new(pos..next_pos + 1)))
-            }
-            _ => Err(LexerError::UnexpectedCharacter {
-                ch,
-                // We are only reporting the position of the next character
-                span: Span::pos(next_pos),
-            }),
-        }
-    }
-
-    /// Select the next token based on the current and next character
-    ///
-    /// This is useful for parsing tokens that may have a wider production based on the next
-    /// character in the input stream. For example, the '&' character means dereference on its own,
-    /// but may also be used as a logical and when followed by another '&'.
-    pub fn select_peek<F>(
-        &mut self,
-        pos: usize,
-        default: TokenType,
-        f: F,
-    ) -> Result<Token, LexerError>
-    where
-        F: FnOnce(&char) -> Option<TokenType>,
-    {
-        match self.input.peek() {
-            Some((_, ch)) => match f(ch) {
-                Some(typ) => {
-                    let (next_post, _) = self.input.next().ok_or(LexerError::Infallible)?;
-                    Ok(Token::new(typ, Span::new(pos..next_post + 1)))
-                }
-                None => Ok(Token::new(default, Span::pos(pos))),
-            },
-            _ => Ok(Token::new(default, Span::pos(pos))),
-        }
-    }
-}
-
-pub struct LexerIter<'a> {
-    l: Lexer<'a>,
-}
-
-impl<'a> Iterator for LexerIter<'a> {
-    type Item = Result<Token, LexerError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.l.produce() {
-            Err(LexerError::SourceExhausted) => None,
-            v => Some(v),
-        }
-    }
-}
-
-impl<'a> IntoIterator for Lexer<'a> {
-    type Item = Result<Token, LexerError>;
-    type IntoIter = LexerIter<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        LexerIter { l: self }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::lexer::{Lexer, LexerError};
-    use crate::{Span, Token, TokenType};
+    use crate::{Span, Token, TokenType, UnexpectedEndOfInput};
 
     macro_rules! assert_lexer_parse {
         ($input:expr, $($token:expr),*) => {
@@ -245,14 +268,18 @@ mod tests {
                 let tok = lexer.produce().unwrap();
                 assert_eq!(tok, $token);
             )*
-            assert_eq!(Err(LexerError::SourceExhausted), lexer.produce());
+            assert!(matches!(lexer.produce(), Err(LexerError::UnexpectedEndOfInput(_))));
         }
     }
 
     macro_rules! assert_failure {
-        ($input:expr, $error:expr) => {
+        ($input:expr, $error:pat) => {
             let mut lexer = Lexer::new($input);
-            assert_eq!(Err($error), lexer.produce());
+            assert!(matches!(lexer.produce(), $pat $(if $cond)?));
+        };
+        ($input:expr, $pat:pat $(if $cond:expr)?) => {
+            let mut lexer = Lexer::new($input);
+            assert!(matches!(lexer.produce(), $pat $(if $cond)?));
         };
     }
 
@@ -274,18 +301,16 @@ mod tests {
         // Cannot use octal syntax in the current implementation.
         assert_failure!(
             "0123",
-            LexerError::InvalidIntegerLiteral {
-                buf: "0123".to_string(),
-                span: Span::new(0..4)
-            }
+            Err(
+            LexerError::InvalidIntegerLiteral { buf, span }
+            ) if buf == "0123" && span == Span::new(0..4)
         );
         // Cannot be unparsable by rust's i32 parser
         assert_failure!(
             "99999999999999999999",
-            LexerError::InvalidIntegerLiteral {
-                buf: "99999999999999999999".to_string(),
-                span: Span::new(0..20)
-            }
+            Err(
+            LexerError::InvalidIntegerLiteral { buf, span }
+            ) if buf == "99999999999999999999" && span == Span::new(0..20)
         );
     }
 
@@ -350,16 +375,15 @@ mod tests {
 
         assert_failure!(
             "|-",
-            LexerError::UnexpectedCharacter {
-                ch: '-',
-                span: Span::new(1..2)
-            }
+            Err(
+                LexerError::UnexpectedCharacter { ch, span }
+            ) if ch == '-' && span == Span::new(1..2)
         );
         assert_failure!(
             "|",
-            LexerError::UnexpectedEndOfInput {
-                span: Span::new(0..1)
-            }
+            Err(
+                LexerError::UnexpectedEndOfInput(UnexpectedEndOfInput { span })
+            ) if span == Span::new(0..1)
         );
     }
 }

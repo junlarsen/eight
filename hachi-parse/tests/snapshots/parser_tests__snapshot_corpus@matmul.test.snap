@@ -87,7 +87,7 @@ TranslationUnit(
     Function(FunctionItem(
       span: Span(
         low: 52,
-        high: 462,
+        high: 461,
       ),
       name: Identifier(
         name: "matrix_matrix_multiply",
@@ -152,14 +152,14 @@ TranslationUnit(
       ],
       return_type: Some(Named(NamedType(
         span: Span(
-          low: 103,
-          high: 109,
+          low: 102,
+          high: 108,
         ),
         name: Identifier(
           name: "Matrix",
           span: Span(
-            low: 103,
-            high: 109,
+            low: 102,
+            high: 108,
           ),
         ),
       ))),
