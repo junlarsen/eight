@@ -7,14 +7,11 @@ edition = "2021"
 default = ["serde"]
 serde = ["dep:serde"]
 
-[profile.dev.package]
-insta.opt-level = 3
-similar.opt-level = 3
-
 [dependencies]
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }
+ron = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }

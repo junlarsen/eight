@@ -10,4 +10,6 @@ name = "hcc"
 [dependencies]
 clap = { version = "4.5.23", features = ["derive"] }
 miette = { workspace = true, features = ["fancy"] }
+ron = { workspace = true }
+
 hachi-parse = { path = "../hachi-parse" }
