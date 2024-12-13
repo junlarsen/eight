@@ -4,3 +4,9 @@ members = [
     "hachi-driver",
     "hachi-parse"
 ]
+
+[workspace.dependencies]
+miette = { version = "7.4.0", features = ["derive"] }
+insta = { version = "1.41.1", features = ["serde", "ron", "glob"] }
+serde = { version = "1.0.216", features = ["derive"] }
+thiserror = "2.0.6"

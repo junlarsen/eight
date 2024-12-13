@@ -3,4 +3,11 @@ name = "hachi-driver"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+path = "src/bin/hcc.rs"
+name = "hcc"
+
 [dependencies]
+clap = { version = "4.5.23", features = ["derive"] }
+miette = { workspace = true, features = ["fancy"] }
+hachi-parse = { path = "../hachi-parse" }
