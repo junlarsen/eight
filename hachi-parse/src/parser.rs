@@ -102,10 +102,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Determine if the next token in the token stream matches the given type.
-    pub fn lookahead_check(&mut self, ty: TokenType) -> ParseResult<bool> {
+    pub fn lookahead_check(&mut self, ty: &TokenType) -> ParseResult<bool> {
         let token = self.lookahead()?;
         match token {
-            Some(token) if token.ty == ty => Ok(true),
+            Some(token) if token.ty == *ty => Ok(true),
             _ => Ok(false),
         }
     }
@@ -113,10 +113,10 @@ impl<'a> Parser<'a> {
     /// Consume the next token from the token stream and ensure it matches the given type.
     ///
     /// If the token doesn't match, the entire parser fails.
-    pub fn check(&mut self, ty: TokenType) -> ParseResult<Token> {
+    pub fn check(&mut self, ty: &TokenType) -> ParseResult<Token> {
         let token = self.eat()?;
         match token {
-            token if token.ty == ty => Ok(token),
+            token if token.ty == *ty => Ok(token),
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 span: token.span.clone(),
                 token,
@@ -173,32 +173,32 @@ impl Parser<'_> {
     ///             CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
     /// ```
     pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
-        let start = self.check(TokenType::KeywordFn)?;
+        let start = self.check(&TokenType::KeywordFn)?;
         let id = self.parse_identifier()?;
-        self.check(TokenType::OpenParen)?;
+        self.check(&TokenType::OpenParen)?;
         let mut parameters = Vec::new();
-        while !self.lookahead_check(TokenType::CloseParen)? {
+        while !self.lookahead_check(&TokenType::CloseParen)? {
             let parameter = self.parse_fn_parameter_item()?;
             // Consume commas if we're not matching the end of the parameter list.
-            if !self.lookahead_check(TokenType::CloseParen)? {
-                self.check(TokenType::Comma)?;
+            if !self.lookahead_check(&TokenType::CloseParen)? {
+                self.check(&TokenType::Comma)?;
             }
             parameters.push(parameter);
         }
-        self.check(TokenType::CloseParen)?;
-        let return_type = if self.lookahead_check(TokenType::Arrow)? {
-            self.check(TokenType::Arrow)?;
+        self.check(&TokenType::CloseParen)?;
+        let return_type = if self.lookahead_check(&TokenType::Arrow)? {
+            self.check(&TokenType::Arrow)?;
             Some(self.parse_type()?)
         } else {
             None
         };
 
-        self.check(TokenType::OpenBrace)?;
+        self.check(&TokenType::OpenBrace)?;
         let mut body = Vec::new();
-        while !self.lookahead_check(TokenType::CloseBrace)? {
+        while !self.lookahead_check(&TokenType::CloseBrace)? {
             body.push(self.parse_stmt()?);
         }
-        let end = self.check(TokenType::CloseBrace)?;
+        let end = self.check(&TokenType::CloseBrace)?;
         let node = FunctionItem::new(
             self.next_node_id(),
             Span::from_pair(&start.span, &end.span),
@@ -218,7 +218,7 @@ impl Parser<'_> {
     /// ```
     pub fn parse_fn_parameter_item(&mut self) -> ParseResult<Box<FunctionParameterItem>> {
         let id = self.parse_identifier()?;
-        self.check(TokenType::Colon)?;
+        self.check(&TokenType::Colon)?;
         let ty = self.parse_type()?;
         let node = FunctionParameterItem::new(
             self.next_node_id(),
@@ -235,15 +235,15 @@ impl Parser<'_> {
     /// type_item ::= KEYWORD_TYPE identifier EQUAL OPEN_BRACE type_member_item* CLOSE_BRACE
     /// ```
     pub fn parse_type_item(&mut self) -> ParseResult<Box<TypeItem>> {
-        let start = self.check(TokenType::KeywordType)?;
+        let start = self.check(&TokenType::KeywordType)?;
         let id = self.parse_identifier()?;
-        self.check(TokenType::Equal)?;
-        self.check(TokenType::OpenBrace)?;
+        self.check(&TokenType::Equal)?;
+        self.check(&TokenType::OpenBrace)?;
         let mut members = Vec::new();
-        while !self.lookahead_check(TokenType::CloseBrace)? {
+        while !self.lookahead_check(&TokenType::CloseBrace)? {
             members.push(self.parse_type_member_item()?);
         }
-        let end = self.check(TokenType::CloseBrace)?;
+        let end = self.check(&TokenType::CloseBrace)?;
         let node = TypeItem::new(
             self.next_node_id(),
             Span::from_pair(&start.span, &end.span),
@@ -260,9 +260,9 @@ impl Parser<'_> {
     /// ```
     pub fn parse_type_member_item(&mut self) -> ParseResult<Box<TypeMemberItem>> {
         let id = self.parse_identifier()?;
-        self.check(TokenType::Colon)?;
+        self.check(&TokenType::Colon)?;
         let ty = self.parse_type()?;
-        let end = self.check(TokenType::Comma)?;
+        let end = self.check(&TokenType::Comma)?;
         let node = TypeMemberItem::new(
             self.next_node_id(),
             Span::from_pair(&id.span, &end.span),
@@ -303,17 +303,17 @@ impl Parser<'_> {
     /// let_stmt ::= KEYWORD_LET IDENTIFIER (COLON type)? EQUAL expr SEMICOLON
     /// ```
     pub fn parse_let_stmt(&mut self) -> ParseResult<Box<LetStmt>> {
-        let start = self.check(TokenType::KeywordLet)?;
+        let start = self.check(&TokenType::KeywordLet)?;
         let id = self.parse_identifier()?;
-        let ty = if self.lookahead_check(TokenType::Colon)? {
-            self.check(TokenType::Colon)?;
+        let ty = if self.lookahead_check(&TokenType::Colon)? {
+            self.check(&TokenType::Colon)?;
             Some(self.parse_type()?)
         } else {
             None
         };
-        self.check(TokenType::Equal)?;
+        self.check(&TokenType::Equal)?;
         let expr = self.parse_expr()?;
-        let end = self.check(TokenType::Semicolon)?;
+        let end = self.check(&TokenType::Semicolon)?;
         let node = LetStmt::new(
             self.next_node_id(),
             Span::from_pair(&start.span, &end.span),
@@ -330,13 +330,13 @@ impl Parser<'_> {
     /// return_stmt ::= RETURN expr? SEMICOLON
     /// ```
     pub fn parse_return_stmt(&mut self) -> ParseResult<Box<ReturnStmt>> {
-        let start = self.check(TokenType::KeywordReturn)?;
-        let value = if !self.lookahead_check(TokenType::Semicolon)? {
+        let start = self.check(&TokenType::KeywordReturn)?;
+        let value = if !self.lookahead_check(&TokenType::Semicolon)? {
             Some(self.parse_expr()?)
         } else {
             None
         };
-        let end = self.check(TokenType::Semicolon)?;
+        let end = self.check(&TokenType::Semicolon)?;
         let node = ReturnStmt::new(
             self.next_node_id(),
             Span::from_pair(&start.span, &end.span),
@@ -351,32 +351,32 @@ impl Parser<'_> {
     /// for_stmt ::= FOR LPAREN for_stmt_initializer? SEMICOLON expr? SEMICOLON expr? RPAREN LBRACE stmt* RBRACE
     /// ```
     pub fn parse_for_stmt(&mut self) -> ParseResult<Box<ForStmt>> {
-        let start = self.check(TokenType::KeywordFor)?;
-        self.check(TokenType::OpenParen)?;
-        let initializer = if !self.lookahead_check(TokenType::Semicolon)? {
+        let start = self.check(&TokenType::KeywordFor)?;
+        self.check(&TokenType::OpenParen)?;
+        let initializer = if !self.lookahead_check(&TokenType::Semicolon)? {
             Some(self.parse_for_stmt_initializer()?)
         } else {
             None
         };
-        self.check(TokenType::Semicolon)?;
-        let condition = if !self.lookahead_check(TokenType::Semicolon)? {
+        self.check(&TokenType::Semicolon)?;
+        let condition = if !self.lookahead_check(&TokenType::Semicolon)? {
             Some(self.parse_expr()?)
         } else {
             None
         };
-        self.check(TokenType::Semicolon)?;
-        let increment = if !self.lookahead_check(TokenType::CloseParen)? {
+        self.check(&TokenType::Semicolon)?;
+        let increment = if !self.lookahead_check(&TokenType::CloseParen)? {
             Some(self.parse_expr()?)
         } else {
             None
         };
-        self.check(TokenType::CloseParen)?;
-        self.check(TokenType::OpenBrace)?;
+        self.check(&TokenType::CloseParen)?;
+        self.check(&TokenType::OpenBrace)?;
         let mut body = Vec::new();
-        while !self.lookahead_check(TokenType::CloseBrace)? {
+        while !self.lookahead_check(&TokenType::CloseBrace)? {
             body.push(self.parse_stmt()?);
         }
-        let end = self.check(TokenType::CloseBrace)?;
+        let end = self.check(&TokenType::CloseBrace)?;
         let node = ForStmt::new(
             self.next_node_id(),
             Span::from_pair(&start.span, &end.span),
@@ -394,9 +394,9 @@ impl Parser<'_> {
     /// for_stmt_initializer ::= LET identifier EQUAL expr
     /// ```
     pub fn parse_for_stmt_initializer(&mut self) -> ParseResult<Box<ForStmtInitializer>> {
-        let start = self.check(TokenType::KeywordLet)?;
+        let start = self.check(&TokenType::KeywordLet)?;
         let name = self.parse_identifier()?;
-        self.check(TokenType::Equal)?;
+        self.check(&TokenType::Equal)?;
         let initializer = self.parse_expr()?;
         let node = ForStmtInitializer::new(
             self.next_node_id(),
@@ -413,8 +413,8 @@ impl Parser<'_> {
     /// break_stmt ::= BREAK SEMICOLON
     /// ```
     pub fn parse_break_stmt(&mut self) -> ParseResult<Box<BreakStmt>> {
-        let start = self.check(TokenType::KeywordBreak)?;
-        let end = self.check(TokenType::Semicolon)?;
+        let start = self.check(&TokenType::KeywordBreak)?;
+        let end = self.check(&TokenType::Semicolon)?;
         let node = BreakStmt::new(self.next_node_id(), Span::from_pair(&start.span, &end.span));
         Ok(Box::new(node))
     }
@@ -425,8 +425,8 @@ impl Parser<'_> {
     /// continue_stmt ::= CONTINUE SEMICOLON
     /// ```
     pub fn parse_continue_stmt(&mut self) -> ParseResult<Box<ContinueStmt>> {
-        let start = self.check(TokenType::KeywordContinue)?;
-        let end = self.check(TokenType::Semicolon)?;
+        let start = self.check(&TokenType::KeywordContinue)?;
+        let end = self.check(&TokenType::Semicolon)?;
         let node = ContinueStmt::new(self.next_node_id(), Span::from_pair(&start.span, &end.span));
         Ok(Box::new(node))
     }
@@ -436,26 +436,26 @@ impl Parser<'_> {
     /// ```text
     /// if_stmt ::= IF LPAREN expr RPAREN LBRACE stmt* RBRACE (ELSE LBRACE stmt* RBRACE)?
     pub fn parse_if_stmt(&mut self) -> ParseResult<Box<IfStmt>> {
-        let start = self.check(TokenType::KeywordIf)?;
-        self.check(TokenType::OpenParen)?;
+        let start = self.check(&TokenType::KeywordIf)?;
+        self.check(&TokenType::OpenParen)?;
         let condition = self.parse_expr()?;
-        self.check(TokenType::CloseParen)?;
-        self.check(TokenType::OpenBrace)?;
+        self.check(&TokenType::CloseParen)?;
+        self.check(&TokenType::OpenBrace)?;
         let mut body = Vec::new();
-        while !self.lookahead_check(TokenType::CloseBrace)? {
+        while !self.lookahead_check(&TokenType::CloseBrace)? {
             body.push(self.parse_stmt()?);
         }
         // We default to the end of the if statement by its closing brace if it doesn't have an else
         // block attached. Otherwise, we use the end of the else block.
-        let mut end = self.check(TokenType::CloseBrace)?;
-        let r#else = if self.lookahead_check(TokenType::KeywordElse)? {
-            self.check(TokenType::KeywordElse)?;
-            self.check(TokenType::OpenBrace)?;
+        let mut end = self.check(&TokenType::CloseBrace)?;
+        let r#else = if self.lookahead_check(&TokenType::KeywordElse)? {
+            self.check(&TokenType::KeywordElse)?;
+            self.check(&TokenType::OpenBrace)?;
             let mut r#else = Vec::new();
-            while !self.lookahead_check(TokenType::CloseBrace)? {
+            while !self.lookahead_check(&TokenType::CloseBrace)? {
                 r#else.push(self.parse_stmt()?);
             }
-            end = self.check(TokenType::CloseBrace)?;
+            end = self.check(&TokenType::CloseBrace)?;
             Some(r#else)
         } else {
             None
@@ -476,7 +476,7 @@ impl Parser<'_> {
     /// expr_stmt ::= expr SEMICOLON
     pub fn parse_expr_stmt(&mut self) -> ParseResult<Box<ExprStmt>> {
         let expr = self.parse_expr()?;
-        let end = self.check(TokenType::Semicolon)?;
+        let end = self.check(&TokenType::Semicolon)?;
         let node = ExprStmt::new(
             self.next_node_id(),
             Span::from_pair(expr.span(), &end.span),
@@ -525,8 +525,8 @@ impl Parser<'_> {
     pub fn parse_assign_expr(&mut self) -> ParseResult<Box<Expr>> {
         let expr = self.parse_logical_or_expr()?;
 
-        if self.lookahead_check(TokenType::Equal)? {
-            self.check(TokenType::Equal)?;
+        if self.lookahead_check(&TokenType::Equal)? {
+            self.check(&TokenType::Equal)?;
             let rhs = self.parse_assign_expr()?;
             let node = AssignExpr::new(
                 self.next_node_id(),
@@ -548,8 +548,8 @@ impl Parser<'_> {
     pub fn parse_logical_or_expr(&mut self) -> ParseResult<Box<Expr>> {
         let lhs = self.parse_logical_and_expr()?;
 
-        if self.lookahead_check(TokenType::LogicalOr)? {
-            self.check(TokenType::LogicalOr)?;
+        if self.lookahead_check(&TokenType::LogicalOr)? {
+            self.check(&TokenType::LogicalOr)?;
             let rhs = self.parse_logical_or_expr()?;
             let node = BinaryOpExpr::new(
                 self.next_node_id(),
@@ -572,8 +572,8 @@ impl Parser<'_> {
     pub fn parse_logical_and_expr(&mut self) -> ParseResult<Box<Expr>> {
         let lhs = self.parse_comparison_expr()?;
 
-        if self.lookahead_check(TokenType::LogicalAnd)? {
-            self.check(TokenType::LogicalAnd)?;
+        if self.lookahead_check(&TokenType::LogicalAnd)? {
+            self.check(&TokenType::LogicalAnd)?;
             let rhs = self.parse_logical_and_expr()?;
             let node = BinaryOpExpr::new(
                 self.next_node_id(),
@@ -596,12 +596,12 @@ impl Parser<'_> {
     /// ```
     pub fn parse_comparison_expr(&mut self) -> ParseResult<Box<Expr>> {
         let lhs = self.parse_additive_expr()?;
-        let is_next_comparison = self.lookahead_check(TokenType::EqualEqual)?
-            || self.lookahead_check(TokenType::BangEqual)?
-            || self.lookahead_check(TokenType::OpenAngle)?
-            || self.lookahead_check(TokenType::CloseAngle)?
-            || self.lookahead_check(TokenType::LessThanEqual)?
-            || self.lookahead_check(TokenType::GreaterThanEqual)?;
+        let is_next_comparison = self.lookahead_check(&TokenType::EqualEqual)?
+            || self.lookahead_check(&TokenType::BangEqual)?
+            || self.lookahead_check(&TokenType::OpenAngle)?
+            || self.lookahead_check(&TokenType::CloseAngle)?
+            || self.lookahead_check(&TokenType::LessThanEqual)?
+            || self.lookahead_check(&TokenType::GreaterThanEqual)?;
 
         if is_next_comparison {
             let tok = self.eat()?;
@@ -637,7 +637,7 @@ impl Parser<'_> {
     pub fn parse_additive_expr(&mut self) -> ParseResult<Box<Expr>> {
         let lhs = self.parse_multiplicative_expr()?;
         let is_next_additive =
-            self.lookahead_check(TokenType::Plus)? || self.lookahead_check(TokenType::Minus)?;
+            self.lookahead_check(&TokenType::Plus)? || self.lookahead_check(&TokenType::Minus)?;
 
         if is_next_additive {
             let tok = self.eat()?;
@@ -668,9 +668,9 @@ impl Parser<'_> {
     /// ```
     pub fn parse_multiplicative_expr(&mut self) -> ParseResult<Box<Expr>> {
         let lhs = self.parse_unary_expr()?;
-        let is_next_multiplicative = self.lookahead_check(TokenType::Star)?
-            || self.lookahead_check(TokenType::Slash)?
-            || self.lookahead_check(TokenType::Percent)?;
+        let is_next_multiplicative = self.lookahead_check(&TokenType::Star)?
+            || self.lookahead_check(&TokenType::Slash)?
+            || self.lookahead_check(&TokenType::Percent)?;
 
         if is_next_multiplicative {
             let tok = self.eat()?;
@@ -705,7 +705,7 @@ impl Parser<'_> {
 
         match token.ty {
             TokenType::Minus => {
-                let op = self.check(TokenType::Minus)?;
+                let op = self.check(&TokenType::Minus)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = UnaryOpExpr::new(
                     self.next_node_id(),
@@ -716,7 +716,7 @@ impl Parser<'_> {
                 Ok(Box::new(Expr::UnaryOp(Box::new(node))))
             }
             TokenType::Bang => {
-                let op = self.check(TokenType::Bang)?;
+                let op = self.check(&TokenType::Bang)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = UnaryOpExpr::new(
                     self.next_node_id(),
@@ -727,7 +727,7 @@ impl Parser<'_> {
                 Ok(Box::new(Expr::UnaryOp(Box::new(node))))
             }
             TokenType::Star => {
-                let op = self.check(TokenType::Star)?;
+                let op = self.check(&TokenType::Star)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = UnaryOpExpr::new(
                     self.next_node_id(),
@@ -738,7 +738,7 @@ impl Parser<'_> {
                 Ok(Box::new(Expr::UnaryOp(Box::new(node))))
             }
             TokenType::AddressOf => {
-                let op = self.check(TokenType::AddressOf)?;
+                let op = self.check(&TokenType::AddressOf)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = UnaryOpExpr::new(
                     self.next_node_id(),
@@ -759,16 +759,16 @@ impl Parser<'_> {
     /// ```
     pub fn parse_call_expr(&mut self) -> ParseResult<Box<Expr>> {
         let callee = self.parse_construct_expr()?;
-        if self.lookahead_check(TokenType::OpenParen)? {
-            self.check(TokenType::OpenParen)?;
+        if self.lookahead_check(&TokenType::OpenParen)? {
+            self.check(&TokenType::OpenParen)?;
             let mut arguments = Vec::new();
-            while !self.lookahead_check(TokenType::CloseParen)? {
+            while !self.lookahead_check(&TokenType::CloseParen)? {
                 arguments.push(self.parse_expr()?);
-                if !self.lookahead_check(TokenType::CloseParen)? {
-                    self.check(TokenType::Comma)?;
+                if !self.lookahead_check(&TokenType::CloseParen)? {
+                    self.check(&TokenType::Comma)?;
                 }
             }
-            let end = self.check(TokenType::CloseParen)?;
+            let end = self.check(&TokenType::CloseParen)?;
             let node = CallExpr::new(
                 self.next_node_id(),
                 Span::from_pair(callee.span(), &end.span),
@@ -789,16 +789,16 @@ impl Parser<'_> {
     pub fn parse_construct_expr(&mut self) -> ParseResult<Box<Expr>> {
         let callee = self.parse_bracket_index_expr()?;
 
-        if self.lookahead_check(TokenType::OpenBrace)? {
-            self.check(TokenType::OpenBrace)?;
+        if self.lookahead_check(&TokenType::OpenBrace)? {
+            self.check(&TokenType::OpenBrace)?;
             let mut arguments = Vec::new();
-            while !self.lookahead_check(TokenType::CloseBrace)? {
+            while !self.lookahead_check(&TokenType::CloseBrace)? {
                 arguments.push(self.parse_construct_expr_argument()?);
-                if !self.lookahead_check(TokenType::CloseBrace)? {
-                    self.check(TokenType::Comma)?;
+                if !self.lookahead_check(&TokenType::CloseBrace)? {
+                    self.check(&TokenType::Comma)?;
                 }
             }
-            let end = self.check(TokenType::CloseBrace)?;
+            let end = self.check(&TokenType::CloseBrace)?;
             let node = ConstructExpr::new(
                 self.next_node_id(),
                 Span::from_pair(callee.span(), &end.span),
@@ -817,7 +817,7 @@ impl Parser<'_> {
     /// construct_expr_argument ::= identifier COLON expr
     pub fn parse_construct_expr_argument(&mut self) -> ParseResult<Box<ConstructorExprArgument>> {
         let id = self.parse_identifier()?;
-        self.check(TokenType::Colon)?;
+        self.check(&TokenType::Colon)?;
         let expr = self.parse_expr()?;
         let node = ConstructorExprArgument::new(
             self.next_node_id(),
@@ -835,10 +835,10 @@ impl Parser<'_> {
     /// ```
     pub fn parse_bracket_index_expr(&mut self) -> ParseResult<Box<Expr>> {
         let origin = self.parse_dot_index_expr()?;
-        if self.lookahead_check(TokenType::OpenBracket)? {
-            self.check(TokenType::OpenBracket)?;
+        if self.lookahead_check(&TokenType::OpenBracket)? {
+            self.check(&TokenType::OpenBracket)?;
             let index = self.parse_expr()?;
-            let end = self.check(TokenType::CloseBracket)?;
+            let end = self.check(&TokenType::CloseBracket)?;
             let node = BracketIndexExpr::new(
                 self.next_node_id(),
                 Span::from_pair(origin.span(), &end.span),
@@ -857,8 +857,8 @@ impl Parser<'_> {
     /// ```
     pub fn parse_dot_index_expr(&mut self) -> ParseResult<Box<Expr>> {
         let origin = self.parse_reference_expr()?;
-        if self.lookahead_check(TokenType::Dot)? {
-            self.check(TokenType::Dot)?;
+        if self.lookahead_check(&TokenType::Dot)? {
+            self.check(&TokenType::Dot)?;
             let index = self.parse_identifier()?;
             let node = DotIndexExpr::new(
                 self.next_node_id(),
@@ -924,10 +924,10 @@ impl Parser<'_> {
     /// group_expr ::= OPEN_PAREN expr CLOSE_PAREN
     /// ```
     pub fn parse_group_expr(&mut self) -> ParseResult<Box<Expr>> {
-        if self.lookahead_check(TokenType::OpenParen)? {
-            let start = self.check(TokenType::OpenParen)?;
+        if self.lookahead_check(&TokenType::OpenParen)? {
+            let start = self.check(&TokenType::OpenParen)?;
             let inner = self.parse_expr()?;
-            let end = self.check(TokenType::CloseParen)?;
+            let end = self.check(&TokenType::CloseParen)?;
             let node = GroupExpr::new(
                 self.next_node_id(),
                 Span::from_pair(&start.span, &end.span),
@@ -1017,7 +1017,7 @@ impl Parser<'_> {
     /// pointer_type ::= STAR type
     /// ```
     pub fn parse_pointer_type(&mut self) -> ParseResult<Box<PointerType>> {
-        let indirection = self.check(TokenType::Star)?;
+        let indirection = self.check(&TokenType::Star)?;
         let inner = self.parse_type()?;
         let node = PointerType::new(
             self.next_node_id(),
