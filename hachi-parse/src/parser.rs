@@ -123,6 +123,69 @@ impl<'a> Parser<'a> {
             })),
         }
     }
+
+    /// Apply the given parser `f` to the parser repeatedly until the next token matches the given
+    /// circuit breaker.
+    ///
+    /// Parses the applied parser `f` until the next token matches the given circuit breaker, with
+    /// each call to `f` being interleaved by a single consumption of the delimiter token.
+    ///
+    /// This function does not consume the circuit breaker token.
+    pub fn parser_combinator_delimited<T, F>(
+        &mut self,
+        delimiter: &TokenType,
+        circuit_breaker: &TokenType,
+        f: F,
+    ) -> ParseResult<Vec<T>>
+    where
+        F: Fn(&mut Parser) -> ParseResult<T>,
+    {
+        let mut items = Vec::new();
+        while !self.lookahead_check(circuit_breaker)? {
+            items.push(f(self)?);
+            if !self.lookahead_check(circuit_breaker)? {
+                self.check(delimiter)?;
+            }
+        }
+        Ok(items)
+    }
+
+    /// Optionally apply `f`, decided by the `decision_maker` token.
+    ///
+    /// If the decision maker token is matched, the parser `f` is applied to the parser and the
+    /// result is wrapped in `Some`. Otherwise, the result is `None`.
+    ///
+    /// The combinator consumes the decision maker token before applying `f`.
+    pub fn parser_combinator_take_if<T, F, M>(&mut self, matcher: M, f: F) -> ParseResult<Option<T>>
+    where
+        F: FnOnce(&mut Parser) -> ParseResult<T>,
+        M: FnOnce(&Token) -> bool,
+    {
+        let token = self.lookahead()?;
+        match token {
+            Some(token) if matcher(token) => Ok(Some(f(self)?)),
+            _ => Ok(None),
+        }
+    }
+
+    /// Apply the given parser `f` to the parser repeatedly until the next token matches the given
+    /// circuit breaker.
+    ///
+    /// This function does not consume the circuit breaker token.
+    pub fn parser_combinator_many<T, F>(
+        &mut self,
+        circuit_breaker: &TokenType,
+        f: F,
+    ) -> ParseResult<Vec<T>>
+    where
+        F: Fn(&mut Parser) -> ParseResult<T>,
+    {
+        let mut items = Vec::new();
+        while !self.lookahead_check(circuit_breaker)? {
+            items.push(f(self)?);
+        }
+        Ok(items)
+    }
 }
 
 impl Parser<'_> {
@@ -175,29 +238,24 @@ impl Parser<'_> {
     pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
         let start = self.check(&TokenType::KeywordFn)?;
         let id = self.parse_identifier()?;
+        // Parse the function's parameter list
         self.check(&TokenType::OpenParen)?;
-        let mut parameters = Vec::new();
-        while !self.lookahead_check(&TokenType::CloseParen)? {
-            let parameter = self.parse_fn_parameter_item()?;
-            // Consume commas if we're not matching the end of the parameter list.
-            if !self.lookahead_check(&TokenType::CloseParen)? {
-                self.check(&TokenType::Comma)?;
-            }
-            parameters.push(parameter);
-        }
+        let parameters =
+            self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseParen, |p| {
+                p.parse_fn_parameter_item()
+            })?;
         self.check(&TokenType::CloseParen)?;
-        let return_type = if self.lookahead_check(&TokenType::Arrow)? {
-            self.check(&TokenType::Arrow)?;
-            Some(self.parse_type()?)
-        } else {
-            None
-        };
-
+        // Optionally take a return type if it's specified
+        let return_type = self.parser_combinator_take_if(
+            |t| t.ty == TokenType::Arrow,
+            |p| {
+                p.check(&TokenType::Arrow)?;
+                p.parse_type()
+            },
+        )?;
+        // Parse the function's body
         self.check(&TokenType::OpenBrace)?;
-        let mut body = Vec::new();
-        while !self.lookahead_check(&TokenType::CloseBrace)? {
-            body.push(self.parse_stmt()?);
-        }
+        let body = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = FunctionItem::new(
             self.next_node_id(),
@@ -205,9 +263,8 @@ impl Parser<'_> {
             id,
             parameters,
             return_type,
-            Vec::new(),
+            body,
         );
-
         Ok(Box::new(node))
     }
 
@@ -239,10 +296,8 @@ impl Parser<'_> {
         let id = self.parse_identifier()?;
         self.check(&TokenType::Equal)?;
         self.check(&TokenType::OpenBrace)?;
-        let mut members = Vec::new();
-        while !self.lookahead_check(&TokenType::CloseBrace)? {
-            members.push(self.parse_type_member_item()?);
-        }
+        let members =
+            self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_type_member_item())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = TypeItem::new(
             self.next_node_id(),
@@ -305,12 +360,13 @@ impl Parser<'_> {
     pub fn parse_let_stmt(&mut self) -> ParseResult<Box<LetStmt>> {
         let start = self.check(&TokenType::KeywordLet)?;
         let id = self.parse_identifier()?;
-        let ty = if self.lookahead_check(&TokenType::Colon)? {
-            self.check(&TokenType::Colon)?;
-            Some(self.parse_type()?)
-        } else {
-            None
-        };
+        let ty = self.parser_combinator_take_if(
+            |t| t.ty == TokenType::Colon,
+            |p| {
+                p.check(&TokenType::Colon)?;
+                p.parse_type()
+            },
+        )?;
         self.check(&TokenType::Equal)?;
         let expr = self.parse_expr()?;
         let end = self.check(&TokenType::Semicolon)?;
@@ -331,11 +387,8 @@ impl Parser<'_> {
     /// ```
     pub fn parse_return_stmt(&mut self) -> ParseResult<Box<ReturnStmt>> {
         let start = self.check(&TokenType::KeywordReturn)?;
-        let value = if !self.lookahead_check(&TokenType::Semicolon)? {
-            Some(self.parse_expr()?)
-        } else {
-            None
-        };
+        let value =
+            self.parser_combinator_take_if(|t| t.ty != TokenType::Semicolon, |p| p.parse_expr())?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = ReturnStmt::new(
             self.next_node_id(),
@@ -353,29 +406,19 @@ impl Parser<'_> {
     pub fn parse_for_stmt(&mut self) -> ParseResult<Box<ForStmt>> {
         let start = self.check(&TokenType::KeywordFor)?;
         self.check(&TokenType::OpenParen)?;
-        let initializer = if !self.lookahead_check(&TokenType::Semicolon)? {
-            Some(self.parse_for_stmt_initializer()?)
-        } else {
-            None
-        };
+        let initializer = self.parser_combinator_take_if(
+            |t| t.ty != TokenType::Semicolon,
+            |p| p.parse_for_stmt_initializer(),
+        )?;
         self.check(&TokenType::Semicolon)?;
-        let condition = if !self.lookahead_check(&TokenType::Semicolon)? {
-            Some(self.parse_expr()?)
-        } else {
-            None
-        };
+        let condition =
+            self.parser_combinator_take_if(|t| t.ty != TokenType::Semicolon, |p| p.parse_expr())?;
         self.check(&TokenType::Semicolon)?;
-        let increment = if !self.lookahead_check(&TokenType::CloseParen)? {
-            Some(self.parse_expr()?)
-        } else {
-            None
-        };
+        let increment =
+            self.parser_combinator_take_if(|t| t.ty != TokenType::CloseParen, |p| p.parse_expr())?;
         self.check(&TokenType::CloseParen)?;
         self.check(&TokenType::OpenBrace)?;
-        let mut body = Vec::new();
-        while !self.lookahead_check(&TokenType::CloseBrace)? {
-            body.push(self.parse_stmt()?);
-        }
+        let body = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = ForStmt::new(
             self.next_node_id(),
@@ -441,25 +484,21 @@ impl Parser<'_> {
         let condition = self.parse_expr()?;
         self.check(&TokenType::CloseParen)?;
         self.check(&TokenType::OpenBrace)?;
-        let mut body = Vec::new();
-        while !self.lookahead_check(&TokenType::CloseBrace)? {
-            body.push(self.parse_stmt()?);
-        }
+        let body = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
+        let mut end = self.check(&TokenType::CloseBrace)?;
         // We default to the end of the if statement by its closing brace if it doesn't have an else
         // block attached. Otherwise, we use the end of the else block.
-        let mut end = self.check(&TokenType::CloseBrace)?;
-        let r#else = if self.lookahead_check(&TokenType::KeywordElse)? {
-            self.check(&TokenType::KeywordElse)?;
-            self.check(&TokenType::OpenBrace)?;
-            let mut r#else = Vec::new();
-            while !self.lookahead_check(&TokenType::CloseBrace)? {
-                r#else.push(self.parse_stmt()?);
-            }
-            end = self.check(&TokenType::CloseBrace)?;
-            Some(r#else)
-        } else {
-            None
-        };
+        let r#else = self.parser_combinator_take_if(
+            |t| t.ty == TokenType::KeywordElse,
+            |p| {
+                p.check(&TokenType::KeywordElse)?;
+                p.check(&TokenType::OpenBrace)?;
+                let r#else =
+                    p.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
+                end = p.check(&TokenType::CloseBrace)?;
+                Ok(r#else)
+            },
+        )?;
         let node = IfStmt::new(
             self.next_node_id(),
             Span::from_pair(&start.span, &end.span),
@@ -761,13 +800,10 @@ impl Parser<'_> {
         let callee = self.parse_construct_expr()?;
         if self.lookahead_check(&TokenType::OpenParen)? {
             self.check(&TokenType::OpenParen)?;
-            let mut arguments = Vec::new();
-            while !self.lookahead_check(&TokenType::CloseParen)? {
-                arguments.push(self.parse_expr()?);
-                if !self.lookahead_check(&TokenType::CloseParen)? {
-                    self.check(&TokenType::Comma)?;
-                }
-            }
+            let arguments =
+                self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseParen, |p| {
+                    p.parse_expr()
+                })?;
             let end = self.check(&TokenType::CloseParen)?;
             let node = CallExpr::new(
                 self.next_node_id(),
@@ -791,13 +827,10 @@ impl Parser<'_> {
 
         if self.lookahead_check(&TokenType::OpenBrace)? {
             self.check(&TokenType::OpenBrace)?;
-            let mut arguments = Vec::new();
-            while !self.lookahead_check(&TokenType::CloseBrace)? {
-                arguments.push(self.parse_construct_expr_argument()?);
-                if !self.lookahead_check(&TokenType::CloseBrace)? {
-                    self.check(&TokenType::Comma)?;
-                }
-            }
+            let arguments =
+                self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseBrace, |p| {
+                    p.parse_construct_expr_argument()
+                })?;
             let end = self.check(&TokenType::CloseBrace)?;
             let node = ConstructExpr::new(
                 self.next_node_id(),
