@@ -965,10 +965,8 @@ mod tests {
     use crate::ast::{BinaryOp, BreakStmt, ContinueStmt, Expr, Identifier, Type, UnaryOp};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-    use crate::{
-        assert_err, assert_none, assert_ok, assert_some, InvalidIntegerLiteralError, ParseError,
-        ParseResult,
-    };
+    use crate::{InvalidIntegerLiteralError, ParseError, ParseResult};
+    use hachi_macros::{assert_err, assert_none, assert_ok, assert_some};
 
     fn assert_parse<T>(
         input: &str,

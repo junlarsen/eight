@@ -20,8 +20,7 @@ fn main() -> miette::Result<()> {
     let source = std::fs::read_to_string(args.input.clone()).expect("Failed to read input file");
     let source_code = source.clone();
 
-    let translation_unit =
-        compile(&source).map_err(|e| e.with_source_code(source_code))?;
+    let translation_unit = compile(&source).map_err(|e| e.with_source_code(source_code))?;
 
     if args.emit_ast {
         let syntax = ron::ser::to_string_pretty(&translation_unit, Default::default())

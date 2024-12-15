@@ -246,9 +246,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hachi-macros"
+version = "0.1.0"
+
+[[package]]
 name = "hachi-parse"
 version = "0.1.0"
 dependencies = [
+ "hachi-macros",
  "insta",
  "miette",
  "ron 0.8.1",
