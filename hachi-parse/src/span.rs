@@ -1,4 +1,6 @@
+use miette::{SourceOffset, SourceSpan};
 use std::cmp::{max, min};
+use std::fmt::Debug;
 use std::ops::Range;
 
 /// Compact index of a character in the source code.
@@ -14,9 +16,9 @@ pub struct Span {
     pub high: SourcePosition,
 }
 
-impl From<Span> for miette::SourceSpan {
-    fn from(span: Span) -> Self {
-        Self::new(miette::SourceOffset::from(span.low), span.high - span.low)
+impl From<Span> for SourceSpan {
+    fn from(val: Span) -> Self {
+        SourceSpan::new(SourceOffset::from(val.low), val.high - val.low)
     }
 }
 

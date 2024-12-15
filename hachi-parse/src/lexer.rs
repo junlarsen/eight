@@ -1,23 +1,9 @@
-use crate::{SourcePosition, Span, Token, TokenType, UnexpectedEndOfInput};
-use miette::Diagnostic;
+use crate::{
+    InvalidIntegerLiteralError, ParseError, ParseResult, SourcePosition, Span, Token, TokenType,
+    UnexpectedCharacterError, UnexpectedEndOfInputError,
+};
 use std::iter::Peekable;
 use std::str::Chars;
-use thiserror::Error;
-
-#[derive(Error, Diagnostic, Debug)]
-pub enum LexerError {
-    #[error("invalid integer literal: {buf}")]
-    InvalidIntegerLiteral { buf: String, span: Span },
-    #[error("unexpected character")]
-    UnexpectedCharacter { ch: char, span: Span },
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    UnexpectedEndOfInput(UnexpectedEndOfInput),
-    #[error("invalid state reached")]
-    Infallible,
-}
-
-pub type LexerResult<T> = Result<T, LexerError>;
 
 /// A lexer for source to token stream conversion.
 pub struct Lexer<'a> {
@@ -42,11 +28,11 @@ impl<'a> LexerInput<'a> {
         self.input.peek()
     }
 
-    fn next(&mut self) -> LexerResult<char> {
+    fn next(&mut self) -> ParseResult<char> {
         let ch = self
             .input
             .next()
-            .ok_or(LexerError::UnexpectedEndOfInput(UnexpectedEndOfInput {
+            .ok_or(ParseError::from(UnexpectedEndOfInputError {
                 span: Span::pos(self.pos),
             }));
         self.pos += 1;
@@ -66,10 +52,10 @@ impl<'a> LexerInput<'a> {
         expected: char,
         start: SourcePosition,
         production: TokenType,
-    ) -> Result<Token, LexerError> {
+    ) -> ParseResult<Token> {
         let ch = self
             .peek()
-            .ok_or(LexerError::UnexpectedEndOfInput(UnexpectedEndOfInput {
+            .ok_or(ParseError::from(UnexpectedEndOfInputError {
                 span: Span::pos(start),
             }))?;
         match ch {
@@ -77,11 +63,11 @@ impl<'a> LexerInput<'a> {
                 self.input.next();
                 Ok(Token::new(production, Span::new(start..self.pos + 1)))
             }
-            _ => Err(LexerError::UnexpectedCharacter {
+            _ => Err(ParseError::from(UnexpectedCharacterError {
                 ch: *ch,
                 // We are only reporting the position of the next character
                 span: Span::pos(start + 1),
-            }),
+            })),
         }
     }
 
@@ -95,14 +81,14 @@ impl<'a> LexerInput<'a> {
         default: TokenType,
         start: SourcePosition,
         f: F,
-    ) -> Result<Token, LexerError>
+    ) -> ParseResult<Token>
     where
         F: FnOnce(&char) -> Option<TokenType>,
     {
         match self.peek() {
             Some(ch) => match f(ch) {
                 Some(typ) => {
-                    self.input.next().ok_or(LexerError::Infallible)?;
+                    self.input.next().expect("internal compiler error: lexer should never fail to produce an already peeked token");
                     Ok(Token::new(typ, Span::new(start..self.pos + 1)))
                 }
                 None => Ok(Token::new(default, Span::pos(start))),
@@ -124,7 +110,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Produce the next token from the input stream
-    pub fn produce(&mut self) -> Result<Token, LexerError> {
+    pub fn produce(&mut self) -> ParseResult<Token> {
         let pos = self.pos();
         let ch = self.input.next()?;
         match ch {
@@ -189,15 +175,16 @@ impl<'a> Lexer<'a> {
             '}' => Ok(Token::new(TokenType::CloseBrace, Span::pos(pos))),
             // Whitespace is consumed and ignored by the lexer.
             ' ' | '\t' | '\n' | '\r' => self.produce(),
-            unrecognized_char => Err(LexerError::UnexpectedCharacter {
+            // Anything else is an obvious error
+            unrecognized_char => Err(ParseError::from(UnexpectedCharacterError {
                 ch: unrecognized_char,
                 span: Span::pos(pos),
-            }),
+            })),
         }
     }
 
     /// Produce an integer literal token from the input stream.
-    fn produce_integer_literal(&mut self, ch: char) -> Result<Token, LexerError> {
+    fn produce_integer_literal(&mut self, ch: char) -> ParseResult<Token> {
         // The incoming ch has already been consumed, so we offset by 1
         let start = self.input.pos() - 1;
         let mut buf = vec![ch];
@@ -208,20 +195,20 @@ impl<'a> Lexer<'a> {
         let value = String::from_iter(buf);
 
         if value.starts_with('0') && value.len() > 1 {
-            return Err(LexerError::InvalidIntegerLiteral {
-                buf: value,
-                span: Span::new(start..self.pos()),
-            });
-        }
-
-        let integer =
-            value
-                .clone()
-                .parse::<i32>()
-                .map_err(|_| LexerError::InvalidIntegerLiteral {
+            return Err(ParseError::InvalidIntegerLiteral(
+                InvalidIntegerLiteralError {
                     buf: value,
                     span: Span::new(start..self.pos()),
-                })?;
+                },
+            ));
+        }
+
+        let integer = value.clone().parse::<i32>().map_err(|_| {
+            ParseError::InvalidIntegerLiteral(InvalidIntegerLiteralError {
+                buf: value,
+                span: Span::new(start..self.pos()),
+            })
+        })?;
         Ok(Token::new(
             TokenType::IntegerLiteral(integer),
             Span::new(start..self.pos()),
@@ -229,7 +216,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Produce a keyword or identifier token from the input stream.
-    fn produce_keyword_or_identifier(&mut self, ch: char) -> Result<Token, LexerError> {
+    fn produce_keyword_or_identifier(&mut self, ch: char) -> ParseResult<Token> {
         // The incoming ch has already been consumed, so we offset by 1
         let start = self.input.pos() - 1;
         let mut buf = vec![ch];
@@ -258,8 +245,11 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::{Lexer, LexerError};
-    use crate::{Span, Token, TokenType, UnexpectedEndOfInput};
+    use crate::lexer::{Lexer, ParseError};
+    use crate::{
+        InvalidIntegerLiteralError, Span, Token, TokenType, UnexpectedCharacterError,
+        UnexpectedEndOfInputError,
+    };
 
     macro_rules! assert_lexer_parse {
         ($input:expr, $($token:expr),*) => {
@@ -268,7 +258,7 @@ mod tests {
                 let tok = lexer.produce().unwrap();
                 assert_eq!(tok, $token);
             )*
-            assert!(matches!(lexer.produce(), Err(LexerError::UnexpectedEndOfInput(_))));
+            assert!(matches!(lexer.produce(), Err(ParseError::UnexpectedEndOfInput(_))));
         }
     }
 
@@ -302,14 +292,14 @@ mod tests {
         assert_failure!(
             "0123",
             Err(
-            LexerError::InvalidIntegerLiteral { buf, span }
+                ParseError::InvalidIntegerLiteral(InvalidIntegerLiteralError { buf, span })
             ) if buf == "0123" && span == Span::new(0..4)
         );
         // Cannot be unparsable by rust's i32 parser
         assert_failure!(
             "99999999999999999999",
             Err(
-            LexerError::InvalidIntegerLiteral { buf, span }
+                ParseError::InvalidIntegerLiteral(InvalidIntegerLiteralError { buf, span })
             ) if buf == "99999999999999999999" && span == Span::new(0..20)
         );
     }
@@ -373,17 +363,7 @@ mod tests {
         assert_lexer_parse!("&", Token::new(TokenType::AddressOf, Span::new(0..1)));
         assert_lexer_parse!("||", Token::new(TokenType::LogicalOr, Span::new(0..2)));
 
-        assert_failure!(
-            "|-",
-            Err(
-                LexerError::UnexpectedCharacter { ch, span }
-            ) if ch == '-' && span == Span::new(1..2)
-        );
-        assert_failure!(
-            "|",
-            Err(
-                LexerError::UnexpectedEndOfInput(UnexpectedEndOfInput { span })
-            ) if span == Span::new(0..1)
-        );
+        assert_failure!("|-", Err(ParseError::UnexpectedCharacter(UnexpectedCharacterError { ch, span })) if ch == '-' && span == Span::new(1..2));
+        assert_failure!("|", Err(ParseError::UnexpectedEndOfInput(UnexpectedEndOfInputError { span })) if span == Span::new(0..1));
     }
 }
