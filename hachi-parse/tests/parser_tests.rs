@@ -6,7 +6,8 @@ use insta::assert_ron_snapshot;
 fn test_snapshot_corpus() {
     insta::glob!("data/*.test", |path| {
         let input = std::fs::read_to_string(path).unwrap();
-        let mut parser = Parser::new(Lexer::new(&input));
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer);
         let translation_unit = parser
             .parse()
             .unwrap_or_else(|_| panic!("failed to parse corpus file {} into ast", path.display()));

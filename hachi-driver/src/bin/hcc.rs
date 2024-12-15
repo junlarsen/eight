@@ -11,7 +11,9 @@ struct AppArgs {
 }
 
 fn compile(input: &str) -> miette::Result<Box<TranslationUnit>> {
-    let tu = hachi_parse::Parser::new(Lexer::new(input)).parse()?;
+    let mut lexer = Lexer::new(input);
+    let mut parser = hachi_parse::Parser::new(&mut lexer);
+    let tu = parser.parse()?;
     Ok(tu)
 }
 

@@ -14,7 +14,7 @@ use crate::{
 use std::sync::atomic::AtomicUsize;
 
 pub struct ParserInput<'a> {
-    lexer: Lexer<'a>,
+    lexer: &'a mut Lexer<'a>,
     /// Buffer for the next token lookahead.
     ///
     /// If the parser for any reason needs more than LL(1) in the future, this can be replaced with
@@ -23,7 +23,7 @@ pub struct ParserInput<'a> {
 }
 
 impl<'a> ParserInput<'a> {
-    pub fn new(lexer: Lexer<'a>) -> Self {
+    pub fn new(lexer: &'a mut Lexer<'a>) -> Self {
         Self { lexer, la: None }
     }
 
@@ -59,7 +59,7 @@ impl<'a> Parser<'a> {
     /// The ID of the translation unit node.
     const TRANSLATION_UNIT_NODE_ID: NodeId = NodeId::new(0);
 
-    pub fn new(lexer: Lexer<'a>) -> Self {
+    pub fn new(lexer: &'a mut Lexer<'a>) -> Self {
         Self {
             input: ParserInput::new(lexer),
             // The current node ID always starts at 1, as 0 is reserved for the translation unit
@@ -1073,7 +1073,8 @@ mod tests {
         input: &str,
         rule: impl FnOnce(&mut Parser) -> ParseResult<T>,
     ) -> ParseResult<T> {
-        let mut p = Parser::new(Lexer::new(input));
+        let mut lexer = Lexer::new(input);
+        let mut p = Parser::new(&mut lexer);
         let production = rule(&mut p);
         assert_ok!(&production);
         let next = assert_ok!(p.lookahead());
@@ -1577,7 +1578,8 @@ mod tests {
 
     #[test]
     fn test_parse_invalid_literal() {
-        let mut parser = Parser::new(Lexer::new("let k = 1234773457276345671237572345;"));
+        let mut lexer = Lexer::new("let k = 1234773457276345671237572345;");
+        let mut parser = Parser::new(&mut lexer);
         let prod = assert_err!(parser.parse_let_stmt());
         assert!(
             matches!(prod, ParseError::InvalidIntegerLiteral(InvalidIntegerLiteralError {
