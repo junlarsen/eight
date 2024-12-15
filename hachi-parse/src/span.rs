@@ -68,6 +68,8 @@ impl From<Range<SourcePosition>> for Span {
 }
 
 /// A single token parsed from the source code.
+///
+/// TODO: Consider if it's worth interning the spans as they are copied a lot around in the AST.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {

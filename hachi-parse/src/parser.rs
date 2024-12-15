@@ -27,10 +27,16 @@ impl<'a> ParserInput<'a> {
         Self { lexer, la: None }
     }
 
+    /// Perform a single token lookahead.
+    ///
+    /// This function will fail the entire parser if the lexer fails to produce a token, except when
+    /// the lexer reaches the end of input.
     pub fn lookahead(&mut self) -> ParseResult<Option<&Token>> {
         if self.la.is_none() {
             self.la = match self.lexer.produce() {
                 Ok(tok) => Some(tok),
+                // If the end of source is reached, we might be able to recover. For example, if
+                // statements may or may not have an `else` after them.
                 Err(ParseError::UnexpectedEndOfInput(_)) => None,
                 Err(err) => return Err(err),
             };
@@ -38,6 +44,10 @@ impl<'a> ParserInput<'a> {
         Ok(self.la.as_ref())
     }
 
+    /// Consume the next token from the token stream.
+    ///
+    /// This does not optimistically peek at the next token. As with the `lookahead` function, this
+    /// function will fail the entire parser if the lexer fails.
     pub fn eat(&mut self) -> ParseResult<Token> {
         if let Some(token) = self.la.take() {
             return Ok(token);
@@ -59,6 +69,10 @@ impl<'a> Parser<'a> {
     /// The ID of the translation unit node.
     const TRANSLATION_UNIT_NODE_ID: NodeId = NodeId::new(0);
 
+    /// Create a new parser from a given lexer.
+    ///
+    /// The current grammar will make consume the entire lexer, but in the future, we may support
+    /// partial parsing, so taking ownership of the lexer is not a requirement.
     pub fn new(lexer: &'a mut Lexer<'a>) -> Self {
         Self {
             input: ParserInput::new(lexer),
@@ -92,6 +106,10 @@ impl<'a> Parser<'a> {
         Ok(None)
     }
 
+    /// Peek at the next token in the source without consuming it.
+    ///
+    /// As indicated by the name, this function fails the parser if the lexer cannot produce a
+    /// next token.
     pub fn lookahead_or_err(&mut self) -> ParseResult<&Token> {
         let span = Span::pos(self.input.lexer.pos());
         self.input
@@ -189,6 +207,7 @@ impl<'a> Parser<'a> {
 }
 
 impl Parser<'_> {
+    /// Top-level entry for parsing a translation unit (file).
     pub fn parse(&mut self) -> ParseResult<Box<TranslationUnit>> {
         self.parse_translation_unit()
     }
