@@ -5,11 +5,6 @@ use crate::{
 use std::iter::Peekable;
 use std::str::Chars;
 
-/// A lexer for source to token stream conversion.
-pub struct Lexer<'a> {
-    input: LexerInput<'a>,
-}
-
 pub struct LexerInput<'a> {
     input: Peekable<Chars<'a>>,
     pos: usize,
@@ -96,6 +91,11 @@ impl<'a> LexerInput<'a> {
             _ => Ok(Token::new(default, Span::pos(start))),
         }
     }
+}
+
+/// A lexer for source to token stream conversion.
+pub struct Lexer<'a> {
+    input: LexerInput<'a>,
 }
 
 impl<'a> Lexer<'a> {

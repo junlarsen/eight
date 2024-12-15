@@ -5,13 +5,16 @@ input_file: hachi-parse/tests/data/quicksort.test
 snapshot_kind: text
 ---
 TranslationUnit(
+  ast_node_id: NodeId(0),
   items: [
     Function(FunctionItem(
+      ast_node_id: NodeId(56),
       span: Span(
         low: 0,
         high: 152,
       ),
       name: Identifier(
+        ast_node_id: NodeId(1),
         name: "quicksort",
         span: Span(
           low: 3,
@@ -20,11 +23,13 @@ TranslationUnit(
       ),
       parameters: [
         FunctionParameterItem(
+          ast_node_id: NodeId(6),
           span: Span(
             low: 13,
             high: 21,
           ),
           name: Identifier(
+            ast_node_id: NodeId(2),
             name: "xs",
             span: Span(
               low: 13,
@@ -32,11 +37,13 @@ TranslationUnit(
             ),
           ),
           type: Pointer(PointerType(
+            ast_node_id: NodeId(5),
             span: Span(
               low: 17,
               high: 21,
             ),
             inner: Integer32(Integer32Type(
+              ast_node_id: NodeId(4),
               span: Span(
                 low: 18,
                 high: 21,
@@ -45,11 +52,13 @@ TranslationUnit(
           )),
         ),
         FunctionParameterItem(
+          ast_node_id: NodeId(10),
           span: Span(
             low: 23,
             high: 29,
           ),
           name: Identifier(
+            ast_node_id: NodeId(7),
             name: "l",
             span: Span(
               low: 23,
@@ -57,6 +66,7 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
+            ast_node_id: NodeId(9),
             span: Span(
               low: 26,
               high: 29,
@@ -64,11 +74,13 @@ TranslationUnit(
           )),
         ),
         FunctionParameterItem(
+          ast_node_id: NodeId(14),
           span: Span(
             low: 31,
             high: 37,
           ),
           name: Identifier(
+            ast_node_id: NodeId(11),
             name: "r",
             span: Span(
               low: 31,
@@ -76,6 +88,7 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
+            ast_node_id: NodeId(13),
             span: Span(
               low: 34,
               high: 37,
@@ -87,11 +100,13 @@ TranslationUnit(
       body: [],
     )),
     Function(FunctionItem(
+      ast_node_id: NodeId(159),
       span: Span(
         low: 154,
         high: 394,
       ),
       name: Identifier(
+        ast_node_id: NodeId(57),
         name: "partition",
         span: Span(
           low: 157,
@@ -100,11 +115,13 @@ TranslationUnit(
       ),
       parameters: [
         FunctionParameterItem(
+          ast_node_id: NodeId(62),
           span: Span(
             low: 167,
             high: 175,
           ),
           name: Identifier(
+            ast_node_id: NodeId(58),
             name: "xs",
             span: Span(
               low: 167,
@@ -112,11 +129,13 @@ TranslationUnit(
             ),
           ),
           type: Pointer(PointerType(
+            ast_node_id: NodeId(61),
             span: Span(
               low: 171,
               high: 175,
             ),
             inner: Integer32(Integer32Type(
+              ast_node_id: NodeId(60),
               span: Span(
                 low: 172,
                 high: 175,
@@ -125,11 +144,13 @@ TranslationUnit(
           )),
         ),
         FunctionParameterItem(
+          ast_node_id: NodeId(66),
           span: Span(
             low: 177,
             high: 183,
           ),
           name: Identifier(
+            ast_node_id: NodeId(63),
             name: "l",
             span: Span(
               low: 177,
@@ -137,6 +158,7 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
+            ast_node_id: NodeId(65),
             span: Span(
               low: 180,
               high: 183,
@@ -144,11 +166,13 @@ TranslationUnit(
           )),
         ),
         FunctionParameterItem(
+          ast_node_id: NodeId(70),
           span: Span(
             low: 185,
             high: 191,
           ),
           name: Identifier(
+            ast_node_id: NodeId(67),
             name: "r",
             span: Span(
               low: 185,
@@ -156,6 +180,7 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
+            ast_node_id: NodeId(69),
             span: Span(
               low: 188,
               high: 191,
@@ -164,6 +189,7 @@ TranslationUnit(
         ),
       ],
       return_type: Some(Integer32(Integer32Type(
+        ast_node_id: NodeId(72),
         span: Span(
           low: 195,
           high: 198,
@@ -172,11 +198,13 @@ TranslationUnit(
       body: [],
     )),
     Function(FunctionItem(
+      ast_node_id: NodeId(191),
       span: Span(
         low: 396,
         high: 464,
       ),
       name: Identifier(
+        ast_node_id: NodeId(160),
         name: "swap",
         span: Span(
           low: 399,
@@ -185,11 +213,13 @@ TranslationUnit(
       ),
       parameters: [
         FunctionParameterItem(
+          ast_node_id: NodeId(165),
           span: Span(
             low: 404,
             high: 411,
           ),
           name: Identifier(
+            ast_node_id: NodeId(161),
             name: "a",
             span: Span(
               low: 404,
@@ -197,11 +227,13 @@ TranslationUnit(
             ),
           ),
           type: Pointer(PointerType(
+            ast_node_id: NodeId(164),
             span: Span(
               low: 407,
               high: 411,
             ),
             inner: Integer32(Integer32Type(
+              ast_node_id: NodeId(163),
               span: Span(
                 low: 408,
                 high: 411,
@@ -210,11 +242,13 @@ TranslationUnit(
           )),
         ),
         FunctionParameterItem(
+          ast_node_id: NodeId(170),
           span: Span(
             low: 413,
             high: 420,
           ),
           name: Identifier(
+            ast_node_id: NodeId(166),
             name: "b",
             span: Span(
               low: 413,
@@ -222,11 +256,13 @@ TranslationUnit(
             ),
           ),
           type: Pointer(PointerType(
+            ast_node_id: NodeId(169),
             span: Span(
               low: 416,
               high: 420,
             ),
             inner: Integer32(Integer32Type(
+              ast_node_id: NodeId(168),
               span: Span(
                 low: 417,
                 high: 420,

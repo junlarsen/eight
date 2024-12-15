@@ -5,13 +5,16 @@ input_file: hachi-parse/tests/data/matmul.test
 snapshot_kind: text
 ---
 TranslationUnit(
+  ast_node_id: NodeId(0),
   items: [
     Type(TypeItem(
+      ast_node_id: NodeId(15),
       span: Span(
         low: 0,
         high: 50,
       ),
       name: Identifier(
+        ast_node_id: NodeId(1),
         name: "Matrix",
         span: Span(
           low: 5,
@@ -20,11 +23,13 @@ TranslationUnit(
       ),
       members: [
         TypeMemberItem(
+          ast_node_id: NodeId(5),
           span: Span(
             low: 18,
             high: 25,
           ),
           name: Identifier(
+            ast_node_id: NodeId(2),
             name: "r",
             span: Span(
               low: 18,
@@ -32,6 +37,7 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
+            ast_node_id: NodeId(4),
             span: Span(
               low: 21,
               high: 24,
@@ -39,11 +45,13 @@ TranslationUnit(
           )),
         ),
         TypeMemberItem(
+          ast_node_id: NodeId(9),
           span: Span(
             low: 28,
             high: 35,
           ),
           name: Identifier(
+            ast_node_id: NodeId(6),
             name: "c",
             span: Span(
               low: 28,
@@ -51,6 +59,7 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
+            ast_node_id: NodeId(8),
             span: Span(
               low: 31,
               high: 34,
@@ -58,11 +67,13 @@ TranslationUnit(
           )),
         ),
         TypeMemberItem(
+          ast_node_id: NodeId(14),
           span: Span(
             low: 38,
             high: 48,
           ),
           name: Identifier(
+            ast_node_id: NodeId(10),
             name: "buf",
             span: Span(
               low: 38,
@@ -70,11 +81,13 @@ TranslationUnit(
             ),
           ),
           type: Pointer(PointerType(
+            ast_node_id: NodeId(13),
             span: Span(
               low: 43,
               high: 47,
             ),
             inner: Integer32(Integer32Type(
+              ast_node_id: NodeId(12),
               span: Span(
                 low: 44,
                 high: 47,
@@ -85,11 +98,13 @@ TranslationUnit(
       ],
     )),
     Function(FunctionItem(
+      ast_node_id: NodeId(177),
       span: Span(
         low: 52,
         high: 461,
       ),
       name: Identifier(
+        ast_node_id: NodeId(16),
         name: "matrix_matrix_multiply",
         span: Span(
           low: 55,
@@ -98,11 +113,13 @@ TranslationUnit(
       ),
       parameters: [
         FunctionParameterItem(
+          ast_node_id: NodeId(20),
           span: Span(
             low: 78,
             high: 87,
           ),
           name: Identifier(
+            ast_node_id: NodeId(17),
             name: "a",
             span: Span(
               low: 78,
@@ -110,11 +127,13 @@ TranslationUnit(
             ),
           ),
           type: Named(NamedType(
+            ast_node_id: NodeId(19),
             span: Span(
               low: 81,
               high: 87,
             ),
             name: Identifier(
+              ast_node_id: NodeId(18),
               name: "Matrix",
               span: Span(
                 low: 81,
@@ -124,11 +143,13 @@ TranslationUnit(
           )),
         ),
         FunctionParameterItem(
+          ast_node_id: NodeId(24),
           span: Span(
             low: 89,
             high: 98,
           ),
           name: Identifier(
+            ast_node_id: NodeId(21),
             name: "b",
             span: Span(
               low: 89,
@@ -136,11 +157,13 @@ TranslationUnit(
             ),
           ),
           type: Named(NamedType(
+            ast_node_id: NodeId(23),
             span: Span(
               low: 92,
               high: 98,
             ),
             name: Identifier(
+              ast_node_id: NodeId(22),
               name: "Matrix",
               span: Span(
                 low: 92,
@@ -151,11 +174,13 @@ TranslationUnit(
         ),
       ],
       return_type: Some(Named(NamedType(
+        ast_node_id: NodeId(26),
         span: Span(
           low: 102,
           high: 108,
         ),
         name: Identifier(
+          ast_node_id: NodeId(25),
           name: "Matrix",
           span: Span(
             low: 102,

@@ -8,13 +8,10 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::{
-    ParseError, ParseResult, Span, Token, TokenType, UnexpectedEndOfInputError,
+    NodeId, ParseError, ParseResult, Span, Token, TokenType, UnexpectedEndOfInputError,
     UnexpectedTokenError,
 };
-
-pub struct Parser<'a> {
-    input: ParserInput<'a>,
-}
+use std::sync::atomic::AtomicUsize;
 
 pub struct ParserInput<'a> {
     lexer: Lexer<'a>,
@@ -49,11 +46,34 @@ impl<'a> ParserInput<'a> {
     }
 }
 
+pub struct Parser<'a> {
+    input: ParserInput<'a>,
+    /// The current node ID.
+    ///
+    /// There is currently no reason for this to be an atomic integer, but it's here for future
+    /// research into parallelizing the parser.
+    current_node_id: AtomicUsize,
+}
+
 impl<'a> Parser<'a> {
+    /// The ID of the translation unit node.
+    const TRANSLATION_UNIT_NODE_ID: NodeId = NodeId::new(0);
+
     pub fn new(lexer: Lexer<'a>) -> Self {
         Self {
             input: ParserInput::new(lexer),
+            // The current node ID always starts at 1, as 0 is reserved for the translation unit
+            // itself.
+            current_node_id: AtomicUsize::new(1),
         }
+    }
+
+    /// Generate the next node ID.
+    pub fn next_node_id(&self) -> NodeId {
+        let id = self
+            .current_node_id
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        NodeId::new(id)
     }
 
     /// Advance the lexer iterator by one, and return the advanced token.
@@ -120,7 +140,8 @@ impl Parser<'_> {
         while self.lookahead()?.is_some() {
             items.push(self.parse_item()?);
         }
-        Ok(Box::new(TranslationUnit { items }))
+        let node = TranslationUnit::new(Self::TRANSLATION_UNIT_NODE_ID, items);
+        Ok(Box::new(node))
     }
 
     /// Parse an item.
@@ -130,17 +151,18 @@ impl Parser<'_> {
     /// ```
     pub fn parse_item(&mut self) -> ParseResult<Box<Item>> {
         let token = self.lookahead_or_err()?;
-        match token.ty {
-            TokenType::KeywordFn => self.parse_fn_item().map(|v| Box::new(Item::Function(v))),
-            TokenType::KeywordType => self.parse_type_item().map(|v| Box::new(Item::Type(v))),
+        let node = match token.ty {
+            TokenType::KeywordFn => Item::Function(self.parse_fn_item()?),
+            TokenType::KeywordType => Item::Type(self.parse_type_item()?),
             _ => {
                 let token = self.eat()?;
-                Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+                return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                     span: token.span.clone(),
                     token,
-                }))
+                }));
             }
-        }
+        };
+        Ok(Box::new(node))
     }
 
     /// Parse a function item.
@@ -177,14 +199,16 @@ impl Parser<'_> {
             body.push(self.parse_stmt()?);
         }
         let end = self.check(TokenType::CloseBrace)?;
-
-        Ok(Box::new(FunctionItem {
-            span: Span::from_pair(&start.span, &end.span),
-            name: id,
+        let node = FunctionItem::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
+            id,
             parameters,
             return_type,
-            body: Vec::new(),
-        }))
+            Vec::new(),
+        );
+
+        Ok(Box::new(node))
     }
 
     /// Parse a function parameter item.
@@ -196,11 +220,13 @@ impl Parser<'_> {
         let id = self.parse_identifier()?;
         self.check(TokenType::Colon)?;
         let ty = self.parse_type()?;
-        Ok(Box::new(FunctionParameterItem {
-            span: Span::from_pair(&id.span, ty.span()),
-            name: id,
-            r#type: ty,
-        }))
+        let node = FunctionParameterItem::new(
+            self.next_node_id(),
+            Span::from_pair(&id.span, ty.span()),
+            id,
+            ty,
+        );
+        Ok(Box::new(node))
     }
 
     /// Parse a type item.
@@ -218,11 +244,13 @@ impl Parser<'_> {
             members.push(self.parse_type_member_item()?);
         }
         let end = self.check(TokenType::CloseBrace)?;
-        Ok(Box::new(TypeItem {
-            span: Span::from_pair(&start.span, &end.span),
-            name: id,
+        let node = TypeItem::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
+            id,
             members,
-        }))
+        );
+        Ok(Box::new(node))
     }
 
     /// Parse a type member item.
@@ -235,11 +263,13 @@ impl Parser<'_> {
         self.check(TokenType::Colon)?;
         let ty = self.parse_type()?;
         let end = self.check(TokenType::Comma)?;
-        Ok(Box::new(TypeMemberItem {
-            span: Span::from_pair(&id.span, &end.span),
-            name: id,
-            r#type: ty,
-        }))
+        let node = TypeMemberItem::new(
+            self.next_node_id(),
+            Span::from_pair(&id.span, &end.span),
+            id,
+            ty,
+        );
+        Ok(Box::new(node))
     }
 
     /// Parse a statement.
@@ -255,17 +285,16 @@ impl Parser<'_> {
     /// ```
     pub fn parse_stmt(&mut self) -> ParseResult<Box<Stmt>> {
         let next = self.lookahead_or_err()?;
-        match next.ty {
-            TokenType::KeywordLet => self.parse_let_stmt().map(|v| Box::new(Stmt::Let(v))),
-            TokenType::KeywordReturn => self.parse_return_stmt().map(|v| Box::new(Stmt::Return(v))),
-            TokenType::KeywordFor => self.parse_for_stmt().map(|v| Box::new(Stmt::For(v))),
-            TokenType::KeywordBreak => self.parse_break_stmt().map(|v| Box::new(Stmt::Break(v))),
-            TokenType::KeywordContinue => self
-                .parse_continue_stmt()
-                .map(|v| Box::new(Stmt::Continue(v))),
-            TokenType::KeywordIf => self.parse_if_stmt().map(|v| Box::new(Stmt::If(v))),
-            _ => self.parse_expr_stmt().map(|v| Box::new(Stmt::Expr(v))),
-        }
+        let node = match next.ty {
+            TokenType::KeywordLet => Stmt::Let(self.parse_let_stmt()?),
+            TokenType::KeywordReturn => Stmt::Return(self.parse_return_stmt()?),
+            TokenType::KeywordFor => Stmt::For(self.parse_for_stmt()?),
+            TokenType::KeywordBreak => Stmt::Break(self.parse_break_stmt()?),
+            TokenType::KeywordContinue => Stmt::Continue(self.parse_continue_stmt()?),
+            TokenType::KeywordIf => Stmt::If(self.parse_if_stmt()?),
+            _ => Stmt::Expr(self.parse_expr_stmt()?),
+        };
+        Ok(Box::new(node))
     }
 
     /// Parse a let statement.
@@ -285,13 +314,14 @@ impl Parser<'_> {
         self.check(TokenType::Equal)?;
         let expr = self.parse_expr()?;
         let end = self.check(TokenType::Semicolon)?;
-
-        Ok(Box::new(LetStmt {
-            span: Span::from_pair(&start.span, &end.span),
-            name: id,
-            r#type: ty,
-            value: expr,
-        }))
+        let node = LetStmt::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
+            id,
+            ty,
+            expr,
+        );
+        Ok(Box::new(node))
     }
 
     /// Parses a return statement.
@@ -307,10 +337,12 @@ impl Parser<'_> {
             None
         };
         let end = self.check(TokenType::Semicolon)?;
-        Ok(Box::new(ReturnStmt {
-            span: Span::from_pair(&start.span, &end.span),
+        let node = ReturnStmt::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
             value,
-        }))
+        );
+        Ok(Box::new(node))
     }
 
     /// Parses a for statement.
@@ -345,13 +377,15 @@ impl Parser<'_> {
             body.push(self.parse_stmt()?);
         }
         let end = self.check(TokenType::CloseBrace)?;
-        Ok(Box::new(ForStmt {
-            span: Span::from_pair(&start.span, &end.span),
+        let node = ForStmt::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
             initializer,
             condition,
             increment,
             body,
-        }))
+        );
+        Ok(Box::new(node))
     }
 
     /// Parses a for statement initializer.
@@ -364,11 +398,13 @@ impl Parser<'_> {
         let name = self.parse_identifier()?;
         self.check(TokenType::Equal)?;
         let initializer = self.parse_expr()?;
-        Ok(Box::new(ForStmtInitializer {
-            span: Span::from_pair(&start.span, initializer.span()),
+        let node = ForStmtInitializer::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, initializer.span()),
             name,
             initializer,
-        }))
+        );
+        Ok(Box::new(node))
     }
 
     /// Parses a break statement.
@@ -379,9 +415,8 @@ impl Parser<'_> {
     pub fn parse_break_stmt(&mut self) -> ParseResult<Box<BreakStmt>> {
         let start = self.check(TokenType::KeywordBreak)?;
         let end = self.check(TokenType::Semicolon)?;
-        Ok(Box::new(BreakStmt {
-            span: Span::from_pair(&start.span, &end.span),
-        }))
+        let node = BreakStmt::new(self.next_node_id(), Span::from_pair(&start.span, &end.span));
+        Ok(Box::new(node))
     }
 
     /// Parses a continue statement.
@@ -392,9 +427,8 @@ impl Parser<'_> {
     pub fn parse_continue_stmt(&mut self) -> ParseResult<Box<ContinueStmt>> {
         let start = self.check(TokenType::KeywordContinue)?;
         let end = self.check(TokenType::Semicolon)?;
-        Ok(Box::new(ContinueStmt {
-            span: Span::from_pair(&start.span, &end.span),
-        }))
+        let node = ContinueStmt::new(self.next_node_id(), Span::from_pair(&start.span, &end.span));
+        Ok(Box::new(node))
     }
 
     /// Parses an if statement.
@@ -426,12 +460,14 @@ impl Parser<'_> {
         } else {
             None
         };
-        Ok(Box::new(IfStmt {
-            span: Span::from_pair(&start.span, &end.span),
+        let node = IfStmt::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
             condition,
-            happy_path: body,
-            unhappy_path: r#else,
-        }))
+            body,
+            r#else,
+        );
+        Ok(Box::new(node))
     }
 
     /// Parses an expression statement.
@@ -441,10 +477,12 @@ impl Parser<'_> {
     pub fn parse_expr_stmt(&mut self) -> ParseResult<Box<ExprStmt>> {
         let expr = self.parse_expr()?;
         let end = self.check(TokenType::Semicolon)?;
-        Ok(Box::new(ExprStmt {
-            span: Span::from_pair(expr.span(), &end.span),
+        let node = ExprStmt::new(
+            self.next_node_id(),
+            Span::from_pair(expr.span(), &end.span),
             expr,
-        }))
+        );
+        Ok(Box::new(node))
     }
 
     /// Parse an expression
@@ -490,11 +528,13 @@ impl Parser<'_> {
         if self.lookahead_check(TokenType::Equal)? {
             self.check(TokenType::Equal)?;
             let rhs = self.parse_assign_expr()?;
-            return Ok(Box::new(Expr::Assign(Box::new(AssignExpr {
-                span: Span::from_pair(expr.span(), rhs.span()),
-                lhs: expr,
+            let node = AssignExpr::new(
+                self.next_node_id(),
+                Span::from_pair(expr.span(), rhs.span()),
+                expr,
                 rhs,
-            }))));
+            );
+            return Ok(Box::new(Expr::Assign(Box::new(node))));
         };
 
         Ok(expr)
@@ -511,12 +551,14 @@ impl Parser<'_> {
         if self.lookahead_check(TokenType::LogicalOr)? {
             self.check(TokenType::LogicalOr)?;
             let rhs = self.parse_logical_or_expr()?;
-            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: Span::from_pair(lhs.span(), rhs.span()),
+            let node = BinaryOpExpr::new(
+                self.next_node_id(),
+                Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
-                op: BinaryOp::Or,
-            }))));
+                BinaryOp::Or,
+            );
+            return Ok(Box::new(Expr::BinaryOp(Box::new(node))));
         };
 
         Ok(lhs)
@@ -533,12 +575,14 @@ impl Parser<'_> {
         if self.lookahead_check(TokenType::LogicalAnd)? {
             self.check(TokenType::LogicalAnd)?;
             let rhs = self.parse_logical_and_expr()?;
-            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: Span::from_pair(lhs.span(), rhs.span()),
+            let node = BinaryOpExpr::new(
+                self.next_node_id(),
+                Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
-                op: BinaryOp::And,
-            }))));
+                BinaryOp::And,
+            );
+            return Ok(Box::new(Expr::BinaryOp(Box::new(node))));
         };
 
         Ok(lhs)
@@ -571,12 +615,14 @@ impl Parser<'_> {
                 _ => unreachable!(),
             };
             let rhs = self.parse_comparison_expr()?;
-            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: Span::from_pair(lhs.span(), rhs.span()),
+            let node = BinaryOpExpr::new(
+                self.next_node_id(),
+                Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op,
-            }))));
+            );
+            return Ok(Box::new(Expr::BinaryOp(Box::new(node))));
         }
 
         Ok(lhs)
@@ -601,12 +647,14 @@ impl Parser<'_> {
                 _ => unreachable!(),
             };
             let rhs = self.parse_additive_expr()?;
-            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: Span::from_pair(lhs.span(), rhs.span()),
+            let node = BinaryOpExpr::new(
+                self.next_node_id(),
+                Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op,
-            }))));
+            );
+            return Ok(Box::new(Expr::BinaryOp(Box::new(node))));
         }
 
         Ok(lhs)
@@ -633,12 +681,14 @@ impl Parser<'_> {
                 _ => unreachable!(),
             };
             let rhs = self.parse_multiplicative_expr()?;
-            return Ok(Box::new(Expr::BinaryOp(Box::new(BinaryOpExpr {
-                span: Span::from_pair(lhs.span(), rhs.span()),
+            let node = BinaryOpExpr::new(
+                self.next_node_id(),
+                Span::from_pair(lhs.span(), rhs.span()),
                 lhs,
                 rhs,
                 op,
-            }))));
+            );
+            return Ok(Box::new(Expr::BinaryOp(Box::new(node))));
         }
 
         Ok(lhs)
@@ -652,42 +702,51 @@ impl Parser<'_> {
     /// ```
     pub fn parse_unary_expr(&mut self) -> ParseResult<Box<Expr>> {
         let token = self.lookahead_or_err()?;
+
         match token.ty {
             TokenType::Minus => {
                 let op = self.check(TokenType::Minus)?;
                 let rhs = self.parse_unary_expr()?;
-                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
-                    op: UnaryOp::Neg,
-                    operand: rhs,
-                }))))
+                let node = UnaryOpExpr::new(
+                    self.next_node_id(),
+                    Span::from_pair(&op.span, rhs.span()),
+                    rhs,
+                    UnaryOp::Neg,
+                );
+                Ok(Box::new(Expr::UnaryOp(Box::new(node))))
             }
             TokenType::Bang => {
                 let op = self.check(TokenType::Bang)?;
                 let rhs = self.parse_unary_expr()?;
-                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
-                    op: UnaryOp::Not,
-                    operand: rhs,
-                }))))
+                let node = UnaryOpExpr::new(
+                    self.next_node_id(),
+                    Span::from_pair(&op.span, rhs.span()),
+                    rhs,
+                    UnaryOp::Not,
+                );
+                Ok(Box::new(Expr::UnaryOp(Box::new(node))))
             }
             TokenType::Star => {
                 let op = self.check(TokenType::Star)?;
                 let rhs = self.parse_unary_expr()?;
-                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
-                    op: UnaryOp::Deref,
-                    operand: rhs,
-                }))))
+                let node = UnaryOpExpr::new(
+                    self.next_node_id(),
+                    Span::from_pair(&op.span, rhs.span()),
+                    rhs,
+                    UnaryOp::Deref,
+                );
+                Ok(Box::new(Expr::UnaryOp(Box::new(node))))
             }
             TokenType::AddressOf => {
                 let op = self.check(TokenType::AddressOf)?;
                 let rhs = self.parse_unary_expr()?;
-                Ok(Box::new(Expr::UnaryOp(Box::new(UnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
-                    op: UnaryOp::AddressOf,
-                    operand: rhs,
-                }))))
+                let node = UnaryOpExpr::new(
+                    self.next_node_id(),
+                    Span::from_pair(&op.span, rhs.span()),
+                    rhs,
+                    UnaryOp::AddressOf,
+                );
+                Ok(Box::new(Expr::UnaryOp(Box::new(node))))
             }
             _ => self.parse_call_expr(),
         }
@@ -710,11 +769,13 @@ impl Parser<'_> {
                 }
             }
             let end = self.check(TokenType::CloseParen)?;
-            return Ok(Box::new(Expr::Call(Box::new(CallExpr {
-                span: Span::from_pair(callee.span(), &end.span),
+            let node = CallExpr::new(
+                self.next_node_id(),
+                Span::from_pair(callee.span(), &end.span),
                 callee,
                 arguments,
-            }))));
+            );
+            return Ok(Box::new(Expr::Call(Box::new(node))));
         };
 
         Ok(callee)
@@ -738,11 +799,13 @@ impl Parser<'_> {
                 }
             }
             let end = self.check(TokenType::CloseBrace)?;
-            return Ok(Box::new(Expr::Construct(Box::new(ConstructExpr {
-                span: Span::from_pair(callee.span(), &end.span),
+            let node = ConstructExpr::new(
+                self.next_node_id(),
+                Span::from_pair(callee.span(), &end.span),
                 callee,
                 arguments,
-            }))));
+            );
+            return Ok(Box::new(Expr::Construct(Box::new(node))));
         };
 
         Ok(callee)
@@ -756,11 +819,13 @@ impl Parser<'_> {
         let id = self.parse_identifier()?;
         self.check(TokenType::Colon)?;
         let expr = self.parse_expr()?;
-        Ok(Box::new(ConstructorExprArgument {
-            span: Span::from_pair(&id.span, expr.span()),
-            field: id,
+        let node = ConstructorExprArgument::new(
+            self.next_node_id(),
+            Span::from_pair(&id.span, expr.span()),
+            id,
             expr,
-        }))
+        );
+        Ok(Box::new(node))
     }
 
     /// Parse a bracket index expression.
@@ -774,11 +839,13 @@ impl Parser<'_> {
             self.check(TokenType::OpenBracket)?;
             let index = self.parse_expr()?;
             let end = self.check(TokenType::CloseBracket)?;
-            return Ok(Box::new(Expr::BracketIndex(Box::new(BracketIndexExpr {
-                span: Span::from_pair(origin.span(), &end.span),
+            let node = BracketIndexExpr::new(
+                self.next_node_id(),
+                Span::from_pair(origin.span(), &end.span),
                 origin,
                 index,
-            }))));
+            );
+            return Ok(Box::new(Expr::BracketIndex(Box::new(node))));
         }
         Ok(origin)
     }
@@ -793,11 +860,13 @@ impl Parser<'_> {
         if self.lookahead_check(TokenType::Dot)? {
             self.check(TokenType::Dot)?;
             let index = self.parse_identifier()?;
-            return Ok(Box::new(Expr::DotIndex(Box::new(DotIndexExpr {
-                span: Span::from_pair(origin.span(), &index.span),
+            let node = DotIndexExpr::new(
+                self.next_node_id(),
+                Span::from_pair(origin.span(), &index.span),
                 origin,
                 index,
-            }))));
+            );
+            return Ok(Box::new(Expr::DotIndex(Box::new(node))));
         }
         Ok(origin)
     }
@@ -818,10 +887,8 @@ impl Parser<'_> {
         );
         if is_reference {
             let id = self.parse_identifier()?;
-            return Ok(Box::new(Expr::Reference(Box::new(ReferenceExpr {
-                span: id.span.clone(),
-                name: id,
-            }))));
+            let node = ReferenceExpr::new(self.next_node_id(), id.span.clone(), id);
+            return Ok(Box::new(Expr::Reference(Box::new(node))));
         }
         self.parse_literal_expr()
     }
@@ -844,12 +911,8 @@ impl Parser<'_> {
                 TokenType::IntegerLiteral(v) => v,
                 _ => unreachable!("the type should have been checked before to be safe to unwrap"),
             };
-            return Ok(Box::new(Expr::IntegerLiteral(Box::new(
-                IntegerLiteralExpr {
-                    span: token.span,
-                    value,
-                },
-            ))));
+            let node = IntegerLiteralExpr::new(self.next_node_id(), token.span, value);
+            return Ok(Box::new(Expr::IntegerLiteral(Box::new(node))));
         }
 
         self.parse_group_expr()
@@ -865,10 +928,12 @@ impl Parser<'_> {
             let start = self.check(TokenType::OpenParen)?;
             let inner = self.parse_expr()?;
             let end = self.check(TokenType::CloseParen)?;
-            return Ok(Box::new(Expr::Group(Box::new(GroupExpr {
-                span: Span::from_pair(&start.span, &end.span),
+            let node = GroupExpr::new(
+                self.next_node_id(),
+                Span::from_pair(&start.span, &end.span),
                 inner,
-            }))));
+            );
+            return Ok(Box::new(Expr::Group(Box::new(node))));
         };
         let token = self.eat()?;
         Err(ParseError::UnexpectedToken(UnexpectedTokenError {
@@ -888,7 +953,10 @@ impl Parser<'_> {
             Token {
                 ty: TokenType::Identifier(id),
                 span,
-            } => Ok(Box::new(Identifier { name: id, span })),
+            } => {
+                let node = Identifier::new(self.next_node_id(), id, span);
+                Ok(Box::new(node))
+            }
             _ => Err(ParseError::from(UnexpectedTokenError {
                 span: token.span.clone(),
                 token,
@@ -911,13 +979,13 @@ impl Parser<'_> {
             TokenType::Identifier(v) => match v.as_str() {
                 "i32" => {
                     let id = self.parse_identifier()?;
-                    Ok(Box::new(Type::Integer32(Box::new(Integer32Type {
-                        span: id.span,
-                    }))))
+                    let node = Integer32Type::new(self.next_node_id(), id.span);
+                    Ok(Box::new(Type::Integer32(Box::new(node))))
                 }
                 "void" => {
                     let id = self.parse_identifier()?;
-                    Ok(Box::new(Type::Unit(Box::new(UnitType { span: id.span }))))
+                    let node = UnitType::new(self.next_node_id(), id.span);
+                    Ok(Box::new(Type::Unit(Box::new(node))))
                 }
                 _ => Ok(Box::new(Type::Named(self.parse_named_type()?))),
             },
@@ -939,10 +1007,8 @@ impl Parser<'_> {
     /// ```
     pub fn parse_named_type(&mut self) -> ParseResult<Box<NamedType>> {
         let id = self.parse_identifier()?;
-        Ok(Box::new(NamedType {
-            span: id.span.clone(),
-            name: id,
-        }))
+        let node = NamedType::new(self.next_node_id(), id.span.clone(), id);
+        Ok(Box::new(node))
     }
 
     /// Parse a pointer type of single indirection.
@@ -953,10 +1019,12 @@ impl Parser<'_> {
     pub fn parse_pointer_type(&mut self) -> ParseResult<Box<PointerType>> {
         let indirection = self.check(TokenType::Star)?;
         let inner = self.parse_type()?;
-        Ok(Box::new(PointerType {
-            span: Span::from_pair(&indirection.span, inner.span()),
+        let node = PointerType::new(
+            self.next_node_id(),
+            Span::from_pair(&indirection.span, inner.span()),
             inner,
-        }))
+        );
+        Ok(Box::new(node))
     }
 }
 
