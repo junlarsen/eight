@@ -21,10 +21,14 @@ use thiserror::Error;
 /// Utility macro for defining the [`ParserError`] enum type. It ensures that all variants have both
 /// miette and thiserror diagnostic support.
 macro_rules! define_error_variant {
-    ($type_name:ident, [$($name:ident($ty:ty),)*]) => {
-        #[derive(thiserror::Error, miette::Diagnostic, Debug)]
+    {
+        $vis:vis enum $type_name:ident {
+            $($name:ident($ty:ty),)*
+        }
+    } => {
+        #[derive(Error, Diagnostic, Debug)]
         #[error("error occured during parsing: {0}")]
-        pub enum $type_name {
+        $vis enum $type_name {
             $(
                 #[error(transparent)]
                 #[diagnostic(transparent)]
@@ -34,15 +38,14 @@ macro_rules! define_error_variant {
     }
 }
 
-define_error_variant!(
-    ParseError,
-    [
+define_error_variant! {
+    pub enum ParseError {
         UnexpectedEndOfInput(UnexpectedEndOfInputError),
         InvalidIntegerLiteral(InvalidIntegerLiteralError),
         UnexpectedCharacter(UnexpectedCharacterError),
         UnexpectedToken(UnexpectedTokenError),
-    ]
-);
+    }
+}
 
 /// Handy type alias for all parsing-related errors.
 pub type ParseResult<T> = Result<T, ParseError>;
