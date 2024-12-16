@@ -1,5 +1,6 @@
 use clap::Parser;
 use hachi_parse::{Lexer, TranslationUnit};
+use miette::NamedSource;
 
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
@@ -20,7 +21,7 @@ fn compile(input: &str) -> miette::Result<Box<TranslationUnit>> {
 fn main() -> miette::Result<()> {
     let args = AppArgs::parse();
     let source = std::fs::read_to_string(args.input.clone()).expect("Failed to read input file");
-    let source_code = source.clone();
+    let source_code = NamedSource::new(args.input, source.clone());
 
     let translation_unit = compile(&source).map_err(|e| e.with_source_code(source_code))?;
 
