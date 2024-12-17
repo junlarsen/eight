@@ -14,5 +14,5 @@ thiserror = { workspace = true }
 ron = { workspace = true }
 
 [dev-dependencies]
-hachi-macros = { path = "../hachi-macros" }
+hachi-macros = { path = "../hachi-macros", features = ["assertion-macros"] }
 insta = { workspace = true }
