@@ -12,8 +12,8 @@ hachi-macros = { path = "../hachi-macros" }
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }
-ron = { workspace = true }
 
 [dev-dependencies]
 hachi-macros = { path = "../hachi-macros", features = ["assertion-macros"] }
 insta = { workspace = true }
+ron = { workspace = true }

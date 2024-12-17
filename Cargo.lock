@@ -248,6 +248,11 @@ dependencies = [
 [[package]]
 name = "hachi-ir"
 version = "0.1.0"
+dependencies = [
+ "hachi-parse",
+ "miette",
+ "thiserror 2.0.6",
+]
 
 [[package]]
 name = "hachi-macros"
