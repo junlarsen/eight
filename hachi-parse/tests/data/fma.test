@@ -1,0 +1,13 @@
+type vec512 = {
+  vs: *i32,
+}
+
+fn vec512_fma(x: vec512, y: vec512, acc: vec512) -> vec512 {
+  let vs = vec512 {
+    vs: malloc(512 / 4),
+  };
+  for (let i = 0; i < 512 / 4; i = i + 1) {
+    vs.vs[i] = x.vs[i] * y.vs[i] + acc.vs[i];
+  }
+  return vs;
+}

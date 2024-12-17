@@ -1,0 +1,676 @@
+---
+source: hachi-parse/tests/parser_tests.rs
+expression: "*translation_unit"
+input_file: hachi-parse/tests/data/fma.test
+snapshot_kind: text
+---
+TranslationUnit(
+  ast_node_id: NodeId(0),
+  items: [
+    Type(TypeItem(
+      ast_node_id: NodeId(7),
+      span: Span(
+        low: 0,
+        high: 29,
+      ),
+      name: Identifier(
+        ast_node_id: NodeId(1),
+        name: "vec512",
+        span: Span(
+          low: 5,
+          high: 11,
+        ),
+      ),
+      members: [
+        TypeMemberItem(
+          ast_node_id: NodeId(6),
+          span: Span(
+            low: 18,
+            high: 27,
+          ),
+          name: Identifier(
+            ast_node_id: NodeId(2),
+            name: "vs",
+            span: Span(
+              low: 18,
+              high: 20,
+            ),
+          ),
+          type: Pointer(PointerType(
+            ast_node_id: NodeId(5),
+            span: Span(
+              low: 22,
+              high: 26,
+            ),
+            inner: Integer32(Integer32Type(
+              ast_node_id: NodeId(4),
+              span: Span(
+                low: 23,
+                high: 26,
+              ),
+            )),
+          )),
+        ),
+      ],
+    )),
+    Function(FunctionItem(
+      ast_node_id: NodeId(88),
+      span: Span(
+        low: 31,
+        high: 249,
+      ),
+      name: Identifier(
+        ast_node_id: NodeId(8),
+        name: "vec512_fma",
+        span: Span(
+          low: 34,
+          high: 44,
+        ),
+      ),
+      parameters: [
+        FunctionParameterItem(
+          ast_node_id: NodeId(12),
+          span: Span(
+            low: 45,
+            high: 54,
+          ),
+          name: Identifier(
+            ast_node_id: NodeId(9),
+            name: "x",
+            span: Span(
+              low: 45,
+              high: 46,
+            ),
+          ),
+          type: Named(NamedType(
+            ast_node_id: NodeId(11),
+            span: Span(
+              low: 48,
+              high: 54,
+            ),
+            name: Identifier(
+              ast_node_id: NodeId(10),
+              name: "vec512",
+              span: Span(
+                low: 48,
+                high: 54,
+              ),
+            ),
+          )),
+        ),
+        FunctionParameterItem(
+          ast_node_id: NodeId(16),
+          span: Span(
+            low: 56,
+            high: 65,
+          ),
+          name: Identifier(
+            ast_node_id: NodeId(13),
+            name: "y",
+            span: Span(
+              low: 56,
+              high: 57,
+            ),
+          ),
+          type: Named(NamedType(
+            ast_node_id: NodeId(15),
+            span: Span(
+              low: 59,
+              high: 65,
+            ),
+            name: Identifier(
+              ast_node_id: NodeId(14),
+              name: "vec512",
+              span: Span(
+                low: 59,
+                high: 65,
+              ),
+            ),
+          )),
+        ),
+        FunctionParameterItem(
+          ast_node_id: NodeId(20),
+          span: Span(
+            low: 67,
+            high: 78,
+          ),
+          name: Identifier(
+            ast_node_id: NodeId(17),
+            name: "acc",
+            span: Span(
+              low: 67,
+              high: 70,
+            ),
+          ),
+          type: Named(NamedType(
+            ast_node_id: NodeId(19),
+            span: Span(
+              low: 72,
+              high: 78,
+            ),
+            name: Identifier(
+              ast_node_id: NodeId(18),
+              name: "vec512",
+              span: Span(
+                low: 72,
+                high: 78,
+              ),
+            ),
+          )),
+        ),
+      ],
+      return_type: Some(Named(NamedType(
+        ast_node_id: NodeId(22),
+        span: Span(
+          low: 82,
+          high: 88,
+        ),
+        name: Identifier(
+          ast_node_id: NodeId(21),
+          name: "vec512",
+          span: Span(
+            low: 82,
+            high: 88,
+          ),
+        ),
+      ))),
+      body: [
+        Let(LetStmt(
+          ast_node_id: NodeId(35),
+          span: Span(
+            low: 93,
+            high: 140,
+          ),
+          name: Identifier(
+            ast_node_id: NodeId(23),
+            name: "vs",
+            span: Span(
+              low: 97,
+              high: 99,
+            ),
+          ),
+          type: None,
+          value: Construct(ConstructExpr(
+            ast_node_id: NodeId(34),
+            span: Span(
+              low: 102,
+              high: 139,
+            ),
+            callee: Reference(ReferenceExpr(
+              ast_node_id: NodeId(25),
+              span: Span(
+                low: 102,
+                high: 108,
+              ),
+              name: Identifier(
+                ast_node_id: NodeId(24),
+                name: "vec512",
+                span: Span(
+                  low: 102,
+                  high: 108,
+                ),
+              ),
+            )),
+            arguments: [
+              ConstructorExprArgument(
+                ast_node_id: NodeId(33),
+                span: Span(
+                  low: 115,
+                  high: 134,
+                ),
+                field: Identifier(
+                  ast_node_id: NodeId(26),
+                  name: "vs",
+                  span: Span(
+                    low: 115,
+                    high: 117,
+                  ),
+                ),
+                expr: Call(CallExpr(
+                  ast_node_id: NodeId(32),
+                  span: Span(
+                    low: 119,
+                    high: 134,
+                  ),
+                  callee: Reference(ReferenceExpr(
+                    ast_node_id: NodeId(28),
+                    span: Span(
+                      low: 119,
+                      high: 125,
+                    ),
+                    name: Identifier(
+                      ast_node_id: NodeId(27),
+                      name: "malloc",
+                      span: Span(
+                        low: 119,
+                        high: 125,
+                      ),
+                    ),
+                  )),
+                  arguments: [
+                    BinaryOp(BinaryOpExpr(
+                      ast_node_id: NodeId(31),
+                      span: Span(
+                        low: 126,
+                        high: 133,
+                      ),
+                      lhs: IntegerLiteral(IntegerLiteralExpr(
+                        ast_node_id: NodeId(29),
+                        span: Span(
+                          low: 126,
+                          high: 129,
+                        ),
+                        value: 512,
+                      )),
+                      rhs: IntegerLiteral(IntegerLiteralExpr(
+                        ast_node_id: NodeId(30),
+                        span: Span(
+                          low: 132,
+                          high: 133,
+                        ),
+                        value: 4,
+                      )),
+                      op: Div,
+                    )),
+                  ],
+                )),
+              ),
+            ],
+          )),
+        )),
+        For(ForStmt(
+          ast_node_id: NodeId(84),
+          span: Span(
+            low: 143,
+            high: 234,
+          ),
+          initializer: Some(ForStmtInitializer(
+            ast_node_id: NodeId(38),
+            span: Span(
+              low: 148,
+              high: 157,
+            ),
+            name: Identifier(
+              ast_node_id: NodeId(36),
+              name: "i",
+              span: Span(
+                low: 152,
+                high: 153,
+              ),
+            ),
+            initializer: IntegerLiteral(IntegerLiteralExpr(
+              ast_node_id: NodeId(37),
+              span: Span(
+                low: 156,
+                high: 157,
+              ),
+              value: 0,
+            )),
+          )),
+          condition: Some(BinaryOp(BinaryOpExpr(
+            ast_node_id: NodeId(44),
+            span: Span(
+              low: 159,
+              high: 170,
+            ),
+            lhs: Reference(ReferenceExpr(
+              ast_node_id: NodeId(40),
+              span: Span(
+                low: 159,
+                high: 160,
+              ),
+              name: Identifier(
+                ast_node_id: NodeId(39),
+                name: "i",
+                span: Span(
+                  low: 159,
+                  high: 160,
+                ),
+              ),
+            )),
+            rhs: BinaryOp(BinaryOpExpr(
+              ast_node_id: NodeId(43),
+              span: Span(
+                low: 163,
+                high: 170,
+              ),
+              lhs: IntegerLiteral(IntegerLiteralExpr(
+                ast_node_id: NodeId(41),
+                span: Span(
+                  low: 163,
+                  high: 166,
+                ),
+                value: 512,
+              )),
+              rhs: IntegerLiteral(IntegerLiteralExpr(
+                ast_node_id: NodeId(42),
+                span: Span(
+                  low: 169,
+                  high: 170,
+                ),
+                value: 4,
+              )),
+              op: Div,
+            )),
+            op: Lt,
+          ))),
+          increment: Some(Assign(AssignExpr(
+            ast_node_id: NodeId(51),
+            span: Span(
+              low: 172,
+              high: 181,
+            ),
+            lhs: Reference(ReferenceExpr(
+              ast_node_id: NodeId(46),
+              span: Span(
+                low: 172,
+                high: 173,
+              ),
+              name: Identifier(
+                ast_node_id: NodeId(45),
+                name: "i",
+                span: Span(
+                  low: 172,
+                  high: 173,
+                ),
+              ),
+            )),
+            rhs: BinaryOp(BinaryOpExpr(
+              ast_node_id: NodeId(50),
+              span: Span(
+                low: 176,
+                high: 181,
+              ),
+              lhs: Reference(ReferenceExpr(
+                ast_node_id: NodeId(48),
+                span: Span(
+                  low: 176,
+                  high: 177,
+                ),
+                name: Identifier(
+                  ast_node_id: NodeId(47),
+                  name: "i",
+                  span: Span(
+                    low: 176,
+                    high: 177,
+                  ),
+                ),
+              )),
+              rhs: IntegerLiteral(IntegerLiteralExpr(
+                ast_node_id: NodeId(49),
+                span: Span(
+                  low: 180,
+                  high: 181,
+                ),
+                value: 1,
+              )),
+              op: Add,
+            )),
+          ))),
+          body: [
+            Expr(ExprStmt(
+              ast_node_id: NodeId(83),
+              span: Span(
+                low: 189,
+                high: 230,
+              ),
+              expr: Assign(AssignExpr(
+                ast_node_id: NodeId(82),
+                span: Span(
+                  low: 189,
+                  high: 229,
+                ),
+                lhs: BracketIndex(BracketIndexExpr(
+                  ast_node_id: NodeId(58),
+                  span: Span(
+                    low: 189,
+                    high: 197,
+                  ),
+                  origin: DotIndex(DotIndexExpr(
+                    ast_node_id: NodeId(55),
+                    span: Span(
+                      low: 189,
+                      high: 194,
+                    ),
+                    origin: Reference(ReferenceExpr(
+                      ast_node_id: NodeId(53),
+                      span: Span(
+                        low: 189,
+                        high: 191,
+                      ),
+                      name: Identifier(
+                        ast_node_id: NodeId(52),
+                        name: "vs",
+                        span: Span(
+                          low: 189,
+                          high: 191,
+                        ),
+                      ),
+                    )),
+                    index: Identifier(
+                      ast_node_id: NodeId(54),
+                      name: "vs",
+                      span: Span(
+                        low: 192,
+                        high: 194,
+                      ),
+                    ),
+                  )),
+                  index: Reference(ReferenceExpr(
+                    ast_node_id: NodeId(57),
+                    span: Span(
+                      low: 195,
+                      high: 196,
+                    ),
+                    name: Identifier(
+                      ast_node_id: NodeId(56),
+                      name: "i",
+                      span: Span(
+                        low: 195,
+                        high: 196,
+                      ),
+                    ),
+                  )),
+                )),
+                rhs: BinaryOp(BinaryOpExpr(
+                  ast_node_id: NodeId(81),
+                  span: Span(
+                    low: 200,
+                    high: 229,
+                  ),
+                  lhs: BinaryOp(BinaryOpExpr(
+                    ast_node_id: NodeId(73),
+                    span: Span(
+                      low: 200,
+                      high: 217,
+                    ),
+                    lhs: BracketIndex(BracketIndexExpr(
+                      ast_node_id: NodeId(65),
+                      span: Span(
+                        low: 200,
+                        high: 207,
+                      ),
+                      origin: DotIndex(DotIndexExpr(
+                        ast_node_id: NodeId(62),
+                        span: Span(
+                          low: 200,
+                          high: 204,
+                        ),
+                        origin: Reference(ReferenceExpr(
+                          ast_node_id: NodeId(60),
+                          span: Span(
+                            low: 200,
+                            high: 201,
+                          ),
+                          name: Identifier(
+                            ast_node_id: NodeId(59),
+                            name: "x",
+                            span: Span(
+                              low: 200,
+                              high: 201,
+                            ),
+                          ),
+                        )),
+                        index: Identifier(
+                          ast_node_id: NodeId(61),
+                          name: "vs",
+                          span: Span(
+                            low: 202,
+                            high: 204,
+                          ),
+                        ),
+                      )),
+                      index: Reference(ReferenceExpr(
+                        ast_node_id: NodeId(64),
+                        span: Span(
+                          low: 205,
+                          high: 206,
+                        ),
+                        name: Identifier(
+                          ast_node_id: NodeId(63),
+                          name: "i",
+                          span: Span(
+                            low: 205,
+                            high: 206,
+                          ),
+                        ),
+                      )),
+                    )),
+                    rhs: BracketIndex(BracketIndexExpr(
+                      ast_node_id: NodeId(72),
+                      span: Span(
+                        low: 210,
+                        high: 217,
+                      ),
+                      origin: DotIndex(DotIndexExpr(
+                        ast_node_id: NodeId(69),
+                        span: Span(
+                          low: 210,
+                          high: 214,
+                        ),
+                        origin: Reference(ReferenceExpr(
+                          ast_node_id: NodeId(67),
+                          span: Span(
+                            low: 210,
+                            high: 211,
+                          ),
+                          name: Identifier(
+                            ast_node_id: NodeId(66),
+                            name: "y",
+                            span: Span(
+                              low: 210,
+                              high: 211,
+                            ),
+                          ),
+                        )),
+                        index: Identifier(
+                          ast_node_id: NodeId(68),
+                          name: "vs",
+                          span: Span(
+                            low: 212,
+                            high: 214,
+                          ),
+                        ),
+                      )),
+                      index: Reference(ReferenceExpr(
+                        ast_node_id: NodeId(71),
+                        span: Span(
+                          low: 215,
+                          high: 216,
+                        ),
+                        name: Identifier(
+                          ast_node_id: NodeId(70),
+                          name: "i",
+                          span: Span(
+                            low: 215,
+                            high: 216,
+                          ),
+                        ),
+                      )),
+                    )),
+                    op: Mul,
+                  )),
+                  rhs: BracketIndex(BracketIndexExpr(
+                    ast_node_id: NodeId(80),
+                    span: Span(
+                      low: 220,
+                      high: 229,
+                    ),
+                    origin: DotIndex(DotIndexExpr(
+                      ast_node_id: NodeId(77),
+                      span: Span(
+                        low: 220,
+                        high: 226,
+                      ),
+                      origin: Reference(ReferenceExpr(
+                        ast_node_id: NodeId(75),
+                        span: Span(
+                          low: 220,
+                          high: 223,
+                        ),
+                        name: Identifier(
+                          ast_node_id: NodeId(74),
+                          name: "acc",
+                          span: Span(
+                            low: 220,
+                            high: 223,
+                          ),
+                        ),
+                      )),
+                      index: Identifier(
+                        ast_node_id: NodeId(76),
+                        name: "vs",
+                        span: Span(
+                          low: 224,
+                          high: 226,
+                        ),
+                      ),
+                    )),
+                    index: Reference(ReferenceExpr(
+                      ast_node_id: NodeId(79),
+                      span: Span(
+                        low: 227,
+                        high: 228,
+                      ),
+                      name: Identifier(
+                        ast_node_id: NodeId(78),
+                        name: "i",
+                        span: Span(
+                          low: 227,
+                          high: 228,
+                        ),
+                      ),
+                    )),
+                  )),
+                  op: Add,
+                )),
+              )),
+            )),
+          ],
+        )),
+        Return(ReturnStmt(
+          ast_node_id: NodeId(87),
+          span: Span(
+            low: 237,
+            high: 247,
+          ),
+          value: Some(Reference(ReferenceExpr(
+            ast_node_id: NodeId(86),
+            span: Span(
+              low: 244,
+              high: 246,
+            ),
+            name: Identifier(
+              ast_node_id: NodeId(85),
+              name: "vs",
+              span: Span(
+                low: 244,
+                high: 246,
+              ),
+            ),
+          ))),
+        )),
+      ],
+    )),
+  ],
+)
