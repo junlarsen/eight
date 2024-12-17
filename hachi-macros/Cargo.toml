@@ -8,3 +8,5 @@ default = []
 assertion-macros = []
 
 [dependencies]
+miette = { workspace = true }
+thiserror = { workspace = true }

@@ -12,33 +12,15 @@
 //! represents the type of error, while {code} is a 3-digit number that represents the specific
 //! error variant.
 //!
-//! - E1XXX: Token parsing errors
+//! - E1XXX: Source parsing errors
 
 use crate::{Span, Token};
+use hachi_macros::declare_error_type;
 use miette::Diagnostic;
 use thiserror::Error;
 
-/// Utility macro for defining the [`ParserError`] enum type. It ensures that all variants have both
-/// miette and thiserror diagnostic support.
-macro_rules! define_error_variant {
-    {
-        $vis:vis enum $type_name:ident {
-            $($name:ident($ty:ty),)*
-        }
-    } => {
-        #[derive(Error, Diagnostic, Debug)]
-        #[error("error occured during parsing: {0}")]
-        $vis enum $type_name {
-            $(
-                #[error(transparent)]
-                #[diagnostic(transparent)]
-                $name(#[from] $ty),
-            )*
-        }
-    }
-}
-
-define_error_variant! {
+declare_error_type! {
+    #[error("parser error: {0}")]
     pub enum ParseError {
         UnexpectedEndOfInput(UnexpectedEndOfInputError),
         InvalidIntegerLiteral(InvalidIntegerLiteralError),

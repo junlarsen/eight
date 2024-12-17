@@ -8,6 +8,7 @@ default = ["serde"]
 serde = ["dep:serde"]
 
 [dependencies]
+hachi-macros = { path = "../hachi-macros" }
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }
