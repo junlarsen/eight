@@ -1,9 +1,9 @@
 mod ast;
 mod error;
 mod lexer;
+mod macros;
 mod parser;
 mod span;
-mod macros;
 
 pub use ast::*;
 pub use error::*;

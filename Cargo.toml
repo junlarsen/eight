@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "hachi-driver",
-    "hachi-ir",
+    "hachi-mir",
     "hachi-macros",
     "hachi-syntax",
     "hachi-syntax-lower",
