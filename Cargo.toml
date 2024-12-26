@@ -1,7 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-    "hachi-driver", "hachi-ir",
+    "hachi-driver",
+    "hachi-syntax-pass",
     "hachi-macros",
     "hachi-parse"
 ]
