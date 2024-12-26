@@ -1,7 +1,7 @@
 ---
-source: hachi-parse/tests/parser_tests.rs
+source: hachi-syntax/tests/parser_tests.rs
 expression: "*translation_unit"
-input_file: hachi-parse/tests/data/fma.test
+input_file: hachi-syntax/tests/data/fma.test
 snapshot_kind: text
 ---
 TranslationUnit(

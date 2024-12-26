@@ -47,7 +47,7 @@ impl Span {
     /// particularly useful when combining spans from two relevant tokens.
     ///
     /// ```
-    /// use hachi_parse::Span;
+    /// use hachi_syntax::Span;
     ///
     /// let a = Span::new(0..10);
     /// let b = Span::new(5..15);

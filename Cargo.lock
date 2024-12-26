@@ -240,22 +240,9 @@ name = "hachi-driver"
 version = "0.1.0"
 dependencies = [
  "clap",
- "hachi-parse",
+ "hachi-syntax",
  "miette",
  "ron 0.8.1",
-]
-
-[[package]]
-name = "hachi-ir"
-version = "0.1.0"
-dependencies = [
- "hachi-macros",
- "hachi-parse",
- "insta",
- "miette",
- "ron 0.8.1",
- "serde",
- "thiserror 2.0.6",
 ]
 
 [[package]]
@@ -267,10 +254,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "hachi-parse"
+name = "hachi-syntax"
 version = "0.1.0"
 dependencies = [
  "hachi-macros",
+ "insta",
+ "miette",
+ "ron 0.8.1",
+ "serde",
+ "thiserror 2.0.6",
+]
+
+[[package]]
+name = "hachi-syntax-lower"
+version = "0.1.0"
+dependencies = [
+ "hachi-macros",
+ "hachi-syntax",
  "insta",
  "miette",
  "ron 0.8.1",

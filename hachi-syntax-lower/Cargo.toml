@@ -1,5 +1,5 @@
 [package]
-name = "hachi-ir"
+name = "hachi-syntax-lower"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,7 +9,7 @@ serde = ["dep:serde"]
 
 [dependencies]
 hachi-macros = { path = "../hachi-macros" }
-hachi-parse = { path = "../hachi-parse" }
+hachi-syntax = { path = "../hachi-syntax" }
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }

@@ -1,5 +1,5 @@
 use clap::Parser;
-use hachi_parse::{Lexer, TranslationUnit};
+use hachi_syntax::{Lexer, TranslationUnit};
 use miette::NamedSource;
 
 #[derive(clap::Parser)]
@@ -13,7 +13,7 @@ struct AppArgs {
 
 fn compile(input: &str) -> miette::Result<Box<TranslationUnit>> {
     let mut lexer = Lexer::new(input);
-    let mut parser = hachi_parse::Parser::new(&mut lexer);
+    let mut parser = hachi_syntax::Parser::new(&mut lexer);
     let tu = parser.parse()?;
     Ok(tu)
 }

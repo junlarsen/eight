@@ -2,9 +2,9 @@
 resolver = "2"
 members = [
     "hachi-driver",
-    "hachi-syntax-pass",
+    "hachi-syntax",
+    "hachi-syntax-lower",
     "hachi-macros",
-    "hachi-parse"
 ]
 
 [profile.dev.package]
