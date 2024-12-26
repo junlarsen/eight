@@ -3,6 +3,7 @@ mod error;
 mod lexer;
 mod parser;
 mod span;
+mod macros;
 
 pub use ast::*;
 pub use error::*;

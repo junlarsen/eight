@@ -1,4 +1,4 @@
-use crate::Span;
+use crate::{declare_ast_node, declare_ast_variant, Span};
 
 /// An internal ID for a single AST Node.
 ///
@@ -24,65 +24,12 @@ impl From<usize> for NodeId {
     }
 }
 
-macro_rules! declare_ast_node {
-    {
-        $(#[$attr:meta])*
-        $vis:vis struct $name:ident {
-            $($field_vis:vis $field:ident: $ty:ty,)*
-        }
-    } => {
-        $(#[$attr])*
-        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-        #[derive(Debug)]
-        $vis struct $name {
-            /// The internal ID of the AST node.
-            ast_node_id: $crate::ast::NodeId,
-            $($field_vis $field: $ty),*
-        }
-
-        impl $name {
-            pub fn new(ast_node_id: $crate::ast::NodeId, $($field: $ty),*) -> Self {
-                Self { ast_node_id, $($field),* }
-            }
-
-            /// Get the node ID of the AST node.
-            pub fn node_id(&self) -> &$crate::ast::NodeId {
-                &self.ast_node_id
-            }
-        }
-    }
-}
-
-macro_rules! declare_ast_variant {
-    {
-        $(#[$attr:meta])*
-        $vis:vis enum $name:ident {
-            $($field:ident($ty:ty),)*
-        }
-    } => {
-        $(#[$attr])*
-        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-        #[derive(Debug)]
-        $vis enum $name {
-            $($field($ty),)*
-        }
-
-        impl $name {
-            /// Get the node ID of the AST node.
-            pub fn node_id(&self) -> &$crate::ast::NodeId {
-                match self {
-                    $(Self::$field(v) => &v.node_id()),*
-                }
-            }
-        }
-    }
-}
-
 declare_ast_node! {
     /// The top-level AST node representing a single translation unit.
     ///
     /// The term translation unit is used here to refer to a single source file.
     pub struct TranslationUnit {
+        id: NodeId,
         pub items: Vec<Box<Item>>,
     }
 }
@@ -100,6 +47,7 @@ declare_ast_variant! {
 
 declare_ast_node! {
     pub struct FunctionItem {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
         pub parameters: Vec<Box<FunctionParameterItem>>,
@@ -110,6 +58,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct FunctionParameterItem {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
         pub r#type: Box<Type>,
@@ -118,6 +67,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct TypeItem {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
         pub members: Vec<Box<TypeMemberItem>>,
@@ -126,6 +76,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct TypeMemberItem {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
         pub r#type: Box<Type>,
@@ -161,6 +112,7 @@ impl Stmt {
 
 declare_ast_node! {
     pub struct LetStmt {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
         pub r#type: Option<Box<Type>>,
@@ -170,6 +122,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct ReturnStmt {
+        id: NodeId,
         pub span: Span,
         pub value: Option<Box<Expr>>,
     }
@@ -177,6 +130,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct ForStmt {
+        id: NodeId,
         pub span: Span,
         pub initializer: Option<Box<ForStmtInitializer>>,
         pub condition: Option<Box<Expr>>,
@@ -187,6 +141,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct ForStmtInitializer {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
         pub initializer: Box<Expr>,
@@ -195,18 +150,21 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct BreakStmt {
+        id: NodeId,
         pub span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct ContinueStmt {
+        id: NodeId,
         pub span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct IfStmt {
+        id: NodeId,
         pub span: Span,
         pub condition: Box<Expr>,
         pub happy_path: Vec<Box<Stmt>>,
@@ -216,6 +174,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct ExprStmt {
+        id: NodeId,
         pub span: Span,
         pub expr: Box<Expr>,
     }
@@ -256,6 +215,7 @@ impl Expr {
 
 declare_ast_node! {
     pub struct AssignExpr {
+        id: NodeId,
         pub span: Span,
         pub lhs: Box<Expr>,
         pub rhs: Box<Expr>,
@@ -264,6 +224,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct BinaryOpExpr {
+        id: NodeId,
         pub span: Span,
         pub lhs: Box<Expr>,
         pub rhs: Box<Expr>,
@@ -273,6 +234,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct UnaryOpExpr {
+        id: NodeId,
         pub span: Span,
         pub operand: Box<Expr>,
         pub op: UnaryOp,
@@ -281,6 +243,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct IntegerLiteralExpr {
+        id: NodeId,
         pub span: Span,
         pub value: i32,
     }
@@ -288,6 +251,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct DotIndexExpr {
+        id: NodeId,
         pub span: Span,
         pub origin: Box<Expr>,
         pub index: Box<Identifier>,
@@ -296,6 +260,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct BracketIndexExpr {
+        id: NodeId,
         pub span: Span,
         pub origin: Box<Expr>,
         pub index: Box<Expr>,
@@ -304,6 +269,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct ReferenceExpr {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
     }
@@ -311,6 +277,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct CallExpr {
+        id: NodeId,
         pub span: Span,
         pub callee: Box<Expr>,
         pub arguments: Vec<Box<Expr>>,
@@ -319,6 +286,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct ConstructExpr {
+        id: NodeId,
         pub span: Span,
         pub callee: Box<Expr>,
         pub arguments: Vec<Box<ConstructorExprArgument>>,
@@ -327,6 +295,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct ConstructorExprArgument {
+        id: NodeId,
         pub span: Span,
         pub field: Box<Identifier>,
         pub expr: Box<Expr>,
@@ -335,6 +304,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct GroupExpr {
+        id: NodeId,
         pub span: Span,
         pub inner: Box<Expr>,
     }
@@ -346,6 +316,7 @@ declare_ast_node! {
     /// This is practically a copy of the `TokenType::Identifier` variant, but we want to be able to
     /// extract them from the AST, as we don't care for storing token types in the AST.
     pub struct Identifier {
+        id: NodeId,
         pub name: String,
         pub span: Span,
     }
@@ -374,18 +345,21 @@ impl Type {
 
 declare_ast_node! {
     pub struct UnitType {
+        id: NodeId,
         pub span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct Integer32Type {
+        id: NodeId,
         pub span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct PointerType {
+        id: NodeId,
         pub span: Span,
         pub inner: Box<Type>,
     }
@@ -393,6 +367,7 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct NamedType {
+        id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
     }
