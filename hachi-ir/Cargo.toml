@@ -1,0 +1,15 @@
+[package]
+name = "hachi-ir"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hachi-macros = { path = "../hachi-macros" }
+miette = { workspace = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+hachi-macros = { path = "../hachi-macros", features = ["assertion-macros"] }
+insta = { workspace = true }
+ron = { workspace = true }

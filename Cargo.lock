@@ -246,6 +246,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "hachi-ir"
+version = "0.1.0"
+dependencies = [
+ "hachi-macros",
+ "insta",
+ "miette",
+ "ron 0.8.1",
+ "serde",
+ "thiserror 2.0.6",
+]
+
+[[package]]
 name = "hachi-macros"
 version = "0.1.0"
 dependencies = [
