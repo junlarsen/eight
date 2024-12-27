@@ -17,14 +17,14 @@
 //!       %c_c = mem.load %2, 1
 //!       mem.store %c, 0, %c_r
 //!       mem.store %c, 4, %c_c
-//!       %buf_item_size = mem.const.i32 4
+//!       %buf_item_size = const.i32 4
 //!       %buf_size_0 = mul.i32 %c_r, %c_c
 //!       %buf_size_1 = mul.i32 %buf_size_0, %buf_item_size
 //!       %buf = call malloc(%buf_size_1)
 //!       mem.store %c, 8, %buf
 //!       branch loop_i_header
 //!     loop_i_header:
-//!       %i_init = mem.const.i32 0
+//!       %i_init = const.i32 0
 //!       %i = mem.alloc 4
 //!       mem.store %i, 0, %i_init
 //!       branch @loop_i_cond
@@ -35,7 +35,7 @@
 //!     loop_i_body:
 //!       branch loop_j_header
 //!     loop_j_header:
-//!       %j_init = mem.const.i32 0
+//!       %j_init = const.i32 0
 //!       %j = mem.alloc 4
 //!       mem.store %j, 0, %j_init
 //!       branch loop_j_cond
@@ -44,10 +44,10 @@
 //!       %j_cmp = cmp.lt.i32 %j, %c_c
 //!       branch.cond %j_cmp, loop_j_body_0, loop_j_exit
 //!     loop_j_body_0:
-//!       %sum = mem.const.i32 0
+//!       %sum = const.i32 0
 //!       branch loop_k_header
 //!     loop_k_header:
-//!       %k_init = mem.const.i32 0
+//!       %k_init = const.i32 0
 //!       %k = mem.alloc 4
 //!       mem.store %k, 0, %k_init
 //!       branch loop_k_cond
@@ -103,9 +103,137 @@
 //! memory layout of the types. This is because it is not of significance to the memory layout of
 //! the packed types. This also follows the design of the LLVM IR.
 
+pub struct MirFunctionReference {}
+pub struct MirConstant {}
+pub struct MirLocal {}
+pub struct MirLabel {}
+
 pub enum MirType {
     Integer32,
     Unit,
     Pointer,
     Named(String),
+}
+
+pub enum MirInstruction {
+    Branch(MirBranchInstruction),
+    ConditionalBranch(MirConditionalBranchInstruction),
+    Constant(MirConstantInstruction),
+    CompareLessThan(MirCompareLessThanInstruction),
+    CompareGreaterThan(MirCompareGreaterThanInstruction),
+    CompareLessThanOrEqual(MirCompareLessThanOrEqualInstruction),
+    CompareGreaterThanOrEqual(MirCompareGreaterThanOrEqualInstruction),
+    CompareEqual(MirCompareEqualInstruction),
+    CompareNotEqual(MirCompareNotEqualInstruction),
+    Call(MirCallInstruction),
+}
+
+/// The `branch` instruction
+pub struct MirBranchInstruction {
+    pub target: MirLabel,
+}
+
+/// The `branch.cond` instruction
+pub struct MirConditionalBranchInstruction {
+    pub condition: MirLocal,
+    pub true_target: MirLabel,
+    pub false_target: MirLabel,
+}
+
+/// The `const.<type>` instruction
+pub struct MirConstantInstruction {
+    pub value: MirConstant,
+    pub ty: MirType,
+}
+
+/// The `cmp.lt.<type>` instruction
+pub struct MirCompareLessThanInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `cmp.gt.<type>` instruction
+pub struct MirCompareGreaterThanInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `cmp.le.<type>` instruction
+pub struct MirCompareLessThanOrEqualInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `cmp.ge.<type>` instruction
+pub struct MirCompareGreaterThanOrEqualInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `cmp.eq.<type>` instruction
+pub struct MirCompareEqualInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `cmp.ne.<type>` instruction
+pub struct MirCompareNotEqualInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `mul.<type>` instruction
+pub struct MirMultiplyInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `add.<type>` instruction
+pub struct MirAddInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `sub.<type>` instruction
+pub struct MirSubtractInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `load` instruction
+pub struct MirDivideInstruction {
+    pub lhs: MirLocal,
+    pub rhs: MirLocal,
+    pub ty: MirType,
+}
+
+/// The `call` instruction
+pub struct MirCallInstruction {
+    pub callee: MirFunctionReference,
+    pub arguments: Vec<MirLocal>,
+}
+
+/// The `ret` instruction
+pub struct MirReturnInstruction {
+    pub value: Option<MirLocal>,
+}
+
+pub struct MirLoadInstruction {
+    pub pointer: MirLocal,
+    pub ty: MirType,
+}
+
+pub struct MirStoreInstruction {
+    pub pointer: MirLocal,
+    pub value: MirLocal,
+    pub ty: MirType,
 }
