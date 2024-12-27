@@ -9,7 +9,10 @@
 use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
 use crate::scope::TypeEnvironment;
 use crate::ty::Ty;
-use hachi_syntax::{FunctionItem, Item, Span, TranslationUnit, Type, TypeItem, TypeMemberItem};
+use hachi_syntax::{
+    FunctionItem, FunctionParameterItem, Item, Span, TranslationUnit, Type, TypeItem,
+    TypeMemberItem,
+};
 use std::collections::HashMap;
 
 pub struct TypeChecker {
@@ -153,6 +156,22 @@ impl TypeChecker {
 
     /// Visit a function item.
     pub fn visit_function_item(&mut self, node: &FunctionItem) -> TypeResult<()> {
+        self.scope.enter_scope();
+        // Insert all the type parameters into the scope
+        for (idx, parameter) in node.type_parameters.iter().enumerate() {
+            self.scope.add(&parameter.name.name, Ty::TVariable(idx));
+        }
+        // Ensure that all parameter types are defined
+        for parameter in &node.parameters {
+            self.visit_function_parameter(parameter)?;
+        }
+        self.scope.leave_scope();
+        Ok(())
+    }
+
+    /// Visit a function parameter.
+    pub fn visit_function_parameter(&mut self, node: &FunctionParameterItem) -> TypeResult<()> {
+        self.visit_type(&node.r#type)?;
         Ok(())
     }
 
@@ -266,5 +285,25 @@ mod tests {
         fn foo<T>(x: T) -> T {}
         "#
         ));
+
+        assert_ok!(assert_type_check(
+            r#"
+        fn foo<K>(x: T) -> T {}
+        type T = { x: i32, }
+        intrinsic_type i32;
+        "#
+        ));
+
+        let err = assert_err!(assert_type_check(
+            r#"
+        fn foo<T>(x: U) -> T {}
+        "#
+        ));
+        assert!(
+            matches!(err, TypeError::InvalidTypeReference(InvalidTypeReferenceError {
+            name,
+            ..
+        }) if name == "U")
+        );
     }
 }
