@@ -159,6 +159,7 @@ TranslationUnit(
           )),
         ),
       ],
+      type_parameters: [],
       return_type: Some(Named(NamedType(
         id: NodeId(22),
         span: Span(

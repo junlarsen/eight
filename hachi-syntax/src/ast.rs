@@ -53,6 +53,7 @@ declare_ast_node! {
         pub span: Span,
         pub name: Box<Identifier>,
         pub parameters: Vec<Box<FunctionParameterItem>>,
+        pub type_parameters: Vec<Box<FunctionTypeParameterItem>>,
         pub return_type: Option<Box<Type>>,
         pub body: Vec<Box<Stmt>>,
     }
@@ -64,7 +65,16 @@ declare_ast_node! {
         pub span: Span,
         pub name: Box<Identifier>,
         pub parameters: Vec<Box<FunctionParameterItem>>,
+        pub type_parameters: Vec<Box<FunctionTypeParameterItem>>,
         pub return_type: Box<Type>,
+    }
+}
+
+declare_ast_node! {
+    pub struct FunctionTypeParameterItem {
+        id: NodeId,
+        pub span: Span,
+        pub name: Box<Identifier>,
     }
 }
 

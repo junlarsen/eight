@@ -96,6 +96,7 @@ TranslationUnit(
           )),
         ),
       ],
+      type_parameters: [],
       return_type: None,
       body: [
         If(IfStmt(
@@ -509,6 +510,7 @@ TranslationUnit(
           )),
         ),
       ],
+      type_parameters: [],
       return_type: Some(Integer32(Integer32Type(
         id: NodeId(72),
         span: Span(
@@ -1251,6 +1253,7 @@ TranslationUnit(
           )),
         ),
       ],
+      type_parameters: [],
       return_type: None,
       body: [
         Let(LetStmt(

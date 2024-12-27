@@ -8,8 +8,9 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::{
-    BooleanType, IntrinsicFunctionItem, IntrinsicTypeItem, NodeId, ParseError, ParseResult,
-    ReferenceType, Span, Token, TokenType, UnexpectedEndOfFileError, UnexpectedTokenError,
+    BooleanType, FunctionTypeParameterItem, IntrinsicFunctionItem, IntrinsicTypeItem, NodeId,
+    ParseError, ParseResult, ReferenceType, Span, Token, TokenType, UnexpectedEndOfFileError,
+    UnexpectedTokenError,
 };
 use std::sync::atomic::AtomicUsize;
 
@@ -256,13 +257,29 @@ impl Parser<'_> {
     /// Parse a function item.
     ///
     /// ```text
-    /// fn_item ::= KEYWORD_FN IDENTIFIER OPEN_PAREN
-    ///             ((fn_parameter_item COMMA)+ fn_parameter_item)?
+    /// fn_item ::= KEYWORD_FN IDENTIFIER
+    ///             (OPEN_ANGLE ((fn_type_parameter_item COMMA)+ fn_type_parameter_item)? CLOSE_ANGLE)?
+    ///             OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
     ///             CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
     /// ```
     pub fn parse_fn_item(&mut self) -> ParseResult<Box<FunctionItem>> {
         let start = self.check(&TokenType::KeywordFn)?;
         let id = self.parse_identifier()?;
+        let type_parameters = self
+            .parser_combinator_take_if(
+                |t| t.ty == TokenType::OpenAngle,
+                |p| {
+                    p.check(&TokenType::OpenAngle)?;
+                    let type_parameters = p.parser_combinator_delimited(
+                        &TokenType::Comma,
+                        &TokenType::CloseAngle,
+                        |p| p.parse_fn_type_parameter_item(),
+                    )?;
+                    p.check(&TokenType::CloseAngle)?;
+                    Ok(type_parameters)
+                },
+            )?
+            .unwrap_or(vec![]);
         // Parse the function's parameter list
         self.check(&TokenType::OpenParen)?;
         let parameters =
@@ -287,6 +304,7 @@ impl Parser<'_> {
             Span::from_pair(&start.span, &end.span),
             id,
             parameters,
+            type_parameters,
             return_type,
             body,
         );
@@ -308,6 +326,17 @@ impl Parser<'_> {
             id,
             ty,
         );
+        Ok(Box::new(node))
+    }
+
+    /// Parse a function type parameter item.
+    ///
+    /// ```text
+    /// fn_type_parameter_item ::= identifier
+    /// ```
+    pub fn parse_fn_type_parameter_item(&mut self) -> ParseResult<Box<FunctionTypeParameterItem>> {
+        let id = self.parse_identifier()?;
+        let node = FunctionTypeParameterItem::new(self.next_node_id(), id.span.clone(), id);
         Ok(Box::new(node))
     }
 
@@ -374,11 +403,29 @@ impl Parser<'_> {
     /// Unlike regular functions, intrinsic functions must have their return type specified.
     ///
     /// ```text
-    /// intrinsic_fn_item ::= KEYWORD_INTRINSIC_FN IDENTIFIER OPEN_PAREN (fn_parameter_item COMMA)+ fn_parameter_item? CLOSE_PAREN ARROW type SEMICOLON
+    /// intrinsic_fn_item ::= KEYWORD_INTRINSIC_FN IDENTIFIER
+    ///                       (OPEN_ANGLE ((fn_type_parameter_item COMMA)+ fn_type_parameter_item)? CLOSE_ANGLE)?
+    ///                       OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
+    ///                       ARROW type SEMICOLON
     /// ```
     pub fn parse_intrinsic_fn_item(&mut self) -> ParseResult<Box<IntrinsicFunctionItem>> {
         let start = self.check(&TokenType::KeywordIntrinsicFn)?;
         let id = self.parse_identifier()?;
+        let type_parameters = self
+            .parser_combinator_take_if(
+                |t| t.ty == TokenType::OpenAngle,
+                |p| {
+                    p.check(&TokenType::OpenAngle)?;
+                    let type_parameters = p.parser_combinator_delimited(
+                        &TokenType::Comma,
+                        &TokenType::CloseAngle,
+                        |p| p.parse_fn_type_parameter_item(),
+                    )?;
+                    p.check(&TokenType::CloseAngle)?;
+                    Ok(type_parameters)
+                },
+            )?
+            .unwrap_or(vec![]);
         self.check(&TokenType::OpenParen)?;
         let parameters =
             self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseParen, |p| {
@@ -393,6 +440,7 @@ impl Parser<'_> {
             Span::from_pair(&start.span, &end.span),
             id,
             parameters,
+            type_parameters,
             return_type,
         );
         Ok(Box::new(node))
@@ -1355,6 +1403,23 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_fn_item_with_type_parameters() {
+        let prod = assert_parse("fn foo<T, U>() {}", |p| p.parse_fn_item());
+        let prod = assert_ok!(prod);
+
+        let type_parameters = prod.type_parameters.as_slice();
+        assert_eq!(type_parameters.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_fn_type_parameter_item() {
+        let prod = assert_parse("T", |p| p.parse_fn_type_parameter_item());
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        assert!(matches!(name, Identifier { name, .. } if name == "T"));
+    }
+
+    #[test]
     fn test_parse_intrinsic_fn_item() {
         let prod = assert_parse("intrinsic_fn foo(x: i32) -> i32;", |p| {
             p.parse_intrinsic_fn_item()
@@ -1366,6 +1431,16 @@ mod tests {
         assert_eq!(name.name, "foo");
         assert_eq!(parameters.len(), 1);
         assert!(matches!(return_type, Type::Integer32(_)));
+    }
+
+    #[test]
+    fn test_parse_intrinsic_fn_item_with_type_parameters() {
+        let prod = assert_parse("intrinsic_fn malloc<T>() -> *T;", |p| {
+            p.parse_intrinsic_fn_item()
+        });
+        let prod = assert_ok!(prod);
+        let type_parameters = prod.type_parameters.as_slice();
+        assert_eq!(type_parameters.len(), 1);
     }
 
     #[test]
