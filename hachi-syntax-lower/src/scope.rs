@@ -1,17 +1,17 @@
 use std::collections::{BTreeMap, VecDeque};
 
-/// A deque-based reference resolver.
+/// A deque-based stackable type environment.
 ///
 /// Upon entering a new scope, the resolver will create a new scope and push it onto the deque. The
 /// owner can then traverse a syntax tree or similar to store and resolve references in the scope.
 #[derive(Debug)]
-pub struct ReferenceResolver<T> {
+pub struct TypeEnvironment<T> {
     scopes: VecDeque<BTreeMap<String, T>>,
 }
 
-impl<T> ReferenceResolver<T> {
+impl<T> TypeEnvironment<T> {
     pub fn new() -> Self {
-        ReferenceResolver {
+        TypeEnvironment {
             scopes: VecDeque::new(),
         }
     }
@@ -60,12 +60,12 @@ impl<T> ReferenceResolver<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::scope::ReferenceResolver;
+    use crate::scope::TypeEnvironment;
     use hachi_macros::assert_none;
 
     #[test]
-    fn test_reference_resolver_interleaving() {
-        let mut resolver = ReferenceResolver::<i32>::new();
+    fn test_type_environment_interleaving() {
+        let mut resolver = TypeEnvironment::<i32>::new();
         assert_eq!(resolver.depth(), 0);
         resolver.enter_scope();
         resolver.add("a", 1);
@@ -81,8 +81,8 @@ mod tests {
     }
 
     #[test]
-    fn test_reference_resolver_removal() {
-        let mut resolver = ReferenceResolver::<i32>::new();
+    fn test_type_environment_removal() {
+        let mut resolver = TypeEnvironment::<i32>::new();
         resolver.enter_scope();
         resolver.add("a", 1);
         assert_eq!(Some(&1), resolver.find("a"));

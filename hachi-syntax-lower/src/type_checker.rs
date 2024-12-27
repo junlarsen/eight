@@ -7,19 +7,19 @@
 //! The type system is a hindley-milner based type system.
 
 use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
-use crate::scope::ReferenceResolver;
+use crate::scope::TypeEnvironment;
 use crate::ty::Ty;
 use hachi_syntax::{FunctionItem, Item, Span, TranslationUnit, Type, TypeItem, TypeMemberItem};
 
 pub struct TypeChecker {
-    scope: ReferenceResolver<Ty>,
+    scope: TypeEnvironment<Ty>,
     type_ids: i32,
 }
 
 impl TypeChecker {
     pub fn new() -> Self {
         Self {
-            scope: ReferenceResolver::new(),
+            scope: TypeEnvironment::new(),
             type_ids: 0,
         }
     }
