@@ -13,3 +13,4 @@ miette = { workspace = true, features = ["fancy"] }
 ron = { workspace = true }
 
 hachi-syntax = { path = "../hachi-syntax" }
+hachi-syntax-lower = { path = "../hachi-syntax-lower" }

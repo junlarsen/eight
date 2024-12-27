@@ -1,5 +1,6 @@
 use clap::Parser;
 use hachi_syntax::{Lexer, TranslationUnit};
+use hachi_syntax_lower::type_checker::TypeChecker;
 use miette::NamedSource;
 
 #[derive(clap::Parser)]
@@ -14,7 +15,9 @@ struct AppArgs {
 fn compile(input: &str) -> miette::Result<Box<TranslationUnit>> {
     let mut lexer = Lexer::new(input);
     let mut parser = hachi_syntax::Parser::new(&mut lexer);
+    let mut type_checker = TypeChecker::new();
     let tu = parser.parse()?;
+    type_checker.visit_translation_unit(tu.as_ref())?;
     Ok(tu)
 }
 

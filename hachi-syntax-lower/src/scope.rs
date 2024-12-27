@@ -4,18 +4,12 @@ use std::collections::{BTreeMap, VecDeque};
 ///
 /// Upon entering a new scope, the resolver will create a new scope and push it onto the deque. The
 /// owner can then traverse a syntax tree or similar to store and resolve references in the scope.
-#[cfg_attr(test, derive(Debug))]
-pub struct ReferenceResolver<'p, T> {
-    scopes: VecDeque<BTreeMap<&'p str, T>>,
+#[derive(Debug)]
+pub struct ReferenceResolver<T> {
+    scopes: VecDeque<BTreeMap<String, T>>,
 }
 
-impl<'p, T> Default for ReferenceResolver<'p, T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'p, T> ReferenceResolver<'p, T> {
+impl<T> ReferenceResolver<T> {
     pub fn new() -> Self {
         ReferenceResolver {
             scopes: VecDeque::new(),
@@ -47,15 +41,15 @@ impl<'p, T> ReferenceResolver<'p, T> {
         None
     }
 
-    pub fn add(&mut self, name: &'p str, id: T) {
+    pub fn add(&mut self, name: &str, id: T) {
         let scope = self
             .scopes
             .front_mut()
             .expect("ReferenceResolver::add: no scope");
-        scope.insert(name, id);
+        scope.insert(name.to_string(), id);
     }
 
-    pub fn remove(&mut self, name: &'p str) {
+    pub fn remove(&mut self, name: &str) {
         let scope = self
             .scopes
             .front_mut()
@@ -71,7 +65,7 @@ mod tests {
 
     #[test]
     fn test_reference_resolver_interleaving() {
-        let mut resolver = ReferenceResolver::<'_, i32>::new();
+        let mut resolver = ReferenceResolver::<i32>::new();
         assert_eq!(resolver.depth(), 0);
         resolver.enter_scope();
         resolver.add("a", 1);
@@ -88,7 +82,7 @@ mod tests {
 
     #[test]
     fn test_reference_resolver_removal() {
-        let mut resolver = ReferenceResolver::<'_, i32>::new();
+        let mut resolver = ReferenceResolver::<i32>::new();
         resolver.enter_scope();
         resolver.add("a", 1);
         assert_eq!(Some(&1), resolver.find("a"));
