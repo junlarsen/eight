@@ -2,7 +2,7 @@ use hachi_syntax::Type;
 use std::fmt::Debug;
 
 pub enum Ty {
-    TVariable(i32),
+    TVariable(usize),
     TConstructor(Box<Ty>, Vec<Box<Ty>>),
     TConst(String),
     TPointer(Box<Ty>),

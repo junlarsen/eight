@@ -10,10 +10,11 @@ use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
 use crate::scope::TypeEnvironment;
 use crate::ty::Ty;
 use hachi_syntax::{FunctionItem, Item, Span, TranslationUnit, Type, TypeItem, TypeMemberItem};
+use std::collections::HashMap;
 
 pub struct TypeChecker {
     scope: TypeEnvironment<Ty>,
-    type_ids: i32,
+    type_ids: usize,
 }
 
 impl TypeChecker {
@@ -30,6 +31,11 @@ impl TypeChecker {
     pub fn get_unique_type_variable(&mut self) -> Ty {
         self.type_ids += 1;
         Ty::TVariable(self.type_ids)
+    }
+
+    pub fn get_unique_type_id(&mut self) -> usize {
+        self.type_ids += 1;
+        self.type_ids
     }
 
     /// Apply the `Var` rule to the given type.
@@ -62,26 +68,54 @@ impl TypeChecker {
             let (name, ty) = match item.as_ref() {
                 // Functions are inserted as unnamed TConstructors into the scope.
                 Item::Function(f) => {
-                    let args = f
+                    let type_parameters = f
+                        .type_parameters
+                        .iter()
+                        .map(|p| (&p.name.name, self.get_unique_type_id()))
+                        .collect::<HashMap<_, _>>();
+                    // Resolve the types of all the parameters. We check if the type is referring to
+                    // a type parameter, and if so, we replace it with the type variables that we
+                    // just created.
+                    let parameters = f
                         .parameters
                         .iter()
-                        .map(|p| Box::new(p.r#type.as_ref().into()))
+                        .map(|p| {
+                            let name = &p.name.name;
+                            if let Some(type_id) = type_parameters.get(name) {
+                                return Box::new(Ty::TVariable(*type_id));
+                            }
+                            Box::new(p.r#type.as_ref().into())
+                        })
                         .collect();
                     let return_type = match &f.return_type {
                         Some(t) => t.as_ref().into(),
                         None => Ty::TConst("void".to_owned()),
                     };
-                    let ty = Ty::TConstructor(Box::new(return_type), args);
+                    let ty = Ty::TConstructor(Box::new(return_type), parameters);
                     (&f.name, ty)
                 }
                 Item::IntrinsicFunction(f) => {
-                    let args = f
+                    let type_parameters = f
+                        .type_parameters
+                        .iter()
+                        .map(|p| (&p.name.name, self.get_unique_type_id()))
+                        .collect::<HashMap<_, _>>();
+                    // Resolve the types of all the parameters. We check if the type is referring to
+                    // a type parameter, and if so, we replace it with the type variables that we
+                    // just created.
+                    let parameters = f
                         .parameters
                         .iter()
-                        .map(|p| Box::new(p.r#type.as_ref().into()))
+                        .map(|p| {
+                            let name = &p.name.name;
+                            if let Some(type_id) = type_parameters.get(name) {
+                                return Box::new(Ty::TVariable(*type_id));
+                            }
+                            Box::new(p.r#type.as_ref().into())
+                        })
                         .collect();
                     let return_type = f.return_type.as_ref().into();
-                    let ty = Ty::TConstructor(Box::new(return_type), args);
+                    let ty = Ty::TConstructor(Box::new(return_type), parameters);
                     (&f.name, ty)
                 }
                 // Types are not generic at the moment, so we can just use the name of the type.
@@ -223,5 +257,14 @@ mod tests {
             ..
         }) if name == "Point")
         );
+    }
+
+    #[test]
+    fn test_type_parameters_are_substituted_in_fn() {
+        assert_ok!(assert_type_check(
+            r#"
+        fn foo<T>(x: T) -> T {}
+        "#
+        ));
     }
 }
