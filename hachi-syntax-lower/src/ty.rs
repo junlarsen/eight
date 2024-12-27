@@ -1,6 +1,7 @@
 use hachi_syntax::Type;
 use std::fmt::Debug;
 
+#[derive(Clone)]
 pub enum Ty {
     TVariable(usize),
     TFunction(Box<Ty>, Vec<Box<Ty>>),
@@ -23,6 +24,9 @@ impl From<&Type> for Ty {
 }
 
 impl Debug for Ty {
+    /// Manual implementation of Debug for Ty
+    ///
+    /// This is done so we can have a nicer print of the more complex types like TFunction.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Ty::TVariable(id) => write!(f, "${}", id),

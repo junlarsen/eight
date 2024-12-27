@@ -6,17 +6,19 @@
 //!
 //! The type system is a hindley-milner based type system.
 
-use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
+use crate::error::{InvalidTypeReferenceError, InvalidValueReferenceError, TypeError, TypeResult};
 use crate::scope::TypeEnvironment;
 use crate::ty::Ty;
 use hachi_syntax::{
-    Expr, ForStmt, FunctionItem, FunctionParameterItem, IntegerLiteralExpr, Item, LetStmt, Span,
-    Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem,
+    BooleanLiteralExpr, Expr, ForStmt, FunctionItem, FunctionParameterItem, GroupExpr,
+    IntegerLiteralExpr, Item, LetStmt, ReferenceExpr, Span, Stmt, TranslationUnit, Type, TypeItem,
+    TypeMemberItem,
 };
 use std::collections::{HashMap, VecDeque};
 
 pub struct TypeChecker<'ast> {
-    scope: TypeEnvironment<Ty>,
+    type_scope: TypeEnvironment<Ty>,
+    let_scope: TypeEnvironment<Ty>,
     type_ids: usize,
 
     /// Keep track of the current looping depth
@@ -38,7 +40,8 @@ impl<'ast> Default for TypeChecker<'ast> {
 impl<'ast> TypeChecker<'ast> {
     pub fn new() -> Self {
         Self {
-            scope: TypeEnvironment::new(),
+            type_scope: TypeEnvironment::new(),
+            let_scope: TypeEnvironment::new(),
             type_ids: 0,
             loop_depth: VecDeque::new(),
             function_depth: VecDeque::new(),
@@ -62,13 +65,31 @@ impl<'ast> TypeChecker<'ast> {
     ///
     /// If the given term exists in the current type environment, return its type. Otherwise, we are
     /// trying to reference a type that does not exist.
-    pub fn var(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
-        let ty = self.scope.find(x).ok_or(TypeError::InvalidTypeReference(
-            InvalidTypeReferenceError {
+    pub fn resolve_type(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
+        let ty = self
+            .type_scope
+            .find(x)
+            .ok_or(TypeError::InvalidTypeReference(InvalidTypeReferenceError {
                 span: location.clone(),
                 name: x.to_owned(),
-            },
-        ))?;
+            }))?;
+        Ok(ty)
+    }
+
+    /// Get the given let-binding from the current scope.
+    ///
+    /// If the given term exists in the current let environment, return its type. Otherwise, we are
+    /// trying to reference a value that does not exist.
+    pub fn resolve_let(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
+        let ty = self
+            .let_scope
+            .find(x)
+            .ok_or(TypeError::InvalidValueReference(
+                InvalidValueReferenceError {
+                    span: location.clone(),
+                    name: x.to_owned(),
+                },
+            ))?;
         Ok(ty)
     }
 
@@ -86,10 +107,11 @@ impl<'ast> TypeChecker<'ast> {
     /// This enables us to perform mutual recursion between two functions, as the type checker will
     /// understand that both functions exist even though they are defined one after another.
     pub fn visit_translation_unit(&mut self, node: &'ast TranslationUnit) -> TypeResult<()> {
-        self.scope.enter_scope();
+        self.type_scope.enter_scope();
+        self.let_scope.enter_scope();
         // Hoist all the types and functions into the top-level scope
         for item in &node.items {
-            let (name, ty) = match item.as_ref() {
+            match item.as_ref() {
                 // Functions are inserted as unnamed TConstructors into the scope.
                 Item::Function(f) => {
                     let type_parameters = f
@@ -116,7 +138,7 @@ impl<'ast> TypeChecker<'ast> {
                         None => Ty::TConst("void".to_owned()),
                     };
                     let ty = Ty::TFunction(Box::new(return_type), parameters);
-                    (&f.name, ty)
+                    self.let_scope.add(&f.name.name, ty);
                 }
                 Item::IntrinsicFunction(f) => {
                     let type_parameters = f
@@ -140,27 +162,27 @@ impl<'ast> TypeChecker<'ast> {
                         .collect();
                     let return_type = f.return_type.as_ref().into();
                     let ty = Ty::TFunction(Box::new(return_type), parameters);
-                    (&f.name, ty)
+                    self.let_scope.add(&f.name.name, ty);
                 }
                 // Types are not generic at the moment, so we can just use the name of the type.
                 // When we add generic types, we will need to introduce a TConstructor here instead.
                 Item::Type(t) => {
                     let ty = Ty::TConst(t.name.name.clone());
-                    (&t.name, ty)
+                    self.type_scope.add(&t.name.name, ty);
                 }
                 Item::IntrinsicType(t) => {
                     let ty = Ty::TConst(t.name.name.clone());
-                    (&t.name, ty)
+                    self.type_scope.add(&t.name.name, ty);
                 }
             };
-            self.scope.add(&name.name, ty);
         }
 
         // Traverse through all the items in the translation unit
         for item in &node.items {
             self.visit_item(item)?;
         }
-        self.scope.leave_scope();
+        self.let_scope.leave_scope();
+        self.type_scope.leave_scope();
 
         Ok(())
     }
@@ -182,23 +204,31 @@ impl<'ast> TypeChecker<'ast> {
     ///
     /// Any return statements are checked against the return type of the function.
     pub fn visit_function_item(&mut self, node: &'ast FunctionItem) -> TypeResult<()> {
-        self.scope.enter_scope();
+        self.type_scope.enter_scope();
+        self.let_scope.enter_scope();
         // Insert all the type parameters into the scope
         for (idx, parameter) in node.type_parameters.iter().enumerate() {
-            self.scope.add(&parameter.name.name, Ty::TVariable(idx));
+            self.type_scope
+                .add(&parameter.name.name, Ty::TVariable(idx));
         }
-        // Ensure that all parameter types are defined
-        if let Some(return_type) = &node.return_type {
-            self.visit_type(return_type)?;
-        }
+
+        // Ensure that all the parameter types are defined
         for parameter in &node.parameters {
             self.visit_function_parameter(parameter)?;
         }
+
+        // If we have a return type, ensure that it is defined
+        if let Some(return_type) = &node.return_type {
+            self.visit_type(return_type)?;
+        }
+
         // Validate the entire body of the function
         for statement in &node.body {
             self.visit_stmt(statement)?;
         }
-        self.scope.leave_scope();
+
+        self.let_scope.leave_scope();
+        self.type_scope.leave_scope();
         Ok(())
     }
 
@@ -208,6 +238,8 @@ impl<'ast> TypeChecker<'ast> {
         node: &'ast FunctionParameterItem,
     ) -> TypeResult<()> {
         self.visit_type(&node.r#type)?;
+        self.let_scope
+            .add(&node.name.name, node.r#type.as_ref().into());
         Ok(())
     }
 
@@ -249,7 +281,7 @@ impl<'ast> TypeChecker<'ast> {
             .unwrap_or(self.get_unique_type_variable());
         let actual_ty = self.visit_expr(&node.value)?;
         self.unify(&expected_ty, &actual_ty)?;
-        self.scope.add(&node.name.name, actual_ty);
+        self.type_scope.add(&node.name.name, actual_ty);
         Ok(())
     }
 
@@ -257,6 +289,9 @@ impl<'ast> TypeChecker<'ast> {
     pub fn visit_expr(&mut self, node: &'ast Expr) -> TypeResult<Ty> {
         match node {
             Expr::IntegerLiteral(e) => self.visit_integer_literal_expr(e),
+            Expr::BooleanLiteral(e) => self.visit_boolean_literal_expr(e),
+            Expr::Group(e) => self.visit_group_expr(e),
+            Expr::Reference(e) => self.visit_reference_expr(e),
             _ => todo!(),
         }
     }
@@ -268,24 +303,46 @@ impl<'ast> TypeChecker<'ast> {
         Ok(Ty::TConst("i32".to_owned()))
     }
 
+    /// Visit a boolean literal expression.
+    ///
+    /// There is nothing to do here, other than infer that the type of the expression is bool.
+    pub fn visit_boolean_literal_expr(&mut self, _: &'ast BooleanLiteralExpr) -> TypeResult<Ty> {
+        Ok(Ty::TConst("bool".to_owned()))
+    }
+
+    /// Visit a group expression.
+    ///
+    /// This function ensures that the type of the inner expression is defined.
+    pub fn visit_group_expr(&mut self, node: &'ast GroupExpr) -> TypeResult<Ty> {
+        self.visit_expr(&node.inner)
+    }
+
+    /// Visit a reference expression.
+    ///
+    /// This function ensures that the type of the reference is defined.
+    pub fn visit_reference_expr(&mut self, node: &'ast ReferenceExpr) -> TypeResult<Ty> {
+        let ty = self.resolve_let(&node.name.name, &node.name.span)?;
+        Ok(ty.clone())
+    }
+
     /// Visit a type.
     ///
     /// This function ensures that the type is defined in the current scope.
     fn visit_type(&mut self, node: &'ast Type) -> TypeResult<()> {
         match node {
             Type::Named(t) => {
-                self.var(&t.name.name, &t.name.span)?;
+                self.resolve_type(&t.name.name, &t.name.span)?;
             }
             Type::Pointer(t) => self.visit_type(&t.inner)?,
             Type::Reference(t) => self.visit_type(&t.inner)?,
             Type::Boolean(_) => {
-                self.var("bool", node.span())?;
+                self.resolve_type("bool", node.span())?;
             }
             Type::Integer32(_) => {
-                self.var("i32", node.span())?;
+                self.resolve_type("i32", node.span())?;
             }
             Type::Unit(_) => {
-                self.var("void", node.span())?;
+                self.resolve_type("void", node.span())?;
             }
         };
         Ok(())
@@ -294,7 +351,9 @@ impl<'ast> TypeChecker<'ast> {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
+    use crate::error::{
+        InvalidTypeReferenceError, InvalidValueReferenceError, TypeError, TypeResult,
+    };
     use crate::type_checker::TypeChecker;
     use hachi_macros::{assert_err, assert_ok};
 
@@ -350,6 +409,24 @@ mod tests {
             name,
             ..
         }) if name == "Point")
+        );
+    }
+
+    #[test]
+    fn test_invalid_value_reference_fails_type_check() {
+        let err = assert_err!(assert_type_check(
+            r#"
+        intrinsic_type i32;
+        fn foo(x: i32) {
+          let a = k;
+        }
+        "#
+        ));
+        assert!(
+            matches!(err, TypeError::InvalidValueReference(InvalidValueReferenceError {
+            name,
+            ..
+            }) if name == "k")
         );
     }
 
