@@ -9,7 +9,7 @@
 use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
 use crate::scope::ReferenceResolver;
 use crate::ty::Ty;
-use hachi_syntax::{FunctionItem, Item, TranslationUnit, Type, TypeItem, TypeMemberItem};
+use hachi_syntax::{FunctionItem, Item, Span, TranslationUnit, Type, TypeItem, TypeMemberItem};
 
 pub struct TypeChecker {
     scope: ReferenceResolver<Ty>,
@@ -30,6 +30,20 @@ impl TypeChecker {
     pub fn get_unique_type_variable(&mut self) -> Ty {
         self.type_ids += 1;
         Ty::TVariable(self.type_ids)
+    }
+
+    /// Apply the `Var` rule to the given type.
+    ///
+    /// If the given term exists in the current type environment, return its type. Otherwise, we are
+    /// trying to reference a type that does not exist.
+    pub fn var(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
+        let ty = self.scope.find(x).ok_or(TypeError::InvalidTypeReference(
+            InvalidTypeReferenceError {
+                span: location.clone(),
+                name: x.to_owned(),
+            },
+        ))?;
+        Ok(ty)
     }
 }
 
@@ -116,18 +130,16 @@ impl TypeChecker {
     fn visit_type(&mut self, node: &Type) -> TypeResult<()> {
         match node {
             Type::Named(t) => {
-                self.scope
-                    .find(&t.name.name)
-                    .ok_or(TypeError::InvalidTypeReference(InvalidTypeReferenceError {
-                        span: t.name.span.clone(),
-                        name: t.name.name.clone(),
-                    }))?;
-                Ok(())
+                self.var(&t.name.name, &t.name.span)?;
             }
-            Type::Pointer(t) => self.visit_type(&t.inner),
-            Type::Reference(t) => self.visit_type(&t.inner),
-            Type::Boolean(_) | Type::Integer32(_) | Type::Unit(_) => Ok(()),
-        }
+            Type::Pointer(t) => self.visit_type(&t.inner)?,
+            Type::Reference(t) => self.visit_type(&t.inner)?,
+            // TODO: Should we do anything here? Ideally we would define these builtin types in a
+            // prelude module that is automatically inserted into each translation unit. If we did
+            // that, we could try against `var` here too.
+            Type::Boolean(_) | Type::Integer32(_) | Type::Unit(_) => (),
+        };
+        Ok(())
     }
 }
 
