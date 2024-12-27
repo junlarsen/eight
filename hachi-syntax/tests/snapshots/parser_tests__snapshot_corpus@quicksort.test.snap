@@ -226,6 +226,7 @@ TranslationUnit(
                     ),
                   )),
                 ],
+                type_arguments: [],
               )),
             )),
             Expr(ExprStmt(
@@ -318,6 +319,7 @@ TranslationUnit(
                     op: Sub,
                   )),
                 ],
+                type_arguments: [],
               )),
             )),
             Expr(ExprStmt(
@@ -410,6 +412,7 @@ TranslationUnit(
                     ),
                   )),
                 ],
+                type_arguments: [],
               )),
             )),
           ],
@@ -988,6 +991,7 @@ TranslationUnit(
                         op: AddressOf,
                       )),
                     ],
+                    type_arguments: [],
                   )),
                 )),
               ],
@@ -1130,6 +1134,7 @@ TranslationUnit(
                 op: AddressOf,
               )),
             ],
+            type_arguments: [],
           )),
         )),
         Return(ReturnStmt(

@@ -865,11 +865,30 @@ impl Parser<'_> {
     /// Parse a call expression.
     ///
     /// ```text
-    /// call_expr ::= construct_expr (OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)?
+    /// call_expr ::= construct_expr
+    ///               (COLON_COLON OPEN_ANGLE (type (COMMA type)*)? CLOSE_ANGLE)?
+    ///               (OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)?
     /// ```
     pub fn parse_call_expr(&mut self) -> ParseResult<Box<Expr>> {
         let callee = self.parse_construct_expr()?;
-        if self.lookahead_check(&TokenType::OpenParen)? {
+        let is_turbo_fish = self.lookahead_check(&TokenType::ColonColon)?;
+        if self.lookahead_check(&TokenType::OpenParen)? || is_turbo_fish {
+            let type_arguments = self
+                .parser_combinator_take_if(
+                    |t| t.ty == TokenType::ColonColon,
+                    |p| {
+                        p.check(&TokenType::ColonColon)?;
+                        p.check(&TokenType::OpenAngle)?;
+                        let arguments = p.parser_combinator_delimited(
+                            &TokenType::Comma,
+                            &TokenType::CloseAngle,
+                            |p| p.parse_type(),
+                        )?;
+                        p.check(&TokenType::CloseAngle)?;
+                        Ok(arguments)
+                    },
+                )?
+                .unwrap_or(vec![]);
             self.check(&TokenType::OpenParen)?;
             let arguments =
                 self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseParen, |p| {
@@ -881,6 +900,7 @@ impl Parser<'_> {
                 Span::from_pair(callee.span(), &end.span),
                 callee,
                 arguments,
+                type_arguments,
             );
             return Ok(Box::new(Expr::Call(Box::new(node))));
         };
@@ -1553,6 +1573,36 @@ mod tests {
         if let Expr::Call(inner) = *prod {
             let count = inner.as_ref().arguments.len();
             assert_eq!(count, 2);
+        }
+    }
+
+    #[test]
+    fn test_parse_call_expr_with_type_arguments() {
+        let prod = assert_parse("x::<i32, bool>()", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Call(_)));
+        if let Expr::Call(inner) = *prod {
+            let count = inner.as_ref().type_arguments.len();
+            assert_eq!(count, 2);
+            assert!(matches!(
+                *inner.as_ref().type_arguments[0],
+                Type::Integer32(_)
+            ));
+            assert!(matches!(
+                *inner.as_ref().type_arguments[1],
+                Type::Boolean(_)
+            ));
+        }
+    }
+
+    #[test]
+    fn test_parse_call_expr_with_turbo_fish_zero_types() {
+        let prod = assert_parse("x::<>()", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Call(_)));
+        if let Expr::Call(inner) = *prod {
+            let count = inner.as_ref().type_arguments.len();
+            assert_eq!(count, 0);
         }
     }
 

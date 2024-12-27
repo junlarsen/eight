@@ -301,6 +301,7 @@ declare_ast_node! {
         pub span: Span,
         pub callee: Box<Expr>,
         pub arguments: Vec<Box<Expr>>,
+        pub type_arguments: Vec<Box<Type>>,
     }
 }
 

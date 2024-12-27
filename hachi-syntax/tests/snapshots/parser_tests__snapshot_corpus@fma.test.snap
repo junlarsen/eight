@@ -273,6 +273,7 @@ TranslationUnit(
                       op: Div,
                     )),
                   ],
+                  type_arguments: [],
                 )),
               ),
             ],

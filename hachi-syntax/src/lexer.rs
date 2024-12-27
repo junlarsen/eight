@@ -260,7 +260,7 @@ mod tests {
                 let tok = lexer.produce().unwrap();
                 assert_eq!(tok, $token);
             )*
-            assert!(matches!(lexer.produce(), Err(ParseError::UnexpectedEndOfInput(_))));
+            assert!(matches!(lexer.produce(), Err(ParseError::UnexpectedEndOfFile(_))));
         }
     }
 

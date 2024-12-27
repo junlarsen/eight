@@ -437,6 +437,7 @@ TranslationUnit(
                       op: Mul,
                     )),
                   ],
+                  type_arguments: [],
                 )),
               ),
             ],
