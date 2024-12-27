@@ -3,7 +3,7 @@ use std::fmt::Debug;
 
 pub enum Ty {
     TVariable(usize),
-    TConstructor(Box<Ty>, Vec<Box<Ty>>),
+    TFunction(Box<Ty>, Vec<Box<Ty>>),
     TConst(String),
     TPointer(Box<Ty>),
     TReference(Box<Ty>),
@@ -26,7 +26,7 @@ impl Debug for Ty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Ty::TVariable(id) => write!(f, "${}", id),
-            Ty::TConstructor(return_type, args) => {
+            Ty::TFunction(return_type, args) => {
                 let args = args
                     .iter()
                     .map(|a| format!("{:?}", a))

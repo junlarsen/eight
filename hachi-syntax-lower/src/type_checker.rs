@@ -9,22 +9,30 @@
 use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
 use crate::scope::TypeEnvironment;
 use crate::ty::Ty;
-use hachi_syntax::{
-    FunctionItem, FunctionParameterItem, Item, Span, TranslationUnit, Type, TypeItem,
-    TypeMemberItem,
-};
-use std::collections::HashMap;
+use hachi_syntax::{Expr, ForStmt, FunctionItem, FunctionParameterItem, IntegerLiteralExpr, Item, LetStmt, Span, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem};
+use std::collections::{HashMap, VecDeque};
 
-pub struct TypeChecker {
+pub struct TypeChecker<'ast> {
     scope: TypeEnvironment<Ty>,
     type_ids: usize,
+
+    /// Keep track of the current looping depth
+    loop_depth: VecDeque<&'ast ForStmt>,
+    /// Keep track of the current function depth
+    ///
+    /// The language does currently not support nested functions, so this VecDeque will always have
+    /// a maximum length of 1 at the moment. This is just to unify with the implementation of the
+    /// looping depth.
+    function_depth: VecDeque<&'ast FunctionItem>,
 }
 
-impl TypeChecker {
+impl<'ast> TypeChecker<'ast> {
     pub fn new() -> Self {
         Self {
             scope: TypeEnvironment::new(),
             type_ids: 0,
+            loop_depth: VecDeque::new(),
+            function_depth: VecDeque::new(),
         }
     }
 
@@ -54,9 +62,13 @@ impl TypeChecker {
         ))?;
         Ok(ty)
     }
+
+    pub fn unify(&self, a: &Ty, b: &Ty) -> TypeResult<()> {
+        todo!()
+    }
 }
 
-impl TypeChecker {
+impl<'ast> TypeChecker<'ast> {
     /// Traverse a TranslationUnit and infer the types of all its items.
     ///
     /// The type checker will hoist the declarations of all types and functions into the top-level
@@ -64,7 +76,7 @@ impl TypeChecker {
     ///
     /// This enables us to perform mutual recursion between two functions, as the type checker will
     /// understand that both functions exist even though they are defined one after another.
-    pub fn visit_translation_unit(&mut self, node: &TranslationUnit) -> TypeResult<()> {
+    pub fn visit_translation_unit(&mut self, node: &'ast TranslationUnit) -> TypeResult<()> {
         self.scope.enter_scope();
         // Hoist all the types and functions into the top-level scope
         for item in &node.items {
@@ -94,7 +106,7 @@ impl TypeChecker {
                         Some(t) => t.as_ref().into(),
                         None => Ty::TConst("void".to_owned()),
                     };
-                    let ty = Ty::TConstructor(Box::new(return_type), parameters);
+                    let ty = Ty::TFunction(Box::new(return_type), parameters);
                     (&f.name, ty)
                 }
                 Item::IntrinsicFunction(f) => {
@@ -118,7 +130,7 @@ impl TypeChecker {
                         })
                         .collect();
                     let return_type = f.return_type.as_ref().into();
-                    let ty = Ty::TConstructor(Box::new(return_type), parameters);
+                    let ty = Ty::TFunction(Box::new(return_type), parameters);
                     (&f.name, ty)
                 }
                 // Types are not generic at the moment, so we can just use the name of the type.
@@ -145,7 +157,7 @@ impl TypeChecker {
     }
 
     /// Visit an item.
-    pub fn visit_item(&mut self, node: &Item) -> TypeResult<()> {
+    pub fn visit_item(&mut self, node: &'ast Item) -> TypeResult<()> {
         match node {
             Item::Function(f) => self.visit_function_item(f),
             Item::Type(t) => self.visit_type_item(t),
@@ -155,22 +167,34 @@ impl TypeChecker {
     }
 
     /// Visit a function item.
-    pub fn visit_function_item(&mut self, node: &FunctionItem) -> TypeResult<()> {
+    ///
+    /// In a function, we validate that all of the types of the parameters are defined, that the
+    /// return type is defined, and that the body of the function is well-typed.
+    ///
+    /// Any return statements are checked against the return type of the function.
+    pub fn visit_function_item(&mut self, node: &'ast FunctionItem) -> TypeResult<()> {
         self.scope.enter_scope();
         // Insert all the type parameters into the scope
         for (idx, parameter) in node.type_parameters.iter().enumerate() {
             self.scope.add(&parameter.name.name, Ty::TVariable(idx));
         }
         // Ensure that all parameter types are defined
+        if let Some(return_type) = &node.return_type {
+            self.visit_type(return_type)?;
+        }
         for parameter in &node.parameters {
             self.visit_function_parameter(parameter)?;
+        }
+        // Validate the entire body of the function
+        for statement in &node.body {
+            self.visit_stmt(statement)?;
         }
         self.scope.leave_scope();
         Ok(())
     }
 
     /// Visit a function parameter.
-    pub fn visit_function_parameter(&mut self, node: &FunctionParameterItem) -> TypeResult<()> {
+    pub fn visit_function_parameter(&mut self, node: &'ast FunctionParameterItem) -> TypeResult<()> {
         self.visit_type(&node.r#type)?;
         Ok(())
     }
@@ -178,7 +202,7 @@ impl TypeChecker {
     /// Visit a type item.
     ///
     /// This function ensures that all members of the type are defined.
-    pub fn visit_type_item(&mut self, node: &TypeItem) -> TypeResult<()> {
+    pub fn visit_type_item(&mut self, node: &'ast TypeItem) -> TypeResult<()> {
         for member in &node.members {
             self.visit_type_member(member)?;
         }
@@ -188,15 +212,52 @@ impl TypeChecker {
     /// Visit a type member.
     ///
     /// This function ensures that the type of the member is defined.
-    fn visit_type_member(&mut self, node: &TypeMemberItem) -> TypeResult<()> {
+    fn visit_type_member(&mut self, node: &'ast TypeMemberItem) -> TypeResult<()> {
         self.visit_type(&node.r#type)?;
         Ok(())
+    }
+
+    /// Visit a statement.
+    pub fn visit_stmt(&mut self, node: &'ast Stmt) -> TypeResult<()> {
+        match node {
+            Stmt::Let(l) => self.visit_let_stmt(l),
+            _ => Ok(()),
+        }
+    }
+
+    /// Visit a let statement.
+    ///
+    /// We either take the expected type of the let statement, or we infer the type of the variable
+    /// from the expression.
+    pub fn visit_let_stmt(&mut self, node: &'ast LetStmt) -> TypeResult<()> {
+        let expected_ty = node.r#type.as_ref()
+            .map(|t| t.as_ref().into())
+            .unwrap_or(self.get_unique_type_variable());
+        let actual_ty = self.visit_expr(&node.value)?;
+        self.unify(&expected_ty, &actual_ty)?;
+        self.scope.add(&node.name.name, actual_ty);
+        Ok(())
+    }
+
+    /// Visit an expression.
+    pub fn visit_expr(&mut self, node: &'ast Expr) -> TypeResult<Ty> {
+        match node {
+            Expr::IntegerLiteral(e) => self.visit_integer_literal_expr(e),
+            _ => todo!(),
+        }
+    }
+
+    /// Visit an integer literal expression.
+    ///
+    /// There is nothing to do here, other than infer that the type of the expression is i32.
+    pub fn visit_integer_literal_expr(&mut self, _: &'ast IntegerLiteralExpr) -> TypeResult<Ty> {
+        Ok(Ty::TConst("i32".to_owned()))
     }
 
     /// Visit a type.
     ///
     /// This function ensures that the type is defined in the current scope.
-    fn visit_type(&mut self, node: &Type) -> TypeResult<()> {
+    fn visit_type(&mut self, node: &'ast Type) -> TypeResult<()> {
         match node {
             Type::Named(t) => {
                 self.var(&t.name.name, &t.name.span)?;
