@@ -41,7 +41,9 @@ declare_ast_variant! {
     /// currently means either functions or types.
     pub enum Item {
         Function(Box<FunctionItem>),
+        IntrinsicFunction(Box<IntrinsicFunctionItem>),
         Type(Box<TypeItem>),
+        IntrinsicType(Box<IntrinsicTypeItem>),
     }
 }
 
@@ -57,11 +59,29 @@ declare_ast_node! {
 }
 
 declare_ast_node! {
+    pub struct IntrinsicFunctionItem {
+        id: NodeId,
+        pub span: Span,
+        pub name: Box<Identifier>,
+        pub parameters: Vec<Box<FunctionParameterItem>>,
+        pub return_type: Box<Type>,
+    }
+}
+
+declare_ast_node! {
     pub struct FunctionParameterItem {
         id: NodeId,
         pub span: Span,
         pub name: Box<Identifier>,
         pub r#type: Box<Type>,
+    }
+}
+
+declare_ast_node! {
+    pub struct IntrinsicTypeItem {
+        id: NodeId,
+        pub span: Span,
+        pub name: Box<Identifier>,
     }
 }
 

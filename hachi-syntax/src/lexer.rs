@@ -236,6 +236,8 @@ impl<'a> Lexer<'a> {
             "break" => TokenType::KeywordBreak,
             "continue" => TokenType::KeywordContinue,
             "for" => TokenType::KeywordFor,
+            "intrinsic_type" => TokenType::KeywordIntrinsicType,
+            "intrinsic_fn" => TokenType::KeywordIntrinsicFn,
             _ => TokenType::Identifier(value),
         };
         let span = Span::new(start..self.pos());

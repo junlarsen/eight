@@ -8,8 +8,8 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::{
-    BooleanType, NodeId, ParseError, ParseResult, ReferenceType, Span, Token, TokenType,
-    UnexpectedEndOfInputError, UnexpectedTokenError,
+    BooleanType, IntrinsicFunctionItem, IntrinsicTypeItem, NodeId, ParseError, ParseResult,
+    ReferenceType, Span, Token, TokenType, UnexpectedEndOfInputError, UnexpectedTokenError,
 };
 use std::sync::atomic::AtomicUsize;
 
@@ -229,13 +229,19 @@ impl Parser<'_> {
     /// Parse an item.
     ///
     /// ```text
-    /// item ::= fn_item | type_item
+    /// item ::= fn_item | type_item | intrinsic_type_item | intrinsic_fn_item
     /// ```
     pub fn parse_item(&mut self) -> ParseResult<Box<Item>> {
         let token = self.lookahead_or_err()?;
         let node = match token.ty {
             TokenType::KeywordFn => Item::Function(self.parse_fn_item()?),
             TokenType::KeywordType => Item::Type(self.parse_type_item()?),
+            TokenType::KeywordIntrinsicType => {
+                Item::IntrinsicType(self.parse_intrinsic_type_item()?)
+            }
+            TokenType::KeywordIntrinsicFn => {
+                Item::IntrinsicFunction(self.parse_intrinsic_fn_item()?)
+            }
             _ => {
                 let token = self.eat()?;
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
@@ -342,6 +348,52 @@ impl Parser<'_> {
             Span::from_pair(&id.span, &end.span),
             id,
             ty,
+        );
+        Ok(Box::new(node))
+    }
+
+    /// Parse an intrinsic type item.
+    ///
+    /// ```text
+    /// intrinsic_type_item ::= KEYWORD_INTRINSIC_TYPE IDENTIFIER
+    /// ```
+    pub fn parse_intrinsic_type_item(&mut self) -> ParseResult<Box<IntrinsicTypeItem>> {
+        let start = self.check(&TokenType::KeywordIntrinsicType)?;
+        let id = self.parse_identifier()?;
+        let end = self.check(&TokenType::Semicolon)?;
+        let node = IntrinsicTypeItem::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
+            id,
+        );
+        Ok(Box::new(node))
+    }
+
+    /// Parse an intrinsic function item.
+    ///
+    /// Unlike regular functions, intrinsic functions must have their return type specified.
+    ///
+    /// ```text
+    /// intrinsic_fn_item ::= KEYWORD_INTRINSIC_FN IDENTIFIER OPEN_PAREN (fn_parameter_item COMMA)+ fn_parameter_item? CLOSE_PAREN ARROW type SEMICOLON
+    /// ```
+    pub fn parse_intrinsic_fn_item(&mut self) -> ParseResult<Box<IntrinsicFunctionItem>> {
+        let start = self.check(&TokenType::KeywordIntrinsicFn)?;
+        let id = self.parse_identifier()?;
+        self.check(&TokenType::OpenParen)?;
+        let parameters =
+            self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseParen, |p| {
+                p.parse_fn_parameter_item()
+            })?;
+        self.check(&TokenType::CloseParen)?;
+        self.check(&TokenType::Arrow)?;
+        let return_type = self.parse_type()?;
+        let end = self.check(&TokenType::Semicolon)?;
+        let node = IntrinsicFunctionItem::new(
+            self.next_node_id(),
+            Span::from_pair(&start.span, &end.span),
+            id,
+            parameters,
+            return_type,
         );
         Ok(Box::new(node))
     }
@@ -1280,6 +1332,28 @@ mod tests {
 
         let parameters = prod.parameters.as_slice();
         assert_eq!(parameters.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_intrinsic_fn_item() {
+        let prod = assert_parse("intrinsic_fn foo(x: i32) -> i32;", |p| {
+            p.parse_intrinsic_fn_item()
+        });
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        let parameters = prod.parameters.as_slice();
+        let return_type = prod.return_type.as_ref();
+        assert_eq!(name.name, "foo");
+        assert_eq!(parameters.len(), 1);
+        assert!(matches!(return_type, Type::Integer32(_)));
+    }
+
+    #[test]
+    fn test_parse_intrinsic_type_item() {
+        let prod = assert_parse("intrinsic_type i32;", |p| p.parse_intrinsic_type_item());
+        let prod = assert_ok!(prod);
+        let name = prod.name.as_ref();
+        assert_eq!(name.name, "i32");
     }
 
     #[test]

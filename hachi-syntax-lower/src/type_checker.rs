@@ -74,9 +74,23 @@ impl TypeChecker {
                     let ty = Ty::TConstructor(Box::new(return_type), args);
                     (&f.name, ty)
                 }
+                Item::IntrinsicFunction(f) => {
+                    let args = f
+                        .parameters
+                        .iter()
+                        .map(|p| Box::new(p.r#type.as_ref().into()))
+                        .collect();
+                    let return_type = f.return_type.as_ref().into();
+                    let ty = Ty::TConstructor(Box::new(return_type), args);
+                    (&f.name, ty)
+                }
                 // Types are not generic at the moment, so we can just use the name of the type.
                 // When we add generic types, we will need to introduce a TConstructor here instead.
                 Item::Type(t) => {
+                    let ty = Ty::TConst(t.name.name.clone());
+                    (&t.name, ty)
+                }
+                Item::IntrinsicType(t) => {
                     let ty = Ty::TConst(t.name.name.clone());
                     (&t.name, ty)
                 }
@@ -98,6 +112,8 @@ impl TypeChecker {
         match node {
             Item::Function(f) => self.visit_function_item(f),
             Item::Type(t) => self.visit_type_item(t),
+            Item::IntrinsicFunction(_) => Ok(()),
+            Item::IntrinsicType(_) => Ok(()),
         }
     }
 
@@ -134,10 +150,15 @@ impl TypeChecker {
             }
             Type::Pointer(t) => self.visit_type(&t.inner)?,
             Type::Reference(t) => self.visit_type(&t.inner)?,
-            // TODO: Should we do anything here? Ideally we would define these builtin types in a
-            // prelude module that is automatically inserted into each translation unit. If we did
-            // that, we could try against `var` here too.
-            Type::Boolean(_) | Type::Integer32(_) | Type::Unit(_) => (),
+            Type::Boolean(_) => {
+                self.var("bool", &node.span())?;
+            }
+            Type::Integer32(_) => {
+                self.var("i32", &node.span())?;
+            }
+            Type::Unit(_) => {
+                self.var("void", &node.span())?;
+            }
         };
         Ok(())
     }
@@ -161,18 +182,30 @@ mod tests {
     fn test_forward_declaration_of_items() {
         assert_ok!(assert_type_check(
             r#"
+        intrinsic_type i32;
         fn uses_foo(x: Foo) -> Foo {}
         type Foo = { elem: i32, }
         "#
         ));
         assert_ok!(assert_type_check(
             r#"
+        intrinsic_type i32;
         fn mutually() -> i32 {
           return recursive();
         }
         fn recursive() -> i32 {
            return mutually();
         }
+        "#
+        ));
+    }
+
+    #[test]
+    fn test_intrinsic_types_are_forward_declared() {
+        assert_ok!(assert_type_check(
+            r#"
+        fn consumes_i32(x: i32) {}
+        intrinsic_type i32;
         "#
         ));
     }
