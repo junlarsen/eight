@@ -216,6 +216,7 @@ declare_ast_variant! {
         BinaryOp(Box<BinaryOpExpr>),
         UnaryOp(Box<UnaryOpExpr>),
         IntegerLiteral(Box<IntegerLiteralExpr>),
+        BooleanLiteral(Box<BooleanLiteralExpr>),
         DotIndex(Box<DotIndexExpr>),
         BracketIndex(Box<BracketIndexExpr>),
         Reference(Box<ReferenceExpr>),
@@ -233,6 +234,7 @@ impl Expr {
             Expr::BinaryOp(e) => &e.span,
             Expr::UnaryOp(e) => &e.span,
             Expr::IntegerLiteral(e) => &e.span,
+            Expr::BooleanLiteral(e) => &e.span,
             Expr::DotIndex(e) => &e.span,
             Expr::BracketIndex(e) => &e.span,
             Expr::Reference(e) => &e.span,
@@ -276,6 +278,14 @@ declare_ast_node! {
         id: NodeId,
         pub span: Span,
         pub value: i32,
+    }
+}
+
+declare_ast_node! {
+    pub struct BooleanLiteralExpr {
+        id: NodeId,
+        pub span: Span,
+        pub value: bool,
     }
 }
 

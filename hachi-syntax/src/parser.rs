@@ -8,9 +8,9 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::{
-    BooleanType, FunctionTypeParameterItem, IntrinsicFunctionItem, IntrinsicTypeItem, NodeId,
-    ParseError, ParseResult, ReferenceType, Span, Token, TokenType, UnexpectedEndOfFileError,
-    UnexpectedTokenError,
+    BooleanLiteralExpr, BooleanType, FunctionTypeParameterItem, IntrinsicFunctionItem,
+    IntrinsicTypeItem, NodeId, ParseError, ParseResult, ReferenceType, Span, Token, TokenType,
+    UnexpectedEndOfFileError, UnexpectedTokenError,
 };
 use std::sync::atomic::AtomicUsize;
 
@@ -1071,23 +1071,31 @@ impl Parser<'_> {
     /// integer_literal_expr ::= INTEGER_LITERAL
     /// ```
     pub fn parse_literal_expr(&mut self) -> ParseResult<Box<Expr>> {
-        if matches!(
-            self.lookahead()?,
-            Some(Token {
-                ty: TokenType::IntegerLiteral(_),
-                ..
-            })
-        ) {
-            let token = self.eat()?;
-            let value = match token.ty {
-                TokenType::IntegerLiteral(v) => v,
-                _ => unreachable!("the type should have been checked before to be safe to unwrap"),
-            };
-            let node = IntegerLiteralExpr::new(self.next_node_id(), token.span, value);
-            return Ok(Box::new(Expr::IntegerLiteral(Box::new(node))));
+        if !self
+            .lookahead()?
+            .map(|t| t.ty.is_integer_literal() || t.ty.is_boolean_literal())
+            .unwrap_or(true)
+        {
+            return self.parse_group_expr();
         }
 
-        self.parse_group_expr()
+        match self.eat()? {
+            Token {
+                ty: TokenType::IntegerLiteral(v),
+                span,
+            } => {
+                let node = IntegerLiteralExpr::new(self.next_node_id(), span, v);
+                Ok(Box::new(Expr::IntegerLiteral(Box::new(node))))
+            }
+            Token {
+                ty: TokenType::BooleanLiteral(v),
+                span,
+            } => {
+                let node = BooleanLiteralExpr::new(self.next_node_id(), span, v);
+                Ok(Box::new(Expr::BooleanLiteral(Box::new(node))))
+            }
+            _ => self.parse_group_expr(),
+        }
     }
 
     /// Parse a group expression.
@@ -1577,6 +1585,22 @@ mod tests {
         if let Expr::IntegerLiteral(inner) = *prod {
             let value = inner.as_ref().value;
             assert_eq!(value, 123);
+        };
+
+        let prod = assert_parse("true", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BooleanLiteral(_)));
+        if let Expr::BooleanLiteral(inner) = *prod {
+            let value = inner.as_ref().value;
+            assert!(value);
+        };
+
+        let prod = assert_parse("false", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::BooleanLiteral(_)));
+        if let Expr::BooleanLiteral(inner) = *prod {
+            let value = inner.as_ref().value;
+            assert!(!value);
         };
     }
 

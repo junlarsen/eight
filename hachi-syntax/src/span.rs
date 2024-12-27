@@ -106,6 +106,7 @@ pub enum TokenType {
 
     Identifier(String),
     IntegerLiteral(i32),
+    BooleanLiteral(bool),
     Comment(String),
 
     AddressOf,
@@ -140,4 +141,14 @@ pub enum TokenType {
     LogicalOr,
 
     Eof,
+}
+
+impl TokenType {
+    pub fn is_integer_literal(&self) -> bool {
+        matches!(self, TokenType::IntegerLiteral(_))
+    }
+
+    pub fn is_boolean_literal(&self) -> bool {
+        matches!(self, TokenType::BooleanLiteral(_))
+    }
 }

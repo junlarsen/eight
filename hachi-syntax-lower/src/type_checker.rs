@@ -9,7 +9,10 @@
 use crate::error::{InvalidTypeReferenceError, TypeError, TypeResult};
 use crate::scope::TypeEnvironment;
 use crate::ty::Ty;
-use hachi_syntax::{Expr, ForStmt, FunctionItem, FunctionParameterItem, IntegerLiteralExpr, Item, LetStmt, Span, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem};
+use hachi_syntax::{
+    Expr, ForStmt, FunctionItem, FunctionParameterItem, IntegerLiteralExpr, Item, LetStmt, Span,
+    Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem,
+};
 use std::collections::{HashMap, VecDeque};
 
 pub struct TypeChecker<'ast> {
@@ -24,6 +27,12 @@ pub struct TypeChecker<'ast> {
     /// a maximum length of 1 at the moment. This is just to unify with the implementation of the
     /// looping depth.
     function_depth: VecDeque<&'ast FunctionItem>,
+}
+
+impl<'ast> Default for TypeChecker<'ast> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<'ast> TypeChecker<'ast> {
@@ -194,7 +203,10 @@ impl<'ast> TypeChecker<'ast> {
     }
 
     /// Visit a function parameter.
-    pub fn visit_function_parameter(&mut self, node: &'ast FunctionParameterItem) -> TypeResult<()> {
+    pub fn visit_function_parameter(
+        &mut self,
+        node: &'ast FunctionParameterItem,
+    ) -> TypeResult<()> {
         self.visit_type(&node.r#type)?;
         Ok(())
     }
@@ -230,7 +242,9 @@ impl<'ast> TypeChecker<'ast> {
     /// We either take the expected type of the let statement, or we infer the type of the variable
     /// from the expression.
     pub fn visit_let_stmt(&mut self, node: &'ast LetStmt) -> TypeResult<()> {
-        let expected_ty = node.r#type.as_ref()
+        let expected_ty = node
+            .r#type
+            .as_ref()
             .map(|t| t.as_ref().into())
             .unwrap_or(self.get_unique_type_variable());
         let actual_ty = self.visit_expr(&node.value)?;
@@ -265,13 +279,13 @@ impl<'ast> TypeChecker<'ast> {
             Type::Pointer(t) => self.visit_type(&t.inner)?,
             Type::Reference(t) => self.visit_type(&t.inner)?,
             Type::Boolean(_) => {
-                self.var("bool", &node.span())?;
+                self.var("bool", node.span())?;
             }
             Type::Integer32(_) => {
-                self.var("i32", &node.span())?;
+                self.var("i32", node.span())?;
             }
             Type::Unit(_) => {
-                self.var("void", &node.span())?;
+                self.var("void", node.span())?;
             }
         };
         Ok(())

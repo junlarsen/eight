@@ -238,6 +238,8 @@ impl<'a> Lexer<'a> {
             "for" => TokenType::KeywordFor,
             "intrinsic_type" => TokenType::KeywordIntrinsicType,
             "intrinsic_fn" => TokenType::KeywordIntrinsicFn,
+            "true" => TokenType::BooleanLiteral(true),
+            "false" => TokenType::BooleanLiteral(false),
             _ => TokenType::Identifier(value),
         };
         let span = Span::new(start..self.pos());
