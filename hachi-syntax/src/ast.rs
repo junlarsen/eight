@@ -328,6 +328,7 @@ declare_ast_variant! {
         Integer32(Box<Integer32Type>),
         Pointer(Box<PointerType>),
         Named(Box<NamedType>),
+        Boolean(Box<BooleanType>),
     }
 }
 
@@ -339,6 +340,7 @@ impl Type {
             Type::Integer32(t) => &t.span,
             Type::Pointer(t) => &t.span,
             Type::Named(t) => &t.span,
+            Type::Boolean(t) => &t.span,
         }
     }
 }
@@ -352,6 +354,13 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct Integer32Type {
+        id: NodeId,
+        pub span: Span,
+    }
+}
+
+declare_ast_node! {
+    pub struct BooleanType {
         id: NodeId,
         pub span: Span,
     }

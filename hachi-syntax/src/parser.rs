@@ -7,10 +7,7 @@ use crate::ast::{
     UnitType,
 };
 use crate::lexer::Lexer;
-use crate::{
-    NodeId, ParseError, ParseResult, Span, Token, TokenType, UnexpectedEndOfInputError,
-    UnexpectedTokenError,
-};
+use crate::{BooleanType, NodeId, ParseError, ParseResult, Span, Token, TokenType, UnexpectedEndOfInputError, UnexpectedTokenError};
 use std::sync::atomic::AtomicUsize;
 
 pub struct ParserInput<'a> {
@@ -1034,6 +1031,11 @@ impl Parser<'_> {
                     let node = Integer32Type::new(self.next_node_id(), id.span);
                     Ok(Box::new(Type::Integer32(Box::new(node))))
                 }
+                "bool" => {
+                    let id = self.parse_identifier()?;
+                    let node = BooleanType::new(self.next_node_id(), id.span);
+                    Ok(Box::new(Type::Boolean(Box::new(node))))
+                }
                 "void" => {
                     let id = self.parse_identifier()?;
                     let node = UnitType::new(self.next_node_id(), id.span);
@@ -1110,6 +1112,10 @@ mod tests {
         let prod = assert_parse("void", |p| p.parse_type());
         let prod = assert_ok!(prod);
         assert!(matches!(*prod, Type::Unit(_)));
+
+        let prod =  assert_parse("bool", |p| p.parse_type());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Type::Boolean(_)));
     }
 
     #[test]
