@@ -9,6 +9,12 @@ pub struct TypeEnvironment<T> {
     scopes: VecDeque<BTreeMap<String, T>>,
 }
 
+impl<T> Default for TypeEnvironment<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> TypeEnvironment<T> {
     pub fn new() -> Self {
         TypeEnvironment {
