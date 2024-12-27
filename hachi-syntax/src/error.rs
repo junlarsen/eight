@@ -7,12 +7,6 @@
 //! By this, we mean that because the lexer is an iterator over tokens, it doesn't necessarily know
 //! of future lexer-related syntax errors. These will only be triggered by the parser upon
 //! attempting to consume further tokens.
-//!
-//! Error codes follow the {namespace}{code} convention, where the namespace is a number that
-//! represents the type of error, while {code} is a 3-digit number that represents the specific
-//! error variant.
-//!
-//! - E1XXX: Source parsing errors
 
 use crate::{Span, Token};
 use hachi_macros::declare_error_type;
@@ -22,7 +16,7 @@ use thiserror::Error;
 declare_error_type! {
     #[error("parser error: {0}")]
     pub enum ParseError {
-        UnexpectedEndOfInput(UnexpectedEndOfInputError),
+        UnexpectedEndOfFile(UnexpectedEndOfFileError),
         InvalidIntegerLiteral(InvalidIntegerLiteralError),
         UnexpectedCharacter(UnexpectedCharacterError),
         UnexpectedToken(UnexpectedTokenError),
@@ -33,16 +27,16 @@ declare_error_type! {
 pub type ParseResult<T> = Result<T, ParseError>;
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(E0101))]
+#[diagnostic(code(syntax::unexpected_end_of_file))]
 #[error("expected more characters after this")]
-pub struct UnexpectedEndOfInputError {
+pub struct UnexpectedEndOfFileError {
     // TODO: This span is completely broken
     #[label = "expected more characters after this"]
     pub span: Span,
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(E0102))]
+#[diagnostic(code(syntax::invalid_integer_literal))]
 #[error("invalid 32-bit integer literal")]
 pub struct InvalidIntegerLiteralError {
     pub buf: String,
@@ -51,7 +45,7 @@ pub struct InvalidIntegerLiteralError {
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(E0103))]
+#[diagnostic(code(syntax::unexpected_character))]
 #[error("did not expect {ch} in this position")]
 pub struct UnexpectedCharacterError {
     pub ch: char,
@@ -60,7 +54,7 @@ pub struct UnexpectedCharacterError {
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(E0104))]
+#[diagnostic(code(syntax::unexpected_token))]
 #[error("unexpected token")]
 pub struct UnexpectedTokenError {
     pub token: Token,

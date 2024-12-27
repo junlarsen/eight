@@ -13,7 +13,7 @@ declare_error_type! {
 pub type TypeResult<T> = Result<T, TypeError>;
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(syntax::invalid_type_reference))]
+#[diagnostic(code(sema::invalid_type_reference))]
 #[error("attempted to reference a type named {name} that does not exist")]
 pub struct InvalidTypeReferenceError {
     #[label = "the type {name} does not exist"]

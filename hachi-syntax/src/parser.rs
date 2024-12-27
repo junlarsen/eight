@@ -9,7 +9,7 @@ use crate::ast::{
 use crate::lexer::Lexer;
 use crate::{
     BooleanType, IntrinsicFunctionItem, IntrinsicTypeItem, NodeId, ParseError, ParseResult,
-    ReferenceType, Span, Token, TokenType, UnexpectedEndOfInputError, UnexpectedTokenError,
+    ReferenceType, Span, Token, TokenType, UnexpectedEndOfFileError, UnexpectedTokenError,
 };
 use std::sync::atomic::AtomicUsize;
 
@@ -37,7 +37,7 @@ impl<'a> ParserInput<'a> {
                 Ok(tok) => Some(tok),
                 // If the end of source is reached, we might be able to recover. For example, if
                 // statements may or may not have an `else` after them.
-                Err(ParseError::UnexpectedEndOfInput(_)) => None,
+                Err(ParseError::UnexpectedEndOfFile(_)) => None,
                 Err(err) => return Err(err),
             };
         }
@@ -114,9 +114,9 @@ impl<'a> Parser<'a> {
         let span = Span::pos(self.input.lexer.pos());
         self.input
             .lookahead()?
-            .ok_or(ParseError::UnexpectedEndOfInput(
-                UnexpectedEndOfInputError { span },
-            ))
+            .ok_or(ParseError::UnexpectedEndOfFile(UnexpectedEndOfFileError {
+                span,
+            }))
     }
 
     /// Determine if the next token in the token stream matches the given type.

@@ -1,6 +1,6 @@
 use crate::{
     InvalidIntegerLiteralError, ParseError, ParseResult, SourcePosition, Span, Token, TokenType,
-    UnexpectedCharacterError, UnexpectedEndOfInputError,
+    UnexpectedCharacterError, UnexpectedEndOfFileError,
 };
 use std::iter::Peekable;
 use std::str::Chars;
@@ -27,7 +27,7 @@ impl<'a> LexerInput<'a> {
         let ch = self
             .input
             .next()
-            .ok_or(ParseError::from(UnexpectedEndOfInputError {
+            .ok_or(ParseError::from(UnexpectedEndOfFileError {
                 span: Span::pos(self.pos),
             }));
         self.pos += 1;
@@ -50,7 +50,7 @@ impl<'a> LexerInput<'a> {
     ) -> ParseResult<Token> {
         let ch = self
             .peek()
-            .ok_or(ParseError::from(UnexpectedEndOfInputError {
+            .ok_or(ParseError::from(UnexpectedEndOfFileError {
                 span: Span::pos(start),
             }))?;
         match ch {
@@ -250,7 +250,7 @@ mod tests {
     use crate::lexer::{Lexer, ParseError};
     use crate::{
         InvalidIntegerLiteralError, Span, Token, TokenType, UnexpectedCharacterError,
-        UnexpectedEndOfInputError,
+        UnexpectedEndOfFileError,
     };
 
     macro_rules! assert_lexer_parse {
@@ -366,6 +366,6 @@ mod tests {
         assert_lexer_parse!("||", Token::new(TokenType::LogicalOr, Span::new(0..2)));
 
         assert_failure!("|-", Err(ParseError::UnexpectedCharacter(UnexpectedCharacterError { ch, span })) if ch == '-' && span == Span::new(1..2));
-        assert_failure!("|", Err(ParseError::UnexpectedEndOfInput(UnexpectedEndOfInputError { span })) if span == Span::new(0..1));
+        assert_failure!("|", Err(ParseError::UnexpectedEndOfFile(UnexpectedEndOfFileError { span })) if span == Span::new(0..1));
     }
 }
