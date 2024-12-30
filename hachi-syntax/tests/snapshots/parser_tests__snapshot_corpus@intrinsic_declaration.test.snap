@@ -1,0 +1,104 @@
+---
+source: hachi-syntax/tests/parser_tests.rs
+expression: "*translation_unit"
+input_file: hachi-syntax/tests/data/intrinsic_declaration.test
+snapshot_kind: text
+---
+TranslationUnit(
+  id: NodeId(0),
+  items: [
+    IntrinsicType(IntrinsicTypeItem(
+      id: NodeId(2),
+      span: Span(
+        low: 0,
+        high: 19,
+      ),
+      name: Identifier(
+        id: NodeId(1),
+        name: "i32",
+        span: Span(
+          low: 15,
+          high: 18,
+        ),
+      ),
+    )),
+    IntrinsicFunction(IntrinsicFunctionItem(
+      id: NodeId(13),
+      span: Span(
+        low: 20,
+        high: 59,
+      ),
+      name: Identifier(
+        id: NodeId(3),
+        name: "malloc",
+        span: Span(
+          low: 33,
+          high: 39,
+        ),
+      ),
+      parameters: [
+        FunctionParameterItem(
+          id: NodeId(9),
+          span: Span(
+            low: 43,
+            high: 52,
+          ),
+          name: Identifier(
+            id: NodeId(6),
+            name: "size",
+            span: Span(
+              low: 43,
+              high: 47,
+            ),
+          ),
+          type: Integer32(Integer32Type(
+            id: NodeId(8),
+            span: Span(
+              low: 49,
+              high: 52,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [
+        FunctionTypeParameterItem(
+          id: NodeId(5),
+          span: Span(
+            low: 40,
+            high: 41,
+          ),
+          name: Identifier(
+            id: NodeId(4),
+            name: "T",
+            span: Span(
+              low: 40,
+              high: 41,
+            ),
+          ),
+        ),
+      ],
+      return_type: Pointer(PointerType(
+        id: NodeId(12),
+        span: Span(
+          low: 56,
+          high: 58,
+        ),
+        inner: Named(NamedType(
+          id: NodeId(11),
+          span: Span(
+            low: 57,
+            high: 58,
+          ),
+          name: Identifier(
+            id: NodeId(10),
+            name: "T",
+            span: Span(
+              low: 57,
+              high: 58,
+            ),
+          ),
+        )),
+      )),
+    )),
+  ],
+)
