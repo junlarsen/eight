@@ -1,5 +1,5 @@
 [package]
-name = "hachi-syntax-lower"
+name = "hachi-sema"
 version = "0.1.0"
 edition = "2021"
 

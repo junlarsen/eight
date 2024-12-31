@@ -5,7 +5,7 @@ members = [
     "hachi-mir",
     "hachi-macros",
     "hachi-syntax",
-    "hachi-syntax-lower",
+    "hachi-sema",
 ]
 
 [profile.dev.package]

@@ -1,6 +1,6 @@
 use clap::Parser;
+use hachi_sema::type_checker::TypeChecker;
 use hachi_syntax::{Lexer, TranslationUnit};
-use hachi_syntax_lower::type_checker::TypeChecker;
 use miette::NamedSource;
 
 #[derive(clap::Parser)]
