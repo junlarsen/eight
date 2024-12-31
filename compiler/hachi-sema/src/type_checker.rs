@@ -17,9 +17,18 @@ use hachi_syntax::{
 use std::collections::{HashMap, VecDeque};
 
 pub struct TypeChecker<'ast> {
-    type_scope: TypeEnvironment<Ty>,
-    let_scope: TypeEnvironment<Ty>,
-    type_ids: usize,
+    /// The hierarchical set of types available in the current scope.
+    ///
+    /// In practice, we don't actually support nested types, but when we have generic functions, the
+    /// parameter types are local to that function. For this reason, we need the type context to act
+    /// like a Deque.
+    type_context: TypeEnvironment<Ty>,
+    /// The hierarchical set of let bindings available in the current scope.
+    ///
+    /// We also bind functions into the [let_binding_context] as well. It makes sense to do so, even
+    /// more so when we introduce lambdas/anonymous functions.
+    let_binding_context: TypeEnvironment<Ty>,
+    next_type_id: usize,
 
     /// Keep track of the current looping depth
     loop_depth: VecDeque<&'ast ForStmt>,
@@ -40,9 +49,9 @@ impl<'ast> Default for TypeChecker<'ast> {
 impl<'ast> TypeChecker<'ast> {
     pub fn new() -> Self {
         Self {
-            type_scope: TypeEnvironment::new(),
-            let_scope: TypeEnvironment::new(),
-            type_ids: 0,
+            type_context: TypeEnvironment::new(),
+            let_binding_context: TypeEnvironment::new(),
+            next_type_id: 0,
             loop_depth: VecDeque::new(),
             function_depth: VecDeque::new(),
         }
@@ -51,23 +60,23 @@ impl<'ast> TypeChecker<'ast> {
     /// Get a new type variable.
     ///
     /// This type has zero constraints at the moment, and is unbound to any other type.
-    pub fn get_unique_type_variable(&mut self) -> Ty {
-        self.type_ids += 1;
-        Ty::TVariable(self.type_ids)
+    pub fn fresh_type_variable(&mut self) -> Ty {
+        Ty::TVariable(self.fresh_type_id())
     }
 
-    pub fn get_unique_type_id(&mut self) -> usize {
-        self.type_ids += 1;
-        self.type_ids
+    /// Get a new type id.
+    pub fn fresh_type_id(&mut self) -> usize {
+        self.next_type_id += 1;
+        self.next_type_id
     }
 
     /// Apply the `Var` rule to the given type.
     ///
     /// If the given term exists in the current type environment, return its type. Otherwise, we are
     /// trying to reference a type that does not exist.
-    pub fn resolve_type(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
+    pub fn search_type(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
         let ty = self
-            .type_scope
+            .type_context
             .find(x)
             .ok_or(TypeError::InvalidTypeReference(InvalidTypeReferenceError {
                 span: location.clone(),
@@ -80,9 +89,9 @@ impl<'ast> TypeChecker<'ast> {
     ///
     /// If the given term exists in the current let environment, return its type. Otherwise, we are
     /// trying to reference a value that does not exist.
-    pub fn resolve_let(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
+    pub fn search_let_binding(&self, x: &str, location: &Span) -> TypeResult<&Ty> {
         let ty = self
-            .let_scope
+            .let_binding_context
             .find(x)
             .ok_or(TypeError::InvalidValueReference(
                 InvalidValueReferenceError {
@@ -107,8 +116,8 @@ impl<'ast> TypeChecker<'ast> {
     /// This enables us to perform mutual recursion between two functions, as the type checker will
     /// understand that both functions exist even though they are defined one after another.
     pub fn visit_translation_unit(&mut self, node: &'ast TranslationUnit) -> TypeResult<()> {
-        self.type_scope.enter_scope();
-        self.let_scope.enter_scope();
+        self.type_context.enter_scope();
+        self.let_binding_context.enter_scope();
         // Hoist all the types and functions into the top-level scope
         for item in &node.items {
             match item.as_ref() {
@@ -118,14 +127,12 @@ impl<'ast> TypeChecker<'ast> {
                 Item::IntrinsicType(t) => self.insert_intrinsic_type(t)?,
             };
         }
-
         // Traverse through all the items in the translation unit
         for item in &node.items {
             self.visit_item(item)?;
         }
-        self.let_scope.leave_scope();
-        self.type_scope.leave_scope();
-
+        self.let_binding_context.leave_scope();
+        self.type_context.leave_scope();
         Ok(())
     }
 
@@ -134,7 +141,7 @@ impl<'ast> TypeChecker<'ast> {
         let type_parameters = item
             .type_parameters
             .iter()
-            .map(|p| (&p.name.name, self.get_unique_type_id()))
+            .map(|p| (&p.name.name, self.fresh_type_id()))
             .collect::<HashMap<_, _>>();
         // Resolve the types of all the parameters. We check if the type is referring to
         // a type parameter, and if so, we replace it with the type variables that we
@@ -155,7 +162,7 @@ impl<'ast> TypeChecker<'ast> {
             None => Ty::TConst("void".to_owned()),
         };
         let ty = Ty::TFunction(Box::new(return_type), parameters);
-        self.let_scope.add(&item.name.name, ty);
+        self.let_binding_context.add(&item.name.name, ty);
         Ok(())
     }
 
@@ -167,7 +174,7 @@ impl<'ast> TypeChecker<'ast> {
         let type_parameters = item
             .type_parameters
             .iter()
-            .map(|p| (&p.name.name, self.get_unique_type_id()))
+            .map(|p| (&p.name.name, self.fresh_type_id()))
             .collect::<HashMap<_, _>>();
         // Resolve the types of all the parameters. We check if the type is referring to
         // a type parameter, and if so, we replace it with the type variables that we
@@ -185,7 +192,7 @@ impl<'ast> TypeChecker<'ast> {
             .collect();
         let return_type = item.return_type.as_ref().into();
         let ty = Ty::TFunction(Box::new(return_type), parameters);
-        self.let_scope.add(&item.name.name, ty);
+        self.let_binding_context.add(&item.name.name, ty);
         Ok(())
     }
 
@@ -198,7 +205,7 @@ impl<'ast> TypeChecker<'ast> {
             fields.insert(name.clone(), Box::new(ty));
         }
         let ty = Ty::TRecord(fields);
-        self.type_scope.add(&item.name.name, ty);
+        self.type_context.add(&item.name.name, ty);
         Ok(())
     }
 
@@ -208,7 +215,7 @@ impl<'ast> TypeChecker<'ast> {
     /// that TConst is fine.
     pub fn insert_intrinsic_type(&mut self, item: &'ast IntrinsicTypeItem) -> TypeResult<()> {
         let ty = Ty::TConst(item.name.name.clone());
-        self.type_scope.add(&item.name.name, ty);
+        self.type_context.add(&item.name.name, ty);
         Ok(())
     }
 
@@ -229,11 +236,11 @@ impl<'ast> TypeChecker<'ast> {
     ///
     /// Any return statements are checked against the return type of the function.
     pub fn visit_function_item(&mut self, node: &'ast FunctionItem) -> TypeResult<()> {
-        self.type_scope.enter_scope();
-        self.let_scope.enter_scope();
+        self.type_context.enter_scope();
+        self.let_binding_context.enter_scope();
         // Insert all the type parameters into the scope
         for (idx, parameter) in node.type_parameters.iter().enumerate() {
-            self.type_scope
+            self.type_context
                 .add(&parameter.name.name, Ty::TVariable(idx));
         }
 
@@ -252,8 +259,8 @@ impl<'ast> TypeChecker<'ast> {
             self.visit_stmt(statement)?;
         }
 
-        self.let_scope.leave_scope();
-        self.type_scope.leave_scope();
+        self.let_binding_context.leave_scope();
+        self.type_context.leave_scope();
         Ok(())
     }
 
@@ -263,7 +270,7 @@ impl<'ast> TypeChecker<'ast> {
         node: &'ast FunctionParameterItem,
     ) -> TypeResult<()> {
         self.visit_type(&node.r#type)?;
-        self.let_scope
+        self.let_binding_context
             .add(&node.name.name, node.r#type.as_ref().into());
         Ok(())
     }
@@ -303,10 +310,10 @@ impl<'ast> TypeChecker<'ast> {
             .r#type
             .as_ref()
             .map(|t| t.as_ref().into())
-            .unwrap_or(self.get_unique_type_variable());
+            .unwrap_or(self.fresh_type_variable());
         let actual_ty = self.visit_expr(&node.value)?;
         self.unify(&expected_ty, &actual_ty)?;
-        self.type_scope.add(&node.name.name, actual_ty);
+        self.type_context.add(&node.name.name, actual_ty);
         Ok(())
     }
 
@@ -346,7 +353,7 @@ impl<'ast> TypeChecker<'ast> {
     ///
     /// This function ensures that the type of the reference is defined.
     pub fn visit_reference_expr(&mut self, node: &'ast ReferenceExpr) -> TypeResult<Ty> {
-        let ty = self.resolve_let(&node.name.name, &node.name.span)?;
+        let ty = self.search_let_binding(&node.name.name, &node.name.span)?;
         Ok(ty.clone())
     }
 
@@ -356,18 +363,18 @@ impl<'ast> TypeChecker<'ast> {
     fn visit_type(&mut self, node: &'ast Type) -> TypeResult<()> {
         match node {
             Type::Named(t) => {
-                self.resolve_type(&t.name.name, &t.name.span)?;
+                self.search_type(&t.name.name, &t.name.span)?;
             }
             Type::Pointer(t) => self.visit_type(&t.inner)?,
             Type::Reference(t) => self.visit_type(&t.inner)?,
             Type::Boolean(_) => {
-                self.resolve_type("bool", node.span())?;
+                self.search_type("bool", node.span())?;
             }
             Type::Integer32(_) => {
-                self.resolve_type("i32", node.span())?;
+                self.search_type("i32", node.span())?;
             }
             Type::Unit(_) => {
-                self.resolve_type("void", node.span())?;
+                self.search_type("void", node.span())?;
             }
         };
         Ok(())
