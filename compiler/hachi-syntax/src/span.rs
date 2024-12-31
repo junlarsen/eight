@@ -103,6 +103,7 @@ pub enum TokenType {
     KeywordBreak,
     KeywordContinue,
     KeywordFor,
+    KeywordNew,
 
     Identifier(String),
     IntegerLiteral(i32),

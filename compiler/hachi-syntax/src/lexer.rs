@@ -236,6 +236,7 @@ impl<'a> Lexer<'a> {
             "break" => TokenType::KeywordBreak,
             "continue" => TokenType::KeywordContinue,
             "for" => TokenType::KeywordFor,
+            "new" => TokenType::KeywordNew,
             "intrinsic_type" => TokenType::KeywordIntrinsicType,
             "intrinsic_fn" => TokenType::KeywordIntrinsicFn,
             "true" => TokenType::BooleanLiteral(true),

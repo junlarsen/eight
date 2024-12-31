@@ -1,7 +1,7 @@
 ---
-source: hachi-syntax/tests/parser_tests.rs
+source: compiler/hachi-syntax/tests/parser_tests.rs
 expression: "*translation_unit"
-input_file: hachi-syntax/tests/data/intrinsic_declaration.test
+input_file: compiler/hachi-syntax/tests/data/intrinsic_declaration.test
 snapshot_kind: text
 ---
 TranslationUnit(

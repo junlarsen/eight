@@ -1,4 +1,5 @@
 use hachi_syntax::Type;
+use std::collections::BTreeMap;
 use std::fmt::Debug;
 
 #[derive(Clone)]

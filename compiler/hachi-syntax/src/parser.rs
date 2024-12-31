@@ -959,28 +959,30 @@ impl Parser<'_> {
     /// Parse a construct expression.
     ///
     /// ```text
-    /// construct_expr ::= parse_dot_index_expr OPEN_BRACE (construct_expr_argument (COMMA construct_expr_argument)*)? CLOSE_BRACE
+    /// construct_expr ::= NEW type OPEN_BRACE
+    ///                   (construct_expr_argument (COMMA construct_expr_argument)*)?
+    ///                   CLOSE_BRACE
     /// ```
     pub fn parse_construct_expr(&mut self) -> ParseResult<Box<Expr>> {
-        let callee = self.parse_bracket_index_expr()?;
+        if !self.lookahead_check(&TokenType::KeywordNew)? {
+            return self.parse_bracket_index_expr();
+        }
 
-        if self.lookahead_check(&TokenType::OpenBrace)? {
-            self.check(&TokenType::OpenBrace)?;
-            let arguments =
-                self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseBrace, |p| {
-                    p.parse_construct_expr_argument()
-                })?;
-            let end = self.check(&TokenType::CloseBrace)?;
-            let node = ConstructExpr::new(
-                self.next_node_id(),
-                Span::from_pair(callee.span(), &end.span),
-                callee,
-                arguments,
-            );
-            return Ok(Box::new(Expr::Construct(Box::new(node))));
-        };
-
-        Ok(callee)
+        self.check(&TokenType::KeywordNew)?;
+        let callee = self.parse_type()?;
+        self.check(&TokenType::OpenBrace)?;
+        let arguments =
+            self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseBrace, |p| {
+                p.parse_construct_expr_argument()
+            })?;
+        let end = self.check(&TokenType::CloseBrace)?;
+        let node = ConstructExpr::new(
+            self.next_node_id(),
+            Span::from_pair(callee.span(), &end.span),
+            callee,
+            arguments,
+        );
+        Ok(Box::new(Expr::Construct(Box::new(node))))
     }
 
     /// Parse a construct expression argument.
@@ -1707,7 +1709,7 @@ mod tests {
 
     #[test]
     fn test_parse_construct_expr() {
-        let prod = assert_parse("x {}", |p| p.parse_expr());
+        let prod = assert_parse("new x {}", |p| p.parse_expr());
         let prod = assert_ok!(prod);
         assert!(matches!(*prod, Expr::Construct(_)));
         if let Expr::Construct(inner) = *prod {
@@ -1715,7 +1717,7 @@ mod tests {
             assert_eq!(count, 0);
         };
 
-        let prod = assert_parse("x { y: z, }", |p| p.parse_expr());
+        let prod = assert_parse("new x { y: z }", |p| p.parse_expr());
         let prod = assert_ok!(prod);
         assert!(matches!(*prod, Expr::Construct(_)));
         if let Expr::Construct(inner) = *prod {
@@ -1723,8 +1725,15 @@ mod tests {
             assert_eq!(count, 1);
         }
 
-        let prod = assert_parse("x { y: notrailingcomma }", |p| p.parse_expr());
+        let prod = assert_parse("new x { y: notrailingcomma }", |p| p.parse_expr());
         assert_ok!(prod);
+    }
+
+    #[test]
+    fn test_parse_constructor_grammar_allows_non_id_types() {
+        let prod = assert_parse("new *x {}", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert!(matches!(*prod, Expr::Construct(_)));
     }
 
     #[test]

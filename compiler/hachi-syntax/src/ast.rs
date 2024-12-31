@@ -329,7 +329,7 @@ declare_ast_node! {
     pub struct ConstructExpr {
         id: NodeId,
         pub span: Span,
-        pub callee: Box<Expr>,
+        pub callee: Box<Type>,
         pub arguments: Vec<Box<ConstructorExprArgument>>,
     }
 }

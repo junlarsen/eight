@@ -3,7 +3,7 @@ type vec512 = {
 }
 
 fn vec512_fma(x: vec512, y: vec512, acc: vec512) -> vec512 {
-  let vs = vec512 {
+  let vs = new vec512 {
     vs: malloc(512 / 4),
   };
   for (let i = 0; i < 512 / 4; i = i + 1) {

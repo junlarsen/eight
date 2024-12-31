@@ -16,7 +16,7 @@ type Matrix = {
 }
 
 fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
-  let c = Matrix {
+  let c = new Matrix {
     r: a.r,
     c: b.c,
     buf: malloc(a.r * b.c * 4),
