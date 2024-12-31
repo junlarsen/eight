@@ -231,7 +231,7 @@ impl<'ast> TypeChecker<'ast> {
 
     /// Visit a function item.
     ///
-    /// In a function, we validate that all of the types of the parameters are defined, that the
+    /// In a function, we validate that all the types of the parameters are defined, that the
     /// return type is defined, and that the body of the function is well-typed.
     ///
     /// Any return statements are checked against the return type of the function.
@@ -239,9 +239,9 @@ impl<'ast> TypeChecker<'ast> {
         self.type_context.enter_scope();
         self.let_binding_context.enter_scope();
         // Insert all the type parameters into the scope
-        for (idx, parameter) in node.type_parameters.iter().enumerate() {
+        for parameter in node.type_parameters.iter() {
             self.type_context
-                .add(&parameter.name.name, Ty::TVariable(idx));
+                .add(&parameter.name.name, self.fresh_type_variable());
         }
 
         // Ensure that all the parameter types are defined
