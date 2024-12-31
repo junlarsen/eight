@@ -191,7 +191,13 @@ impl<'ast> TypeChecker<'ast> {
 
     /// Insert a new type into the type scope.
     pub fn insert_type(&mut self, item: &'ast TypeItem) -> TypeResult<()> {
-        let ty = Ty::TConst(item.name.name.clone());
+        let mut fields = HashMap::new();
+        for member in &item.members {
+            let name = &member.name.name.clone();
+            let ty = member.r#type.as_ref().into();
+            fields.insert(name.clone(), Box::new(ty));
+        }
+        let ty = Ty::TRecord(fields);
         self.type_scope.add(&item.name.name, ty);
         Ok(())
     }
@@ -382,6 +388,17 @@ mod tests {
         let mut parser = hachi_syntax::Parser::new(&mut lexer);
         let tu = parser.parse().expect("failed to parse translation unit");
         checker.visit_translation_unit(&tu)
+    }
+
+    #[test]
+    fn test_record_fields_are_typed() {
+        assert_ok!(assert_type_check(
+            r#"
+        type Delta = { a: Point, b: Point, }
+        type Point = { x: i32, y: i32, }
+        intrinsic_type i32;
+        "#
+        ));
     }
 
     #[test]
