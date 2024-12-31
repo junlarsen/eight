@@ -11,8 +11,8 @@ use crate::scope::TypeEnvironment;
 use crate::ty::Ty;
 use hachi_syntax::{
     BooleanLiteralExpr, Expr, ForStmt, FunctionItem, FunctionParameterItem, GroupExpr,
-    IntegerLiteralExpr, Item, LetStmt, ReferenceExpr, Span, Stmt, TranslationUnit, Type, TypeItem,
-    TypeMemberItem,
+    IntegerLiteralExpr, IntrinsicFunctionItem, IntrinsicTypeItem, Item, LetStmt, ReferenceExpr,
+    Span, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem,
 };
 use std::collections::{HashMap, VecDeque};
 
@@ -112,68 +112,10 @@ impl<'ast> TypeChecker<'ast> {
         // Hoist all the types and functions into the top-level scope
         for item in &node.items {
             match item.as_ref() {
-                // Functions are inserted as unnamed TConstructors into the scope.
-                Item::Function(f) => {
-                    let type_parameters = f
-                        .type_parameters
-                        .iter()
-                        .map(|p| (&p.name.name, self.get_unique_type_id()))
-                        .collect::<HashMap<_, _>>();
-                    // Resolve the types of all the parameters. We check if the type is referring to
-                    // a type parameter, and if so, we replace it with the type variables that we
-                    // just created.
-                    let parameters = f
-                        .parameters
-                        .iter()
-                        .map(|p| {
-                            let name = &p.name.name;
-                            if let Some(type_id) = type_parameters.get(name) {
-                                return Box::new(Ty::TVariable(*type_id));
-                            }
-                            Box::new(p.r#type.as_ref().into())
-                        })
-                        .collect();
-                    let return_type = match &f.return_type {
-                        Some(t) => t.as_ref().into(),
-                        None => Ty::TConst("void".to_owned()),
-                    };
-                    let ty = Ty::TFunction(Box::new(return_type), parameters);
-                    self.let_scope.add(&f.name.name, ty);
-                }
-                Item::IntrinsicFunction(f) => {
-                    let type_parameters = f
-                        .type_parameters
-                        .iter()
-                        .map(|p| (&p.name.name, self.get_unique_type_id()))
-                        .collect::<HashMap<_, _>>();
-                    // Resolve the types of all the parameters. We check if the type is referring to
-                    // a type parameter, and if so, we replace it with the type variables that we
-                    // just created.
-                    let parameters = f
-                        .parameters
-                        .iter()
-                        .map(|p| {
-                            let name = &p.name.name;
-                            if let Some(type_id) = type_parameters.get(name) {
-                                return Box::new(Ty::TVariable(*type_id));
-                            }
-                            Box::new(p.r#type.as_ref().into())
-                        })
-                        .collect();
-                    let return_type = f.return_type.as_ref().into();
-                    let ty = Ty::TFunction(Box::new(return_type), parameters);
-                    self.let_scope.add(&f.name.name, ty);
-                }
-                // Types are not generic at the moment, so we can just use the name of the type.
-                // When we add generic types, we will need to introduce a TConstructor here instead.
-                Item::Type(t) => {
-                    let ty = Ty::TConst(t.name.name.clone());
-                    self.type_scope.add(&t.name.name, ty);
-                }
-                Item::IntrinsicType(t) => {
-                    let ty = Ty::TConst(t.name.name.clone());
-                    self.type_scope.add(&t.name.name, ty);
-                }
+                Item::Function(f) => self.insert_function_type(f)?,
+                Item::IntrinsicFunction(f) => self.insert_intrinsic_function_type(f)?,
+                Item::Type(t) => self.insert_type(t)?,
+                Item::IntrinsicType(t) => self.insert_intrinsic_type(t)?,
             };
         }
 
@@ -184,6 +126,83 @@ impl<'ast> TypeChecker<'ast> {
         self.let_scope.leave_scope();
         self.type_scope.leave_scope();
 
+        Ok(())
+    }
+
+    /// Insert a new function type into the type scope.
+    fn insert_function_type(&mut self, item: &'ast FunctionItem) -> TypeResult<()> {
+        let type_parameters = item
+            .type_parameters
+            .iter()
+            .map(|p| (&p.name.name, self.get_unique_type_id()))
+            .collect::<HashMap<_, _>>();
+        // Resolve the types of all the parameters. We check if the type is referring to
+        // a type parameter, and if so, we replace it with the type variables that we
+        // just created.
+        let parameters = item
+            .parameters
+            .iter()
+            .map(|p| {
+                let name = &p.name.name;
+                if let Some(type_id) = type_parameters.get(name) {
+                    return Box::new(Ty::TVariable(*type_id));
+                }
+                Box::new(p.r#type.as_ref().into())
+            })
+            .collect();
+        let return_type = match &item.return_type {
+            Some(t) => t.as_ref().into(),
+            None => Ty::TConst("void".to_owned()),
+        };
+        let ty = Ty::TFunction(Box::new(return_type), parameters);
+        self.let_scope.add(&item.name.name, ty);
+        Ok(())
+    }
+
+    /// Insert a new intrinsic function type into the type scope.
+    pub fn insert_intrinsic_function_type(
+        &mut self,
+        item: &'ast IntrinsicFunctionItem,
+    ) -> TypeResult<()> {
+        let type_parameters = item
+            .type_parameters
+            .iter()
+            .map(|p| (&p.name.name, self.get_unique_type_id()))
+            .collect::<HashMap<_, _>>();
+        // Resolve the types of all the parameters. We check if the type is referring to
+        // a type parameter, and if so, we replace it with the type variables that we
+        // just created.
+        let parameters = item
+            .parameters
+            .iter()
+            .map(|p| {
+                let name = &p.name.name;
+                if let Some(type_id) = type_parameters.get(name) {
+                    return Box::new(Ty::TVariable(*type_id));
+                }
+                Box::new(p.r#type.as_ref().into())
+            })
+            .collect();
+        let return_type = item.return_type.as_ref().into();
+        let ty = Ty::TFunction(Box::new(return_type), parameters);
+        self.let_scope.add(&item.name.name, ty);
+        Ok(())
+    }
+
+    /// Insert a new type into the type scope.
+    pub fn insert_type(&mut self, item: &'ast TypeItem) -> TypeResult<()> {
+        let ty = Ty::TConst(item.name.name.clone());
+        self.type_scope.add(&item.name.name, ty);
+        Ok(())
+    }
+
+    /// Insert a new intrinsic type into the type scope.
+    ///
+    /// Intrinsic types are (at the moment) all scalar types. This means that we can always assume
+    /// that TConst is fine.
+    pub fn insert_intrinsic_type(&mut self, item: &'ast IntrinsicTypeItem) -> TypeResult<()> {
+        let ty = Ty::TConst(item.name.name.clone());
+        self.type_scope.add(&item.name.name, ty);
         Ok(())
     }
 

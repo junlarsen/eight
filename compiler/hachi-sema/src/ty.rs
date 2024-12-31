@@ -1,5 +1,5 @@
 use hachi_syntax::Type;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 #[derive(Clone)]
@@ -9,6 +9,7 @@ pub enum Ty {
     TConst(String),
     TPointer(Box<Ty>),
     TReference(Box<Ty>),
+    TRecord(HashMap<String, Box<Ty>>),
 }
 
 impl From<&Type> for Ty {
@@ -43,6 +44,14 @@ impl Debug for Ty {
             Ty::TConst(name) => write!(f, "{}", name),
             Ty::TPointer(inner) => write!(f, "*{:?}", inner),
             Ty::TReference(inner) => write!(f, "&{:?}", inner),
+            Ty::TRecord(fields) => {
+                let fields = fields
+                    .iter()
+                    .map(|(name, ty)| format!("{}: {:?}", name, ty))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                write!(f, "{{ {} }}", fields)
+            }
         }
     }
 }
