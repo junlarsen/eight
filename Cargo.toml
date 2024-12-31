@@ -1,11 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-    "hachi-driver",
-    "hachi-mir",
-    "hachi-macros",
-    "hachi-syntax",
-    "hachi-sema",
+    "compiler/hachi-driver",
+    "compiler/hachi-mir",
+    "compiler/hachi-macros",
+    "compiler/hachi-syntax",
+    "compiler/hachi-sema",
 ]
 
 [profile.dev.package]
