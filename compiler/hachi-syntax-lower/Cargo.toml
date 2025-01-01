@@ -1,0 +1,21 @@
+[package]
+name = "hachi-syntax-lower"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
+[dependencies]
+hachi-macros = { path = "../hachi-macros" }
+hachi-syntax = { path = "../hachi-syntax" }
+hachi-hir = { path = "../hachi-hir" }
+miette = { workspace = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+hachi-macros = { path = "../hachi-macros", features = ["assertion-macros"] }
+insta = { workspace = true }
+ron = { workspace = true }

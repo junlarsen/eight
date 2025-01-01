@@ -13,14 +13,13 @@ use crate::ty::HirTy;
 use hachi_syntax::Span;
 use std::collections::HashMap;
 
-mod error;
-mod expr;
-mod fun;
-mod passes;
-mod stmt;
-mod ty;
+pub mod error;
+pub mod expr;
+pub mod fun;
+pub mod stmt;
+pub mod ty;
 
-pub type HirId = usize;
+pub type InternedTy<'hir> = &'hir HirTy<'hir>;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]

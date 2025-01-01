@@ -1,6 +1,5 @@
-use crate::stmt::HirStmt;
-use crate::ty::HirTy;
-use crate::{HirId, HirName};
+use crate::{HirName, InternedTy};
+use hachi_syntax::Span;
 
 /// A function defined in a HIR module.
 ///
@@ -10,34 +9,40 @@ use crate::{HirId, HirName};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub enum HirFun<'hir> {
-    Function(HirFun<'hir>),
+    Function(HirFunction<'hir>),
     Intrinsic(HirIntrinsicFunction<'hir>),
-}
-
-impl HirFun {
-    pub fn id(&self) -> HirId {
-        match self {
-            HirFun::Function(node) => node.id,
-            HirFun::Intrinsic(node) => node.id,
-        }
-    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct HirFunction<'hir> {
-    pub id: HirId,
+    /// Span encapsulating the entire function definition.
+    pub span: Span,
     pub name: HirName<'hir>,
-    pub parameters: Vec<&'hir HirTy<'hir>>,
-    pub return_type: &'hir HirTy<'hir>,
-    pub body: Vec<&'hir HirStmt<'hir>>,
+    pub type_parameters: Vec<HirTypeParameter<'hir>>,
+    pub parameters: Vec<InternedTy<'hir>>,
+    pub return_type: InternedTy<'hir>,
+    pub body: Vec<InternedTy<'hir>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct HirIntrinsicFunction<'hir> {
-    pub id: HirId,
+    /// Span encapsulating the entire function definition.
+    pub span: Span,
     pub name: HirName<'hir>,
-    pub parameters: Vec<&'hir HirTy<'hir>>,
-    pub return_type: &'hir HirTy<'hir>,
+    pub type_parameters: Vec<HirTypeParameter<'hir>>,
+    pub parameters: Vec<InternedTy<'hir>>,
+    pub return_type: InternedTy<'hir>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
+pub struct HirTypeParameter<'hir> {
+    /// Span containing only the type parameter name.
+    ///
+    /// This is effectively the same as the span of the HirName, but in the future we may want to
+    /// allow bounds or sub-typing on type parameters.
+    pub span: Span,
+    pub name: HirName<'hir>,
 }
