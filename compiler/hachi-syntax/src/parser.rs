@@ -223,7 +223,8 @@ impl Parser<'_> {
         while self.lookahead()?.is_some() {
             items.push(self.parse_item()?);
         }
-        let node = TranslationUnit::new(Self::TRANSLATION_UNIT_NODE_ID, items);
+        // The translation unit doesn't record a span
+        let node = TranslationUnit::new(Self::TRANSLATION_UNIT_NODE_ID, Span::empty(), items);
         Ok(Box::new(node))
     }
 
@@ -322,7 +323,7 @@ impl Parser<'_> {
         let ty = self.parse_type()?;
         let node = FunctionParameterItem::new(
             self.next_node_id(),
-            Span::from_pair(&id.span, ty.span()),
+            Span::from_pair(id.span(), ty.span()),
             id,
             ty,
         );
@@ -335,8 +336,9 @@ impl Parser<'_> {
     /// fn_type_parameter_item ::= identifier
     /// ```
     pub fn parse_fn_type_parameter_item(&mut self) -> ParseResult<Box<FunctionTypeParameterItem>> {
+        // TODO: Parse this as a type
         let id = self.parse_identifier()?;
-        let node = FunctionTypeParameterItem::new(self.next_node_id(), id.span.clone(), id);
+        let node = FunctionTypeParameterItem::new(self.next_node_id(), id.span().clone(), id);
         Ok(Box::new(node))
     }
 
@@ -374,7 +376,7 @@ impl Parser<'_> {
         let end = self.check(&TokenType::Comma)?;
         let node = TypeMemberItem::new(
             self.next_node_id(),
-            Span::from_pair(&id.span, &end.span),
+            Span::from_pair(id.span(), &end.span),
             id,
             ty,
         );
@@ -995,7 +997,7 @@ impl Parser<'_> {
         let expr = self.parse_expr()?;
         let node = ConstructorExprArgument::new(
             self.next_node_id(),
-            Span::from_pair(&id.span, expr.span()),
+            Span::from_pair(id.span(), expr.span()),
             id,
             expr,
         );
@@ -1036,7 +1038,7 @@ impl Parser<'_> {
             let index = self.parse_identifier()?;
             let node = DotIndexExpr::new(
                 self.next_node_id(),
-                Span::from_pair(origin.span(), &index.span),
+                Span::from_pair(origin.span(), index.span()),
                 origin,
                 index,
             );
@@ -1061,7 +1063,7 @@ impl Parser<'_> {
         );
         if is_reference {
             let id = self.parse_identifier()?;
-            let node = ReferenceExpr::new(self.next_node_id(), id.span.clone(), id);
+            let node = ReferenceExpr::new(self.next_node_id(), id.span().clone(), id);
             return Ok(Box::new(Expr::Reference(Box::new(node))));
         }
         self.parse_literal_expr()
@@ -1161,17 +1163,17 @@ impl Parser<'_> {
             TokenType::Identifier(v) => match v.as_str() {
                 "i32" => {
                     let id = self.parse_identifier()?;
-                    let node = Integer32Type::new(self.next_node_id(), id.span);
+                    let node = Integer32Type::new(self.next_node_id(), id.span().clone());
                     Ok(Box::new(Type::Integer32(Box::new(node))))
                 }
                 "bool" => {
                     let id = self.parse_identifier()?;
-                    let node = BooleanType::new(self.next_node_id(), id.span);
+                    let node = BooleanType::new(self.next_node_id(), id.span().clone());
                     Ok(Box::new(Type::Boolean(Box::new(node))))
                 }
                 "void" => {
                     let id = self.parse_identifier()?;
-                    let node = UnitType::new(self.next_node_id(), id.span);
+                    let node = UnitType::new(self.next_node_id(), id.span().clone());
                     Ok(Box::new(Type::Unit(Box::new(node))))
                 }
                 _ => Ok(Box::new(Type::Named(self.parse_named_type()?))),
@@ -1195,7 +1197,7 @@ impl Parser<'_> {
     /// ```
     pub fn parse_named_type(&mut self) -> ParseResult<Box<NamedType>> {
         let id = self.parse_identifier()?;
-        let node = NamedType::new(self.next_node_id(), id.span.clone(), id);
+        let node = NamedType::new(self.next_node_id(), id.span().clone(), id);
         Ok(Box::new(node))
     }
 

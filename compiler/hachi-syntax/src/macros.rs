@@ -22,6 +22,10 @@ macro_rules! declare_ast_node {
             pub fn node_id(&self) -> &$crate::ast::NodeId {
                 &self.id
             }
+
+            pub fn span(&self) -> &$crate::span::Span {
+                &self.span
+            }
         }
     }
 }

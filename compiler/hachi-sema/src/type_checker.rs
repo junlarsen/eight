@@ -157,7 +157,7 @@ impl<'ast> TypeChecker<'ast> {
         node: &'ast ReferenceExpr,
         expected_ty: &Ty,
     ) -> TypeResult<Ty> {
-        let ty = self.search_let_binding(&node.name.name, &node.name.span)?;
+        let ty = self.search_let_binding(&node.name.name, node.name.span())?;
         self.constrain_eq(expected_ty, ty)?;
         Ok(ty.clone())
     }
@@ -420,7 +420,7 @@ impl<'ast> TypeChecker<'ast> {
             .front()
             .ok_or(TypeError::ReturnOutsideOfFunction(
                 ReturnOutsideOfFunctionError {
-                    span: node.span.clone(),
+                    span: node.span().clone(),
                 },
             ))?;
         let expected_ty = fun.return_type.as_ref().map(|t| t.as_ref());
@@ -435,7 +435,7 @@ impl<'ast> TypeChecker<'ast> {
             }
             (Some(_), _) => Err(TypeError::VoidReturnFromNonVoidFunction(
                 VoidReturnFromNonVoidFunctionError {
-                    span: node.span.clone(),
+                    span: node.span().clone(),
                 },
             )),
             (_, Some(v)) => {
@@ -445,7 +445,7 @@ impl<'ast> TypeChecker<'ast> {
                 if !actual_ty.is_intrinsic_void() {
                     return Err(TypeError::ValueReturnFromVoidFunction(
                         ValueReturnFromVoidFunctionError {
-                            span: node.span.clone(),
+                            span: node.span().clone(),
                         },
                     ));
                 };
@@ -492,7 +492,7 @@ impl<'ast> TypeChecker<'ast> {
     ///
     /// This function ensures that the type of the reference is defined.
     pub fn visit_reference_expr(&mut self, node: &'ast ReferenceExpr) -> TypeResult<()> {
-        self.search_let_binding(&node.name.name, &node.name.span)?;
+        self.search_let_binding(&node.name.name, node.name.span())?;
         Ok(())
     }
 
@@ -502,7 +502,7 @@ impl<'ast> TypeChecker<'ast> {
     fn visit_type(&mut self, node: &'ast Type) -> TypeResult<()> {
         match node {
             Type::Named(t) => {
-                self.search_type(&t.name.name, &t.name.span)?;
+                self.search_type(&t.name.name, t.name.span())?;
             }
             Type::Pointer(t) => self.visit_type(&t.inner)?,
             Type::Reference(t) => self.visit_type(&t.inner)?,

@@ -30,6 +30,7 @@ declare_ast_node! {
     /// The term translation unit is used here to refer to a single source file.
     pub struct TranslationUnit {
         id: NodeId,
+        span: Span,
         pub items: Vec<Box<Item>>,
     }
 }
@@ -50,7 +51,7 @@ declare_ast_variant! {
 declare_ast_node! {
     pub struct FunctionItem {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
         pub parameters: Vec<Box<FunctionParameterItem>>,
         pub type_parameters: Vec<Box<FunctionTypeParameterItem>>,
@@ -62,7 +63,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct IntrinsicFunctionItem {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
         pub parameters: Vec<Box<FunctionParameterItem>>,
         pub type_parameters: Vec<Box<FunctionTypeParameterItem>>,
@@ -73,7 +74,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct FunctionTypeParameterItem {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
     }
 }
@@ -81,7 +82,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct FunctionParameterItem {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
         pub r#type: Box<Type>,
     }
@@ -90,7 +91,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct IntrinsicTypeItem {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
     }
 }
@@ -98,7 +99,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct TypeItem {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
         pub members: Vec<Box<TypeMemberItem>>,
     }
@@ -107,7 +108,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct TypeMemberItem {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
         pub r#type: Box<Type>,
     }
@@ -143,7 +144,7 @@ impl Stmt {
 declare_ast_node! {
     pub struct LetStmt {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
         pub r#type: Option<Box<Type>>,
         pub value: Box<Expr>,
@@ -153,7 +154,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ReturnStmt {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub value: Option<Box<Expr>>,
     }
 }
@@ -161,7 +162,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ForStmt {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub initializer: Option<Box<ForStmtInitializer>>,
         pub condition: Option<Box<Expr>>,
         pub increment: Option<Box<Expr>>,
@@ -172,7 +173,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ForStmtInitializer {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
         pub initializer: Box<Expr>,
     }
@@ -181,21 +182,21 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct BreakStmt {
         id: NodeId,
-        pub span: Span,
+        span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct ContinueStmt {
         id: NodeId,
-        pub span: Span,
+        span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct IfStmt {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub condition: Box<Expr>,
         pub happy_path: Vec<Box<Stmt>>,
         pub unhappy_path: Option<Vec<Box<Stmt>>>,
@@ -205,7 +206,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ExprStmt {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub expr: Box<Expr>,
     }
 }
@@ -248,7 +249,7 @@ impl Expr {
 declare_ast_node! {
     pub struct AssignExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub lhs: Box<Expr>,
         pub rhs: Box<Expr>,
     }
@@ -257,7 +258,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct BinaryOpExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub lhs: Box<Expr>,
         pub rhs: Box<Expr>,
         pub op: BinaryOp,
@@ -267,7 +268,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct UnaryOpExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub operand: Box<Expr>,
         pub op: UnaryOp,
     }
@@ -276,7 +277,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct IntegerLiteralExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub value: i32,
     }
 }
@@ -284,7 +285,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct BooleanLiteralExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub value: bool,
     }
 }
@@ -292,7 +293,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct DotIndexExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub origin: Box<Expr>,
         pub index: Box<Identifier>,
     }
@@ -301,7 +302,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct BracketIndexExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub origin: Box<Expr>,
         pub index: Box<Expr>,
     }
@@ -310,7 +311,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ReferenceExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
     }
 }
@@ -318,7 +319,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct CallExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub callee: Box<Expr>,
         pub arguments: Vec<Box<Expr>>,
         pub type_arguments: Vec<Box<Type>>,
@@ -328,7 +329,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ConstructExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub callee: Box<Type>,
         pub arguments: Vec<Box<ConstructorExprArgument>>,
     }
@@ -337,7 +338,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ConstructorExprArgument {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub field: Box<Identifier>,
         pub expr: Box<Expr>,
     }
@@ -346,7 +347,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct GroupExpr {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub inner: Box<Expr>,
     }
 }
@@ -359,7 +360,7 @@ declare_ast_node! {
     pub struct Identifier {
         id: NodeId,
         pub name: String,
-        pub span: Span,
+        span: Span,
     }
 }
 
@@ -391,28 +392,28 @@ impl Type {
 declare_ast_node! {
     pub struct UnitType {
         id: NodeId,
-        pub span: Span,
+        span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct Integer32Type {
         id: NodeId,
-        pub span: Span,
+        span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct BooleanType {
         id: NodeId,
-        pub span: Span,
+        span: Span,
     }
 }
 
 declare_ast_node! {
     pub struct PointerType {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub inner: Box<Type>,
     }
 }
@@ -420,7 +421,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ReferenceType {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub inner: Box<Type>,
     }
 }
@@ -428,7 +429,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct NamedType {
         id: NodeId,
-        pub span: Span,
+        span: Span,
         pub name: Box<Identifier>,
     }
 }

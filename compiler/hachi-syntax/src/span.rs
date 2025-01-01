@@ -41,6 +41,10 @@ impl Span {
         low.merge(high)
     }
 
+    pub fn empty() -> Self {
+        Self { low: 0, high: 0 }
+    }
+
     /// Get the union of two spans.
     ///
     /// This is equivalent to `min(self.low, other.low)..max(self.high, other.high)`. This method is
