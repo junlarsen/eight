@@ -63,6 +63,10 @@ impl<T> LocalContext<T> {
     pub fn local_size(&self) -> usize {
         self.scopes.front().map(|s| s.len()).unwrap_or(0)
     }
+
+    pub fn find_local(&self, name: &str) -> Option<&T> {
+        self.scopes.front().and_then(|s| s.get(name))
+    }
 }
 
 #[cfg(test)]

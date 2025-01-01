@@ -15,6 +15,60 @@ pub enum HirFun {
     Intrinsic(HirIntrinsicFunction),
 }
 
+impl HirFun {
+    pub fn is_intrinsic(&self) -> bool {
+        matches!(self, HirFun::Intrinsic(_))
+    }
+
+    /// Determine if the function has type parameters.
+    pub fn has_type_parameters(&self) -> bool {
+        matches!(self, HirFun::Function(HirFunction { type_parameters, .. }) if !type_parameters.is_empty())
+    }
+
+    pub fn type_parameters(&self) -> &Vec<Box<HirFunctionTypeParameter>> {
+        match self {
+            HirFun::Function(HirFunction {
+                type_parameters, ..
+            }) => type_parameters,
+            HirFun::Intrinsic(HirIntrinsicFunction {
+                type_parameters, ..
+            }) => type_parameters,
+        }
+    }
+
+    /// Get a reference to the function's parameters.
+    pub fn parameters(&self) -> &Vec<Box<HirFunctionParameter>> {
+        match self {
+            HirFun::Function(HirFunction { parameters, .. }) => parameters,
+            HirFun::Intrinsic(HirIntrinsicFunction { parameters, .. }) => parameters,
+        }
+    }
+
+    /// Get a mutable reference to the function's parameters.
+    pub fn parameters_mut(&mut self) -> &mut Vec<Box<HirFunctionParameter>> {
+        match self {
+            HirFun::Function(HirFunction { parameters, .. }) => parameters,
+            HirFun::Intrinsic(HirIntrinsicFunction { parameters, .. }) => parameters,
+        }
+    }
+
+    /// Get the function's return type.
+    pub fn return_type(&self) -> &HirTy {
+        match self {
+            HirFun::Function(HirFunction { return_type, .. }) => return_type,
+            HirFun::Intrinsic(HirIntrinsicFunction { return_type, .. }) => return_type,
+        }
+    }
+
+    /// Get a mutable reference to the function's return type.
+    pub fn return_type_mut(&mut self) -> &mut HirTy {
+        match self {
+            HirFun::Function(HirFunction { return_type, .. }) => return_type,
+            HirFun::Intrinsic(HirIntrinsicFunction { return_type, .. }) => return_type,
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirFunction {

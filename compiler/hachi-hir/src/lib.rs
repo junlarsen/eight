@@ -18,6 +18,7 @@ pub mod error;
 pub mod expr;
 pub mod format;
 pub mod fun;
+pub mod passes;
 pub mod stmt;
 pub mod ty;
 
