@@ -26,10 +26,8 @@ impl Pipeline {
             println!("{}", syntax);
         }
         if self.options.emit_hir {
-            let doc = HirModuleFormatter::format_hir_module(&module);
-            let mut w = Vec::new();
-            doc.render(80, &mut w).expect("failed to render doc");
-            println!("{}", String::from_utf8(w).unwrap());
+            let doc = HirModuleFormatter::format_hir_module_to_string(&module);
+            println!("{}", doc);
         }
         Ok(())
     }
