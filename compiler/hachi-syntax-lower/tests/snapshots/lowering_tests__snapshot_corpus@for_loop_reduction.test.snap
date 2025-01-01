@@ -1,0 +1,21 @@
+---
+source: compiler/hachi-syntax-lower/tests/lowering_tests.rs
+expression: "String::from_utf8(w).unwrap()"
+input_file: compiler/hachi-syntax-lower/tests/data/for_loop_reduction.test
+snapshot_kind: text
+---
+module {
+  // module types
+  
+  
+  // module functions
+  fn loop_transform<>() -> void {
+    {
+      let i: _ = 0;
+      while (i < 10) {
+        let x: _ = i;
+      }
+      i = i + 1;
+    }
+  }
+}

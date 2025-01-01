@@ -1,5 +1,5 @@
 use hachi_syntax::Span;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 
 /// A single type in the HIR representation.
@@ -60,7 +60,7 @@ pub struct HirReferenceTy {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
 pub struct HirRecordTy {
-    pub fields: HashMap<String, Box<HirTy>>,
+    pub fields: BTreeMap<String, Box<HirTy>>,
     pub span: Span,
 }
 
@@ -98,7 +98,7 @@ impl HirTy {
         })
     }
 
-    pub fn new_record(fields: HashMap<String, Box<HirTy>>, span: &Span) -> Self {
+    pub fn new_record(fields: BTreeMap<String, Box<HirTy>>, span: &Span) -> Self {
         Self::Record(HirRecordTy {
             fields,
             span: span.clone(),

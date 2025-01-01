@@ -1,9 +1,9 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeMap, VecDeque};
 
 /// A deque-based scoped context.
 #[derive(Debug)]
 pub struct LocalContext<T> {
-    scopes: VecDeque<HashMap<String, T>>,
+    scopes: VecDeque<BTreeMap<String, T>>,
 }
 
 impl<T> Default for LocalContext<T> {
@@ -21,7 +21,7 @@ impl<T> LocalContext<T> {
 
     /// Push a new scope onto the deque.
     pub fn enter_scope(&mut self) {
-        let scope = HashMap::new();
+        let scope = BTreeMap::new();
         self.scopes.push_front(scope);
     }
 

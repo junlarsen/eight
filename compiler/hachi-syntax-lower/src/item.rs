@@ -9,7 +9,7 @@ use hachi_syntax::{
     FunctionItem, FunctionParameterItem, FunctionTypeParameterItem, IntrinsicFunctionItem,
     IntrinsicTypeItem, Item, Span, TranslationUnit, TypeItem,
 };
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 impl SyntaxLoweringPass {
     pub fn visit_translation_unit(
@@ -148,7 +148,7 @@ impl SyntaxLoweringPass {
                 let ty = self.visit_type(member.r#type.as_ref())?;
                 Ok((member.name.name.to_owned(), ty))
             })
-            .collect::<SyntaxLoweringResult<HashMap<_, _>>>()?;
+            .collect::<SyntaxLoweringResult<BTreeMap<_, _>>>()?;
         let ty = HirTy::new_record(fields, node.name.span());
         module.types.insert(node.name.name.to_owned(), ty);
         Ok(())
