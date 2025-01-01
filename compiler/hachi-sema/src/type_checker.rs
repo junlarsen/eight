@@ -315,6 +315,8 @@ impl<'ast> TypeChecker<'ast> {
     pub fn visit_function_item(&mut self, node: &'ast FunctionItem) -> TypeResult<()> {
         self.type_context.enter_scope();
         self.let_binding_context.enter_scope();
+        self.function_depth.push_back(node);
+
         // Insert all the type parameters into the scope
         for parameter in node.type_parameters.iter() {
             let ty = self.fresh_type_variable();
@@ -336,6 +338,7 @@ impl<'ast> TypeChecker<'ast> {
             self.visit_stmt(statement)?;
         }
 
+        self.function_depth.pop_back();
         self.let_binding_context.leave_scope();
         self.type_context.leave_scope();
         Ok(())
