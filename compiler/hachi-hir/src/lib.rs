@@ -13,22 +13,21 @@ use crate::ty::HirTy;
 use hachi_syntax::Span;
 use std::collections::HashMap;
 
+pub mod context;
 pub mod error;
 pub mod expr;
 pub mod fun;
 pub mod stmt;
 pub mod ty;
 
-pub type InternedTy<'hir> = &'hir HirTy<'hir>;
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirModule<'hir> {
-    pub types: HashMap<&'hir str, HirTy<'hir>>,
-    pub functions: HashMap<&'hir str, HirFun<'hir>>,
+pub struct HirModule {
+    pub types: HashMap<String, HirTy>,
+    pub functions: HashMap<String, HirFun>,
 }
 
-impl<'hir> HirModule<'hir> {
+impl HirModule {
     pub fn new() -> Self {
         Self {
             types: HashMap::new(),
@@ -37,15 +36,15 @@ impl<'hir> HirModule<'hir> {
     }
 }
 
-impl<'hir> Default for HirModule<'hir> {
+impl Default for HirModule {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirName<'hir> {
+pub struct HirName {
     pub name: String,
     pub span: Span,
 }

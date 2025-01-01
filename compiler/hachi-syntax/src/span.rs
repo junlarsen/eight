@@ -9,7 +9,7 @@ pub type SourcePosition = usize;
 /// A span represents a range of characters in an input string.
 ///
 /// It has the same semantics as Rust's x..y range syntax.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Span {
     pub low: SourcePosition,
@@ -74,7 +74,7 @@ impl From<Range<SourcePosition>> for Span {
 /// A single token parsed from the source code.
 ///
 /// TODO: Consider if it's worth interning the spans as they are copied a lot around in the AST.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub span: Span,
@@ -93,7 +93,7 @@ impl Token {
 /// Some variants hold values such as literals and identifiers.
 ///
 /// We currently only support i32 integer literals as the only data type.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     KeywordType,

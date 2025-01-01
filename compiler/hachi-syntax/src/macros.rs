@@ -7,7 +7,7 @@ macro_rules! declare_ast_node {
         }
     } => {
         $(#[$attr])*
-        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize))]
         #[derive(Debug)]
         $vis struct $name {
             $($field_vis $field: $ty),*
@@ -39,7 +39,7 @@ macro_rules! declare_ast_variant {
         }
     } => {
         $(#[$attr])*
-        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize))]
         #[derive(Debug)]
         $vis enum $name {
             $($field($ty),)*

@@ -9,92 +9,100 @@ use std::fmt::Debug;
 ///
 /// 1. Pointer and reference types, which effectively are Abs types.
 /// 2. Record types, which are indexable abstract types.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
-pub enum HirTy<'hir> {
-    Var(TyVariable<'hir>),
-    Fun(HirFunctionTy<'hir>),
-    Const(HirConstantTy<'hir>),
-    Ptr(HirPointerTy<'hir>),
-    Ref(HirReferenceTy<'hir>),
-    Record(HirRecordTy<'hir>),
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone)]
+pub enum HirTy {
+    Var(TyVariable),
+    Fun(HirFunctionTy),
+    Const(HirConstantTy),
+    Ptr(HirPointerTy),
+    Ref(HirReferenceTy),
+    Record(HirRecordTy),
     Uninitialized,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
-pub struct TyVariable<'hir> {
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone)]
+pub struct TyVariable {
     pub name: usize,
     pub span: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
-pub struct HirFunctionTy<'hir> {
-    pub return_type: &'hir HirTy<'hir>,
-    pub parameters: Vec<&'hir HirTy<'hir>>,
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone)]
+pub struct HirFunctionTy {
+    pub return_type: Box<HirTy>,
+    pub parameters: Vec<Box<HirTy>>,
     pub span: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
-pub struct HirConstantTy<'hir> {
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone)]
+pub struct HirConstantTy {
     pub name: String,
     pub span: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
-pub struct HirPointerTy<'hir> {
-    pub inner: &'hir HirTy<'hir>,
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone)]
+pub struct HirPointerTy {
+    pub inner: Box<HirTy>,
     pub span: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
-pub struct HirReferenceTy<'hir> {
-    pub inner: &'hir HirTy<'hir>,
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone)]
+pub struct HirReferenceTy {
+    pub inner: Box<HirTy>,
     pub span: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug)]
-pub struct HirRecordTy<'hir> {
-    pub fields: HashMap<String, &'hir HirTy<'hir>>,
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone)]
+pub struct HirRecordTy {
+    pub fields: HashMap<String, Box<HirTy>>,
     pub span: Span,
 }
 
-impl<'hir> HirTy<'hir> {
+impl HirTy {
     pub fn new_var(name: usize, span: Span) -> Self {
         Self::Var(TyVariable { name, span })
     }
 
-    pub fn new_fun(
-        return_type: &'hir HirTy<'hir>,
-        parameters: Vec<&'hir HirTy<'hir>>,
-        span: Span,
-    ) -> Self {
+    pub fn new_fun(return_type: Box<HirTy>, parameters: Vec<Box<HirTy>>, span: &Span) -> Self {
         Self::Fun(HirFunctionTy {
             return_type,
             parameters,
-            span,
+            span: span.clone(),
         })
     }
 
-    pub fn new_const(name: String, span: Span) -> Self {
-        Self::Const(HirConstantTy { name, span })
+    pub fn new_const<T: AsRef<str>>(name: T, span: &Span) -> Self {
+        Self::Const(HirConstantTy {
+            name: name.as_ref().to_owned(),
+            span: span.clone(),
+        })
     }
 
-    pub fn new_ptr(inner: &'hir HirTy<'hir>, span: Span) -> Self {
-        Self::Ptr(HirPointerTy { inner, span })
+    pub fn new_ptr(inner: Box<HirTy>, span: &Span) -> Self {
+        Self::Ptr(HirPointerTy {
+            inner,
+            span: span.clone(),
+        })
     }
 
-    pub fn new_ref(inner: &'hir HirTy<'hir>, span: Span) -> Self {
-        Self::Ref(HirReferenceTy { inner, span })
+    pub fn new_ref(inner: Box<HirTy>, span: &Span) -> Self {
+        Self::Ref(HirReferenceTy {
+            inner,
+            span: span.clone(),
+        })
     }
 
-    pub fn new_record(fields: HashMap<String, &'hir HirTy<'hir>>, span: Span) -> Self {
-        Self::Record(HirRecordTy { fields, span })
+    pub fn new_record(fields: HashMap<String, Box<HirTy>>, span: &Span) -> Self {
+        Self::Record(HirRecordTy {
+            fields,
+            span: span.clone(),
+        })
     }
 }
 

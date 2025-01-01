@@ -1,30 +1,27 @@
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
-/// A deque-based stackable type environment.
-///
-/// Upon entering a new scope, the resolver will create a new scope and push it onto the deque. The
-/// owner can then traverse a syntax tree or similar to store and resolve references in the scope.
+/// A deque-based scoped context.
 #[derive(Debug)]
-pub struct TypeEnvironment<T> {
-    scopes: VecDeque<BTreeMap<String, T>>,
+pub struct LocalContext<T> {
+    scopes: VecDeque<HashMap<String, T>>,
 }
 
-impl<T> Default for TypeEnvironment<T> {
+impl<T> Default for LocalContext<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> TypeEnvironment<T> {
+impl<T> LocalContext<T> {
     pub fn new() -> Self {
-        TypeEnvironment {
+        LocalContext {
             scopes: VecDeque::new(),
         }
     }
 
     /// Push a new scope onto the deque.
     pub fn enter_scope(&mut self) {
-        let scope = BTreeMap::new();
+        let scope = HashMap::new();
         self.scopes.push_front(scope);
     }
 
@@ -62,16 +59,20 @@ impl<T> TypeEnvironment<T> {
             .expect("ReferenceResolver::remove: no scope");
         scope.remove(name);
     }
+
+    pub fn local_size(&self) -> usize {
+        self.scopes.front().map(|s| s.len()).unwrap_or(0)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::scope::TypeEnvironment;
+    use super::LocalContext;
     use hachi_macros::assert_none;
 
     #[test]
-    fn test_type_environment_interleaving() {
-        let mut resolver = TypeEnvironment::<i32>::new();
+    fn test_local_context_interleaving() {
+        let mut resolver = LocalContext::<i32>::new();
         assert_eq!(resolver.depth(), 0);
         resolver.enter_scope();
         resolver.add("a", 1);
@@ -87,8 +88,8 @@ mod tests {
     }
 
     #[test]
-    fn test_type_environment_removal() {
-        let mut resolver = TypeEnvironment::<i32>::new();
+    fn test_local_context_removal() {
+        let mut resolver = LocalContext::<i32>::new();
         resolver.enter_scope();
         resolver.add("a", 1);
         assert_eq!(Some(&1), resolver.find("a"));

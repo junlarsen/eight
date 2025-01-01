@@ -12,5 +12,6 @@ clap = { version = "4.5.23", features = ["derive"] }
 miette = { workspace = true, features = ["fancy"] }
 ron = { workspace = true }
 
+hachi-hir = { path = "../hachi-hir" }
 hachi-syntax = { path = "../hachi-syntax" }
-hachi-sema = { path = "../hachi-sema" }
+hachi-syntax-lower = { path = "../hachi-syntax-lower" }

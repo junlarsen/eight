@@ -209,7 +209,7 @@ impl<'a> Parser<'a> {
 
 impl Parser<'_> {
     /// Top-level entry for parsing a translation unit (file).
-    pub fn parse(&mut self) -> ParseResult<Box<TranslationUnit>> {
+    pub fn parse(&mut self) -> ParseResult<TranslationUnit> {
         self.parse_translation_unit()
     }
 
@@ -218,14 +218,14 @@ impl Parser<'_> {
     /// ```text
     /// translation_unit ::= item*
     /// ```
-    pub fn parse_translation_unit(&mut self) -> ParseResult<Box<TranslationUnit>> {
+    pub fn parse_translation_unit(&mut self) -> ParseResult<TranslationUnit> {
         let mut items = Vec::new();
         while self.lookahead()?.is_some() {
             items.push(self.parse_item()?);
         }
         // The translation unit doesn't record a span
         let node = TranslationUnit::new(Self::TRANSLATION_UNIT_NODE_ID, Span::empty(), items);
-        Ok(Box::new(node))
+        Ok(node)
     }
 
     /// Parse an item.

@@ -11,6 +11,6 @@ fn test_snapshot_corpus() {
         let translation_unit = parser
             .parse()
             .unwrap_or_else(|_| panic!("failed to parse corpus file {} into ast", path.display()));
-        assert_ron_snapshot!(*translation_unit);
+        assert_ron_snapshot!(translation_unit);
     })
 }
