@@ -14,4 +14,3 @@ ron = { workspace = true }
 
 hachi-hir = { path = "../hachi-hir" }
 hachi-syntax = { path = "../hachi-syntax" }
-hachi-syntax-lower = { path = "../hachi-syntax-lower" }

@@ -1,13 +1,13 @@
-use crate::error::SyntaxLoweringResult;
-use crate::SyntaxLoweringPass;
-use hachi_hir::ty::HirTy;
-use hachi_hir::HirName;
 use hachi_syntax::{Identifier, Type};
+use crate::error::HirResult;
+use crate::HirName;
+use crate::syntax_lowering::SyntaxLoweringPass;
+use crate::ty::HirTy;
 
 /// Visitor for the `Type` AST node variants.
 impl SyntaxLoweringPass<'_> {
     /// Translate a syntax identifier into a HIR name.
-    pub fn visit_identifier(&mut self, node: &Identifier) -> SyntaxLoweringResult<HirName> {
+    pub fn visit_identifier(&mut self, node: &Identifier) -> HirResult<HirName> {
         Ok(HirName {
             name: node.name.to_owned(),
             span: node.span().clone(),
@@ -24,7 +24,7 @@ impl SyntaxLoweringPass<'_> {
     /// fn foo<T>(x: T) -> T {}
     /// ```
     #[allow(clippy::only_used_in_recursion)]
-    pub fn visit_type(&mut self, node: &Type) -> SyntaxLoweringResult<Box<HirTy>> {
+    pub fn visit_type(&mut self, node: &Type) -> HirResult<Box<HirTy>> {
         let ty = match node {
             Type::Unit(_) => HirTy::new_const("void", node.span()),
             Type::Integer32(_) => HirTy::new_const("i32", node.span()),

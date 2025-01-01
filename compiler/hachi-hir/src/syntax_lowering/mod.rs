@@ -1,8 +1,7 @@
-mod error;
-mod expr;
-mod item;
-mod stmt;
-mod r#type;
+pub mod expr;
+pub mod item;
+pub mod stmt;
+pub mod r#type;
 
 use hachi_syntax::ForStmt;
 use std::collections::VecDeque;

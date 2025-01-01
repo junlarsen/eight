@@ -1,21 +1,19 @@
-use crate::error::SyntaxLoweringResult;
-use crate::SyntaxLoweringPass;
-use hachi_hir::fun::{
-    HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
-};
-use hachi_hir::ty::HirTy;
-use hachi_hir::HirModule;
+use crate::error::{HirResult};
+use crate::{HirModule};
 use hachi_syntax::{
     FunctionItem, FunctionParameterItem, FunctionTypeParameterItem, IntrinsicFunctionItem,
     IntrinsicTypeItem, Item, Span, TranslationUnit, TypeItem,
 };
 use std::collections::BTreeMap;
+use crate::fun::{HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction};
+use crate::syntax_lowering::SyntaxLoweringPass;
+use crate::ty::HirTy;
 
 impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_translation_unit(
         &mut self,
         node: &'ast TranslationUnit,
-    ) -> SyntaxLoweringResult<HirModule> {
+    ) -> HirResult<HirModule> {
         let mut module = HirModule::new();
         for item in &node.items {
             self.visit_item(&mut module, item)?;
@@ -27,7 +25,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         &mut self,
         module: &mut HirModule,
         node: &'ast Item,
-    ) -> SyntaxLoweringResult<()> {
+    ) -> HirResult<()> {
         match node {
             Item::Function(f) => self.visit_function_item(module, f),
             Item::IntrinsicFunction(f) => self.visit_intrinsic_function_item(module, f),
@@ -40,7 +38,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         &mut self,
         module: &mut HirModule,
         node: &'ast FunctionItem,
-    ) -> SyntaxLoweringResult<()> {
+    ) -> HirResult<()> {
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
             None => Box::new(HirTy::new_const("void", &Span::empty())),
@@ -49,17 +47,17 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             .parameters
             .iter()
             .map(|p| self.visit_function_parameter(p))
-            .collect::<SyntaxLoweringResult<Vec<_>>>()?;
+            .collect::<HirResult<Vec<_>>>()?;
         let type_parameters = node
             .type_parameters
             .iter()
             .map(|p| self.visit_function_type_parameter(p))
-            .collect::<SyntaxLoweringResult<Vec<_>>>()?;
+            .collect::<HirResult<Vec<_>>>()?;
         let body = node
             .body
             .iter()
             .map(|stmt| self.visit_stmt(stmt))
-            .collect::<SyntaxLoweringResult<Vec<_>>>()?;
+            .collect::<HirResult<Vec<_>>>()?;
 
         let fun = HirFun::Function(HirFunction {
             span: node.span().clone(),
@@ -77,18 +75,18 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         &mut self,
         module: &mut HirModule,
         node: &'ast IntrinsicFunctionItem,
-    ) -> SyntaxLoweringResult<()> {
+    ) -> HirResult<()> {
         let return_type = self.visit_type(node.return_type.as_ref())?;
         let parameters = node
             .parameters
             .iter()
             .map(|p| self.visit_function_parameter(p))
-            .collect::<SyntaxLoweringResult<Vec<_>>>()?;
+            .collect::<HirResult<Vec<_>>>()?;
         let type_parameters = node
             .type_parameters
             .iter()
             .map(|p| self.visit_function_type_parameter(p))
-            .collect::<SyntaxLoweringResult<Vec<_>>>()?;
+            .collect::<HirResult<Vec<_>>>()?;
 
         let fun = HirFun::Intrinsic(HirIntrinsicFunction {
             span: node.span().clone(),
@@ -104,7 +102,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_function_parameter(
         &mut self,
         node: &'ast FunctionParameterItem,
-    ) -> SyntaxLoweringResult<Box<HirFunctionParameter>> {
+    ) -> HirResult<Box<HirFunctionParameter>> {
         let name = self.visit_identifier(node.name.as_ref())?;
         let ty = self.visit_type(node.r#type.as_ref())?;
         let hir = HirFunctionParameter {
@@ -118,7 +116,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_function_type_parameter(
         &mut self,
         node: &'ast FunctionTypeParameterItem,
-    ) -> SyntaxLoweringResult<Box<HirFunctionTypeParameter>> {
+    ) -> HirResult<Box<HirFunctionTypeParameter>> {
         let name = self.visit_identifier(node.name.as_ref())?;
         let hir = HirFunctionTypeParameter {
             span: node.span().clone(),
@@ -144,7 +142,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         &mut self,
         module: &mut HirModule,
         node: &'ast TypeItem,
-    ) -> SyntaxLoweringResult<()> {
+    ) -> HirResult<()> {
         let fields = node
             .members
             .iter()
@@ -152,7 +150,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
                 let ty = self.visit_type(member.r#type.as_ref())?;
                 Ok((member.name.name.to_owned(), ty))
             })
-            .collect::<SyntaxLoweringResult<BTreeMap<_, _>>>()?;
+            .collect::<HirResult<BTreeMap<_, _>>>()?;
         let ty = HirTy::new_record(fields, node.name.span());
         module.types.insert(node.name.name.to_owned(), ty);
         Ok(())
@@ -165,7 +163,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         &mut self,
         module: &mut HirModule,
         node: &'ast IntrinsicTypeItem,
-    ) -> SyntaxLoweringResult<()> {
+    ) -> HirResult<()> {
         let ty = HirTy::new_const(&node.name.name, node.name.span());
         module.types.insert(node.name.name.to_owned(), ty);
         Ok(())

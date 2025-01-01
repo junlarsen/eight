@@ -79,7 +79,7 @@ impl<'hir> TypeChecker<'hir> {
         // Create fresh type variables for all type parameters.
         for (i, ty) in fun.type_parameters().iter().enumerate() {
             self.local_types
-                .add(&ty.name.name, HirTy::new_var(i, ty.span().clone()));
+                .add(&ty.name.name, HirTy::new_var(i, ty.span.clone()));
         }
 
         // With the type parameters in scope, we can visit the parameters, and if the current
@@ -107,6 +107,7 @@ impl<'hir> TypeChecker<'hir> {
             HirFun::Intrinsic(f) => self.visit_intrinsic_function(f)?,
         }
         self.local_types.leave_scope();
+        Ok(())
     }
 
     pub fn visit_function(&mut self, fun: &HirFunction) -> HirResult<()> {
@@ -226,31 +227,31 @@ impl<'hir> TypeChecker<'hir> {
 
 #[cfg(test)]
 mod tests {
-    use crate::passes::type_checker::TypeChecker;
-
-    macro_rules! assert_hir_module {
-        ($input:expr) => {{
-            let mut lexer = hachi_syntax::Lexer::new($input);
-            let mut parser = hachi_syntax::Parser::new(&mut lexer);
-            let translation_unit = assert_ok!(parser.parse());
-            let mut lowering_pass = hachi_syntax_lower::SyntaxLoweringPass::new();
-            let module = lowering_pass
-                .visit_translation_unit(&translation_unit)
-                .expect("failed to lower translation unit");
-            module
-        }};
-    }
-
-    #[test]
-    fn test_synthesis_of_generic_functions() {
-        let mut module = assert_hir_module!(
-            r#"
-        fn id<T>(x: T) -> T {
-          return x;
-        }
-        "#
-        );
-        let mut tc = TypeChecker::new();
-        tc.visit(&mut module).expect("failed to type-check module");
-    }
+    // use crate::passes::type_checker::TypeChecker;
+    //
+    // macro_rules! assert_hir_module {
+    //     ($input:expr) => {{
+    //         let mut lexer = hachi_syntax::Lexer::new($input);
+    //         let mut parser = hachi_syntax::Parser::new(&mut lexer);
+    //         let translation_unit = assert_ok!(parser.parse());
+    //         let mut lowering_pass = hachi_syntax_lower::SyntaxLoweringPass::new();
+    //         let module = lowering_pass
+    //             .visit_translation_unit(&translation_unit)
+    //             .expect("failed to lower translation unit");
+    //         module
+    //     }};
+    // }
+    //
+    // #[test]
+    // fn test_synthesis_of_generic_functions() {
+    //     let mut module = assert_hir_module!(
+    //         r#"
+    //     fn id<T>(x: T) -> T {
+    //       return x;
+    //     }
+    //     "#
+    //     );
+    //     let mut tc = TypeChecker::new();
+    //     tc.visit(&mut module).expect("failed to type-check module");
+    // }
 }

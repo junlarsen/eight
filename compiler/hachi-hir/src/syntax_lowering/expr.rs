@@ -1,19 +1,15 @@
-use crate::error::SyntaxLoweringResult;
-use crate::SyntaxLoweringPass;
-use hachi_hir::expr::{
-    HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
-    HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirExpr, HirGroupExpr,
-    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
-};
-use hachi_hir::ty::HirTy;
 use hachi_syntax::{
     AssignExpr, BinaryOp, BinaryOpExpr, BooleanLiteralExpr, BracketIndexExpr, CallExpr,
     ConstructExpr, ConstructorExprArgument, DotIndexExpr, Expr, GroupExpr, IntegerLiteralExpr,
     ReferenceExpr, UnaryOp, UnaryOpExpr,
 };
+use crate::error::HirResult;
+use crate::expr::{HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr};
+use crate::syntax_lowering::SyntaxLoweringPass;
+use crate::ty::HirTy;
 
 impl<'ast> SyntaxLoweringPass<'ast> {
-    pub fn visit_expr(&mut self, node: &'ast Expr) -> SyntaxLoweringResult<Box<HirExpr>> {
+    pub fn visit_expr(&mut self, node: &'ast Expr) -> HirResult<Box<HirExpr>> {
         match node {
             Expr::Assign(e) => self.visit_assign_expr(e),
             Expr::Call(e) => self.visit_call_expr(e),
@@ -32,7 +28,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_assign_expr(
         &mut self,
         node: &'ast AssignExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::Assign(HirAssignExpr {
             span: node.span().clone(),
             lhs: self.visit_expr(node.lhs.as_ref())?,
@@ -42,7 +38,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(Box::new(hir))
     }
 
-    pub fn visit_call_expr(&mut self, node: &'ast CallExpr) -> SyntaxLoweringResult<Box<HirExpr>> {
+    pub fn visit_call_expr(&mut self, node: &'ast CallExpr) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::Call(HirCallExpr {
             span: node.span().clone(),
             callee: self.visit_expr(node.callee.as_ref())?,
@@ -50,12 +46,12 @@ impl<'ast> SyntaxLoweringPass<'ast> {
                 .arguments
                 .iter()
                 .map(|a| self.visit_expr(a))
-                .collect::<SyntaxLoweringResult<Vec<_>>>()?,
+                .collect::<HirResult<Vec<_>>>()?,
             type_arguments: node
                 .type_arguments
                 .iter()
                 .map(|t| self.visit_type(t))
-                .collect::<SyntaxLoweringResult<Vec<_>>>()?,
+                .collect::<HirResult<Vec<_>>>()?,
             ty: Box::new(HirTy::Uninitialized),
         });
         Ok(Box::new(hir))
@@ -64,7 +60,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_construct_expr(
         &mut self,
         node: &'ast ConstructExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::Construct(HirConstructExpr {
             span: node.span().clone(),
             callee: self.visit_type(node.callee.as_ref())?,
@@ -72,7 +68,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
                 .arguments
                 .iter()
                 .map(|a| self.visit_constructor_expr_argument(a))
-                .collect::<SyntaxLoweringResult<Vec<_>>>()?,
+                .collect::<HirResult<Vec<_>>>()?,
             ty: Box::new(HirTy::Uninitialized),
         });
         Ok(Box::new(hir))
@@ -81,7 +77,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_constructor_expr_argument(
         &mut self,
         node: &'ast ConstructorExprArgument,
-    ) -> SyntaxLoweringResult<Box<HirConstructExprArgument>> {
+    ) -> HirResult<Box<HirConstructExprArgument>> {
         let hir = HirConstructExprArgument {
             span: node.span().clone(),
             field: self.visit_identifier(node.field.as_ref())?,
@@ -93,7 +89,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_group_expr(
         &mut self,
         node: &'ast GroupExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::Group(HirGroupExpr {
             span: node.span().clone(),
             inner: self.visit_expr(node.inner.as_ref())?,
@@ -105,7 +101,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_integer_literal_expr(
         &mut self,
         node: &'ast IntegerLiteralExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::IntegerLiteral(HirIntegerLiteralExpr {
             span: node.span().clone(),
             value: node.value,
@@ -117,7 +113,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_boolean_literal_expr(
         &mut self,
         node: &'ast BooleanLiteralExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::BooleanLiteral(HirBooleanLiteralExpr {
             span: node.span().clone(),
             value: node.value,
@@ -129,7 +125,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_unary_op_expr(
         &mut self,
         node: &'ast UnaryOpExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::UnaryOp(HirUnaryOpExpr {
             span: node.span().clone(),
             operand: self.visit_expr(node.operand.as_ref())?,
@@ -142,7 +138,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_binary_op_expr(
         &mut self,
         node: &'ast BinaryOpExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::BinaryOp(HirBinaryOpExpr {
             span: node.span().clone(),
             lhs: self.visit_expr(node.lhs.as_ref())?,
@@ -156,7 +152,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_dot_index_expr(
         &mut self,
         node: &'ast DotIndexExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::ConstantIndex(HirConstantIndexExpr {
             span: node.span().clone(),
             origin: self.visit_expr(node.origin.as_ref())?,
@@ -169,7 +165,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_bracket_index_expr(
         &mut self,
         node: &'ast BracketIndexExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::OffsetIndex(HirOffsetIndexExpr {
             span: node.span().clone(),
             origin: self.visit_expr(node.origin.as_ref())?,
@@ -182,7 +178,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_reference_expr(
         &mut self,
         node: &'ast ReferenceExpr,
-    ) -> SyntaxLoweringResult<Box<HirExpr>> {
+    ) -> HirResult<Box<HirExpr>> {
         let hir = HirExpr::Reference(HirReferenceExpr {
             span: node.span().clone(),
             name: self.visit_identifier(node.name.as_ref())?,
@@ -191,7 +187,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(Box::new(hir))
     }
 
-    pub fn visit_unary_op(&mut self, node: &'ast UnaryOp) -> SyntaxLoweringResult<HirUnaryOp> {
+    pub fn visit_unary_op(&mut self, node: &'ast UnaryOp) -> HirResult<HirUnaryOp> {
         match node {
             UnaryOp::Not => Ok(HirUnaryOp::Not),
             UnaryOp::Neg => Ok(HirUnaryOp::Neg),
@@ -200,7 +196,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         }
     }
 
-    pub fn visit_binary_op(&mut self, node: &'ast BinaryOp) -> SyntaxLoweringResult<HirBinaryOp> {
+    pub fn visit_binary_op(&mut self, node: &'ast BinaryOp) -> HirResult<HirBinaryOp> {
         match node {
             BinaryOp::Add => Ok(HirBinaryOp::Add),
             BinaryOp::Sub => Ok(HirBinaryOp::Sub),

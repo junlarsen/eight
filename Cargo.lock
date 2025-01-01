@@ -248,7 +248,6 @@ dependencies = [
  "clap",
  "hachi-hir",
  "hachi-syntax",
- "hachi-syntax-lower",
  "miette",
  "ron 0.8.1",
 ]
@@ -292,20 +291,6 @@ name = "hachi-syntax"
 version = "0.1.0"
 dependencies = [
  "hachi-macros",
- "insta",
- "miette",
- "ron 0.8.1",
- "serde",
- "thiserror 2.0.6",
-]
-
-[[package]]
-name = "hachi-syntax-lower"
-version = "0.1.0"
-dependencies = [
- "hachi-hir",
- "hachi-macros",
- "hachi-syntax",
  "insta",
  "miette",
  "ron 0.8.1",

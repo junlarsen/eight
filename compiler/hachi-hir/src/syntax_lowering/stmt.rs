@@ -1,19 +1,14 @@
-use crate::error::{
-    BreakOutsideLoopError, ContinueOutsideLoopError, SyntaxLoweringError, SyntaxLoweringResult,
-};
-use crate::SyntaxLoweringPass;
-use hachi_hir::expr::{HirBooleanLiteralExpr, HirExpr};
-use hachi_hir::stmt::{
-    HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
-    HirReturnStmt, HirStmt,
-};
-use hachi_hir::ty::HirTy;
+use crate::error::{BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult};
 use hachi_syntax::{
     BreakStmt, ContinueStmt, ExprStmt, ForStmt, IfStmt, LetStmt, ReturnStmt, Span, Stmt,
 };
+use crate::expr::{HirBooleanLiteralExpr, HirExpr};
+use crate::stmt::{HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt};
+use crate::syntax_lowering::SyntaxLoweringPass;
+use crate::ty::HirTy;
 
 impl<'ast> SyntaxLoweringPass<'ast> {
-    pub fn visit_stmt(&mut self, node: &'ast Stmt) -> SyntaxLoweringResult<Box<HirStmt>> {
+    pub fn visit_stmt(&mut self, node: &'ast Stmt) -> HirResult<Box<HirStmt>> {
         match node {
             Stmt::Let(s) => self.visit_let_stmt(s),
             Stmt::Return(s) => self.visit_return_stmt(s),
@@ -25,7 +20,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         }
     }
 
-    pub fn visit_let_stmt(&mut self, node: &'ast LetStmt) -> SyntaxLoweringResult<Box<HirStmt>> {
+    pub fn visit_let_stmt(&mut self, node: &'ast LetStmt) -> HirResult<Box<HirStmt>> {
         let name = self.visit_identifier(node.name.as_ref())?;
         let r#type = match &node.r#type {
             Some(t) => self.visit_type(t)?,
@@ -44,7 +39,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_return_stmt(
         &mut self,
         node: &'ast ReturnStmt,
-    ) -> SyntaxLoweringResult<Box<HirStmt>> {
+    ) -> HirResult<Box<HirStmt>> {
         let value = node
             .value
             .as_ref()
@@ -78,13 +73,13 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     /// - If the initializer is missing, then the induced `let` statement is replaced with a {}
     /// - If the condition is missing, then a literal true is used as the condition.
     /// - If the increment is missing, then the increment block is replaced with a {}
-    pub fn visit_for_stmt(&mut self, node: &'ast ForStmt) -> SyntaxLoweringResult<Box<HirStmt>> {
+    pub fn visit_for_stmt(&mut self, node: &'ast ForStmt) -> HirResult<Box<HirStmt>> {
         self.loop_depth.push_back(node);
         // Build the let statement for the initializer
         let initializer = node
             .initializer
             .as_ref()
-            .map(|i| -> SyntaxLoweringResult<HirLetStmt> {
+            .map(|i| -> HirResult<HirLetStmt> {
                 Ok(HirLetStmt {
                     span: i.span().clone(),
                     name: self.visit_identifier(i.name.as_ref())?,
@@ -115,7 +110,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             .body
             .iter()
             .map(|s| self.visit_stmt(s))
-            .collect::<SyntaxLoweringResult<Vec<_>>>()?;
+            .collect::<HirResult<Vec<_>>>()?;
         // Build the new block statement with the loop
         let hir = HirStmt::Block(HirBlockStmt {
             span: node.span().clone(),
@@ -154,18 +149,18 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     ///
     /// The synthesis of the if statement simply replaces a missing unhappy path with an empty
     /// block.
-    pub fn visit_if_stmt(&mut self, node: &'ast IfStmt) -> SyntaxLoweringResult<Box<HirStmt>> {
+    pub fn visit_if_stmt(&mut self, node: &'ast IfStmt) -> HirResult<Box<HirStmt>> {
         let condition = self.visit_expr(node.condition.as_ref())?;
         let happy_path = node
             .happy_path
             .iter()
             .map(|s| self.visit_stmt(s))
-            .collect::<SyntaxLoweringResult<Vec<_>>>()?;
+            .collect::<HirResult<Vec<_>>>()?;
         let unhappy_path = match &node.unhappy_path {
             Some(unhappy_path) => unhappy_path
                 .iter()
                 .map(|s| self.visit_stmt(s))
-                .collect::<SyntaxLoweringResult<Vec<_>>>()?,
+                .collect::<HirResult<Vec<_>>>()?,
             None => vec![],
         };
         let hir = HirStmt::If(HirIfStmt {
@@ -180,10 +175,10 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_break_stmt(
         &mut self,
         node: &'ast BreakStmt,
-    ) -> SyntaxLoweringResult<Box<HirStmt>> {
+    ) -> HirResult<Box<HirStmt>> {
         self.loop_depth
             .back()
-            .ok_or(SyntaxLoweringError::BreakOutsideLoop(
+            .ok_or(HirError::BreakOutsideLoop(
                 BreakOutsideLoopError {
                     span: node.span().clone(),
                 },
@@ -194,7 +189,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(Box::new(hir))
     }
 
-    pub fn visit_expr_stmt(&mut self, node: &'ast ExprStmt) -> SyntaxLoweringResult<Box<HirStmt>> {
+    pub fn visit_expr_stmt(&mut self, node: &'ast ExprStmt) -> HirResult<Box<HirStmt>> {
         let expr = self.visit_expr(node.expr.as_ref())?;
         let hir = HirStmt::Expr(HirExprStmt {
             span: node.span().clone(),
@@ -206,10 +201,10 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_continue_stmt(
         &mut self,
         node: &'ast ContinueStmt,
-    ) -> SyntaxLoweringResult<Box<HirStmt>> {
+    ) -> HirResult<Box<HirStmt>> {
         self.loop_depth
             .back()
-            .ok_or(SyntaxLoweringError::ContinueOutsideLoop(
+            .ok_or(HirError::ContinueOutsideLoop(
                 ContinueOutsideLoopError {
                     span: node.span().clone(),
                 },

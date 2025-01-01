@@ -1,8 +1,8 @@
 use hachi_hir::format::HirModuleFormatter;
 use hachi_syntax::Lexer;
 use hachi_syntax::Parser;
-use hachi_syntax_lower::SyntaxLoweringPass;
 use insta::assert_snapshot;
+use hachi_hir::syntax_lowering::SyntaxLoweringPass;
 
 #[test]
 fn test_snapshot_corpus() {

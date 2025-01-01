@@ -21,6 +21,7 @@ pub mod fun;
 pub mod passes;
 pub mod stmt;
 pub mod ty;
+pub mod syntax_lowering;
 
 /// A module containing all the types and functions defined in a program.
 ///

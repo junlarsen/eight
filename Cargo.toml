@@ -6,7 +6,6 @@ members = [
     "compiler/hachi-mir",
     "compiler/hachi-macros",
     "compiler/hachi-syntax",
-    "compiler/hachi-syntax-lower",
 ]
 
 [profile.dev.package]
