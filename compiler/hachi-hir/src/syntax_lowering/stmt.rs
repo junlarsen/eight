@@ -1,11 +1,14 @@
 use crate::error::{BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult};
+use crate::expr::{HirBooleanLiteralExpr, HirExpr};
+use crate::stmt::{
+    HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
+    HirReturnStmt, HirStmt,
+};
+use crate::syntax_lowering::SyntaxLoweringPass;
+use crate::ty::HirTy;
 use hachi_syntax::{
     BreakStmt, ContinueStmt, ExprStmt, ForStmt, IfStmt, LetStmt, ReturnStmt, Span, Stmt,
 };
-use crate::expr::{HirBooleanLiteralExpr, HirExpr};
-use crate::stmt::{HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt};
-use crate::syntax_lowering::SyntaxLoweringPass;
-use crate::ty::HirTy;
 
 impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_stmt(&mut self, node: &'ast Stmt) -> HirResult<Box<HirStmt>> {
@@ -36,10 +39,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(Box::new(hir))
     }
 
-    pub fn visit_return_stmt(
-        &mut self,
-        node: &'ast ReturnStmt,
-    ) -> HirResult<Box<HirStmt>> {
+    pub fn visit_return_stmt(&mut self, node: &'ast ReturnStmt) -> HirResult<Box<HirStmt>> {
         let value = node
             .value
             .as_ref()
@@ -172,17 +172,12 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(Box::new(hir))
     }
 
-    pub fn visit_break_stmt(
-        &mut self,
-        node: &'ast BreakStmt,
-    ) -> HirResult<Box<HirStmt>> {
+    pub fn visit_break_stmt(&mut self, node: &'ast BreakStmt) -> HirResult<Box<HirStmt>> {
         self.loop_depth
             .back()
-            .ok_or(HirError::BreakOutsideLoop(
-                BreakOutsideLoopError {
-                    span: node.span().clone(),
-                },
-            ))?;
+            .ok_or(HirError::BreakOutsideLoop(BreakOutsideLoopError {
+                span: node.span().clone(),
+            }))?;
         let hir = HirStmt::Break(HirBreakStmt {
             span: node.span().clone(),
         });
@@ -198,17 +193,12 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(Box::new(hir))
     }
 
-    pub fn visit_continue_stmt(
-        &mut self,
-        node: &'ast ContinueStmt,
-    ) -> HirResult<Box<HirStmt>> {
+    pub fn visit_continue_stmt(&mut self, node: &'ast ContinueStmt) -> HirResult<Box<HirStmt>> {
         self.loop_depth
             .back()
-            .ok_or(HirError::ContinueOutsideLoop(
-                ContinueOutsideLoopError {
-                    span: node.span().clone(),
-                },
-            ))?;
+            .ok_or(HirError::ContinueOutsideLoop(ContinueOutsideLoopError {
+                span: node.span().clone(),
+            }))?;
         let hir = HirStmt::Continue(HirContinueStmt {
             span: node.span().clone(),
         });

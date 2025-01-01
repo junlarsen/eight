@@ -1,8 +1,8 @@
-use hachi_syntax::{Identifier, Type};
 use crate::error::HirResult;
-use crate::HirName;
 use crate::syntax_lowering::SyntaxLoweringPass;
 use crate::ty::HirTy;
+use crate::HirName;
+use hachi_syntax::{Identifier, Type};
 
 /// Visitor for the `Type` AST node variants.
 impl SyntaxLoweringPass<'_> {

@@ -1,19 +1,18 @@
-use crate::error::{HirResult};
-use crate::{HirModule};
+use crate::error::HirResult;
+use crate::fun::{
+    HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
+};
+use crate::syntax_lowering::SyntaxLoweringPass;
+use crate::ty::HirTy;
+use crate::HirModule;
 use hachi_syntax::{
     FunctionItem, FunctionParameterItem, FunctionTypeParameterItem, IntrinsicFunctionItem,
     IntrinsicTypeItem, Item, Span, TranslationUnit, TypeItem,
 };
 use std::collections::BTreeMap;
-use crate::fun::{HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction};
-use crate::syntax_lowering::SyntaxLoweringPass;
-use crate::ty::HirTy;
 
 impl<'ast> SyntaxLoweringPass<'ast> {
-    pub fn visit_translation_unit(
-        &mut self,
-        node: &'ast TranslationUnit,
-    ) -> HirResult<HirModule> {
+    pub fn visit_translation_unit(&mut self, node: &'ast TranslationUnit) -> HirResult<HirModule> {
         let mut module = HirModule::new();
         for item in &node.items {
             self.visit_item(&mut module, item)?;
@@ -21,11 +20,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(module)
     }
 
-    pub fn visit_item(
-        &mut self,
-        module: &mut HirModule,
-        node: &'ast Item,
-    ) -> HirResult<()> {
+    pub fn visit_item(&mut self, module: &mut HirModule, node: &'ast Item) -> HirResult<()> {
         match node {
             Item::Function(f) => self.visit_function_item(module, f),
             Item::IntrinsicFunction(f) => self.visit_intrinsic_function_item(module, f),
