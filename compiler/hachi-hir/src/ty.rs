@@ -12,18 +12,18 @@ use std::fmt::Debug;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
 pub enum HirTy {
-    Var(TyVariable),
-    Fun(HirFunctionTy),
-    Const(HirConstantTy),
-    Ptr(HirPointerTy),
-    Ref(HirReferenceTy),
+    Variable(HirVariableTy),
+    Function(HirFunctionTy),
+    Constant(HirConstantTy),
+    Pointer(HirPointerTy),
+    Reference(HirReferenceTy),
     Record(HirRecordTy),
     Uninitialized,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct TyVariable {
+pub struct HirVariableTy {
     pub name: usize,
     pub span: Span,
 }
@@ -66,11 +66,11 @@ pub struct HirRecordTy {
 
 impl HirTy {
     pub fn new_var(name: usize, span: Span) -> Self {
-        Self::Var(TyVariable { name, span })
+        Self::Variable(HirVariableTy { name, span })
     }
 
     pub fn new_fun(return_type: Box<HirTy>, parameters: Vec<Box<HirTy>>, span: &Span) -> Self {
-        Self::Fun(HirFunctionTy {
+        Self::Function(HirFunctionTy {
             return_type,
             parameters,
             span: span.clone(),
@@ -78,21 +78,21 @@ impl HirTy {
     }
 
     pub fn new_const<T: AsRef<str>>(name: T, span: &Span) -> Self {
-        Self::Const(HirConstantTy {
+        Self::Constant(HirConstantTy {
             name: name.as_ref().to_owned(),
             span: span.clone(),
         })
     }
 
     pub fn new_ptr(inner: Box<HirTy>, span: &Span) -> Self {
-        Self::Ptr(HirPointerTy {
+        Self::Pointer(HirPointerTy {
             inner,
             span: span.clone(),
         })
     }
 
     pub fn new_ref(inner: Box<HirTy>, span: &Span) -> Self {
-        Self::Ref(HirReferenceTy {
+        Self::Reference(HirReferenceTy {
             inner,
             span: span.clone(),
         })
@@ -108,23 +108,23 @@ impl HirTy {
 
 impl HirTy {
     pub fn is_intrinsic_i32(&self) -> bool {
-        matches!(self, HirTy::Const(t) if t.name == "i32")
+        matches!(self, HirTy::Constant(t) if t.name == "i32")
     }
 
     pub fn is_intrinsic_bool(&self) -> bool {
-        matches!(self, HirTy::Const(t) if t.name == "bool")
+        matches!(self, HirTy::Constant(t) if t.name == "bool")
     }
 
     pub fn is_intrinsic_void(&self) -> bool {
-        matches!(self, HirTy::Const(t) if t.name == "void")
+        matches!(self, HirTy::Constant(t) if t.name == "void")
     }
 
     pub fn is_pointer(&self) -> bool {
-        matches!(self, HirTy::Ptr(_))
+        matches!(self, HirTy::Pointer(_))
     }
 
     pub fn is_reference(&self) -> bool {
-        matches!(self, HirTy::Ref(_))
+        matches!(self, HirTy::Reference(_))
     }
 
     pub fn is_record(&self) -> bool {

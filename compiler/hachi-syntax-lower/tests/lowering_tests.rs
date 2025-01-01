@@ -1,7 +1,8 @@
+use hachi_hir::format::HirModuleFormatter;
 use hachi_syntax::Lexer;
 use hachi_syntax::Parser;
 use hachi_syntax_lower::SyntaxLoweringPass;
-use insta::assert_ron_snapshot;
+use insta::{assert_ron_snapshot, assert_snapshot};
 
 #[test]
 fn test_snapshot_corpus() {
@@ -13,7 +14,12 @@ fn test_snapshot_corpus() {
             .parse()
             .unwrap_or_else(|_| panic!("failed to parse corpus file {} into ast", path.display()));
         let mut lowering_pass = SyntaxLoweringPass::new();
-        let module = lowering_pass.visit_translation_unit(&translation_unit).unwrap();
-        assert_ron_snapshot!(module);
+        let module = lowering_pass
+            .visit_translation_unit(&translation_unit)
+            .expect("failed to lower translation unit");
+        let doc = HirModuleFormatter::format_hir_module(&module);
+        let mut w = Vec::new();
+        doc.render(80, &mut w).expect("failed to render doc");
+        assert_snapshot!(String::from_utf8(w).unwrap());
     })
 }

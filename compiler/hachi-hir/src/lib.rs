@@ -11,27 +11,32 @@
 use crate::fun::HirFun;
 use crate::ty::HirTy;
 use hachi_syntax::Span;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 pub mod context;
 pub mod error;
 pub mod expr;
+pub mod format;
 pub mod fun;
 pub mod stmt;
 pub mod ty;
 
+/// A module containing all the types and functions defined in a program.
+///
+/// We use a BTreeMap here instead of a HashMap to preserve the order of the types for when we're
+/// emitting code.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirModule {
-    pub types: HashMap<String, HirTy>,
-    pub functions: HashMap<String, HirFun>,
+    pub types: BTreeMap<String, HirTy>,
+    pub functions: BTreeMap<String, HirFun>,
 }
 
 impl HirModule {
     pub fn new() -> Self {
         Self {
-            types: HashMap::new(),
-            functions: HashMap::new(),
+            types: BTreeMap::new(),
+            functions: BTreeMap::new(),
         }
     }
 }

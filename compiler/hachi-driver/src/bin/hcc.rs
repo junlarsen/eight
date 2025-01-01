@@ -1,8 +1,8 @@
 use clap::Parser;
-use hachi_syntax_lower::SyntaxLoweringPass;
-use hachi_syntax::{Lexer, TranslationUnit};
-use miette::NamedSource;
 use hachi_hir::HirModule;
+use hachi_syntax::{Lexer, TranslationUnit};
+use hachi_syntax_lower::SyntaxLoweringPass;
+use miette::NamedSource;
 
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]

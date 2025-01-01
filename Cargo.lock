@@ -76,6 +76,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayvec"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
+
+[[package]]
 name = "backtrace"
 version = "0.3.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -255,6 +261,7 @@ dependencies = [
  "hachi-syntax",
  "insta",
  "miette",
+ "pretty",
  "ron 0.8.1",
  "serde",
  "thiserror 2.0.6",
@@ -430,6 +437,17 @@ name = "owo-colors"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb37767f6569cd834a413442455e0f066d0d522de8630436e2a1761d9726ba56"
+
+[[package]]
+name = "pretty"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b55c4d17d994b637e2f4daf6e5dc5d660d209d5642377d675d7a1c3ab69fa579"
+dependencies = [
+ "arrayvec",
+ "typed-arena",
+ "unicode-width",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -640,6 +658,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "typed-arena"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6af6ae20167a9ece4bcb41af5b80f8a1f1df981f6391189ce00fd257af04126a"
 
 [[package]]
 name = "unicode-ident"

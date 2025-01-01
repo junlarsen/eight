@@ -1,188 +1,55 @@
 ---
 source: compiler/hachi-syntax-lower/tests/lowering_tests.rs
-expression: module
+expression: "String::from_utf8(w).unwrap()"
 input_file: compiler/hachi-syntax-lower/tests/data/for_loop_reduction.test
 snapshot_kind: text
 ---
-HirModule(
-  types: {},
-  functions: {
-    "loopy": Function(HirFunction(
-      span: Span(
-        low: 0,
-        high: 72,
-      ),
-      name: HirName(
-        name: "loopy",
-        span: Span(
-          low: 3,
-          high: 8,
-        ),
-      ),
-      type_parameters: [],
-      parameters: [],
-      return_type: Const(HirConstantTy(
-        name: "void",
-        span: Span(
-          low: 0,
-          high: 0,
-        ),
-      )),
-      body: [
-        Block(HirBlockStmt(
-          span: Span(
-            low: 15,
-            high: 70,
-          ),
-          body: [
-            Let(HirLetStmt(
-              span: Span(
-                low: 20,
-                high: 29,
-              ),
-              name: HirName(
-                name: "i",
-                span: Span(
-                  low: 24,
-                  high: 25,
-                ),
-              ),
-              type: Uninitialized,
-              value: IntegerLiteral(HirIntegerLiteralExpr(
-                span: Span(
-                  low: 28,
-                  high: 29,
-                ),
-                value: 0,
-                ty: Uninitialized,
-              )),
-            )),
-            Loop(HirLoopStmt(
-              span: Span(
-                low: 15,
-                high: 70,
-              ),
-              condition: BinaryOp(HirBinaryOpExpr(
-                span: Span(
-                  low: 31,
-                  high: 37,
-                ),
-                lhs: Reference(HirReferenceExpr(
-                  span: Span(
-                    low: 31,
-                    high: 32,
-                  ),
-                  name: HirName(
-                    name: "i",
-                    span: Span(
-                      low: 31,
-                      high: 32,
-                    ),
-                  ),
-                  ty: Uninitialized,
-                )),
-                rhs: IntegerLiteral(HirIntegerLiteralExpr(
-                  span: Span(
-                    low: 35,
-                    high: 37,
-                  ),
-                  value: 10,
-                  ty: Uninitialized,
-                )),
-                op: Lt,
-                ty: Uninitialized,
-              )),
-              body: [
-                Let(HirLetStmt(
-                  span: Span(
-                    low: 56,
-                    high: 66,
-                  ),
-                  name: HirName(
-                    name: "j",
-                    span: Span(
-                      low: 60,
-                      high: 61,
-                    ),
-                  ),
-                  type: Uninitialized,
-                  value: Reference(HirReferenceExpr(
-                    span: Span(
-                      low: 64,
-                      high: 65,
-                    ),
-                    name: HirName(
-                      name: "i",
-                      span: Span(
-                        low: 64,
-                        high: 65,
-                      ),
-                    ),
-                    ty: Uninitialized,
-                  )),
-                )),
-              ],
-            )),
-            Expr(HirExprStmt(
-              span: Span(
-                low: 39,
-                high: 48,
-              ),
-              expr: Assign(HirAssignExpr(
-                span: Span(
-                  low: 39,
-                  high: 48,
-                ),
-                lhs: Reference(HirReferenceExpr(
-                  span: Span(
-                    low: 39,
-                    high: 40,
-                  ),
-                  name: HirName(
-                    name: "i",
-                    span: Span(
-                      low: 39,
-                      high: 40,
-                    ),
-                  ),
-                  ty: Uninitialized,
-                )),
-                rhs: BinaryOp(HirBinaryOpExpr(
-                  span: Span(
-                    low: 43,
-                    high: 48,
-                  ),
-                  lhs: Reference(HirReferenceExpr(
-                    span: Span(
-                      low: 43,
-                      high: 44,
-                    ),
-                    name: HirName(
-                      name: "i",
-                      span: Span(
-                        low: 43,
-                        high: 44,
-                      ),
-                    ),
-                    ty: Uninitialized,
-                  )),
-                  rhs: IntegerLiteral(HirIntegerLiteralExpr(
-                    span: Span(
-                      low: 47,
-                      high: 48,
-                    ),
-                    value: 1,
-                    ty: Uninitialized,
-                  )),
-                  op: Add,
-                  ty: Uninitialized,
-                )),
-                ty: Uninitialized,
-              )),
-            )),
-          ],
-        )),
-      ],
-    )),
-  },
-)
+module {
+  // module types
+  type Matrix = {
+    c: i32,
+    r: i32,
+    buf: *i32,
+  };
+  type bool = bool;
+  type i32 = i32;
+  type void = void;
+  
+  // module functions
+  intrinsic_fn free<T>(ptr: *T) -> void;
+  intrinsic_fn malloc<T>(size: i32) -> *T;
+  fn matrix_matrix_multiply<>(a: Matrix, b: Matrix) -> Matrix {
+    if (a.r != b.c){
+      panic::<>();
+    } else {
+    
+    }
+    let c: _ = new Matrix {
+      r: a.r,
+      c: b.c,
+      buf: malloc::<>(a.r * b.c * 4),
+    };
+    {
+      let i: _ = 0;
+      while (i < a.r) {
+        {
+          let j: _ = 0;
+          while (j < b.c) {
+            let sum: _ = 0;
+            {
+              let k: _ = 0;
+              while (k < a.c) {
+                sum = sum + a.buf[i * a.c + k] * b.buf[k * b.c + j];
+              }
+              k = k + 1;
+            }
+            c.buf[i * b.c + j] = sum;
+          }
+          j = j + 1;
+        }
+      }
+      i = i + 1;
+    }
+    return c;
+  }
+}

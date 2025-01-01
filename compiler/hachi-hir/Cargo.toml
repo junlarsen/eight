@@ -11,6 +11,7 @@ serde = ["dep:serde"]
 hachi-macros = { path = "../hachi-macros" }
 hachi-syntax = { path = "../hachi-syntax" }
 miette = { workspace = true }
+pretty = "0.12.3"
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }
 
