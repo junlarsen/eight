@@ -1,11 +1,15 @@
 ---
 source: compiler/hachi-syntax/tests/parser_tests.rs
-expression: "*translation_unit"
+expression: translation_unit
 input_file: compiler/hachi-syntax/tests/data/matmul.test
 snapshot_kind: text
 ---
 TranslationUnit(
   id: NodeId(0),
+  span: Span(
+    low: 0,
+    high: 0,
+  ),
   items: [
     Type(TypeItem(
       id: NodeId(15),
