@@ -6,13 +6,16 @@
 //!
 //! The type system is a hindley-milner based type system.
 
-use crate::error::{InvalidTypeReferenceError, InvalidValueReferenceError, TypeError, TypeResult};
+use crate::error::{
+    InvalidTypeReferenceError, InvalidValueReferenceError, ReturnOutsideOfFunctionError, TypeError,
+    TypeResult, ValueReturnFromVoidFunctionError, VoidReturnFromNonVoidFunctionError,
+};
 use crate::scope::TypeEnvironment;
-use crate::ty::Ty;
+use crate::ty::{Constraint, Ty};
 use hachi_syntax::{
-    BooleanLiteralExpr, Expr, ForStmt, FunctionItem, FunctionParameterItem, GroupExpr,
-    IntegerLiteralExpr, IntrinsicFunctionItem, IntrinsicTypeItem, Item, LetStmt, ReferenceExpr,
-    Span, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem,
+    BooleanLiteralExpr, CallExpr, Expr, ExprStmt, ForStmt, FunctionItem, FunctionParameterItem,
+    GroupExpr, IntegerLiteralExpr, IntrinsicFunctionItem, IntrinsicTypeItem, Item, LetStmt,
+    ReferenceExpr, ReturnStmt, Span, Stmt, TranslationUnit, Type, TypeItem, TypeMemberItem,
 };
 use std::collections::{HashMap, VecDeque};
 
@@ -28,7 +31,8 @@ pub struct TypeChecker<'ast> {
     /// We also bind functions into the [let_binding_context] as well. It makes sense to do so, even
     /// more so when we introduce lambdas/anonymous functions.
     let_binding_context: TypeEnvironment<Ty>,
-    next_type_id: usize,
+    substitutions: Vec<&'ast Ty>,
+    constraints: Vec<Constraint<'ast>>,
 
     /// Keep track of the current looping depth
     loop_depth: VecDeque<&'ast ForStmt>,
@@ -51,7 +55,8 @@ impl<'ast> TypeChecker<'ast> {
         Self {
             type_context: TypeEnvironment::new(),
             let_binding_context: TypeEnvironment::new(),
-            next_type_id: 0,
+            substitutions: Vec::new(),
+            constraints: Vec::new(),
             loop_depth: VecDeque::new(),
             function_depth: VecDeque::new(),
         }
@@ -66,8 +71,7 @@ impl<'ast> TypeChecker<'ast> {
 
     /// Get a new type id.
     pub fn fresh_type_id(&mut self) -> usize {
-        self.next_type_id += 1;
-        self.next_type_id
+        self.substitutions.len()
     }
 
     /// Apply the `Var` rule to the given type.
@@ -104,6 +108,79 @@ impl<'ast> TypeChecker<'ast> {
 
     pub fn unify(&self, a: &Ty, b: &Ty) -> TypeResult<()> {
         todo!()
+    }
+
+    /// Constrain the given type `a` to be equal to the given type `b`.
+    pub fn constrain_eq(&self, a: &Ty, b: &Ty) -> TypeResult<()> {
+        Ok(())
+    }
+
+    /// Infer the type of the given expression node.
+    pub fn infer(&mut self, node: &'ast Expr, expected_ty: &Ty) -> TypeResult<Ty> {
+        let ty = match node {
+            Expr::IntegerLiteral(e) => self.infer_integer_literal_expr(e, expected_ty)?,
+            Expr::BooleanLiteral(e) => self.infer_boolean_literal_expr(e, expected_ty)?,
+            Expr::Group(e) => self.infer_group_expr(e, expected_ty)?,
+            Expr::Reference(e) => self.infer_reference_expr(e, expected_ty)?,
+            Expr::Call(e) => self.infer_call_expr(e, expected_ty)?,
+            _ => todo!(),
+        };
+        Ok(ty)
+    }
+
+    pub fn infer_integer_literal_expr(
+        &mut self,
+        _: &'ast IntegerLiteralExpr,
+        expected_ty: &Ty,
+    ) -> TypeResult<Ty> {
+        let ty = Ty::TConst("i32".to_owned());
+        self.constrain_eq(expected_ty, &ty)?;
+        Ok(ty)
+    }
+
+    pub fn infer_boolean_literal_expr(
+        &mut self,
+        _: &'ast BooleanLiteralExpr,
+        expected_ty: &Ty,
+    ) -> TypeResult<Ty> {
+        let ty = Ty::TConst("bool".to_owned());
+        self.constrain_eq(expected_ty, &ty)?;
+        Ok(ty)
+    }
+
+    pub fn infer_group_expr(&mut self, node: &'ast GroupExpr, expected_ty: &Ty) -> TypeResult<Ty> {
+        self.infer(&node.inner, expected_ty)
+    }
+
+    pub fn infer_reference_expr(
+        &mut self,
+        node: &'ast ReferenceExpr,
+        expected_ty: &Ty,
+    ) -> TypeResult<Ty> {
+        let ty = self.search_let_binding(&node.name.name, &node.name.span)?;
+        self.constrain_eq(expected_ty, ty)?;
+        Ok(ty.clone())
+    }
+
+    pub fn infer_call_expr(&mut self, node: &'ast CallExpr, expected_ty: &Ty) -> TypeResult<Ty> {
+        let argument_types = node
+            .arguments
+            .iter()
+            .map(|a| self.fresh_type_variable())
+            .collect::<Vec<_>>();
+        let return_ty = self.fresh_type_variable();
+        self.constrain_eq(expected_ty, &return_ty)?;
+        for (argument, argument_ty) in node.arguments.iter().zip(&argument_types) {
+            self.infer(argument.as_ref(), argument_ty)?;
+        }
+
+        let boxed_argument_types = argument_types
+            .iter()
+            .map(|t| Box::new(t.clone()))
+            .collect::<Vec<_>>();
+        let fun_ty = Ty::TFunction(Box::new(return_ty), boxed_argument_types);
+        let actual_ty = self.infer(&node.callee, &fun_ty)?;
+        Ok(actual_ty)
     }
 }
 
@@ -240,8 +317,8 @@ impl<'ast> TypeChecker<'ast> {
         self.let_binding_context.enter_scope();
         // Insert all the type parameters into the scope
         for parameter in node.type_parameters.iter() {
-            self.type_context
-                .add(&parameter.name.name, self.fresh_type_variable());
+            let ty = self.fresh_type_variable();
+            self.type_context.add(&parameter.name.name, ty);
         }
 
         // Ensure that all the parameter types are defined
@@ -297,6 +374,10 @@ impl<'ast> TypeChecker<'ast> {
     pub fn visit_stmt(&mut self, node: &'ast Stmt) -> TypeResult<()> {
         match node {
             Stmt::Let(l) => self.visit_let_stmt(l),
+            Stmt::Expr(e) => self.visit_expr_stmt(e),
+            Stmt::Return(r) => self.visit_return_stmt(r),
+            Stmt::Continue(_) => Ok(()),
+            Stmt::Break(_) => Ok(()),
             _ => Ok(()),
         }
     }
@@ -306,55 +387,110 @@ impl<'ast> TypeChecker<'ast> {
     /// We either take the expected type of the let statement, or we infer the type of the variable
     /// from the expression.
     pub fn visit_let_stmt(&mut self, node: &'ast LetStmt) -> TypeResult<()> {
+        // We resolve the type annotation if it exists, or default to a fresh type variable for
+        // inference if it was untyped `let x = ...`
         let expected_ty = node
             .r#type
             .as_ref()
             .map(|t| t.as_ref().into())
             .unwrap_or(self.fresh_type_variable());
-        let actual_ty = self.visit_expr(&node.value)?;
-        self.unify(&expected_ty, &actual_ty)?;
+        let actual_ty = self.infer(&node.value, &expected_ty)?;
         self.type_context.add(&node.name.name, actual_ty);
         Ok(())
     }
 
-    /// Visit an expression.
-    pub fn visit_expr(&mut self, node: &'ast Expr) -> TypeResult<Ty> {
-        match node {
-            Expr::IntegerLiteral(e) => self.visit_integer_literal_expr(e),
-            Expr::BooleanLiteral(e) => self.visit_boolean_literal_expr(e),
-            Expr::Group(e) => self.visit_group_expr(e),
-            Expr::Reference(e) => self.visit_reference_expr(e),
-            _ => todo!(),
+    pub fn visit_expr_stmt(&mut self, node: &'ast ExprStmt) -> TypeResult<()> {
+        self.visit_expr(&node.expr)?;
+        Ok(())
+    }
+
+    pub fn visit_return_stmt(&mut self, node: &'ast ReturnStmt) -> TypeResult<()> {
+        // Traverse down the return value if it exists.
+        if let Some(v) = &node.value {
+            self.visit_expr(v)?;
         }
+
+        // At the moment, the grammar doesn't allow for this error to be dispatched, but we should
+        // keep it here for future-proofing.
+        let fun = self
+            .function_depth
+            .front()
+            .ok_or(TypeError::ReturnOutsideOfFunction(
+                ReturnOutsideOfFunctionError {
+                    span: node.span.clone(),
+                },
+            ))?;
+        let expected_ty = fun.return_type.as_ref().map(|t| t.as_ref());
+
+        match (expected_ty, node.value.as_ref()) {
+            (None, None) => Ok(()),
+            // Both return value and value are present, perform inference
+            (Some(ty), Some(val)) => {
+                let expected_ty = ty.into();
+                self.infer(val, &expected_ty)?;
+                Ok(())
+            }
+            (Some(_), _) => Err(TypeError::VoidReturnFromNonVoidFunction(
+                VoidReturnFromNonVoidFunctionError {
+                    span: node.span.clone(),
+                },
+            )),
+            (_, Some(v)) => {
+                let expected_ty = Ty::TConst("void".to_owned());
+                let actual_ty = self.infer(v, &expected_ty)?;
+                // This allows us to do things like `return returns_void();`
+                if !actual_ty.is_intrinsic_void() {
+                    return Err(TypeError::ValueReturnFromVoidFunction(
+                        ValueReturnFromVoidFunctionError {
+                            span: node.span.clone(),
+                        },
+                    ));
+                };
+                Ok(())
+            }
+        }
+    }
+
+    /// Visit an expression.
+    pub fn visit_expr(&mut self, node: &'ast Expr) -> TypeResult<()> {
+        match node {
+            Expr::IntegerLiteral(e) => self.visit_integer_literal_expr(e)?,
+            Expr::BooleanLiteral(e) => self.visit_boolean_literal_expr(e)?,
+            Expr::Group(e) => self.visit_group_expr(e)?,
+            Expr::Reference(e) => self.visit_reference_expr(e)?,
+            _ => todo!(),
+        };
+        Ok(())
     }
 
     /// Visit an integer literal expression.
     ///
-    /// There is nothing to do here, other than infer that the type of the expression is i32.
-    pub fn visit_integer_literal_expr(&mut self, _: &'ast IntegerLiteralExpr) -> TypeResult<Ty> {
-        Ok(Ty::TConst("i32".to_owned()))
+    /// Integer literals are a leaf node, therefore they don't recurse further.
+    pub fn visit_integer_literal_expr(&mut self, _: &'ast IntegerLiteralExpr) -> TypeResult<()> {
+        Ok(())
     }
 
     /// Visit a boolean literal expression.
     ///
-    /// There is nothing to do here, other than infer that the type of the expression is bool.
-    pub fn visit_boolean_literal_expr(&mut self, _: &'ast BooleanLiteralExpr) -> TypeResult<Ty> {
-        Ok(Ty::TConst("bool".to_owned()))
+    /// Boolean literals are a leaf node, therefore they don't recurse further.
+    pub fn visit_boolean_literal_expr(&mut self, _: &'ast BooleanLiteralExpr) -> TypeResult<()> {
+        Ok(())
     }
 
     /// Visit a group expression.
     ///
     /// This function ensures that the type of the inner expression is defined.
-    pub fn visit_group_expr(&mut self, node: &'ast GroupExpr) -> TypeResult<Ty> {
-        self.visit_expr(&node.inner)
+    pub fn visit_group_expr(&mut self, node: &'ast GroupExpr) -> TypeResult<()> {
+        self.visit_expr(&node.inner)?;
+        Ok(())
     }
 
     /// Visit a reference expression.
     ///
     /// This function ensures that the type of the reference is defined.
-    pub fn visit_reference_expr(&mut self, node: &'ast ReferenceExpr) -> TypeResult<Ty> {
-        let ty = self.search_let_binding(&node.name.name, &node.name.span)?;
-        Ok(ty.clone())
+    pub fn visit_reference_expr(&mut self, node: &'ast ReferenceExpr) -> TypeResult<()> {
+        self.search_let_binding(&node.name.name, &node.name.span)?;
+        Ok(())
     }
 
     /// Visit a type.

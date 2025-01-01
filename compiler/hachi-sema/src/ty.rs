@@ -12,6 +12,20 @@ pub enum Ty {
     TRecord(HashMap<String, Box<Ty>>),
 }
 
+impl Ty {
+    pub fn is_intrinsic_i32(&self) -> bool {
+        matches!(self, Ty::TConst(v) if v == "i32")
+    }
+
+    pub fn is_intrinsic_bool(&self) -> bool {
+        matches!(self, Ty::TConst(v) if v == "bool")
+    }
+
+    pub fn is_intrinsic_void(&self) -> bool {
+        matches!(self, Ty::TConst(v) if v == "void")
+    }
+}
+
 impl From<&Type> for Ty {
     fn from(ty: &Type) -> Self {
         match ty {
@@ -54,4 +68,8 @@ impl Debug for Ty {
             }
         }
     }
+}
+
+pub enum Constraint<'tc> {
+    Eq(&'tc Ty, &'tc Ty),
 }
