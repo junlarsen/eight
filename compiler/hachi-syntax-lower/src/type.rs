@@ -5,7 +5,7 @@ use hachi_hir::HirName;
 use hachi_syntax::{Identifier, Type};
 
 /// Visitor for the `Type` AST node variants.
-impl SyntaxLoweringPass {
+impl SyntaxLoweringPass<'_> {
     /// Translate a syntax identifier into a HIR name.
     pub fn visit_identifier(&mut self, node: &Identifier) -> SyntaxLoweringResult<HirName> {
         Ok(HirName {

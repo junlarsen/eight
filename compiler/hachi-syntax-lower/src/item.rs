@@ -11,10 +11,10 @@ use hachi_syntax::{
 };
 use std::collections::BTreeMap;
 
-impl SyntaxLoweringPass {
+impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_translation_unit(
         &mut self,
-        node: &TranslationUnit,
+        node: &'ast TranslationUnit,
     ) -> SyntaxLoweringResult<HirModule> {
         let mut module = HirModule::new();
         for item in &node.items {
@@ -23,7 +23,11 @@ impl SyntaxLoweringPass {
         Ok(module)
     }
 
-    pub fn visit_item(&mut self, module: &mut HirModule, node: &Item) -> SyntaxLoweringResult<()> {
+    pub fn visit_item(
+        &mut self,
+        module: &mut HirModule,
+        node: &'ast Item,
+    ) -> SyntaxLoweringResult<()> {
         match node {
             Item::Function(f) => self.visit_function_item(module, f),
             Item::IntrinsicFunction(f) => self.visit_intrinsic_function_item(module, f),
@@ -35,7 +39,7 @@ impl SyntaxLoweringPass {
     pub fn visit_function_item(
         &mut self,
         module: &mut HirModule,
-        node: &FunctionItem,
+        node: &'ast FunctionItem,
     ) -> SyntaxLoweringResult<()> {
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
@@ -72,7 +76,7 @@ impl SyntaxLoweringPass {
     pub fn visit_intrinsic_function_item(
         &mut self,
         module: &mut HirModule,
-        node: &IntrinsicFunctionItem,
+        node: &'ast IntrinsicFunctionItem,
     ) -> SyntaxLoweringResult<()> {
         let return_type = self.visit_type(node.return_type.as_ref())?;
         let parameters = node
@@ -99,7 +103,7 @@ impl SyntaxLoweringPass {
 
     pub fn visit_function_parameter(
         &mut self,
-        node: &FunctionParameterItem,
+        node: &'ast FunctionParameterItem,
     ) -> SyntaxLoweringResult<Box<HirFunctionParameter>> {
         let name = self.visit_identifier(node.name.as_ref())?;
         let ty = self.visit_type(node.r#type.as_ref())?;
@@ -113,7 +117,7 @@ impl SyntaxLoweringPass {
 
     pub fn visit_function_type_parameter(
         &mut self,
-        node: &FunctionTypeParameterItem,
+        node: &'ast FunctionTypeParameterItem,
     ) -> SyntaxLoweringResult<Box<HirFunctionTypeParameter>> {
         let name = self.visit_identifier(node.name.as_ref())?;
         let hir = HirFunctionTypeParameter {
@@ -139,7 +143,7 @@ impl SyntaxLoweringPass {
     pub fn visit_type_item(
         &mut self,
         module: &mut HirModule,
-        node: &TypeItem,
+        node: &'ast TypeItem,
     ) -> SyntaxLoweringResult<()> {
         let fields = node
             .members
@@ -160,7 +164,7 @@ impl SyntaxLoweringPass {
     pub fn visit_intrinsic_type_item(
         &mut self,
         module: &mut HirModule,
-        node: &IntrinsicTypeItem,
+        node: &'ast IntrinsicTypeItem,
     ) -> SyntaxLoweringResult<()> {
         let ty = HirTy::new_const(&node.name.name, node.name.span());
         module.types.insert(node.name.name.to_owned(), ty);

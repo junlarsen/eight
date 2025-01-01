@@ -6,8 +6,8 @@ use thiserror::Error;
 declare_error_type! {
     #[error("syntax lowering error: {0}")]
     pub enum SyntaxLoweringError {
-        InvalidTypeReference(InvalidTypeReferenceError),
-        InvalidValueReference(InvalidValueReferenceError),
+        BreakOutsideLoop(BreakOutsideLoopError),
+        ContinueOutsideLoop(ContinueOutsideLoopError),
     }
 }
 
@@ -15,19 +15,17 @@ declare_error_type! {
 pub type SyntaxLoweringResult<T> = Result<T, SyntaxLoweringError>;
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(sema::invalid_type_reference))]
-#[error("attempted to reference a type named {name} that does not exist")]
-pub struct InvalidTypeReferenceError {
-    #[label = "the type '{name}' does not exist"]
+#[diagnostic(code(sema::break_outside_loop))]
+#[error("break statement outside of loop")]
+pub struct BreakOutsideLoopError {
+    #[label = "there is no enclosing loop"]
     pub span: Span,
-    pub name: String,
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(sema::invalid_value_reference))]
-#[error("attempted to reference a value named {name} that does not exist")]
-pub struct InvalidValueReferenceError {
-    #[label = "the value {name} does not exist"]
+#[diagnostic(code(sema::continue_outside_loop))]
+#[error("continue statement outside of loop")]
+pub struct ContinueOutsideLoopError {
+    #[label = "there is no enclosing loop"]
     pub span: Span,
-    pub name: String,
 }
