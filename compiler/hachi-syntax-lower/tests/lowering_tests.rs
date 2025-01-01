@@ -2,7 +2,7 @@ use hachi_hir::format::HirModuleFormatter;
 use hachi_syntax::Lexer;
 use hachi_syntax::Parser;
 use hachi_syntax_lower::SyntaxLoweringPass;
-use insta::{assert_ron_snapshot, assert_snapshot};
+use insta::assert_snapshot;
 
 #[test]
 fn test_snapshot_corpus() {

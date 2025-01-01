@@ -55,9 +55,7 @@ impl HirModuleFormatter {
                     .append(RcDoc::hardline())
                     .append(RcDoc::intersperse(
                         module
-                            .functions
-                            .iter()
-                            .map(|(name, fun)| Self::format_hir_fun(fun)),
+                            .functions.values().map(|fun| Self::format_hir_fun(fun)),
                         RcDoc::hardline(),
                     ))
                     .append(RcDoc::hardline()),

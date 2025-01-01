@@ -9,7 +9,7 @@ use hachi_syntax::{
     FunctionItem, FunctionParameterItem, FunctionTypeParameterItem, IntrinsicFunctionItem,
     IntrinsicTypeItem, Item, Span, TranslationUnit, TypeItem,
 };
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 impl SyntaxLoweringPass {
     pub fn visit_translation_unit(

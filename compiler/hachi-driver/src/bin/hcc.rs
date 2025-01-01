@@ -1,39 +1,35 @@
 use clap::Parser;
-use hachi_hir::HirModule;
-use hachi_syntax::{Lexer, TranslationUnit};
-use hachi_syntax_lower::SyntaxLoweringPass;
+use hachi_driver::pipeline::{Pipeline, PipelineOptions};
 use miette::NamedSource;
 
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 struct AppArgs {
     input: String,
-
     #[arg(long, default_value = "false")]
     emit_ast: bool,
+    #[arg(long, default_value = "false")]
+    emit_hir: bool,
 }
 
-fn compile(input: &str) -> miette::Result<(TranslationUnit, HirModule)> {
-    let mut lexer = Lexer::new(input);
-    let mut parser = hachi_syntax::Parser::new(&mut lexer);
-    let mut lowering_pass = SyntaxLoweringPass::new();
-    let tu = parser.parse()?;
-    let module = lowering_pass.visit_translation_unit(&tu)?;
-    Ok((tu, module))
+impl From<AppArgs> for PipelineOptions {
+    fn from(args: AppArgs) -> Self {
+        Self {
+            emit_ast: args.emit_ast,
+            emit_hir: args.emit_hir,
+        }
+    }
 }
 
 fn main() -> miette::Result<()> {
     let args = AppArgs::parse();
     let source = std::fs::read_to_string(args.input.clone()).expect("Failed to read input file");
-    let source_code = NamedSource::new(args.input, source.clone());
+    let source_code = NamedSource::new(&args.input, source.clone());
 
-    let (tu, module) = compile(&source).map_err(|e| e.with_source_code(source_code))?;
-
-    if args.emit_ast {
-        let syntax = ron::ser::to_string_pretty(&tu, Default::default())
-            .expect("failed to serialize ast to ron");
-        println!("{}", syntax);
-    }
-
+    let options = PipelineOptions::from(args);
+    let pipeline = Pipeline::new(options);
+    pipeline
+        .run(source)
+        .map_err(|e| e.with_source_code(source_code))?;
     Ok(())
 }

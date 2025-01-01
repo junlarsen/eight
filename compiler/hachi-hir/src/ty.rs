@@ -1,5 +1,5 @@
 use hachi_syntax::Span;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::fmt::Debug;
 
 /// A single type in the HIR representation.

@@ -11,7 +11,7 @@
 use crate::fun::HirFun;
 use crate::ty::HirTy;
 use hachi_syntax::Span;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 pub mod context;
 pub mod error;
