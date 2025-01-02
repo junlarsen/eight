@@ -79,7 +79,7 @@ impl<'hir> TypeChecker<'hir> {
         // Create fresh type variables for all type parameters.
         for (i, ty) in fun.type_parameters().iter().enumerate() {
             self.local_types
-                .add(&ty.name.name, HirTy::new_var(i, ty.span.clone()));
+                .add(&ty.syntax_name.name, HirTy::new_var(i, ty.span.clone()));
         }
 
         // With the type parameters in scope, we can visit the parameters, and if the current

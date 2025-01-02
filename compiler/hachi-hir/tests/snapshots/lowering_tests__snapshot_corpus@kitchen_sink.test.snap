@@ -1,7 +1,7 @@
 ---
-source: compiler/hachi-syntax-lower/tests/lowering_tests.rs
-expression: "String::from_utf8(w).unwrap()"
-input_file: compiler/hachi-syntax-lower/tests/data/kitchen_sink.test
+source: compiler/hachi-hir/tests/lowering_tests.rs
+expression: doc
+input_file: compiler/hachi-hir/tests/data/kitchen_sink.test
 snapshot_kind: text
 ---
 module {
@@ -16,8 +16,8 @@ module {
   type void = void;
   
   // module functions
-  intrinsic_fn free<T>(ptr: *T) -> void;
-  intrinsic_fn malloc<T>(size: i32) -> *T;
+  intrinsic_fn free<$0>(ptr: *$0) -> void;
+  intrinsic_fn malloc<$0>(size: i32) -> *$0;
   fn matrix_matrix_multiply<>(a: Matrix, b: Matrix) -> Matrix {
     if (a.r != b.c){
       panic::<>();

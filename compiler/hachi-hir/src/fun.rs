@@ -100,7 +100,10 @@ pub struct HirFunctionTypeParameter {
     /// This is effectively the same as the span of the HirName, but in the future we may want to
     /// allow bounds or sub-typing on type parameters.
     pub span: Span,
-    pub name: HirName,
+    /// The type variable index in the type environment.
+    pub name: usize,
+    /// The name that was actually written by the programmer.
+    pub syntax_name: HirName,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

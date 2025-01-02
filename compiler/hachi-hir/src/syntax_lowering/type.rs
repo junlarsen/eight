@@ -29,7 +29,12 @@ impl SyntaxLoweringPass<'_> {
             Type::Unit(_) => HirTy::new_const("void", node.span()),
             Type::Integer32(_) => HirTy::new_const("i32", node.span()),
             Type::Boolean(_) => HirTy::new_const("bool", node.span()),
-            Type::Named(t) => HirTy::new_const(&t.name.name, node.span()),
+            // If the type is referring to a generic type that we have substituted before, we
+            // use replace it with the substitution
+            Type::Named(t) => match self.generic_substitutions.find(&t.name.name) {
+                Some(ty) => ty.clone(),
+                None => HirTy::new_const(&t.name.name, node.span()),
+            },
             Type::Pointer(t) => HirTy::new_ptr(self.visit_type(t.inner.as_ref())?, node.span()),
             Type::Reference(t) => HirTy::new_ref(self.visit_type(t.inner.as_ref())?, node.span()),
         };

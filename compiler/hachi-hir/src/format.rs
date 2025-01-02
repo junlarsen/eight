@@ -147,7 +147,9 @@ impl HirModuleFormatter {
     ) -> RcDoc<()> {
         RcDoc::text("<")
             .append(RcDoc::intersperse(
-                parameters.iter().map(|p| RcDoc::text(p.name.name.as_str())),
+                parameters
+                    .iter()
+                    .map(|p| RcDoc::text("$").append(RcDoc::text(p.name.to_string()))),
                 RcDoc::text(", "),
             ))
             .append(RcDoc::text(">"))

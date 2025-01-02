@@ -34,6 +34,23 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         module: &mut HirModule,
         node: &'ast FunctionItem,
     ) -> HirResult<()> {
+        // When we enter a function, we substitute all the type parameters with fresh type variables
+        // so that the type checker knows these are generic types, and not constants. It is
+        // currently safe to assume index for the type parameters, as we don't have higher order
+        // functions or lambdas.
+        self.generic_substitutions.enter_scope();
+        let mut type_parameters = Vec::new();
+        for (variable, type_parameter) in node.type_parameters.iter().enumerate() {
+            self.generic_substitutions.add(
+                &type_parameter.name.name,
+                HirTy::new_var(variable, type_parameter.span().clone()),
+            );
+            // We also build the HIR representation, preserving the original name that was written
+            // in code.
+            let hir = self.visit_function_type_parameter(type_parameter, variable)?;
+            type_parameters.push(hir);
+        }
+
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
             None => Box::new(HirTy::new_const("void", &Span::empty())),
@@ -42,11 +59,6 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             .parameters
             .iter()
             .map(|p| self.visit_function_parameter(p))
-            .collect::<HirResult<Vec<_>>>()?;
-        let type_parameters = node
-            .type_parameters
-            .iter()
-            .map(|p| self.visit_function_type_parameter(p))
             .collect::<HirResult<Vec<_>>>()?;
         let body = node
             .body
@@ -62,6 +74,8 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             return_type,
             body,
         });
+        self.generic_substitutions.leave_scope();
+
         module.functions.insert(node.name.name.to_owned(), fun);
         Ok(())
     }
@@ -71,16 +85,24 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         module: &mut HirModule,
         node: &'ast IntrinsicFunctionItem,
     ) -> HirResult<()> {
+        self.generic_substitutions.enter_scope();
+        let mut type_parameters = Vec::new();
+        for (variable, type_parameter) in node.type_parameters.iter().enumerate() {
+            self.generic_substitutions.add(
+                &type_parameter.name.name,
+                HirTy::new_var(variable, type_parameter.span().clone()),
+            );
+            // We also build the HIR representation, preserving the original name that was written
+            // in code.
+            let hir = self.visit_function_type_parameter(type_parameter, variable)?;
+            type_parameters.push(hir);
+        }
+
         let return_type = self.visit_type(node.return_type.as_ref())?;
         let parameters = node
             .parameters
             .iter()
             .map(|p| self.visit_function_parameter(p))
-            .collect::<HirResult<Vec<_>>>()?;
-        let type_parameters = node
-            .type_parameters
-            .iter()
-            .map(|p| self.visit_function_type_parameter(p))
             .collect::<HirResult<Vec<_>>>()?;
 
         let fun = HirFun::Intrinsic(HirIntrinsicFunction {
@@ -90,6 +112,8 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             parameters,
             return_type,
         });
+        self.generic_substitutions.leave_scope();
+
         module.functions.insert(node.name.name.to_owned(), fun);
         Ok(())
     }
@@ -111,11 +135,13 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_function_type_parameter(
         &mut self,
         node: &'ast FunctionTypeParameterItem,
+        substitution_name: usize,
     ) -> HirResult<Box<HirFunctionTypeParameter>> {
         let name = self.visit_identifier(node.name.as_ref())?;
         let hir = HirFunctionTypeParameter {
             span: node.span().clone(),
-            name,
+            name: substitution_name,
+            syntax_name: name,
         };
         Ok(Box::new(hir))
     }

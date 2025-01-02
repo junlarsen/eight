@@ -3,6 +3,8 @@ pub mod item;
 pub mod stmt;
 pub mod r#type;
 
+use crate::context::LocalContext;
+use crate::ty::HirTy;
 use hachi_syntax::ForStmt;
 use std::collections::VecDeque;
 
@@ -19,12 +21,14 @@ use std::collections::VecDeque;
 #[derive(Debug)]
 pub struct SyntaxLoweringPass<'ast> {
     loop_depth: VecDeque<&'ast ForStmt>,
+    generic_substitutions: LocalContext<HirTy>,
 }
 
 impl SyntaxLoweringPass<'_> {
     pub fn new() -> Self {
         Self {
             loop_depth: VecDeque::new(),
+            generic_substitutions: LocalContext::new(),
         }
     }
 }
