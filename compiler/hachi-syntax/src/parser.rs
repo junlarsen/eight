@@ -1131,9 +1131,9 @@ impl Parser<'_> {
     /// Parse a type.
     ///
     /// ```text
-    /// type ::= named_type | pointer_type | builtin_void_type | builtin_integer32_type
+    /// type ::= named_type | pointer_type | builtin_unit_type | builtin_integer32_type
     ///
-    /// builtin_void_type ::= identifier<"void">
+    /// builtin_unit_type ::= identifier<"unit">
     /// builtin_integer32_type ::= identifier<"i32">
     /// ```
     pub fn parse_type(&mut self) -> ParseResult<Box<Type>> {
@@ -1151,7 +1151,7 @@ impl Parser<'_> {
                     let node = BooleanType::new(self.next_node_id(), id.span().clone());
                     Ok(Box::new(Type::Boolean(Box::new(node))))
                 }
-                "void" => {
+                "unit" => {
                     let id = self.parse_identifier()?;
                     let node = UnitType::new(self.next_node_id(), id.span().clone());
                     Ok(Box::new(Type::Unit(Box::new(node))))
@@ -1241,7 +1241,7 @@ mod tests {
         let prod = assert_ok!(prod);
         assert!(matches!(*prod, Type::Integer32(_)));
 
-        let prod = assert_parse("void", |p| p.parse_type());
+        let prod = assert_parse("unit", |p| p.parse_type());
         let prod = assert_ok!(prod);
         assert!(matches!(*prod, Type::Unit(_)));
 

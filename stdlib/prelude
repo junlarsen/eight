@@ -1,6 +1,6 @@
 intrinsic_fn malloc<T>(size: i32) -> *T;
 intrinsic_fn free<T>(ptr: *T);
-intrinsic_fn panic() -> void;
+intrinsic_fn panic() -> unit;
 
 intrinsic_fn i32_add(a: i32, b: i32) -> i32;
 intrinsic_fn i32_sub(a: i32, b: i32) -> i32;

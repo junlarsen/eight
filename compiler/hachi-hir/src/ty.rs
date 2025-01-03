@@ -16,7 +16,7 @@ pub enum HirTy {
     Integer32(HirInteger32Ty),
     /// The builtin type `bool`.
     Boolean(HirBooleanTy),
-    /// The builtin type `void`.
+    /// The builtin type `unit`.
     ///
     /// Signifies that a function does not return a value.
     Unit(HirUnitTy),
@@ -176,7 +176,7 @@ impl HirTy {
         matches!(self, HirTy::Boolean(_))
     }
 
-    pub fn is_intrinsic_void(&self) -> bool {
+    pub fn is_intrinsic_unit(&self) -> bool {
         matches!(self, HirTy::Unit(_))
     }
 

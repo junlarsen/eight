@@ -10,8 +10,10 @@
 
 use crate::fun::HirFun;
 use crate::rec::HirRecord;
+use crate::ty::{HirBooleanTy, HirInteger32Ty, HirTy, HirUnitTy};
 use hachi_syntax::Span;
 use std::collections::BTreeMap;
+use std::marker::PhantomData;
 
 pub mod context;
 pub mod error;
@@ -19,7 +21,7 @@ pub mod expr;
 pub mod format;
 pub mod fun;
 pub mod passes;
-mod rec;
+pub mod rec;
 pub mod stmt;
 pub mod syntax_lowering;
 pub mod ty;
@@ -30,21 +32,81 @@ pub mod ty;
 /// emitting code.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirModule {
+pub struct HirModule<'hir> {
+    pub scalars: BTreeMap<String, HirTy>,
     pub records: BTreeMap<String, HirRecord>,
     pub functions: BTreeMap<String, HirFun>,
+    phantom: PhantomData<&'hir ()>,
 }
 
-impl HirModule {
+impl<'hir> HirModule<'hir> {
+    /// Create an empty Hir module.
     pub fn new() -> Self {
         Self {
             records: BTreeMap::new(),
             functions: BTreeMap::new(),
+            scalars: BTreeMap::from([
+                (
+                    "i32".to_owned(),
+                    HirTy::Integer32(HirInteger32Ty {
+                        span: Span::empty(),
+                    }),
+                ),
+                (
+                    "bool".to_owned(),
+                    HirTy::Boolean(HirBooleanTy {
+                        span: Span::empty(),
+                    }),
+                ),
+                (
+                    "unit".to_owned(),
+                    HirTy::Unit(HirUnitTy {
+                        span: Span::empty(),
+                    }),
+                ),
+            ]),
+            phantom: PhantomData,
         }
+    }
+
+    /// Get the named function from the module with the given name.
+    pub fn get_function(&'hir self, name: &str) -> Option<&'hir HirFun> {
+        self.functions.get(name)
+    }
+
+    /// Get the named type from the module with the given name.
+    pub fn get_scalar_type(&'hir self, name: &str) -> Option<&'hir HirTy> {
+        self.scalars.get(name)
+    }
+
+    /// Get the builtin integer32 type.
+    pub fn get_builtin_integer32_type(&'hir self) -> &'hir HirTy {
+        self.scalars
+            .get("i32")
+            .expect("builtin integer32 type not found")
+    }
+
+    /// Get the builtin boolean type.
+    pub fn get_builtin_boolean_type(&'hir self) -> &'hir HirTy {
+        self.scalars
+            .get("bool")
+            .expect("builtin boolean type not found")
+    }
+
+    /// Get the builtin unit type.
+    pub fn get_builtin_unit_type(&'hir self) -> &'hir HirTy {
+        self.scalars
+            .get("unit")
+            .expect("builtin unit type not found")
+    }
+
+    /// Get a record type from the module with the given name.
+    pub fn get_record_type(&'hir self, name: &str) -> Option<&'hir HirRecord> {
+        self.records.get(name)
     }
 }
 
-impl Default for HirModule {
+impl<'hir> Default for HirModule<'hir> {
     fn default() -> Self {
         Self::new()
     }

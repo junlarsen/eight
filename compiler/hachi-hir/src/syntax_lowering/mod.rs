@@ -16,9 +16,6 @@ use std::collections::VecDeque;
 /// All types (note: generic types too) are preserved, meaning that a generic type like `T` will be
 /// lowered into a TConst type, despite the fact that the type checker will replace this with a
 /// fresh type variable.
-///
-/// TODO: Do we one-shot the type-checker here?
-#[derive(Debug)]
 pub struct SyntaxLoweringPass<'ast> {
     loop_depth: VecDeque<&'ast ForStmt>,
     generic_substitutions: LocalContext<HirTy>,

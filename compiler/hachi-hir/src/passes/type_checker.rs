@@ -1,7 +1,7 @@
 use crate::context::LocalContext;
 use crate::error::{
-    FunctionTypeMismatchError, HirError, HirResult, TypeFieldInfiniteRecursionError,
-    TypeMismatchError, UnknownTypeError,
+    FunctionTypeMismatchError, HirError, HirResult, InvalidReferenceError,
+    TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
 };
 use crate::expr::HirExpr;
 use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
@@ -12,8 +12,8 @@ use crate::HirModule;
 use hachi_syntax::Span;
 use std::collections::VecDeque;
 
-pub enum Constraint {
-    Eq(HirTy, HirTy),
+pub enum Constraint<'hir> {
+    Eq(&'hir HirTy, &'hir HirTy),
 }
 
 /// A type checker for HIR modules.
@@ -21,9 +21,9 @@ pub enum Constraint {
 /// The type checker is also responsible for type inference. Our type system is based on the Hindley
 /// Milner type system.
 pub struct TypeChecker<'hir> {
-    local_types: LocalContext<HirTy>,
+    module: HirModule<'hir>,
     local_let_bindings: LocalContext<HirTy>,
-    constraints: Vec<Constraint>,
+    constraints: Vec<Constraint<'hir>>,
     substitutions: Vec<HirTy>,
     /// The deque of functions that are currently being visited.
     ///
@@ -33,9 +33,9 @@ pub struct TypeChecker<'hir> {
 
 /// Implementation block for inference and type checking functions.
 impl<'hir> TypeChecker<'hir> {
-    pub fn new() -> Self {
+    pub fn new(module: HirModule<'hir>) -> Self {
         Self {
-            local_types: LocalContext::new(),
+            module,
             local_let_bindings: LocalContext::new(),
             constraints: Vec::new(),
             substitutions: Vec::new(),
@@ -50,26 +50,38 @@ impl<'hir> TypeChecker<'hir> {
         ty
     }
 
-    pub fn constrain_eq(&mut self, a: HirTy, b: HirTy) {
+    /// Constrain the two types to be equal.
+    pub fn constrain_eq(&mut self, a: &'hir HirTy, b: &'hir HirTy) {
         self.constraints.push(Constraint::Eq(a, b))
     }
 
     /// Infer the type expression's type.
     ///
     /// This mutates the original expression type.
-    pub fn infer(&mut self, expr: &mut HirExpr, expected_ty: &'hir HirTy) -> HirResult<()> {
+    pub fn infer(&'hir mut self, expr: &mut HirExpr, expected_ty: &'hir HirTy) -> HirResult<()> {
         match expr {
             HirExpr::IntegerLiteral(_) => {
-                self.constrain_eq(expected_ty.clone(), HirTy::new_i32(&Span::empty()));
+                self.constraints.push(Constraint::Eq(
+                    expected_ty,
+                    self.module.get_builtin_integer32_type(),
+                ));
                 Ok(())
             }
             HirExpr::BooleanLiteral(_) => {
-                self.constrain_eq(expected_ty.clone(), HirTy::new_bool(&Span::empty()));
+                self.constraints.push(Constraint::Eq(
+                    expected_ty,
+                    self.module.get_builtin_boolean_type(),
+                ));
                 Ok(())
             }
             HirExpr::Reference(r) => {
-                let ty = self.lookup_type(&r.name.name, &r.span)?;
-                self.constrain_eq(expected_ty.clone(), ty.clone());
+                let ty = self.local_let_bindings.find(&r.name.name).ok_or(
+                    HirError::InvalidReference(InvalidReferenceError {
+                        name: r.name.name.to_owned(),
+                        span: r.span.clone(),
+                    }),
+                )?;
+                self.constraints.push(Constraint::Eq(expected_ty, ty));
                 Ok(())
             }
             _ => Ok(()),
@@ -80,7 +92,7 @@ impl<'hir> TypeChecker<'hir> {
     pub fn solve(&mut self) -> HirResult<()> {
         for constraint in self.constraints.drain(..) {
             match constraint {
-                Constraint::Eq(lhs, rhs) => Self::unify(&lhs, &rhs)?,
+                Constraint::Eq(lhs, rhs) => Self::unify(lhs, rhs)?,
             }
         }
         Ok(())
@@ -119,36 +131,6 @@ impl<'hir> TypeChecker<'hir> {
 
     pub fn occurs(&self, ty: &HirTy, matcher: &HirTy) -> bool {
         todo!()
-    }
-
-    /// Find the given type in the local type environment.
-    pub fn lookup_type(&'hir self, name: &str, span: &Span) -> HirResult<&'hir HirTy> {
-        let ty = self
-            .local_types
-            .find(name)
-            .ok_or(HirError::UnknownType(UnknownTypeError {
-                name: name.to_owned(),
-                span: span.clone(),
-            }))?;
-        Ok(ty)
-    }
-
-    /// Find the type of the given let binding in the local type environment.
-    pub fn lookup_let_binding(&'hir self, name: &str, span: &Span) -> HirResult<&'hir HirTy> {
-        let ty = self
-            .local_let_bindings
-            .find(name)
-            .ok_or(HirError::UnknownType(UnknownTypeError {
-                name: name.to_owned(),
-                span: span.clone(),
-            }))?;
-        Ok(ty)
-    }
-}
-
-impl<'hir> Default for TypeChecker<'hir> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -216,7 +198,6 @@ impl<'hir> TypeChecker<'hir> {
     ///
     /// TODO: Consider how resetting the substitutions should be handled once we have nesting
     pub fn visit_function(&mut self, fun: &mut HirFunction) -> HirResult<()> {
-        self.local_types.enter_scope();
         // Create substitutions for all the type parameters.
         for ty in fun.type_parameters.iter() {
             let substitution = HirTy::new_var(ty.name, ty.span.clone());
@@ -239,7 +220,6 @@ impl<'hir> TypeChecker<'hir> {
         self.local_let_bindings.leave_scope();
         // Clear the substitution variables.
         self.substitutions.clear();
-        self.local_types.leave_scope();
         Ok(())
     }
 
@@ -248,12 +228,10 @@ impl<'hir> TypeChecker<'hir> {
     /// This ensures that all the type parameters of the function exist in the local type
     /// environment.
     pub fn visit_intrinsic_function(&mut self, fun: &mut HirIntrinsicFunction) -> HirResult<()> {
-        self.local_types.enter_scope();
         for p in fun.parameters.iter_mut() {
             self.visit_type(&mut p.ty)?;
         }
         self.visit_type(&mut fun.return_type)?;
-        self.local_types.leave_scope();
         Ok(())
     }
 }
@@ -304,7 +282,12 @@ impl<'hir> TypeChecker<'hir> {
     ///
     /// This ensures that the type that is being referenced is defined in the current environment.
     pub fn visit_nominal_ty(&mut self, ty: &mut HirNominalTy) -> HirResult<()> {
-        self.lookup_type(&ty.name.name, &ty.span)?;
+        self.module
+            .get_record_type(&ty.name.name)
+            .ok_or(HirError::UnknownType(UnknownTypeError {
+                name: ty.name.name.to_owned(),
+                span: ty.name.span.clone(),
+            }))?;
         Ok(())
     }
 

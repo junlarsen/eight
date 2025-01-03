@@ -27,14 +27,14 @@ use pretty::RcDoc;
 pub struct HirModuleFormatter();
 
 impl HirModuleFormatter {
-    pub fn format_hir_module_to_string(module: &HirModule) -> String {
+    pub fn format_hir_module_to_string<'hir>(module: &'hir HirModule<'hir>) -> String {
         let doc = Self::format_hir_module(module);
         let mut w = Vec::new();
         doc.render(80, &mut w).expect("failed to render doc");
         String::from_utf8(w).unwrap()
     }
 
-    pub fn format_hir_module(module: &HirModule) -> RcDoc<()> {
+    pub fn format_hir_module<'hir>(module: &'hir HirModule<'hir>) -> RcDoc<()> {
         RcDoc::text("module")
             .append(RcDoc::space())
             .append(RcDoc::text("{"))

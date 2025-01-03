@@ -1,5 +1,5 @@
 intrinsic_fn malloc<T>(size: i32) -> *T;
-intrinsic_fn free<T>(ptr: *T) -> void;
+intrinsic_fn free<T>(ptr: *T) -> unit;
 
 type Matrix = {
   r: i32,

@@ -1,7 +1,5 @@
 use std::collections::{BTreeMap, VecDeque};
 
-/// A deque-based scoped context.
-#[derive(Debug)]
 pub struct LocalContext<T> {
     scopes: VecDeque<BTreeMap<String, T>>,
 }

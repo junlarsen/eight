@@ -13,9 +13,8 @@ macro_rules! assert_hir_module_compiles {
             .parse()
             .unwrap_or_else(|_| panic!("failed to parse corpus file into syntax tree"));
         let mut lowering_pass = SyntaxLoweringPass::new();
-        let module = lowering_pass
+        lowering_pass
             .visit_translation_unit(&translation_unit)
-            .expect("failed to lower translation unit");
-        module
+            .expect("failed to lower translation unit")
     }};
 }
