@@ -1,7 +1,7 @@
 use crate::stmt::HirStmt;
 use crate::ty::HirTy;
 use crate::HirName;
-use hachi_syntax::Span;
+use hachi_span::Span;
 
 /// A function defined in a HIR module.
 ///

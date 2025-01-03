@@ -6,9 +6,8 @@ use crate::stmt::{
 };
 use crate::syntax_lowering::SyntaxLoweringPass;
 use crate::ty::HirTy;
-use hachi_syntax::{
-    BreakStmt, ContinueStmt, ExprStmt, ForStmt, IfStmt, LetStmt, ReturnStmt, Span, Stmt,
-};
+use hachi_span::Span;
+use hachi_syntax::{BreakStmt, ContinueStmt, ExprStmt, ForStmt, IfStmt, LetStmt, ReturnStmt, Stmt};
 
 impl<'ast> SyntaxLoweringPass<'ast> {
     pub fn visit_stmt(&mut self, node: &'ast Stmt) -> HirResult<Box<HirStmt>> {

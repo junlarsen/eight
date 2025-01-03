@@ -5,6 +5,7 @@ members = [
     "compiler/hachi-hir",
     "compiler/hachi-mir",
     "compiler/hachi-macros",
+    "compiler/hachi-span",
     "compiler/hachi-syntax",
 ]
 

@@ -1,7 +1,7 @@
 use crate::expr::HirExpr;
 use crate::ty::HirTy;
 use crate::HirName;
-use hachi_syntax::Span;
+use hachi_span::Span;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]

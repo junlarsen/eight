@@ -8,8 +8,9 @@
 //! of future lexer-related syntax errors. These will only be triggered by the parser upon
 //! attempting to consume further tokens.
 
-use crate::{Span, Token};
+use crate::Token;
 use hachi_macros::declare_error_type;
+use hachi_span::Span;
 use miette::Diagnostic;
 use thiserror::Error;
 

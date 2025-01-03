@@ -257,6 +257,7 @@ name = "hachi-hir"
 version = "0.1.0"
 dependencies = [
  "hachi-macros",
+ "hachi-span",
  "hachi-syntax",
  "insta",
  "miette",
@@ -287,10 +288,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hachi-span"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "serde",
+]
+
+[[package]]
 name = "hachi-syntax"
 version = "0.1.0"
 dependencies = [
  "hachi-macros",
+ "hachi-span",
  "insta",
  "miette",
  "ron 0.8.1",

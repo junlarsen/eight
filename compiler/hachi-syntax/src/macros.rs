@@ -23,7 +23,7 @@ macro_rules! declare_ast_node {
                 &self.id
             }
 
-            pub fn span(&self) -> &$crate::span::Span {
+            pub fn span(&self) -> &hachi_span::Span {
                 &self.span
             }
         }

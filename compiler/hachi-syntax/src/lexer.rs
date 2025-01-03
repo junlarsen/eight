@@ -1,7 +1,8 @@
 use crate::{
-    InvalidIntegerLiteralError, ParseError, ParseResult, SourcePosition, Span, Token, TokenType,
+    InvalidIntegerLiteralError, ParseError, ParseResult, Token, TokenType,
     UnexpectedCharacterError, UnexpectedEndOfFileError,
 };
+use hachi_span::{SourcePosition, Span};
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -251,9 +252,10 @@ impl<'a> Lexer<'a> {
 mod tests {
     use crate::lexer::{Lexer, ParseError};
     use crate::{
-        InvalidIntegerLiteralError, Span, Token, TokenType, UnexpectedCharacterError,
+        InvalidIntegerLiteralError, Token, TokenType, UnexpectedCharacterError,
         UnexpectedEndOfFileError,
     };
+    use hachi_span::Span;
 
     macro_rules! assert_lexer_parse {
         ($input:expr, $($token:expr),*) => {

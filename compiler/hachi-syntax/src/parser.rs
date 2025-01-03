@@ -9,9 +9,10 @@ use crate::ast::{
 use crate::lexer::Lexer;
 use crate::{
     BooleanLiteralExpr, BooleanType, FunctionTypeParameterItem, IntrinsicFunctionItem, NodeId,
-    ParseError, ParseResult, ReferenceType, Span, Token, TokenType, UnexpectedEndOfFileError,
+    ParseError, ParseResult, ReferenceType, Token, TokenType, UnexpectedEndOfFileError,
     UnexpectedTokenError,
 };
+use hachi_span::Span;
 use std::sync::atomic::AtomicUsize;
 
 pub struct ParserInput<'a> {

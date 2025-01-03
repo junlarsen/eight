@@ -1,5 +1,5 @@
 use crate::HirName;
-use hachi_syntax::Span;
+use hachi_span::Span;
 use std::fmt::Debug;
 
 /// A single type in the HIR representation.

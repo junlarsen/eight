@@ -11,7 +11,7 @@
 use crate::fun::HirFun;
 use crate::rec::HirRecord;
 use crate::ty::{HirBooleanTy, HirInteger32Ty, HirTy, HirUnitTy};
-use hachi_syntax::Span;
+use hachi_span::Span;
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
 

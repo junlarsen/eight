@@ -1,4 +1,5 @@
-use crate::{declare_ast_node, declare_ast_variant, Span};
+use crate::{declare_ast_node, declare_ast_variant};
+use hachi_span::Span;
 
 /// An internal ID for a single AST Node.
 ///

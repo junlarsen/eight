@@ -9,7 +9,7 @@ use crate::rec::HirRecord;
 use crate::stmt::{HirLetStmt, HirStmt};
 use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirReferenceTy, HirTy};
 use crate::HirModule;
-use hachi_syntax::Span;
+use hachi_span::Span;
 use std::collections::VecDeque;
 
 pub enum Constraint<'hir> {

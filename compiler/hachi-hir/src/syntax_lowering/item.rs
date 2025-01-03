@@ -6,9 +6,10 @@ use crate::rec::{HirRecord, HirRecordField};
 use crate::syntax_lowering::SyntaxLoweringPass;
 use crate::ty::HirTy;
 use crate::HirModule;
+use hachi_span::Span;
 use hachi_syntax::{
     FunctionItem, FunctionParameterItem, FunctionTypeParameterItem, IntrinsicFunctionItem, Item,
-    Span, TranslationUnit, TypeItem,
+    TranslationUnit, TypeItem,
 };
 use std::collections::BTreeMap;
 

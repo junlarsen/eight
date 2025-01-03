@@ -1,5 +1,5 @@
 use hachi_macros::declare_error_type;
-use hachi_syntax::Span;
+use hachi_span::Span;
 use miette::Diagnostic;
 use thiserror::Error;
 
