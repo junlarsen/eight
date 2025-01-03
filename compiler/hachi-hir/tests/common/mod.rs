@@ -11,7 +11,7 @@ macro_rules! assert_hir_module_compiles {
         let mut parser = Parser::new(&mut lexer);
         let translation_unit = parser
             .parse()
-            .unwrap_or_else(|_| panic!("failed to parse corpus file into syntax tree"));
+            .expect("failed to parse corpus file into syntax tree");
         let mut lowering_pass = SyntaxLoweringPass::new();
         lowering_pass
             .visit_translation_unit(&translation_unit)

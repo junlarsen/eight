@@ -108,7 +108,7 @@ impl HirTy {
             }
             (HirTy::Nominal(v), HirTy::Nominal(o)) => v.name.name == o.name.name,
             (HirTy::Uninitialized, HirTy::Uninitialized) => {
-                panic!("should not be comparing uninitialized types")
+                panic!("ice: should not be comparing uninitialized types")
             }
             _ => false,
         }

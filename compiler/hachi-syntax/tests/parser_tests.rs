@@ -10,7 +10,7 @@ fn test_snapshot_corpus() {
         let mut parser = Parser::new(&mut lexer);
         let translation_unit = parser
             .parse()
-            .unwrap_or_else(|_| panic!("failed to parse corpus file {} into ast", path.display()));
+            .expect("failed to parse corpus file into ast");
         assert_ron_snapshot!(translation_unit);
     })
 }

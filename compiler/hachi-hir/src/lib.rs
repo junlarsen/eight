@@ -83,21 +83,21 @@ impl<'hir> HirModule<'hir> {
     pub fn get_builtin_integer32_type(&'hir self) -> &'hir HirTy {
         self.scalars
             .get("i32")
-            .expect("builtin integer32 type not found")
+            .expect("ice: builtin integer32 type not found")
     }
 
     /// Get the builtin boolean type.
     pub fn get_builtin_boolean_type(&'hir self) -> &'hir HirTy {
         self.scalars
             .get("bool")
-            .expect("builtin boolean type not found")
+            .expect("ice: builtin boolean type not found")
     }
 
     /// Get the builtin unit type.
     pub fn get_builtin_unit_type(&'hir self) -> &'hir HirTy {
         self.scalars
             .get("unit")
-            .expect("builtin unit type not found")
+            .expect("ice: builtin unit type not found")
     }
 
     /// Get a record type from the module with the given name.

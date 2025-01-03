@@ -46,7 +46,7 @@ impl<T> LocalContext<T> {
         let scope = self
             .scopes
             .front_mut()
-            .expect("ReferenceResolver::add: no scope");
+            .expect("ice: local context has no scope");
         scope.insert(name.to_string(), id);
     }
 
@@ -54,7 +54,7 @@ impl<T> LocalContext<T> {
         let scope = self
             .scopes
             .front_mut()
-            .expect("ReferenceResolver::remove: no scope");
+            .expect("ice: local context has no scope");
         scope.remove(name);
     }
 

@@ -84,7 +84,9 @@ impl<'a> LexerInput<'a> {
         match self.peek() {
             Some(ch) => match f(ch) {
                 Some(typ) => {
-                    self.input.next().expect("internal compiler error: lexer should never fail to produce an already peeked token");
+                    self.input
+                        .next()
+                        .expect("ice: lexer should never fail to produce an already peeked token");
                     Ok(Token::new(typ, Span::new(start..self.pos + 1)))
                 }
                 None => Ok(Token::new(default, Span::pos(start))),
