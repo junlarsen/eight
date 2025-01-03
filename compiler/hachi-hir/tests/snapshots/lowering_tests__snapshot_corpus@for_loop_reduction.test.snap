@@ -14,8 +14,8 @@ module {
       let i: _ = 0;
       while (i < 10) {
         let x: _ = i;
+        i = i + 1;
       }
-      i = i + 1;
     }
   }
 }

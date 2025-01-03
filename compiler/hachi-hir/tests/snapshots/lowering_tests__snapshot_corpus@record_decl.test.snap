@@ -1,0 +1,33 @@
+---
+source: compiler/hachi-hir/tests/lowering_tests.rs
+expression: doc
+input_file: compiler/hachi-hir/tests/data/record_decl.test
+snapshot_kind: text
+---
+module {
+  // module types
+  type Node = {
+    next: *Node,
+    value: i32,
+  }
+  
+  // module functions
+  fn append<>(node: Node, value: i32) -> unit {
+    {
+      let curr: _ = node;
+      while (curr.next != 0) {
+        curr = curr.next;
+      }
+    }
+    let node: _ = malloc::<Node>(8 + 4);
+    node.value = value;
+    node.next = 0;
+    curr.next = node;
+  }
+  fn prepend<>(node: Node, value: i32) -> Node {
+    return new Node {
+      value: value,
+      next: node,
+    };
+  }
+}

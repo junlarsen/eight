@@ -1,0 +1,19 @@
+type Node = {
+  value: i32,
+  next: *Node,
+}
+
+fn prepend(node: Node, value: i32) -> Node {
+  return new Node {
+    value: value,
+    next: node,
+  };
+}
+
+fn append(node: Node, value: i32) {
+  for (let curr = node; curr.next != 0; curr = curr.next) {}
+  let node = malloc::<Node>(8 + 4);
+  node.value = value;
+  node.next = 0;
+  curr.next = node;
+}

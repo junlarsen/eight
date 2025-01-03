@@ -106,7 +106,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             .as_ref()
             .map(|i| self.visit_expr(i))
             .transpose()?;
-        let body = node
+        let mut body = node
             .body
             .iter()
             .map(|s| self.visit_stmt(s))
@@ -124,21 +124,17 @@ impl<'ast> SyntaxLoweringPass<'ast> {
                 Box::new(HirStmt::Loop(HirLoopStmt {
                     span: node.span().clone(),
                     condition,
-                    body,
+                    body: {
+                        let mut stmts = body;
+                        if let Some(i) = increment {
+                            stmts.push(Box::new(HirStmt::Expr(HirExprStmt {
+                                span: i.span().clone(),
+                                expr: i,
+                            })));
+                        }
+                        stmts
+                    },
                 })),
-                increment
-                    .map(|i| {
-                        Box::new(HirStmt::Expr(HirExprStmt {
-                            span: i.span().clone(),
-                            expr: i,
-                        }))
-                    })
-                    .unwrap_or_else(|| {
-                        Box::new(HirStmt::Block(HirBlockStmt {
-                            span: Span::empty(),
-                            body: vec![],
-                        }))
-                    }),
             ],
         });
         self.loop_depth.pop_back();

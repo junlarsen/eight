@@ -37,15 +37,15 @@ module {
               let k: _ = 0;
               while (k < a.c) {
                 sum = sum + a.buf[i * a.c + k] * b.buf[k * b.c + j];
+                k = k + 1;
               }
-              k = k + 1;
             }
             c.buf[i * b.c + j] = sum;
+            j = j + 1;
           }
-          j = j + 1;
         }
+        i = i + 1;
       }
-      i = i + 1;
     }
     return c;
   }
