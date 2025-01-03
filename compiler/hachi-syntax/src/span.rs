@@ -97,7 +97,6 @@ impl Token {
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     KeywordType,
-    KeywordIntrinsicType,
     KeywordLet,
     KeywordFn,
     KeywordIntrinsicFn,

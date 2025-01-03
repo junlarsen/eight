@@ -44,7 +44,6 @@ declare_ast_variant! {
         Function(Box<FunctionItem>),
         IntrinsicFunction(Box<IntrinsicFunctionItem>),
         Type(Box<TypeItem>),
-        IntrinsicType(Box<IntrinsicTypeItem>),
     }
 }
 
@@ -85,14 +84,6 @@ declare_ast_node! {
         span: Span,
         pub name: Box<Identifier>,
         pub r#type: Box<Type>,
-    }
-}
-
-declare_ast_node! {
-    pub struct IntrinsicTypeItem {
-        id: NodeId,
-        span: Span,
-        pub name: Box<Identifier>,
     }
 }
 

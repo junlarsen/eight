@@ -1,7 +1,3 @@
-intrinsic_type i32;
-intrinsic_type bool;
-intrinsic_type void;
-
 intrinsic_fn malloc<T>(size: i32) -> *T;
 intrinsic_fn free<T>(ptr: *T) -> void;
 

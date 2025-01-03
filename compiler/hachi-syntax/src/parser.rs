@@ -8,9 +8,9 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::{
-    BooleanLiteralExpr, BooleanType, FunctionTypeParameterItem, IntrinsicFunctionItem,
-    IntrinsicTypeItem, NodeId, ParseError, ParseResult, ReferenceType, Span, Token, TokenType,
-    UnexpectedEndOfFileError, UnexpectedTokenError,
+    BooleanLiteralExpr, BooleanType, FunctionTypeParameterItem, IntrinsicFunctionItem, NodeId,
+    ParseError, ParseResult, ReferenceType, Span, Token, TokenType, UnexpectedEndOfFileError,
+    UnexpectedTokenError,
 };
 use std::sync::atomic::AtomicUsize;
 
@@ -231,16 +231,13 @@ impl Parser<'_> {
     /// Parse an item.
     ///
     /// ```text
-    /// item ::= fn_item | type_item | intrinsic_type_item | intrinsic_fn_item
+    /// item ::= fn_item | type_item | intrinsic_fn_item
     /// ```
     pub fn parse_item(&mut self) -> ParseResult<Box<Item>> {
         let token = self.lookahead_or_err()?;
         let node = match token.ty {
             TokenType::KeywordFn => Item::Function(self.parse_fn_item()?),
             TokenType::KeywordType => Item::Type(self.parse_type_item()?),
-            TokenType::KeywordIntrinsicType => {
-                Item::IntrinsicType(self.parse_intrinsic_type_item()?)
-            }
             TokenType::KeywordIntrinsicFn => {
                 Item::IntrinsicFunction(self.parse_intrinsic_fn_item()?)
             }
@@ -379,23 +376,6 @@ impl Parser<'_> {
             Span::from_pair(id.span(), &end.span),
             id,
             ty,
-        );
-        Ok(Box::new(node))
-    }
-
-    /// Parse an intrinsic type item.
-    ///
-    /// ```text
-    /// intrinsic_type_item ::= KEYWORD_INTRINSIC_TYPE IDENTIFIER
-    /// ```
-    pub fn parse_intrinsic_type_item(&mut self) -> ParseResult<Box<IntrinsicTypeItem>> {
-        let start = self.check(&TokenType::KeywordIntrinsicType)?;
-        let id = self.parse_identifier()?;
-        let end = self.check(&TokenType::Semicolon)?;
-        let node = IntrinsicTypeItem::new(
-            self.next_node_id(),
-            Span::from_pair(&start.span, &end.span),
-            id,
         );
         Ok(Box::new(node))
     }
@@ -1453,14 +1433,6 @@ mod tests {
         let prod = assert_ok!(prod);
         let type_parameters = prod.type_parameters.as_slice();
         assert_eq!(type_parameters.len(), 1);
-    }
-
-    #[test]
-    fn test_parse_intrinsic_type_item() {
-        let prod = assert_parse("intrinsic_type i32;", |p| p.parse_intrinsic_type_item());
-        let prod = assert_ok!(prod);
-        let name = prod.name.as_ref();
-        assert_eq!(name.name, "i32");
     }
 
     #[test]

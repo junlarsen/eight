@@ -7,8 +7,8 @@ use crate::syntax_lowering::SyntaxLoweringPass;
 use crate::ty::HirTy;
 use crate::HirModule;
 use hachi_syntax::{
-    FunctionItem, FunctionParameterItem, FunctionTypeParameterItem, IntrinsicFunctionItem,
-    IntrinsicTypeItem, Item, Span, TranslationUnit, TypeItem,
+    FunctionItem, FunctionParameterItem, FunctionTypeParameterItem, IntrinsicFunctionItem, Item,
+    Span, TranslationUnit, TypeItem,
 };
 use std::collections::BTreeMap;
 
@@ -26,7 +26,6 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             Item::Function(f) => self.visit_function_item(module, f),
             Item::IntrinsicFunction(f) => self.visit_intrinsic_function_item(module, f),
             Item::Type(t) => self.visit_type_item(module, t),
-            Item::IntrinsicType(t) => self.visit_intrinsic_type_item(module, t),
         }
     }
 
@@ -185,17 +184,6 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             span: node.span().clone(),
         };
         module.records.insert(node.name.name.to_owned(), rec);
-        Ok(())
-    }
-
-    /// Declare an intrinsic type item.
-    ///
-    /// Intrinsic types are at the moment only scalar, so declaring them as constant types is fine.
-    pub fn visit_intrinsic_type_item(
-        &mut self,
-        _: &mut HirModule,
-        _: &'ast IntrinsicTypeItem,
-    ) -> HirResult<()> {
         Ok(())
     }
 }
