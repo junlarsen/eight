@@ -88,6 +88,36 @@ pub enum HirTy {
 }
 
 impl HirTy {
+    /// Determine if two types are trivially equal.
+    ///
+    /// Two types are trivially equal if they refer to the same type.
+    pub fn is_trivially_equal(&self, other: &Self) -> bool {
+        match (self, other) {
+            (HirTy::Variable(v), HirTy::Variable(o)) => v.name == o.name,
+            (HirTy::Pointer(v), HirTy::Pointer(o)) => v.inner.is_trivially_equal(&o.inner),
+            (HirTy::Reference(v), HirTy::Reference(o)) => v.inner.is_trivially_equal(&o.inner),
+            (HirTy::Constant(v), HirTy::Constant(o)) => v.name == o.name,
+            (HirTy::Function(v), HirTy::Function(o)) => {
+                v.return_type.is_trivially_equal(&o.return_type)
+                    && v.parameters.len() == o.parameters.len()
+                    && v.parameters
+                        .iter()
+                        .zip(o.parameters.iter())
+                        .all(|(a, b)| a.is_trivially_equal(b))
+            }
+            (HirTy::Record(v), HirTy::Record(o)) => v
+                .fields
+                .iter()
+                .all(|(k, v)| matches!(o.fields.get(k), Some(f) if f.is_trivially_equal(v))),
+            (HirTy::Uninitialized, HirTy::Uninitialized) => {
+                panic!("should not be comparing uninitialized types")
+            }
+            _ => false,
+        }
+    }
+}
+
+impl HirTy {
     pub fn new_var(name: usize, span: Span) -> Self {
         Self::Variable(HirVariableTy { name, span })
     }
