@@ -10,13 +10,10 @@ module {
     buf: *i32,
     c: i32,
     r: i32,
-  };
-  type bool = bool;
-  type i32 = i32;
-  type void = void;
+  }
   
   // module functions
-  intrinsic_fn free<$0>(ptr: *$0) -> void;
+  intrinsic_fn free<$0>(ptr: *$0) -> unit;
   intrinsic_fn malloc<$0>(size: i32) -> *$0;
   fn matrix_matrix_multiply<>(a: Matrix, b: Matrix) -> Matrix {
     if (a.r != b.c){

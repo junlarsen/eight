@@ -6,7 +6,7 @@ snapshot_kind: text
 ---
 module {
   // module types
-  type i32 = i32;
+  
   
   // module functions
   fn substitute<$0, $1, $2>(a: i32, b: $0, c: $1, d: $2) -> $2 {
