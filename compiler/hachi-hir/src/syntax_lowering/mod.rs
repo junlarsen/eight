@@ -5,7 +5,7 @@ pub mod r#type;
 
 use crate::context::LocalContext;
 use crate::ty::HirTy;
-use hachi_syntax::ForStmt;
+use hachi_syntax::{ForStmt, FunctionItem};
 use std::collections::VecDeque;
 
 /// Translation pass that lowers the `hachi-syntax` AST into the HIR representation.
@@ -22,6 +22,7 @@ use std::collections::VecDeque;
 pub struct SyntaxLoweringPass<'ast> {
     loop_depth: VecDeque<&'ast ForStmt>,
     generic_substitutions: LocalContext<HirTy>,
+    function_depth: VecDeque<&'ast FunctionItem>,
 }
 
 impl SyntaxLoweringPass<'_> {
@@ -29,6 +30,7 @@ impl SyntaxLoweringPass<'_> {
         Self {
             loop_depth: VecDeque::new(),
             generic_substitutions: LocalContext::new(),
+            function_depth: VecDeque::new(),
         }
     }
 }

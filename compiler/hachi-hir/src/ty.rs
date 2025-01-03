@@ -116,10 +116,12 @@ impl HirTy {
 }
 
 impl HirTy {
+    /// Create a new variable type.
     pub fn new_var(name: usize, span: Span) -> Self {
         Self::Variable(HirVariableTy { name, span })
     }
 
+    /// Create a new function type.
     pub fn new_fun(return_type: Box<HirTy>, parameters: Vec<Box<HirTy>>, span: &Span) -> Self {
         Self::Function(HirFunctionTy {
             return_type,
@@ -128,6 +130,7 @@ impl HirTy {
         })
     }
 
+    /// Create a new pointer type.
     pub fn new_ptr(inner: Box<HirTy>, span: &Span) -> Self {
         Self::Pointer(HirPointerTy {
             inner,
@@ -135,6 +138,7 @@ impl HirTy {
         })
     }
 
+    /// Create a new reference type.
     pub fn new_ref(inner: Box<HirTy>, span: &Span) -> Self {
         Self::Reference(HirReferenceTy {
             inner,
@@ -142,6 +146,7 @@ impl HirTy {
         })
     }
 
+    /// Create a new nominal type.
     pub fn new_nominal(name: HirName, span: &Span) -> Self {
         Self::Nominal(HirNominalTy {
             name,

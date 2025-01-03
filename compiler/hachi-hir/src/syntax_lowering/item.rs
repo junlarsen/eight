@@ -34,6 +34,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         module: &mut HirModule,
         node: &'ast FunctionItem,
     ) -> HirResult<()> {
+        self.function_depth.push_back(node);
         // When we enter a function, we substitute all the type parameters with fresh type variables
         // so that the type checker knows these are generic types, and not constants. It is
         // currently safe to assume index for the type parameters, as we don't have higher order
@@ -50,7 +51,6 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             let hir = self.visit_function_type_parameter(type_parameter, variable)?;
             type_parameters.push(hir);
         }
-
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
             None => Box::new(HirTy::new_unit(&Span::empty())),
@@ -75,7 +75,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             body,
         });
         self.generic_substitutions.leave_scope();
-
+        self.function_depth.pop_back();
         module.functions.insert(node.name.name.to_owned(), fun);
         Ok(())
     }

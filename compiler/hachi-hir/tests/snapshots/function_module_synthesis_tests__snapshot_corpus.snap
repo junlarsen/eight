@@ -1,0 +1,15 @@
+---
+source: compiler/hachi-hir/tests/function_module_synthesis_tests.rs
+expression: doc
+input_file: compiler/hachi-hir/tests/data/function_module_synthesis/generic_function_synthesis.test
+snapshot_kind: text
+---
+module {
+  // module types
+  
+  
+  // module functions
+  fn id<T>(x: T) -> T {
+    return x;
+  }
+}

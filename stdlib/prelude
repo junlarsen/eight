@@ -1,2 +1,22 @@
 intrinsic_fn malloc<T>(size: i32) -> *T;
 intrinsic_fn free<T>(ptr: *T);
+intrinsic_fn panic() -> void;
+
+intrinsic_fn i32_add(a: i32, b: i32) -> i32;
+intrinsic_fn i32_sub(a: i32, b: i32) -> i32;
+intrinsic_fn i32_mul(a: i32, b: i32) -> i32;
+intrinsic_fn i32_div(a: i32, b: i32) -> i32;
+intrinsic_fn i32_rem(a: i32, b: i32) -> i32;
+
+intrinsic_fn i32_eq(a: i32, b: i32) -> bool;
+intrinsic_fn i32_neq(a: i32, b: i32) -> bool;
+intrinsic_fn i32_lt(a: i32, b: i32) -> bool;
+intrinsic_fn i32_gt(a: i32, b: i32) -> bool;
+intrinsic_fn i32_le(a: i32, b: i32) -> bool;
+intrinsic_fn i32_ge(a: i32, b: i32) -> bool;
+intrinsic_fn i32_lte(a: i32, b: i32) -> bool;
+intrinsic_fn i32_gte(a: i32, b: i32) -> bool;
+
+intrinsic_fn bool_and(a: bool, b: bool) -> bool;
+intrinsic_fn bool_or(a: bool, b: bool) -> bool;
+intrinsic_fn bool_not(a: bool) -> bool;

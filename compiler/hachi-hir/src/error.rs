@@ -11,6 +11,8 @@ declare_error_type! {
         TypeFieldInfiniteRecursion(TypeFieldInfiniteRecursionError),
         BreakOutsideLoop(BreakOutsideLoopError),
         ContinueOutsideLoop(ContinueOutsideLoopError),
+        TypeMismatch(TypeMismatchError),
+        FunctionTypeMismatch(FunctionTypeMismatchError),
     }
 }
 
@@ -58,5 +60,21 @@ pub struct BreakOutsideLoopError {
 #[error("continue statement outside of loop")]
 pub struct ContinueOutsideLoopError {
     #[label = "there is no enclosing loop"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::type_mismatch))]
+#[error("type mismatch")]
+pub struct TypeMismatchError {
+    #[label = "type does not match"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::function_type_mismatch))]
+#[error("function types do not take the same number of arguments")]
+pub struct FunctionTypeMismatchError {
+    #[label = "some error here"]
     pub span: Span,
 }

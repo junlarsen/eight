@@ -106,7 +106,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
             .as_ref()
             .map(|i| self.visit_expr(i))
             .transpose()?;
-        let mut body = node
+        let body = node
             .body
             .iter()
             .map(|s| self.visit_stmt(s))
