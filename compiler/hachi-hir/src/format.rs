@@ -15,13 +15,12 @@ use crate::expr::{
 use crate::fun::{
     HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
 };
+use crate::rec::HirRecord;
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
-use crate::ty::{
-    HirConstantTy, HirFunctionTy, HirPointerTy, HirRecordTy, HirReferenceTy, HirTy, HirVariableTy,
-};
+use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirReferenceTy, HirTy, HirVariableTy};
 use crate::HirModule;
 use pretty::RcDoc;
 
@@ -44,16 +43,10 @@ impl HirModuleFormatter {
                     .append("// module types")
                     .append(RcDoc::hardline())
                     .append(RcDoc::intersperse(
-                        module.types.iter().map(|(name, ty)| {
-                            RcDoc::text("type")
-                                .append(RcDoc::space())
-                                .append(RcDoc::text(name))
-                                .append(RcDoc::space())
-                                .append(RcDoc::text("="))
-                                .append(RcDoc::space())
-                                .append(Self::format_hir_ty(ty))
-                                .append(RcDoc::text(";"))
-                        }),
+                        module
+                            .records
+                            .values()
+                            .map(|rec| Self::format_hir_record(rec)),
                         RcDoc::hardline(),
                     ))
                     .append(RcDoc::hardline())
@@ -123,6 +116,35 @@ impl HirModuleFormatter {
             .append(RcDoc::space())
             .append(Self::format_hir_ty(&function.return_type))
             .append(RcDoc::text(";"))
+    }
+
+    pub fn format_hir_record(ty: &HirRecord) -> RcDoc<()> {
+        RcDoc::text("type")
+            .append(RcDoc::space())
+            .append(RcDoc::text(ty.name.name.as_str()))
+            .append(RcDoc::space())
+            .append(RcDoc::text("="))
+            .append(RcDoc::space())
+            .append(
+                RcDoc::text("{")
+                    .append(
+                        RcDoc::hardline()
+                            .append(RcDoc::intersperse(
+                                ty.fields.iter().map(|(name, ty)| {
+                                    RcDoc::text(name.as_str())
+                                        .append(RcDoc::text(":"))
+                                        .append(RcDoc::space())
+                                        .append(Self::format_hir_ty(ty.ty.as_ref()))
+                                        .append(RcDoc::text(","))
+                                }),
+                                RcDoc::line(),
+                            ))
+                            .nest(2)
+                            .group(),
+                    )
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::text("}")),
+            )
     }
 
     pub(super) fn format_function_parameters(
@@ -429,12 +451,14 @@ impl HirModuleFormatter {
 
     pub fn format_hir_ty(ty: &HirTy) -> RcDoc<()> {
         match ty {
-            HirTy::Variable(v) => Self::format_hir_variable_ty(v),
-            HirTy::Function(f) => Self::format_hir_function_ty(f),
-            HirTy::Constant(c) => Self::format_hir_constant_ty(c),
-            HirTy::Pointer(p) => Self::format_hir_pointer_ty(p),
-            HirTy::Reference(r) => Self::format_hir_reference_ty(r),
-            HirTy::Record(r) => Self::format_hir_record_ty(r),
+            HirTy::Integer32(_) => RcDoc::text("i32"),
+            HirTy::Boolean(_) => RcDoc::text("bool"),
+            HirTy::Unit(_) => RcDoc::text("unit"),
+            HirTy::Variable(t) => Self::format_hir_variable_ty(t),
+            HirTy::Function(t) => Self::format_hir_function_ty(t),
+            HirTy::Nominal(t) => Self::format_hir_nominal_ty(t),
+            HirTy::Pointer(t) => Self::format_hir_pointer_ty(t),
+            HirTy::Reference(t) => Self::format_hir_reference_ty(t),
             HirTy::Uninitialized => Self::format_hir_uninitialized_ty(ty),
         }
     }
@@ -459,8 +483,8 @@ impl HirModuleFormatter {
             .append(Self::format_hir_ty(&ty.return_type))
     }
 
-    pub fn format_hir_constant_ty(ty: &HirConstantTy) -> RcDoc<()> {
-        RcDoc::text(ty.name.as_str())
+    pub fn format_hir_nominal_ty(ty: &HirNominalTy) -> RcDoc<()> {
+        RcDoc::text(ty.name.name.as_str())
     }
 
     pub fn format_hir_pointer_ty(ty: &HirPointerTy) -> RcDoc<()> {
@@ -469,27 +493,6 @@ impl HirModuleFormatter {
 
     pub fn format_hir_reference_ty(ty: &HirReferenceTy) -> RcDoc<()> {
         RcDoc::text("&").append(Self::format_hir_ty(&ty.inner))
-    }
-
-    pub fn format_hir_record_ty(ty: &HirRecordTy) -> RcDoc<()> {
-        RcDoc::text("{")
-            .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        ty.fields.iter().map(|(name, ty)| {
-                            RcDoc::text(name.as_str())
-                                .append(RcDoc::text(":"))
-                                .append(RcDoc::space())
-                                .append(Self::format_hir_ty(ty))
-                                .append(RcDoc::text(","))
-                        }),
-                        RcDoc::line(),
-                    ))
-                    .nest(2)
-                    .group(),
-            )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
     }
 
     pub fn format_hir_uninitialized_ty(_: &HirTy) -> RcDoc<()> {

@@ -9,7 +9,7 @@
 //! program than the AST.
 
 use crate::fun::HirFun;
-use crate::ty::HirTy;
+use crate::rec::HirRecord;
 use hachi_syntax::Span;
 use std::collections::BTreeMap;
 
@@ -19,6 +19,7 @@ pub mod expr;
 pub mod format;
 pub mod fun;
 pub mod passes;
+mod rec;
 pub mod stmt;
 pub mod syntax_lowering;
 pub mod ty;
@@ -30,14 +31,14 @@ pub mod ty;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirModule {
-    pub types: BTreeMap<String, HirTy>,
+    pub records: BTreeMap<String, HirRecord>,
     pub functions: BTreeMap<String, HirFun>,
 }
 
 impl HirModule {
     pub fn new() -> Self {
         Self {
-            types: BTreeMap::new(),
+            records: BTreeMap::new(),
             functions: BTreeMap::new(),
         }
     }
@@ -50,7 +51,7 @@ impl Default for HirModule {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HirName {
     pub name: String,
     pub span: Span,

@@ -1,5 +1,5 @@
+use crate::HirName;
 use hachi_syntax::Span;
-use std::collections::BTreeMap;
 use std::fmt::Debug;
 
 /// A single type in the HIR representation.
@@ -12,6 +12,14 @@ use std::fmt::Debug;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
 pub enum HirTy {
+    /// The builtin type `i32`.
+    Integer32(HirInteger32Ty),
+    /// The builtin type `bool`.
+    Boolean(HirBooleanTy),
+    /// The builtin type `void`.
+    ///
+    /// Signifies that a function does not return a value.
+    Unit(HirUnitTy),
     /// A type variable that is not yet resolved.
     ///
     /// These types are used for unification during type inference, and in the module IR look like
@@ -48,11 +56,6 @@ pub enum HirTy {
     /// }
     /// ```
     Function(HirFunctionTy),
-    /// A constant constructor type.
-    ///
-    /// This represents a type that doesn't have any parameters. This container is used for scalar
-    /// types such as i32, bool, and the special type void.
-    Constant(HirConstantTy),
     /// A pointer constructor type.
     ///
     /// The pointer has a single parameter type, which is the inner pointee type.
@@ -61,14 +64,10 @@ pub enum HirTy {
     ///
     /// The reference has a single parameter type, which is the referent type.
     Reference(HirReferenceTy),
-    /// A record constructor type.
+    /// A nominal type.
     ///
-    /// We do not currently support parameterized records, so this type is effectively a quantified
-    /// version of the HirConstantTy type.
-    ///
-    /// A HirRecordTy represents a packed type, and it can be indexed by any of its members to
-    /// reveal the type of the field.
-    Record(HirRecordTy),
+    /// This is used for structs at the moment, but could also be used for enums in the future.
+    Nominal(HirNominalTy),
     /// A type that has not yet been resolved.
     ///
     /// All uninitialized types are eliminated during type inference. This enum variant exists in
@@ -93,10 +92,12 @@ impl HirTy {
     /// Two types are trivially equal if they refer to the same type.
     pub fn is_trivially_equal(&self, other: &Self) -> bool {
         match (self, other) {
+            (HirTy::Boolean(_), HirTy::Boolean(_)) => true,
+            (HirTy::Integer32(_), HirTy::Integer32(_)) => true,
+            (HirTy::Unit(_), HirTy::Unit(_)) => true,
             (HirTy::Variable(v), HirTy::Variable(o)) => v.name == o.name,
             (HirTy::Pointer(v), HirTy::Pointer(o)) => v.inner.is_trivially_equal(&o.inner),
             (HirTy::Reference(v), HirTy::Reference(o)) => v.inner.is_trivially_equal(&o.inner),
-            (HirTy::Constant(v), HirTy::Constant(o)) => v.name == o.name,
             (HirTy::Function(v), HirTy::Function(o)) => {
                 v.return_type.is_trivially_equal(&o.return_type)
                     && v.parameters.len() == o.parameters.len()
@@ -105,10 +106,7 @@ impl HirTy {
                         .zip(o.parameters.iter())
                         .all(|(a, b)| a.is_trivially_equal(b))
             }
-            (HirTy::Record(v), HirTy::Record(o)) => v
-                .fields
-                .iter()
-                .all(|(k, v)| matches!(o.fields.get(k), Some(f) if f.is_trivially_equal(v))),
+            (HirTy::Nominal(v), HirTy::Nominal(o)) => v.name.name == o.name.name,
             (HirTy::Uninitialized, HirTy::Uninitialized) => {
                 panic!("should not be comparing uninitialized types")
             }
@@ -130,13 +128,6 @@ impl HirTy {
         })
     }
 
-    pub fn new_const<T: AsRef<str>>(name: T, span: &Span) -> Self {
-        Self::Constant(HirConstantTy {
-            name: name.as_ref().to_owned(),
-            span: span.clone(),
-        })
-    }
-
     pub fn new_ptr(inner: Box<HirTy>, span: &Span) -> Self {
         Self::Pointer(HirPointerTy {
             inner,
@@ -151,25 +142,37 @@ impl HirTy {
         })
     }
 
-    pub fn new_record(fields: BTreeMap<String, Box<HirTy>>, span: &Span) -> Self {
-        Self::Record(HirRecordTy {
-            fields,
+    pub fn new_nominal(name: HirName, span: &Span) -> Self {
+        Self::Nominal(HirNominalTy {
+            name,
             span: span.clone(),
         })
+    }
+
+    pub fn new_i32(span: &Span) -> Self {
+        Self::Integer32(HirInteger32Ty { span: span.clone() })
+    }
+
+    pub fn new_bool(span: &Span) -> Self {
+        Self::Boolean(HirBooleanTy { span: span.clone() })
+    }
+
+    pub fn new_unit(span: &Span) -> Self {
+        Self::Unit(HirUnitTy { span: span.clone() })
     }
 }
 
 impl HirTy {
     pub fn is_intrinsic_i32(&self) -> bool {
-        matches!(self, HirTy::Constant(t) if t.name == "i32")
+        matches!(self, HirTy::Integer32(_))
     }
 
     pub fn is_intrinsic_bool(&self) -> bool {
-        matches!(self, HirTy::Constant(t) if t.name == "bool")
+        matches!(self, HirTy::Boolean(_))
     }
 
     pub fn is_intrinsic_void(&self) -> bool {
-        matches!(self, HirTy::Constant(t) if t.name == "void")
+        matches!(self, HirTy::Unit(_))
     }
 
     pub fn is_pointer(&self) -> bool {
@@ -181,28 +184,44 @@ impl HirTy {
     }
 
     pub fn is_record(&self) -> bool {
-        matches!(self, HirTy::Record(_))
+        matches!(self, HirTy::Nominal(_))
     }
 
     pub fn is_uninitialized(&self) -> bool {
         matches!(self, HirTy::Uninitialized)
     }
 
-    pub fn is_exact_constant<T: AsRef<str>>(&self, m: T) -> bool {
-        matches!(self, HirTy::Constant(HirConstantTy { name, .. }) if name == m.as_ref())
-    }
-
     pub fn span(&self) -> &Span {
         match self {
             HirTy::Variable(v) => &v.span,
             HirTy::Function(f) => &f.span,
-            HirTy::Constant(c) => &c.span,
+            HirTy::Integer32(i) => &i.span,
+            HirTy::Boolean(b) => &b.span,
+            HirTy::Unit(u) => &u.span,
             HirTy::Pointer(p) => &p.span,
             HirTy::Reference(r) => &r.span,
-            HirTy::Record(r) => &r.span,
+            HirTy::Nominal(r) => &r.span,
             HirTy::Uninitialized => todo!(),
         }
     }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HirInteger32Ty {
+    pub span: Span,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HirBooleanTy {
+    pub span: Span,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HirUnitTy {
+    pub span: Span,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -256,7 +275,7 @@ impl HirReferenceTy {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct HirRecordTy {
-    pub fields: BTreeMap<String, Box<HirTy>>,
+pub struct HirNominalTy {
+    pub name: HirName,
     pub span: Span,
 }

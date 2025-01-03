@@ -2,6 +2,7 @@ use crate::error::HirResult;
 use crate::fun::{
     HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
 };
+use crate::rec::{HirRecord, HirRecordField};
 use crate::syntax_lowering::SyntaxLoweringPass;
 use crate::ty::HirTy;
 use crate::HirModule;
@@ -53,7 +54,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
 
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
-            None => Box::new(HirTy::new_const("void", &Span::empty())),
+            None => Box::new(HirTy::new_unit(&Span::empty())),
         };
         let parameters = node
             .parameters
@@ -164,16 +165,26 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         module: &mut HirModule,
         node: &'ast TypeItem,
     ) -> HirResult<()> {
+        let name = self.visit_identifier(node.name.as_ref())?;
         let fields = node
             .members
             .iter()
             .map(|member| {
                 let ty = self.visit_type(member.r#type.as_ref())?;
-                Ok((member.name.name.to_owned(), ty))
+                let field = HirRecordField {
+                    name: self.visit_identifier(member.name.as_ref())?,
+                    ty,
+                    span: member.span().clone(),
+                };
+                Ok((member.name.name.to_owned(), Box::new(field)))
             })
             .collect::<HirResult<BTreeMap<_, _>>>()?;
-        let ty = HirTy::new_record(fields, node.name.span());
-        module.types.insert(node.name.name.to_owned(), ty);
+        let rec = HirRecord {
+            name,
+            fields,
+            span: node.span().clone(),
+        };
+        module.records.insert(node.name.name.to_owned(), rec);
         Ok(())
     }
 
@@ -182,11 +193,9 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     /// Intrinsic types are at the moment only scalar, so declaring them as constant types is fine.
     pub fn visit_intrinsic_type_item(
         &mut self,
-        module: &mut HirModule,
-        node: &'ast IntrinsicTypeItem,
+        _: &mut HirModule,
+        _: &'ast IntrinsicTypeItem,
     ) -> HirResult<()> {
-        let ty = HirTy::new_const(&node.name.name, node.name.span());
-        module.types.insert(node.name.name.to_owned(), ty);
         Ok(())
     }
 }

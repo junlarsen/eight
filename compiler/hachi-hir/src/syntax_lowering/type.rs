@@ -26,14 +26,14 @@ impl SyntaxLoweringPass<'_> {
     #[allow(clippy::only_used_in_recursion)]
     pub fn visit_type(&mut self, node: &Type) -> HirResult<Box<HirTy>> {
         let ty = match node {
-            Type::Unit(_) => HirTy::new_const("void", node.span()),
-            Type::Integer32(_) => HirTy::new_const("i32", node.span()),
-            Type::Boolean(_) => HirTy::new_const("bool", node.span()),
+            Type::Unit(_) => HirTy::new_unit(node.span()),
+            Type::Integer32(_) => HirTy::new_i32(node.span()),
+            Type::Boolean(_) => HirTy::new_bool(node.span()),
             // If the type is referring to a generic type that we have substituted before, we
             // use replace it with the substitution
             Type::Named(t) => match self.generic_substitutions.find(&t.name.name) {
                 Some(ty) => ty.clone(),
-                None => HirTy::new_const(&t.name.name, node.span()),
+                None => HirTy::new_nominal(self.visit_identifier(t.name.as_ref())?, node.span()),
             },
             Type::Pointer(t) => HirTy::new_ptr(self.visit_type(t.inner.as_ref())?, node.span()),
             Type::Reference(t) => HirTy::new_ref(self.visit_type(t.inner.as_ref())?, node.span()),
