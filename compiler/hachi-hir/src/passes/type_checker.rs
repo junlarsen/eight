@@ -158,13 +158,13 @@ impl TypingContext {
             // We substitute type variables as long as they don't point to $T
             HirTy::Variable(v)
                 if !self
-                    .substitution(v.name)
-                    .map(|t| t.is_equal_to_variable(v.name))
+                    .substitution(v.var)
+                    .map(|t| t.is_equal_to_variable(v.var))
                     .unwrap_or(false) =>
             {
                 // We have to recurse down here, because $T could point to another type variable
                 // that we may have a substitution for.
-                let mut sub = self.substitutions[v.name].clone();
+                let mut sub = self.substitutions[v.var].clone();
                 self.substitute(&mut sub)?;
                 *ty = sub;
                 Ok(())
@@ -194,24 +194,32 @@ impl TypingContext {
     }
 
     /// Get the substitution for the given type variable.
-    pub fn substitution(&self, name: usize) -> Option<&HirTy> {
-        self.substitutions.get(name)
+    pub fn substitution(&self, var: usize) -> Option<&HirTy> {
+        self.substitutions.get(var)
+    }
+
+    /// Determine if the substitution at the given index is equal to its own type variable.
+    pub fn is_substitution_equal_to_self(&self, var: usize) -> bool {
+        self.substitutions
+            .get(var)
+            .map(|t| t.is_equal_to_variable(var))
+            .unwrap_or(false)
     }
 
     /// Determine if the given variable type occurs in another type.
     ///
     /// This is required for HM type inference, as we need to determine if a type variable points to
     /// itself. An example is a constraint like `$0 = fn() -> $0`, which cannot be satisfied ever.
-    pub fn occurs_in(&self, name: usize, ty: &HirTy) -> bool {
+    pub fn occurs_in(&self, var: usize, ty: &HirTy) -> bool {
         match ty {
             // If the variable points to a substitution of itself, it occurs in itself
-            HirTy::Variable(v) if self.substitutions[v.name].is_equal_to_variable(name) => true,
-            HirTy::Variable(v) => v.name == name,
-            HirTy::Pointer(t) => self.occurs_in(name, &t.inner),
-            HirTy::Reference(t) => self.occurs_in(name, &t.inner),
+            HirTy::Variable(v) if self.is_substitution_equal_to_self(v.var) => true,
+            HirTy::Variable(v) => v.var == var,
+            HirTy::Pointer(t) => self.occurs_in(var, &t.inner),
+            HirTy::Reference(t) => self.occurs_in(var, &t.inner),
             HirTy::Function(t) => {
-                self.occurs_in(name, &t.return_type)
-                    || t.parameters.iter().any(|p| self.occurs_in(name, p))
+                self.occurs_in(var, &t.return_type)
+                    || t.parameters.iter().any(|p| self.occurs_in(var, p))
             }
             // Non-constructor types cannot possibly occur in other types.
             _ => false,
@@ -224,42 +232,32 @@ impl TypingContext {
     /// Because we currently do not support subtyping, this is always an equivalence check.
     pub fn unify(&mut self, lhs: HirTy, rhs: HirTy) -> HirResult<()> {
         match (&lhs, &rhs) {
-            (HirTy::Variable(lhs), HirTy::Variable(rhs)) if lhs.name == rhs.name => Ok(()),
+            (HirTy::Variable(lhs), HirTy::Variable(rhs)) if lhs.var == rhs.var => Ok(()),
             (HirTy::Nominal(a), HirTy::Nominal(b)) if a.name.name == b.name.name => Ok(()),
-            (HirTy::Variable(v), _)
-                if !self
-                    .substitution(v.name)
-                    .map(|t| t.is_equal_to_variable(v.name))
-                    .unwrap_or(false) =>
-            {
-                self.unify(self.substitutions[v.name].clone(), rhs)
+            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v.var) => {
+                self.unify(self.substitutions[v.var].clone(), rhs)
             }
-            (_, HirTy::Variable(v))
-                if !self
-                    .substitution(v.name)
-                    .map(|t| t.is_equal_to_variable(v.name))
-                    .unwrap_or(false) =>
-            {
-                self.unify(lhs, self.substitutions[v.name].clone())
+            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v.var) => {
+                self.unify(lhs, self.substitutions[v.var].clone())
             }
             (HirTy::Variable(v), _) => {
-                if self.occurs_in(v.name, &rhs) {
+                if self.occurs_in(v.var, &rhs) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: lhs.span().clone(),
                         right: rhs.span().clone(),
                     }));
                 }
-                self.substitutions[v.name] = rhs.clone();
+                self.substitutions[v.var] = rhs.clone();
                 Ok(())
             }
             (_, HirTy::Variable(v)) => {
-                if self.occurs_in(v.name, &lhs) {
+                if self.occurs_in(v.var, &lhs) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: lhs.span().clone(),
                         right: rhs.span().clone(),
                     }));
                 }
-                self.substitutions[v.name] = lhs.clone();
+                self.substitutions[v.var] = lhs.clone();
                 Ok(())
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {

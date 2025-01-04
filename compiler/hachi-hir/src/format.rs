@@ -469,7 +469,7 @@ impl HirModuleFormatter {
     }
 
     pub fn format_hir_variable_ty(ty: &HirVariableTy) -> RcDoc<()> {
-        RcDoc::text("$").append(RcDoc::text(ty.name.to_string()))
+        RcDoc::text("$").append(RcDoc::text(ty.var.to_string()))
     }
 
     pub fn format_hir_function_ty(ty: &HirFunctionTy) -> RcDoc<()> {

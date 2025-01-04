@@ -96,7 +96,7 @@ impl HirTy {
             (HirTy::Boolean(_), HirTy::Boolean(_)) => true,
             (HirTy::Integer32(_), HirTy::Integer32(_)) => true,
             (HirTy::Unit(_), HirTy::Unit(_)) => true,
-            (HirTy::Variable(v), HirTy::Variable(o)) => v.name == o.name,
+            (HirTy::Variable(v), HirTy::Variable(o)) => v.var == o.var,
             (HirTy::Pointer(v), HirTy::Pointer(o)) => v.inner.is_trivially_equal(&o.inner),
             (HirTy::Reference(v), HirTy::Reference(o)) => v.inner.is_trivially_equal(&o.inner),
             (HirTy::Function(v), HirTy::Function(o)) => {
@@ -115,9 +115,9 @@ impl HirTy {
         }
     }
 
-    pub fn is_equal_to_variable(&self, name: usize) -> bool {
+    pub fn is_equal_to_variable(&self, var: usize) -> bool {
         match self {
-            HirTy::Variable(v) => v.name == name,
+            HirTy::Variable(v) => v.var == var,
             _ => false,
         }
     }
@@ -125,8 +125,8 @@ impl HirTy {
 
 impl HirTy {
     /// Create a new variable type.
-    pub fn new_var(name: usize, span: Span) -> Self {
-        Self::Variable(HirVariableTy { name, span })
+    pub fn new_var(var: usize, span: Span) -> Self {
+        Self::Variable(HirVariableTy { var, span })
     }
 
     /// Create a new function type.
@@ -178,7 +178,7 @@ impl HirTy {
 impl Debug for HirTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            HirTy::Variable(t) => write!(f, "${}", t.name),
+            HirTy::Variable(t) => write!(f, "${}", t.var),
             HirTy::Function(t) => write!(f, "fn({:?}) -> {:?}", t.parameters, t.return_type),
             HirTy::Integer32(_) => write!(f, "i32"),
             HirTy::Boolean(_) => write!(f, "bool"),
@@ -256,7 +256,7 @@ pub struct HirUnitTy {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
 pub struct HirVariableTy {
-    pub name: usize,
+    pub var: usize,
     pub span: Span,
 }
 
