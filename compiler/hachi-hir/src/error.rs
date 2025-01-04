@@ -13,6 +13,7 @@ declare_error_type! {
         ContinueOutsideLoop(ContinueOutsideLoopError),
         TypeMismatch(TypeMismatchError),
         FunctionTypeMismatch(FunctionTypeMismatchError),
+        SelfReferentialType(SelfReferentialTypeError),
     }
 }
 
@@ -77,4 +78,14 @@ pub struct TypeMismatchError {
 pub struct FunctionTypeMismatchError {
     #[label = "some error here"]
     pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::self_referential_type))]
+#[error("type references itself")]
+pub struct SelfReferentialTypeError {
+    #[label = "this type refers to itself"]
+    pub left: Span,
+    #[label = "this type refers to itself"]
+    pub right: Span,
 }

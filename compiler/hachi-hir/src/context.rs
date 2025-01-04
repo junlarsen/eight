@@ -1,3 +1,4 @@
+use hachi_diagnostics::ice;
 use std::collections::{BTreeMap, VecDeque};
 
 #[derive(Debug)]
@@ -47,7 +48,7 @@ impl<T> LocalContext<T> {
         let scope = self
             .scopes
             .front_mut()
-            .expect("ice: local context has no scope");
+            .unwrap_or_else(|| ice!("local context has no scope"));
         scope.insert(name.to_string(), id);
     }
 
@@ -55,7 +56,7 @@ impl<T> LocalContext<T> {
         let scope = self
             .scopes
             .front_mut()
-            .expect("ice: local context has no scope");
+            .unwrap_or_else(|| ice!("local context has no scope"));
         scope.remove(name);
     }
 

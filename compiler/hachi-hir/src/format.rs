@@ -22,6 +22,7 @@ use crate::stmt::{
 };
 use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirReferenceTy, HirTy, HirVariableTy};
 use crate::HirModule;
+use hachi_diagnostics::ice;
 use pretty::RcDoc;
 
 pub struct HirModuleFormatter();
@@ -31,7 +32,7 @@ impl HirModuleFormatter {
         let doc = Self::format_hir_module(module);
         let mut w = Vec::new();
         doc.render(80, &mut w)
-            .expect("ice: failed to render hir module");
+            .unwrap_or_else(|_| ice!("failed to render hir module"));
         String::from_utf8(w).unwrap()
     }
 

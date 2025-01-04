@@ -9,6 +9,7 @@ serde = ["dep:serde"]
 
 [dependencies]
 hachi-macros = { path = "../hachi-macros" }
+hachi-diagnostics = { path = "../hachi-diagnostics" }
 hachi-span = { path = "../hachi-span" }
 miette = { workspace = true }
 serde = { workspace = true, optional = true }

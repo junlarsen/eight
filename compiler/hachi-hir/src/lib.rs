@@ -11,6 +11,7 @@
 use crate::fun::HirFun;
 use crate::rec::HirRecord;
 use crate::ty::{HirBooleanTy, HirInteger32Ty, HirTy, HirUnitTy};
+use hachi_diagnostics::ice;
 use hachi_span::Span;
 use std::collections::BTreeMap;
 
@@ -80,21 +81,21 @@ impl HirModule {
     pub fn get_builtin_integer32_type(&self) -> &HirTy {
         self.scalars
             .get("i32")
-            .expect("ice: builtin integer32 type not found")
+            .unwrap_or_else(|| ice!("builtin integer32 type not found"))
     }
 
     /// Get the builtin boolean type.
     pub fn get_builtin_boolean_type(&self) -> &HirTy {
         self.scalars
             .get("bool")
-            .expect("ice: builtin boolean type not found")
+            .unwrap_or_else(|| ice!("builtin boolean type not found"))
     }
 
     /// Get the builtin unit type.
     pub fn get_builtin_unit_type(&self) -> &HirTy {
         self.scalars
             .get("unit")
-            .expect("ice: builtin unit type not found")
+            .unwrap_or_else(|| ice!("builtin unit type not found"))
     }
 
     /// Get a record type from the module with the given name.

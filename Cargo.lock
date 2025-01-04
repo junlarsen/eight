@@ -242,6 +242,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "hachi-diagnostics"
+version = "0.1.0"
+dependencies = [
+ "hachi-macros",
+ "miette",
+ "serde",
+ "thiserror 2.0.6",
+]
+
+[[package]]
 name = "hachi-driver"
 version = "0.1.0"
 dependencies = [
@@ -256,6 +266,7 @@ dependencies = [
 name = "hachi-hir"
 version = "0.1.0"
 dependencies = [
+ "hachi-diagnostics",
  "hachi-macros",
  "hachi-span",
  "hachi-syntax",
@@ -299,6 +310,7 @@ dependencies = [
 name = "hachi-syntax"
 version = "0.1.0"
 dependencies = [
+ "hachi-diagnostics",
  "hachi-macros",
  "hachi-span",
  "insta",

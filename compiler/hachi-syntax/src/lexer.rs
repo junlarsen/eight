@@ -2,6 +2,7 @@ use crate::{
     InvalidIntegerLiteralError, ParseError, ParseResult, Token, TokenType,
     UnexpectedCharacterError, UnexpectedEndOfFileError,
 };
+use hachi_diagnostics::ice;
 use hachi_span::{SourcePosition, Span};
 use std::iter::Peekable;
 use std::str::Chars;
@@ -84,9 +85,9 @@ impl<'a> LexerInput<'a> {
         match self.peek() {
             Some(ch) => match f(ch) {
                 Some(typ) => {
-                    self.input
-                        .next()
-                        .expect("ice: lexer should never fail to produce an already peeked token");
+                    self.input.next().unwrap_or_else(|| {
+                        ice!("lexer should never fail to produce an already peeked token")
+                    });
                     Ok(Token::new(typ, Span::new(start..self.pos + 1)))
                 }
                 None => Ok(Token::new(default, Span::pos(start))),

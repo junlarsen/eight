@@ -1,4 +1,5 @@
 use crate::HirName;
+use hachi_diagnostics::ice;
 use hachi_span::Span;
 use std::fmt::Debug;
 
@@ -108,7 +109,7 @@ impl HirTy {
             }
             (HirTy::Nominal(v), HirTy::Nominal(o)) => v.name.name == o.name.name,
             (HirTy::Uninitialized, HirTy::Uninitialized) => {
-                panic!("ice: should not be comparing uninitialized types")
+                ice!("attempted to compare uninitialized types")
             }
             _ => false,
         }

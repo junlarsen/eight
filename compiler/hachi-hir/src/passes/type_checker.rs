@@ -1,7 +1,7 @@
 use crate::context::LocalContext;
 use crate::error::{
     FunctionTypeMismatchError, HirError, HirResult, InvalidReferenceError,
-    TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
+    SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
 };
 use crate::expr::HirExpr;
 use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
@@ -9,6 +9,7 @@ use crate::rec::HirRecord;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirReferenceTy, HirTy};
 use crate::HirModule;
+use hachi_diagnostics::ice;
 use hachi_span::Span;
 use std::collections::{BTreeMap, VecDeque};
 
@@ -243,14 +244,20 @@ impl TypingContext {
             }
             (HirTy::Variable(v), _) => {
                 if self.occurs_in(v.name, &rhs) {
-                    panic!("ice: occurs check failed");
+                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
+                        left: lhs.span().clone(),
+                        right: rhs.span().clone(),
+                    }));
                 }
                 self.substitutions[v.name] = rhs.clone();
                 Ok(())
             }
             (_, HirTy::Variable(v)) => {
                 if self.occurs_in(v.name, &lhs) {
-                    panic!("ice: occurs check failed");
+                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
+                        left: lhs.span().clone(),
+                        right: rhs.span().clone(),
+                    }));
                 }
                 self.substitutions[v.name] = lhs.clone();
                 Ok(())
@@ -280,7 +287,7 @@ impl TypingContext {
                 Ok(())
             }
             (HirTy::Uninitialized, _) | (_, HirTy::Uninitialized) => {
-                panic!("ice: type is uninitialized")
+                ice!("tried to unify with uninitialized type")
             }
             _ => Err(HirError::TypeMismatch(TypeMismatchError {
                 span: Span::empty(),
@@ -293,21 +300,21 @@ impl TypingContext {
     pub fn get_integer32_type(&self) -> HirTy {
         self.scalars
             .get("i32")
-            .expect("ice: builtin integer32 type not found")
+            .unwrap_or_else(|| ice!("builtin integer32 type not found"))
             .clone()
     }
 
     pub fn get_boolean_type(&self) -> HirTy {
         self.scalars
             .get("bool")
-            .expect("ice: builtin boolean type not found")
+            .unwrap_or_else(|| ice!("builtin boolean type not found"))
             .clone()
     }
 
     pub fn get_unit_type(&self) -> HirTy {
         self.scalars
             .get("unit")
-            .expect("ice: builtin unit type not found")
+            .unwrap_or_else(|| ice!("builtin unit type not found"))
             .clone()
     }
 }
@@ -491,7 +498,7 @@ impl TypeChecker {
     /// The integer literal expression's type is always the integer32 type.
     pub fn visit_integer_literal_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
         let HirExpr::IntegerLiteral(e) = node else {
-            unreachable!("ice: expected integer literal");
+            ice!("visit_integer_literal_expr called with non-integer literal");
         };
         Self::visit_type(cx, &mut e.ty)?;
         cx.infer(node, node.ty().clone())?;
@@ -503,7 +510,7 @@ impl TypeChecker {
     /// The boolean literal expression's is always the boolean type.
     pub fn visit_boolean_literal_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
         let HirExpr::BooleanLiteral(e) = node else {
-            unreachable!("ice: expected boolean literal");
+            ice!("visit_boolean_literal_expr called with non-boolean literal");
         };
         Self::visit_type(cx, &mut e.ty)?;
         cx.infer(node, node.ty().clone())?;
@@ -515,7 +522,7 @@ impl TypeChecker {
     /// The grouping expression's type is inferred from the inner expression.
     pub fn visit_group_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
         let HirExpr::Group(e) = node else {
-            unreachable!("ice: expected group expression");
+            ice!("visit_group_expr called with non-group expression");
         };
         Self::visit_type(cx, &mut e.ty)?;
         Self::visit_expr(cx, &mut e.inner)?;

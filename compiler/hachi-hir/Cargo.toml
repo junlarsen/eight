@@ -8,6 +8,7 @@ default = ["serde"]
 serde = ["dep:serde"]
 
 [dependencies]
+hachi-diagnostics = { path = "../hachi-diagnostics" }
 hachi-macros = { path = "../hachi-macros" }
 hachi-span = { path = "../hachi-span" }
 hachi-syntax = { path = "../hachi-syntax" }
