@@ -69,8 +69,12 @@ pub struct ContinueOutsideLoopError {
 #[diagnostic(code(sema::type_mismatch))]
 #[error("type mismatch")]
 pub struct TypeMismatchError {
-    #[label = "type does not match"]
-    pub span: Span,
+    pub actual_type: HirTy,
+    pub expected_type: HirTy,
+    #[label = "the expression has type {actual_type}"]
+    pub actual_loc: Span,
+    #[label = "expected type {expected_type}"]
+    pub expected_loc: Span,
 }
 
 #[derive(Error, Diagnostic, Debug)]

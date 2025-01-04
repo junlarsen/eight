@@ -174,8 +174,11 @@ impl TypingContext {
             (HirTy::Uninitialized, _) | (_, HirTy::Uninitialized) => {
                 ice!("tried to unify with uninitialized type")
             }
-            _ => Err(HirError::TypeMismatch(TypeMismatchError {
-                span: Span::empty(),
+            (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
+                actual_loc: rhs.span().clone(),
+                expected_loc: lhs.span().clone(),
+                actual_type: rhs.clone(),
+                expected_type: lhs.clone(),
             })),
         }
     }
