@@ -950,7 +950,7 @@ impl Parser<'_> {
             return self.parse_bracket_index_expr();
         }
 
-        self.check(&TokenType::KeywordNew)?;
+        let start = self.check(&TokenType::KeywordNew)?;
         let callee = self.parse_type()?;
         self.check(&TokenType::OpenBrace)?;
         let arguments =
@@ -960,7 +960,7 @@ impl Parser<'_> {
         let end = self.check(&TokenType::CloseBrace)?;
         let node = ConstructExpr::new(
             self.next_node_id(),
-            Span::from_pair(callee.span(), &end.span),
+            Span::from_pair(&start.span, &end.span),
             callee,
             arguments,
         );
@@ -1204,6 +1204,7 @@ mod tests {
     use crate::parser::Parser;
     use crate::{InvalidIntegerLiteralError, ParseError, ParseResult};
     use hachi_macros::{assert_err, assert_none, assert_ok, assert_some};
+    use hachi_span::Span;
 
     fn assert_parse<T>(
         input: &str,
@@ -1597,6 +1598,7 @@ mod tests {
     fn test_parse_call_expr() {
         let prod = assert_parse("x()", |p| p.parse_expr());
         let prod = assert_ok!(prod);
+        assert_eq!(prod.span(), &Span::new(0..3));
         assert!(matches!(*prod, Expr::Call(_)));
         if let Expr::Call(inner) = *prod {
             let origin = inner.as_ref().callee.as_ref();
@@ -1619,6 +1621,7 @@ mod tests {
 
         let prod = assert_parse("x(z, foo(bar, baz()))", |p| p.parse_expr());
         let prod = assert_ok!(prod);
+        assert_eq!(prod.span(), &Span::new(0..21));
         assert!(matches!(*prod, Expr::Call(_)));
         if let Expr::Call(inner) = *prod {
             let count = inner.as_ref().arguments.len();

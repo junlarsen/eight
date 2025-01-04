@@ -158,7 +158,8 @@ impl TypingContext {
             (HirTy::Function(a), HirTy::Function(b)) => {
                 if a.parameters.len() != b.parameters.len() {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
-                        span: Span::empty(),
+                        expected_ty: b.clone(),
+                        span: a.span.clone(),
                     }));
                 }
                 self.unify_eq(

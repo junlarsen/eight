@@ -1,0 +1,11 @@
+fn noise() {
+  return noise();
+}
+
+fn apply_to_me(x: i32, u: bool) -> i32 {
+  return x;
+}
+
+fn test() {
+  let k = apply_to_me(123);
+}

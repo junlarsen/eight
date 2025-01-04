@@ -1,7 +1,7 @@
 use crate::HirName;
 use hachi_diagnostics::ice;
 use hachi_span::Span;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 /// A single type in the HIR representation.
 ///
@@ -164,15 +164,22 @@ impl HirTy {
 
 impl Debug for HirTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Just use the Display implementation. We don't care enough for the spans here.
+        write!(f, "{}", self)
+    }
+}
+
+impl Display for HirTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            HirTy::Variable(t) => write!(f, "${}", t.var),
-            HirTy::Function(t) => write!(f, "fn({:?}) -> {:?}", t.parameters, t.return_type),
-            HirTy::Integer32(_) => write!(f, "i32"),
-            HirTy::Boolean(_) => write!(f, "bool"),
-            HirTy::Unit(_) => write!(f, "unit"),
+            HirTy::Variable(t) => write!(f, "{}", t),
+            HirTy::Function(t) => write!(f, "{}", t),
+            HirTy::Integer32(t) => write!(f, "{}", t),
+            HirTy::Boolean(t) => write!(f, "{}", t),
+            HirTy::Unit(t) => write!(f, "{}", t),
             HirTy::Uninitialized => write!(f, "_"),
-            HirTy::Pointer(t) => write!(f, "*{:?}", t.inner),
-            HirTy::Nominal(t) => write!(f, "{}", t.name.name),
+            HirTy::Pointer(t) => write!(f, "{}", t),
+            HirTy::Nominal(t) => write!(f, "{}", t),
         }
     }
 }
@@ -222,10 +229,22 @@ pub struct HirInteger32Ty {
     pub span: Span,
 }
 
+impl Display for HirInteger32Ty {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "i32")
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HirBooleanTy {
     pub span: Span,
+}
+
+impl Display for HirBooleanTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "bool")
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -234,11 +253,23 @@ pub struct HirUnitTy {
     pub span: Span,
 }
 
+impl Display for HirUnitTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "unit")
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
 pub struct HirVariableTy {
     pub var: usize,
     pub span: Span,
+}
+
+impl Display for HirVariableTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "${}", self.var)
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -249,6 +280,18 @@ pub struct HirFunctionTy {
     pub span: Span,
 }
 
+impl Display for HirFunctionTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params = self
+            .parameters
+            .iter()
+            .map(|p| format!("{}", p))
+            .collect::<Vec<_>>()
+            .join(", ");
+        write!(f, "fn({}) -> {:?}", params, self.return_type)
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
 pub struct HirPointerTy {
@@ -256,9 +299,21 @@ pub struct HirPointerTy {
     pub span: Span,
 }
 
+impl Display for HirPointerTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "*{}", self.inner)
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
 pub struct HirNominalTy {
     pub name: HirName,
     pub span: Span,
+}
+
+impl Display for HirNominalTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name.name)
+    }
 }

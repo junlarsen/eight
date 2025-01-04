@@ -1,3 +1,4 @@
+use crate::ty::{HirFunctionTy, HirTy};
 use hachi_macros::declare_error_type;
 use hachi_span::Span;
 use miette::Diagnostic;
@@ -76,7 +77,8 @@ pub struct TypeMismatchError {
 #[diagnostic(code(sema::function_type_mismatch))]
 #[error("function types do not take the same number of arguments")]
 pub struct FunctionTypeMismatchError {
-    #[label = "some error here"]
+    pub expected_ty: HirFunctionTy,
+    #[label = "the function has type {expected_ty}"]
     pub span: Span,
 }
 

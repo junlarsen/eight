@@ -198,7 +198,7 @@ TranslationUnit(
           value: Construct(ConstructExpr(
             id: NodeId(34),
             span: Span(
-              low: 106,
+              low: 102,
               high: 143,
             ),
             callee: Named(NamedType(
