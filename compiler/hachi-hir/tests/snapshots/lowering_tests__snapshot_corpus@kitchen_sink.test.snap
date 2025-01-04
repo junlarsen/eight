@@ -1,7 +1,7 @@
 ---
 source: compiler/hachi-hir/tests/lowering_tests.rs
 expression: doc
-input_file: compiler/hachi-hir/tests/data/kitchen_sink.test
+input_file: compiler/hachi-hir/tests/data/lowering/kitchen_sink.test
 snapshot_kind: text
 ---
 module {
@@ -16,37 +16,37 @@ module {
   intrinsic_fn free<$0>(ptr: *$0) -> unit;
   intrinsic_fn malloc<$0>(size: i32) -> *$0;
   fn matrix_matrix_multiply<>(a: Matrix, b: Matrix) -> Matrix {
-    if (a.r != b.c){
-      panic::<>();
+    if (a::_.r::_ != b::_.c::_::_){
+      panic::_::<>()::_;
     } else {
     
     }
     let c: _ = new Matrix {
-      r: a.r,
-      c: b.c,
-      buf: malloc::<>(a.r * b.c * 4),
-    };
+      r: a::_.r::_,
+      c: b::_.c::_,
+      buf: malloc::_::<>(a::_.r::_ * b::_.c::_ * 4::_::_::_)::_,
+    }::_;
     {
-      let i: _ = 0;
-      while (i < a.r) {
+      let i: _ = 0::_;
+      while (i::_ < a::_.r::_::_) {
         {
-          let j: _ = 0;
-          while (j < b.c) {
-            let sum: _ = 0;
+          let j: _ = 0::_;
+          while (j::_ < b::_.c::_::_) {
+            let sum: _ = 0::_;
             {
-              let k: _ = 0;
-              while (k < a.c) {
-                sum = sum + a.buf[i * a.c + k] * b.buf[k * b.c + j];
-                k = k + 1;
+              let k: _ = 0::_;
+              while (k::_ < a::_.c::_::_) {
+                sum::_ = sum::_ + a::_.buf::_[i::_ * a::_.c::_::_ + k::_::_]::_ * b::_.buf::_[k::_ * b::_.c::_::_ + j::_::_]::_::_::_::_;
+                k::_ = k::_ + 1::_::_::_;
               }
             }
-            c.buf[i * b.c + j] = sum;
-            j = j + 1;
+            c::_.buf::_[i::_ * b::_.c::_::_ + j::_::_]::_ = sum::_::_;
+            j::_ = j::_ + 1::_::_::_;
           }
         }
-        i = i + 1;
+        i::_ = i::_ + 1::_::_::_;
       }
     }
-    return c;
+    return c::_;
   }
 }
