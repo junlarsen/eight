@@ -17,7 +17,7 @@ impl Pipeline {
     pub fn run<T: AsRef<str>>(&self, source: T) -> miette::Result<()> {
         let mut lexer = hachi_syntax::Lexer::new(source.as_ref());
         let mut parser = hachi_syntax::Parser::new(&mut lexer);
-        let mut lowering_pass = hachi_hir::syntax_lowering::SyntaxLoweringPass::new();
+        let mut lowering_pass = hachi_hir::passes::SyntaxLoweringPass::new();
         let tu = parser.parse()?;
         let module = lowering_pass.visit_translation_unit(&tu)?;
         if self.options.emit_ast {

@@ -3,7 +3,7 @@
 #[macro_export]
 macro_rules! assert_hir_module_compiles {
     ($input:expr) => {{
-        use hachi_hir::syntax_lowering::SyntaxLoweringPass;
+        use hachi_hir::passes::SyntaxLoweringPass;
         use hachi_syntax::Lexer;
         use hachi_syntax::Parser;
 
@@ -23,7 +23,7 @@ macro_rules! assert_hir_module_compiles {
 #[macro_export]
 macro_rules! assert_hir_module_infers {
     ($input:expr) => {{
-        use hachi_hir::passes::type_checker::TypeChecker;
+        use hachi_hir::passes::TypeChecker;
         let mut module = assert_hir_module_compiles!($input);
         TypeChecker::visit(&mut module).expect("failed to type check corpus file");
         module
