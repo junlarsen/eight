@@ -790,7 +790,7 @@ impl HirModuleTypeCheckerPass {
             HirStmt::Let(s) => Self::visit_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::visit_expr_stmt(cx, e),
             HirStmt::Loop(_) => todo!(),
-            HirStmt::Return(_) => todo!(),
+            HirStmt::Return(_) => Ok(()),
             HirStmt::If(_) => todo!(),
             HirStmt::Break(_) => todo!(),
             HirStmt::Continue(_) => todo!(),

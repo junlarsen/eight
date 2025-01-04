@@ -1804,7 +1804,7 @@ mod tests {
     }
 
     #[test]
-    fn test_assign_expr() {
+    fn test_parse_assign_expr() {
         let prod = assert_parse("a = 3", |p| p.parse_expr());
         let prod = assert_ok!(prod);
         assert!(matches!(*prod, Expr::Assign(_)));

@@ -1,6 +1,6 @@
 use crate::{
     InvalidIntegerLiteralError, ParseError, ParseResult, Token, TokenType,
-    UnexpectedCharacterError, UnexpectedEndOfFileError,
+    UnexpectedCharacterError, UnexpectedEndOfFileError, UnfinishedTokenError,
 };
 use hachi_diagnostics::ice;
 use hachi_span::{SourcePosition, Span};
@@ -25,10 +25,16 @@ impl<'a> LexerInput<'a> {
         self.input.peek()
     }
 
+    /// Get the next character from the input stream.
+    ///
+    /// Note that the UnexpectedEndOfFileError here is bubbled up to the parser, which means that
+    /// the lexer will not emit a diagnostic error for this scenario.
     fn next(&mut self) -> ParseResult<char> {
         let ch = self
             .input
             .next()
+            // The parser ignores an UnexpectedEndOfFileError here in order to support lookahead. If
+            // it reaches the end, it simply returns None as the lookahead token.
             .ok_or(ParseError::from(UnexpectedEndOfFileError {
                 span: Span::pos(self.pos),
             }));
@@ -50,11 +56,10 @@ impl<'a> LexerInput<'a> {
         start: SourcePosition,
         production: TokenType,
     ) -> ParseResult<Token> {
-        let ch = self
-            .peek()
-            .ok_or(ParseError::from(UnexpectedEndOfFileError {
-                span: Span::pos(start),
-            }))?;
+        let ch = self.peek().ok_or(ParseError::from(UnfinishedTokenError {
+            expected,
+            span: Span::pos(start),
+        }))?;
         match ch {
             c if *c == expected => {
                 self.input.next();
@@ -194,7 +199,10 @@ impl<'a> Lexer<'a> {
         let mut buf = vec![ch];
         // Consume while we're eating digits
         while matches!(self.input.peek(), Some(ch) if ch.is_ascii_digit()) {
-            buf.push(self.input.next()?);
+            let ch = self.input.next().unwrap_or_else(|_| {
+                ice!("lexer should never fail to produce an already peeked token")
+            });
+            buf.push(ch);
         }
         let value = String::from_iter(buf);
 
@@ -226,7 +234,10 @@ impl<'a> Lexer<'a> {
         let mut buf = vec![ch];
         // Consume while we're eating alphanumeric characters
         while matches!(self.input.peek(), Some(ch) if ch.is_ascii_alphanumeric() || ch == &'_') {
-            buf.push(self.input.next()?);
+            let ch = self.input.next().unwrap_or_else(|_| {
+                ice!("lexer should never fail to produce an already peeked token")
+            });
+            buf.push(ch);
         }
 
         let value = String::from_iter(buf);
@@ -255,8 +266,7 @@ impl<'a> Lexer<'a> {
 mod tests {
     use crate::lexer::{Lexer, ParseError};
     use crate::{
-        InvalidIntegerLiteralError, Token, TokenType, UnexpectedCharacterError,
-        UnexpectedEndOfFileError,
+        InvalidIntegerLiteralError, Token, TokenType, UnexpectedCharacterError, UnfinishedTokenError,
     };
     use hachi_span::Span;
 
@@ -373,6 +383,6 @@ mod tests {
         assert_lexer_parse!("||", Token::new(TokenType::LogicalOr, Span::new(0..2)));
 
         assert_failure!("|-", Err(ParseError::UnexpectedCharacter(UnexpectedCharacterError { ch, span })) if ch == '-' && span == Span::new(1..2));
-        assert_failure!("|", Err(ParseError::UnexpectedEndOfFile(UnexpectedEndOfFileError { span })) if span == Span::new(0..1));
+        assert_failure!("|", Err(ParseError::UnfinishedToken(UnfinishedTokenError { span, expected })) if span == Span::new(0..1) && expected == '|');
     }
 }
