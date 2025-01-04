@@ -266,7 +266,8 @@ impl<'a> Lexer<'a> {
 mod tests {
     use crate::lexer::{Lexer, ParseError};
     use crate::{
-        InvalidIntegerLiteralError, Token, TokenType, UnexpectedCharacterError, UnfinishedTokenError,
+        InvalidIntegerLiteralError, Token, TokenType, UnexpectedCharacterError,
+        UnfinishedTokenError,
     };
     use hachi_span::Span;
 
