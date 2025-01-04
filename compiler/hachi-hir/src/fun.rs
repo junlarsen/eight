@@ -1,5 +1,5 @@
 use crate::stmt::HirStmt;
-use crate::ty::HirTy;
+use crate::ty::{HirFunctionTy, HirTy};
 use crate::HirName;
 use hachi_span::Span;
 
@@ -22,7 +22,25 @@ impl HirFun {
 
     /// Determine if the function has type parameters.
     pub fn has_type_parameters(&self) -> bool {
-        matches!(self, HirFun::Function(HirFunction { type_parameters, .. }) if !type_parameters.is_empty())
+        match self {
+            HirFun::Function(f) => !f.type_parameters.is_empty(),
+            HirFun::Intrinsic(f) => !f.type_parameters.is_empty(),
+        }
+    }
+
+    pub fn name(&self) -> &HirName {
+        match self {
+            HirFun::Function(f) => &f.name,
+            HirFun::Intrinsic(f) => &f.name,
+        }
+    }
+
+    /// Derive a function type matching the function's signature.
+    pub fn get_type(&self) -> HirFunctionTy {
+        match self {
+            HirFun::Function(f) => f.get_type(),
+            HirFun::Intrinsic(f) => f.get_type(),
+        }
     }
 }
 
@@ -38,6 +56,16 @@ pub struct HirFunction {
     pub body: Vec<Box<HirStmt>>,
 }
 
+impl HirFunction {
+    pub fn get_type(&self) -> HirFunctionTy {
+        HirFunctionTy {
+            return_type: self.return_type.clone(),
+            parameters: self.parameters.iter().map(|p| p.ty.clone()).collect(),
+            span: self.span.clone(),
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirIntrinsicFunction {
@@ -47,6 +75,16 @@ pub struct HirIntrinsicFunction {
     pub type_parameters: Vec<Box<HirFunctionTypeParameter>>,
     pub parameters: Vec<Box<HirFunctionParameter>>,
     pub return_type: Box<HirTy>,
+}
+
+impl HirIntrinsicFunction {
+    pub fn get_type(&self) -> HirFunctionTy {
+        HirFunctionTy {
+            return_type: self.return_type.clone(),
+            parameters: self.parameters.iter().map(|p| p.ty.clone()).collect(),
+            span: self.span.clone(),
+        }
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -64,7 +102,7 @@ pub struct HirFunctionTypeParameter {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HirFunctionParameter {
     pub span: Span,
     pub name: HirName,

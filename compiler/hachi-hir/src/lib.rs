@@ -13,7 +13,6 @@ use crate::rec::HirRecord;
 use crate::ty::{HirBooleanTy, HirInteger32Ty, HirTy, HirUnitTy};
 use hachi_span::Span;
 use std::collections::BTreeMap;
-use std::marker::PhantomData;
 
 pub mod context;
 pub mod error;
@@ -32,14 +31,13 @@ pub mod ty;
 /// emitting code.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirModule<'hir> {
+pub struct HirModule {
     pub scalars: BTreeMap<String, HirTy>,
     pub records: BTreeMap<String, HirRecord>,
     pub functions: BTreeMap<String, HirFun>,
-    phantom: PhantomData<&'hir ()>,
 }
 
-impl<'hir> HirModule<'hir> {
+impl HirModule {
     /// Create an empty Hir module.
     pub fn new() -> Self {
         Self {
@@ -65,48 +63,47 @@ impl<'hir> HirModule<'hir> {
                     }),
                 ),
             ]),
-            phantom: PhantomData,
         }
     }
 
     /// Get the named function from the module with the given name.
-    pub fn get_function(&'hir self, name: &str) -> Option<&'hir HirFun> {
+    pub fn get_function(&self, name: &str) -> Option<&HirFun> {
         self.functions.get(name)
     }
 
     /// Get the named type from the module with the given name.
-    pub fn get_scalar_type(&'hir self, name: &str) -> Option<&'hir HirTy> {
+    pub fn get_scalar_type(&self, name: &str) -> Option<&HirTy> {
         self.scalars.get(name)
     }
 
     /// Get the builtin integer32 type.
-    pub fn get_builtin_integer32_type(&'hir self) -> &'hir HirTy {
+    pub fn get_builtin_integer32_type(&self) -> &HirTy {
         self.scalars
             .get("i32")
             .expect("ice: builtin integer32 type not found")
     }
 
     /// Get the builtin boolean type.
-    pub fn get_builtin_boolean_type(&'hir self) -> &'hir HirTy {
+    pub fn get_builtin_boolean_type(&self) -> &HirTy {
         self.scalars
             .get("bool")
             .expect("ice: builtin boolean type not found")
     }
 
     /// Get the builtin unit type.
-    pub fn get_builtin_unit_type(&'hir self) -> &'hir HirTy {
+    pub fn get_builtin_unit_type(&self) -> &HirTy {
         self.scalars
             .get("unit")
             .expect("ice: builtin unit type not found")
     }
 
     /// Get a record type from the module with the given name.
-    pub fn get_record_type(&'hir self, name: &str) -> Option<&'hir HirRecord> {
+    pub fn get_record_type(&self, name: &str) -> Option<&HirRecord> {
         self.records.get(name)
     }
 }
 
-impl<'hir> Default for HirModule<'hir> {
+impl Default for HirModule {
     fn default() -> Self {
         Self::new()
     }

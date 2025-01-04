@@ -4,7 +4,7 @@ use hachi_span::Span;
 use std::collections::BTreeMap;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HirRecord {
     /// Span encapsulating the entire record definition.
     pub span: Span,
@@ -13,7 +13,7 @@ pub struct HirRecord {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HirRecordField {
     pub span: Span,
     pub name: HirName,

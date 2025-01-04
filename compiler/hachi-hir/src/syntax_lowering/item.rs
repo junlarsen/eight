@@ -14,10 +14,7 @@ use hachi_syntax::{
 use std::collections::BTreeMap;
 
 impl<'ast> SyntaxLoweringPass<'ast> {
-    pub fn visit_translation_unit<'hir>(
-        &mut self,
-        node: &'ast TranslationUnit,
-    ) -> HirResult<HirModule<'hir>> {
+    pub fn visit_translation_unit(&mut self, node: &'ast TranslationUnit) -> HirResult<HirModule> {
         let mut module = HirModule::new();
         for item in &node.items {
             self.visit_item(&mut module, item)?;

@@ -10,7 +10,7 @@ use std::fmt::Debug;
 /// 1. Pointer and reference types, which effectively are Abs types.
 /// 2. Record types, which are indexable abstract types.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum HirTy {
     /// The builtin type `i32`.
     Integer32(HirInteger32Ty),
@@ -113,6 +113,13 @@ impl HirTy {
             _ => false,
         }
     }
+
+    pub fn is_equal_to_variable(&self, name: usize) -> bool {
+        match self {
+            HirTy::Variable(v) => v.name == name,
+            _ => false,
+        }
+    }
 }
 
 impl HirTy {
@@ -164,6 +171,22 @@ impl HirTy {
 
     pub fn new_unit(span: &Span) -> Self {
         Self::Unit(HirUnitTy { span: span.clone() })
+    }
+}
+
+impl Debug for HirTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HirTy::Variable(t) => write!(f, "${}", t.name),
+            HirTy::Function(t) => write!(f, "fn({:?}) -> {:?}", t.parameters, t.return_type),
+            HirTy::Integer32(_) => write!(f, "i32"),
+            HirTy::Boolean(_) => write!(f, "bool"),
+            HirTy::Unit(_) => write!(f, "unit"),
+            HirTy::Uninitialized => write!(f, "_"),
+            HirTy::Pointer(t) => write!(f, "*{:?}", t.inner),
+            HirTy::Reference(t) => write!(f, "&{:?}", t.inner),
+            HirTy::Nominal(t) => write!(f, "{}", t.name.name),
+        }
     }
 }
 
@@ -241,13 +264,6 @@ pub struct HirVariableTy {
 pub struct HirFunctionTy {
     pub return_type: Box<HirTy>,
     pub parameters: Vec<Box<HirTy>>,
-    pub span: Span,
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
-pub struct HirConstantTy {
-    pub name: String,
     pub span: Span,
 }
 

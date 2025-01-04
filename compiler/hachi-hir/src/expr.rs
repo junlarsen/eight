@@ -34,6 +34,22 @@ impl HirExpr {
             HirExpr::Reference(e) => &e.span,
         }
     }
+
+    pub fn ty(&self) -> &HirTy {
+        match self {
+            HirExpr::IntegerLiteral(e) => &e.ty,
+            HirExpr::BooleanLiteral(e) => &e.ty,
+            HirExpr::Assign(e) => &e.ty,
+            HirExpr::UnaryOp(e) => &e.ty,
+            HirExpr::BinaryOp(e) => &e.ty,
+            HirExpr::ConstantIndex(e) => &e.ty,
+            HirExpr::OffsetIndex(e) => &e.ty,
+            HirExpr::Call(e) => &e.ty,
+            HirExpr::Construct(e) => &e.ty,
+            HirExpr::Group(e) => &e.ty,
+            HirExpr::Reference(e) => &e.ty,
+        }
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

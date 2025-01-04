@@ -27,7 +27,7 @@ use pretty::RcDoc;
 pub struct HirModuleFormatter();
 
 impl HirModuleFormatter {
-    pub fn format_hir_module_to_string<'hir>(module: &'hir HirModule<'hir>) -> String {
+    pub fn format_hir_module_to_string(module: &HirModule) -> String {
         let doc = Self::format_hir_module(module);
         let mut w = Vec::new();
         doc.render(80, &mut w)
@@ -35,7 +35,7 @@ impl HirModuleFormatter {
         String::from_utf8(w).unwrap()
     }
 
-    pub fn format_hir_module<'hir>(module: &'hir HirModule<'hir>) -> RcDoc<()> {
+    pub fn format_hir_module(module: &HirModule) -> RcDoc<()> {
         RcDoc::text("module")
             .append(RcDoc::space())
             .append(RcDoc::text("{"))
@@ -312,7 +312,7 @@ impl HirModuleFormatter {
     }
 
     pub fn format_hir_expr(expr: &HirExpr) -> RcDoc<()> {
-        match expr {
+        let inner = match expr {
             HirExpr::IntegerLiteral(e) => Self::format_hir_integer_literal_expr(e),
             HirExpr::BooleanLiteral(e) => Self::format_hir_boolean_literal_expr(e),
             HirExpr::Assign(e) => Self::format_hir_assign_expr(e),
@@ -324,7 +324,10 @@ impl HirModuleFormatter {
             HirExpr::Call(e) => Self::format_hir_call_expr(e),
             HirExpr::Construct(e) => Self::format_hir_construct_expr(e),
             HirExpr::Group(e) => Self::format_hir_group_expr(e),
-        }
+        };
+        inner
+            .append(RcDoc::text("::"))
+            .append(Self::format_hir_ty(expr.ty()))
     }
 
     pub fn format_hir_integer_literal_expr(expr: &HirIntegerLiteralExpr) -> RcDoc<()> {
