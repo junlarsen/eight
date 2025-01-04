@@ -1,0 +1,15 @@
+---
+source: compiler/hachi-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module types
+  
+  
+  // module functions
+  fn test<>() -> unit {
+    let x: i32 = 0::i32;
+    x::i32 = 1::i32::unit;
+  }
+}

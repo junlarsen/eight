@@ -1,5 +1,3 @@
-use hachi_hir::passes::type_checker::TypeChecker;
-
 mod common;
 
 macro_rules! inference_test {
@@ -24,4 +22,8 @@ inference_test!(
 inference_test!(
     test_inference_local_resolution,
     "data/inference/local_resolution.test"
+);
+inference_test!(
+    test_inference_chaining_infers_unit,
+    "data/inference/chaining_infers_unit.test"
 );

@@ -69,7 +69,7 @@ impl TypingContext {
         let constraints = self.constraints.drain(..).collect::<Vec<_>>();
         for constraint in constraints {
             match constraint {
-                Constraint::Eq(lhs, rhs) => self.unify(lhs, rhs)?,
+                Constraint::Eq(lhs, rhs) => self.unify_eq(lhs, rhs)?,
             }
         }
         Ok(())
@@ -99,6 +99,11 @@ impl TypingContext {
             // Booleans always have the bool type
             HirExpr::BooleanLiteral(_) => {
                 self.constrain_eq(expected_ty, self.get_boolean_type());
+                Ok(())
+            }
+            // We don't want assignments to be chained, so we infer them as unit
+            HirExpr::Assign(_) => {
+                self.constrain_eq(expected_ty, self.get_unit_type());
                 Ok(())
             }
             // If is a named type, we find the type in the local context, or throw a type reference
@@ -138,6 +143,12 @@ impl TypingContext {
             HirExpr::IntegerLiteral(e) => self.substitute(&mut e.ty),
             HirExpr::BooleanLiteral(e) => self.substitute(&mut e.ty),
             HirExpr::Reference(e) => self.substitute(&mut e.ty),
+            HirExpr::Assign(e) => {
+                self.substitute_expr(&mut e.lhs)?;
+                self.substitute_expr(&mut e.rhs)?;
+                self.substitute(&mut e.ty)?;
+                Ok(())
+            }
             HirExpr::Group(e) => {
                 self.substitute_expr(&mut e.inner)?;
                 self.substitute(&mut e.ty)?;
@@ -230,15 +241,15 @@ impl TypingContext {
     ///
     /// Unification is the process of determining if two types can be unified into a single type.
     /// Because we currently do not support subtyping, this is always an equivalence check.
-    pub fn unify(&mut self, lhs: HirTy, rhs: HirTy) -> HirResult<()> {
+    pub fn unify_eq(&mut self, lhs: HirTy, rhs: HirTy) -> HirResult<()> {
         match (&lhs, &rhs) {
             (HirTy::Variable(lhs), HirTy::Variable(rhs)) if lhs.var == rhs.var => Ok(()),
             (HirTy::Nominal(a), HirTy::Nominal(b)) if a.name.name == b.name.name => Ok(()),
             (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v.var) => {
-                self.unify(self.substitutions[v.var].clone(), rhs)
+                self.unify_eq(self.substitutions[v.var].clone(), rhs)
             }
             (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v.var) => {
-                self.unify(lhs, self.substitutions[v.var].clone())
+                self.unify_eq(lhs, self.substitutions[v.var].clone())
             }
             (HirTy::Variable(v), _) => {
                 if self.occurs_in(v.var, &rhs) {
@@ -261,10 +272,10 @@ impl TypingContext {
                 Ok(())
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {
-                self.unify(a.inner.as_ref().clone(), b.inner.as_ref().clone())
+                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
             }
             (HirTy::Reference(a), HirTy::Reference(b)) => {
-                self.unify(a.inner.as_ref().clone(), b.inner.as_ref().clone())
+                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
             }
             (HirTy::Integer32(_), HirTy::Integer32(_)) => Ok(()),
             (HirTy::Boolean(_), HirTy::Boolean(_)) => Ok(()),
@@ -275,12 +286,12 @@ impl TypingContext {
                         span: Span::empty(),
                     }));
                 }
-                self.unify(
+                self.unify_eq(
                     a.return_type.as_ref().clone(),
                     b.return_type.as_ref().clone(),
                 )?;
                 for (a, b) in a.parameters.iter().zip(b.parameters.iter()) {
-                    self.unify(a.as_ref().clone(), b.as_ref().clone())?;
+                    self.unify_eq(a.as_ref().clone(), b.as_ref().clone())?;
                 }
                 Ok(())
             }
@@ -391,6 +402,7 @@ impl TypeChecker {
         for stmt in node.body.iter_mut() {
             Self::visit_stmt(cx, stmt)?;
         }
+
         cx.locals.leave_scope();
         // All the substitutions should have been drained by this point.
         // assert_eq!(cx.substitutions.len(), 0);
@@ -488,6 +500,7 @@ impl TypeChecker {
             e @ HirExpr::BooleanLiteral(_) => Self::visit_boolean_literal_expr(cx, e),
             e @ HirExpr::Group(_) => Self::visit_group_expr(cx, e),
             e @ HirExpr::Reference(_) => Self::visit_reference_expr(cx, e),
+            e @ HirExpr::Assign(_) => Self::visit_assign_expr(cx, e),
             _ => Ok(()),
         }
     }
@@ -548,6 +561,21 @@ impl TypeChecker {
         Ok(())
     }
 
+    /// Visit an assign expression.
+    ///
+    /// In order to prevent chaining of assignment such as `a = b = c`, we simply infer the type of
+    /// the entire expression to be void.
+    pub fn visit_assign_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::Assign(e) = node else {
+            ice!("visit_assign_expr called with non-assign expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        Self::visit_expr(cx, &mut e.lhs)?;
+        Self::visit_expr(cx, &mut e.rhs)?;
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
     /// Visit a statement.
     pub fn visit_stmt(cx: &mut TypingContext, node: &mut HirStmt) -> HirResult<()> {
         match node {
@@ -576,6 +604,11 @@ impl TypeChecker {
 
     pub fn visit_expr_stmt(cx: &mut TypingContext, node: &mut HirExprStmt) -> HirResult<()> {
         Self::visit_expr(cx, &mut node.expr)?;
+        cx.solve_constraints()?;
+        cx.substitute_expr(&mut node.expr)?;
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {}
