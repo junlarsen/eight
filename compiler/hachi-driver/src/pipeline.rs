@@ -1,4 +1,4 @@
-use hachi_hir::passes::HirModuleDebugPass;
+use hachi_hir::passes::{HirModuleDebugPass, HirModuleTypeCheckerPass};
 
 pub struct PipelineOptions {
     pub emit_ast: bool,
@@ -19,7 +19,8 @@ impl Pipeline {
         let mut parser = hachi_syntax::Parser::new(&mut lexer);
         let mut lowering_pass = hachi_hir::passes::ASTSyntaxLoweringPass::new();
         let tu = parser.parse()?;
-        let module = lowering_pass.visit_translation_unit(&tu)?;
+        let mut module = lowering_pass.visit_translation_unit(&tu)?;
+        HirModuleTypeCheckerPass::visit(&mut module)?;
         if self.options.emit_ast {
             let syntax = ron::ser::to_string_pretty(&tu, Default::default())
                 .expect("failed to serialize ast to ron");

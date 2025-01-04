@@ -1,0 +1,23 @@
+---
+source: compiler/hachi-tests/tests/ui_tests.rs
+info:
+  program: hcc
+  args:
+    - tests/ui/type/type_mismatch/let_assignment.test
+input_file: compiler/hachi-tests/tests/ui/type/type_mismatch/let_assignment.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::type_mismatch
+
+  × type mismatch
+   ╭─[tests/ui/type/type_mismatch/let_assignment.test:1:1]
+ 1 │ fn test(v: bool) {
+   · ▲
+   · ╰── type does not match
+ 2 │   let k: i32 = v;
+   ╰────
