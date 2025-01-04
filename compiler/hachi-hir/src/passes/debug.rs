@@ -26,9 +26,9 @@ use crate::HirModule;
 use hachi_diagnostics::ice;
 use pretty::RcDoc;
 
-pub struct HirModuleFormatter();
+pub struct HirModuleDebugPass();
 
-impl HirModuleFormatter {
+impl HirModuleDebugPass {
     pub fn format_hir_module_to_string(module: &HirModule) -> String {
         let doc = Self::format_hir_module(module);
         let mut w = Vec::new();
@@ -150,7 +150,7 @@ impl HirModuleFormatter {
             )
     }
 
-    pub(super) fn format_function_parameters(
+    pub(crate) fn format_function_parameters(
         parameters: &[Box<HirFunctionParameter>],
     ) -> RcDoc<()> {
         RcDoc::text("(")
@@ -167,7 +167,7 @@ impl HirModuleFormatter {
             .append(RcDoc::text(")"))
     }
 
-    pub(super) fn format_function_type_parameters(
+    pub(crate) fn format_function_type_parameters(
         parameters: &[Box<HirFunctionTypeParameter>],
     ) -> RcDoc<()> {
         RcDoc::text("<")

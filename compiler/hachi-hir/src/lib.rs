@@ -18,7 +18,6 @@ use std::collections::BTreeMap;
 pub mod context;
 pub mod error;
 pub mod expr;
-pub mod format;
 pub mod fun;
 pub mod passes;
 pub mod rec;

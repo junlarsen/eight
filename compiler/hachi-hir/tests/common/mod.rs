@@ -3,7 +3,7 @@
 #[macro_export]
 macro_rules! assert_hir_module_compiles {
     ($input:expr) => {{
-        use hachi_hir::passes::SyntaxLoweringPass;
+        use hachi_hir::passes::ASTSyntaxLoweringPass;
         use hachi_syntax::Lexer;
         use hachi_syntax::Parser;
 
@@ -12,7 +12,7 @@ macro_rules! assert_hir_module_compiles {
         let translation_unit = parser
             .parse()
             .expect("failed to parse corpus file into syntax tree");
-        let mut lowering_pass = SyntaxLoweringPass::new();
+        let mut lowering_pass = ASTSyntaxLoweringPass::new();
         let module = lowering_pass
             .visit_translation_unit(&translation_unit)
             .expect("failed to lower translation unit");
@@ -23,9 +23,9 @@ macro_rules! assert_hir_module_compiles {
 #[macro_export]
 macro_rules! assert_hir_module_infers {
     ($input:expr) => {{
-        use hachi_hir::passes::TypeChecker;
+        use hachi_hir::passes::HirModuleTypeCheckerPass;
         let mut module = assert_hir_module_compiles!($input);
-        TypeChecker::visit(&mut module).expect("failed to type check corpus file");
+        HirModuleTypeCheckerPass::visit(&mut module).expect("failed to type check corpus file");
         module
     }};
 }

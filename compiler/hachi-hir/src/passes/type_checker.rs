@@ -469,9 +469,9 @@ impl TypingContext {
     }
 }
 
-pub struct TypeChecker();
+pub struct HirModuleTypeCheckerPass();
 
-impl TypeChecker {
+impl HirModuleTypeCheckerPass {
     /// Type-check and perform type inference on the given module.
     pub fn visit(module: &mut HirModule) -> HirResult<()> {
         let mut cx = TypingContext::new();

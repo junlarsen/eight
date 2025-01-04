@@ -35,13 +35,13 @@ use std::collections::{BTreeMap, VecDeque};
 /// All types (note: generic types too) are preserved, meaning that a generic type like `T` will be
 /// lowered into a TConst type, despite the fact that the type checker will replace this with a
 /// fresh type variable.
-pub struct SyntaxLoweringPass<'ast> {
+pub struct ASTSyntaxLoweringPass<'ast> {
     loop_depth: VecDeque<&'ast ForStmt>,
     generic_substitutions: LocalContext<HirTy>,
     function_depth: VecDeque<&'ast FunctionItem>,
 }
 
-impl SyntaxLoweringPass<'_> {
+impl ASTSyntaxLoweringPass<'_> {
     pub fn new() -> Self {
         Self {
             loop_depth: VecDeque::new(),
@@ -51,7 +51,7 @@ impl SyntaxLoweringPass<'_> {
     }
 }
 
-impl<'ast> SyntaxLoweringPass<'ast> {
+impl<'ast> ASTSyntaxLoweringPass<'ast> {
     pub fn visit_expr(&mut self, node: &'ast Expr) -> HirResult<Box<HirExpr>> {
         match node {
             Expr::Assign(e) => self.visit_assign_expr(e),
@@ -652,7 +652,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
     }
 }
 
-impl Default for SyntaxLoweringPass<'_> {
+impl Default for ASTSyntaxLoweringPass<'_> {
     fn default() -> Self {
         Self::new()
     }

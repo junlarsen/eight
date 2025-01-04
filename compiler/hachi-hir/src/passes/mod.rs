@@ -1,5 +1,7 @@
+mod debug;
 mod syntax_lower;
 mod type_checker;
 
-pub use syntax_lower::SyntaxLoweringPass;
-pub use type_checker::TypeChecker;
+pub use debug::HirModuleDebugPass;
+pub use syntax_lower::ASTSyntaxLoweringPass;
+pub use type_checker::HirModuleTypeCheckerPass;
