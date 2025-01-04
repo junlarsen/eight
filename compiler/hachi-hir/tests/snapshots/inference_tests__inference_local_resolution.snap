@@ -1,0 +1,18 @@
+---
+source: compiler/hachi-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module types
+  
+  
+  // module functions
+  fn test<>() -> unit {
+    let loc: i32 = 123::i32;
+    let x: i32 = loc::i32;
+  }
+  fn test_refer_function<>() -> unit {
+    let loc: fn(())->unit = test::fn(())->unit;
+  }
+}

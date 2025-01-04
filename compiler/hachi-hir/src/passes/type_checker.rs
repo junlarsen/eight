@@ -487,6 +487,7 @@ impl TypeChecker {
             e @ HirExpr::IntegerLiteral(_) => Self::visit_integer_literal_expr(cx, e),
             e @ HirExpr::BooleanLiteral(_) => Self::visit_boolean_literal_expr(cx, e),
             e @ HirExpr::Group(_) => Self::visit_group_expr(cx, e),
+            e @ HirExpr::Reference(_) => Self::visit_reference_expr(cx, e),
             _ => Ok(()),
         }
     }
@@ -524,6 +525,25 @@ impl TypeChecker {
         };
         Self::visit_type(cx, &mut e.ty)?;
         Self::visit_expr(cx, &mut e.inner)?;
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
+    /// Visit a reference expression.
+    ///
+    /// For a reference expression, we get the local type from the local context, and infer the
+    /// type according to that type.
+    pub fn visit_reference_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::Reference(e) = node else {
+            ice!("visit_reference_expr called with non-reference expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        let Some(_) = cx.locals.find(&e.name.name) else {
+            return Err(HirError::InvalidReference(InvalidReferenceError {
+                name: e.name.name.to_owned(),
+                span: e.span.clone(),
+            }));
+        };
         cx.infer(node, node.ty().clone())?;
         Ok(())
     }
