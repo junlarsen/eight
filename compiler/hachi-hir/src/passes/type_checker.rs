@@ -15,8 +15,31 @@ use std::collections::{BTreeMap, VecDeque};
 
 #[derive(Debug)]
 pub enum Constraint {
-    Eq(HirTy, HirTy),
-    FieldProjection(HirTy, HirName, HirTy),
+    Equality(EqualityConstraint),
+    FieldProjection(FieldProjectionConstraint),
+}
+
+/// Represent a constraint that two types have to be equal.
+#[derive(Debug)]
+pub struct EqualityConstraint {
+    /// The type that was expected, generally the left-hand side
+    pub expected: HirTy,
+    pub expected_loc: Span,
+    /// The type that was actually found, generally the right-hand side
+    pub actual: HirTy,
+    pub actual_loc: Span,
+}
+
+/// Represent a field projection constraint.
+///
+/// This constraint requires the `origin` type to resolve to a record type that has a field with the
+/// given name N. The Nth field of the record is then constrained to be equal to the
+/// `resolved_type`.
+#[derive(Debug)]
+pub struct FieldProjectionConstraint {
+    pub origin: HirTy,
+    pub field: HirName,
+    pub resolved_type: HirTy,
 }
 
 #[derive(Debug)]
@@ -62,23 +85,40 @@ impl TypingContext {
         }
     }
 
+    /// Imply a new field projection constraint
     pub fn constrain_field_projection(&mut self, ty: HirTy, field: HirName, inner: HirTy) {
         self.constraints
-            .push(Constraint::FieldProjection(ty, field, inner))
+            .push(Constraint::FieldProjection(FieldProjectionConstraint {
+                origin: ty,
+                field,
+                resolved_type: inner,
+            }))
     }
 
-    pub fn constrain_eq(&mut self, a: HirTy, b: HirTy) {
-        self.constraints.push(Constraint::Eq(a, b))
+    /// Imply a new equality constraint
+    pub fn constrain_eq(
+        &mut self,
+        expected: HirTy,
+        actual: HirTy,
+        expected_loc: Span,
+        actual_loc: Span,
+    ) {
+        self.constraints
+            .push(Constraint::Equality(EqualityConstraint {
+                expected,
+                actual,
+                expected_loc,
+                actual_loc,
+            }))
     }
 
+    /// Solve the constraints that have been implied on the context so far.
     pub fn solve_constraints(&mut self) -> HirResult<()> {
         let constraints = self.constraints.drain(..).collect::<Vec<_>>();
         for constraint in constraints {
             match constraint {
-                Constraint::Eq(lhs, rhs) => self.unify_eq(lhs, rhs)?,
-                Constraint::FieldProjection(ty, field, inner) => {
-                    self.unify_field_projection(ty, field, inner)?
-                }
+                Constraint::Equality(c) => self.unify_eq(c)?,
+                Constraint::FieldProjection(c) => self.unify_field_projection(c)?,
             }
         }
         Ok(())
@@ -90,23 +130,36 @@ impl TypingContext {
     /// field `field` has type `inner`. This function unifies the two types.
     pub fn unify_field_projection(
         &mut self,
-        ty: HirTy,
-        field: HirName,
-        inner: HirTy,
+        FieldProjectionConstraint {
+            origin,
+            field,
+            resolved_type,
+        }: FieldProjectionConstraint,
     ) -> HirResult<()> {
-        match ty {
+        match origin {
             HirTy::Variable(v) if !self.is_substitution_equal_to_self(v.var) => {
-                self.unify_field_projection(self.substitutions[v.var].clone(), field, inner)
+                let constraint = FieldProjectionConstraint {
+                    origin: self.substitutions[v.var].clone(),
+                    field,
+                    resolved_type,
+                };
+                self.unify_field_projection(constraint)
             }
             HirTy::Nominal(n) => {
                 let ty = self
                     .records
                     .get(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"));
-                let Some(field) = ty.fields.get(&field.name) else {
+                let Some(record_field) = ty.fields.get(&field.name) else {
                     ice!("field not found in record type");
                 };
-                self.unify_eq(field.r#type.as_ref().clone(), inner)?;
+                let constraint = EqualityConstraint {
+                    expected: record_field.r#type.as_ref().clone(),
+                    expected_loc: record_field.span.clone(),
+                    actual_loc: n.name.span.clone(),
+                    actual: resolved_type,
+                };
+                self.unify_eq(constraint)?;
                 Ok(())
             }
             _ => {
@@ -119,55 +172,94 @@ impl TypingContext {
     ///
     /// Unification is the process of determining if two types can be unified into a single type.
     /// Because we currently do not support subtyping, this is always an equivalence check.
-    pub fn unify_eq(&mut self, lhs: HirTy, rhs: HirTy) -> HirResult<()> {
-        match (&lhs, &rhs) {
+    pub fn unify_eq(
+        &mut self,
+        EqualityConstraint {
+            expected,
+            actual,
+            expected_loc,
+            actual_loc,
+        }: EqualityConstraint,
+    ) -> HirResult<()> {
+        match (&expected, &actual) {
             (HirTy::Variable(lhs), HirTy::Variable(rhs)) if lhs.var == rhs.var => Ok(()),
             (HirTy::Nominal(a), HirTy::Nominal(b)) if a.name.name == b.name.name => Ok(()),
             (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v.var) => {
-                self.unify_eq(self.substitutions[v.var].clone(), rhs)
+                let constraint = EqualityConstraint {
+                    expected: self.substitutions[v.var].clone(),
+                    actual,
+                    expected_loc,
+                    actual_loc,
+                };
+                self.unify_eq(constraint)
             }
             (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v.var) => {
-                self.unify_eq(lhs, self.substitutions[v.var].clone())
+                let constraint = EqualityConstraint {
+                    expected,
+                    actual: self.substitutions[v.var].clone(),
+                    expected_loc,
+                    actual_loc,
+                };
+                self.unify_eq(constraint)
             }
             (HirTy::Variable(v), _) => {
-                if self.occurs_in(v.var, &rhs) {
+                if self.occurs_in(v.var, &actual) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: Span::empty(),
                         right: Span::empty(),
                     }));
                 }
-                self.substitutions[v.var] = rhs.clone();
+                self.substitutions[v.var] = actual.clone();
                 Ok(())
             }
             (_, HirTy::Variable(v)) => {
-                if self.occurs_in(v.var, &lhs) {
+                if self.occurs_in(v.var, &expected) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: Span::empty(),
                         right: Span::empty(),
                     }));
                 }
-                self.substitutions[v.var] = lhs.clone();
+                self.substitutions[v.var] = expected.clone();
                 Ok(())
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {
-                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
+                let constraint = EqualityConstraint {
+                    expected: a.inner.as_ref().clone(),
+                    expected_loc,
+                    actual: b.inner.as_ref().clone(),
+                    actual_loc,
+                };
+                self.unify_eq(constraint)
             }
             (HirTy::Integer32(_), HirTy::Integer32(_)) => Ok(()),
             (HirTy::Boolean(_), HirTy::Boolean(_)) => Ok(()),
             (HirTy::Unit(_), HirTy::Unit(_)) => Ok(()),
-            (HirTy::Function(a), HirTy::Function(b)) => {
-                if a.parameters.len() != b.parameters.len() {
+            (HirTy::Function(definition), HirTy::Function(application)) => {
+                if definition.parameters.len() != application.parameters.len() {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
-                        expected_ty: b.clone(),
+                        expected_ty: application.clone(),
                         span: Span::empty(),
                     }));
                 }
-                self.unify_eq(
-                    a.return_type.as_ref().clone(),
-                    b.return_type.as_ref().clone(),
-                )?;
-                for (a, b) in a.parameters.iter().zip(b.parameters.iter()) {
-                    self.unify_eq(a.as_ref().clone(), b.as_ref().clone())?;
+                let constraint = EqualityConstraint {
+                    expected: definition.return_type.as_ref().clone(),
+                    expected_loc: expected_loc.clone(),
+                    actual: application.return_type.as_ref().clone(),
+                    actual_loc: actual_loc.clone(),
+                };
+                self.unify_eq(constraint)?;
+                for (parameter, argument) in definition
+                    .parameters
+                    .iter()
+                    .zip(application.parameters.iter())
+                {
+                    let constraint = EqualityConstraint {
+                        expected: parameter.as_ref().clone(),
+                        expected_loc: expected_loc.clone(),
+                        actual: argument.as_ref().clone(),
+                        actual_loc: actual_loc.clone(),
+                    };
+                    self.unify_eq(constraint)?;
                 }
                 Ok(())
             }
@@ -200,18 +292,33 @@ impl TypingContext {
     pub fn infer(&mut self, expr: &mut HirExpr, expected_ty: HirTy) -> HirResult<()> {
         match expr {
             // Integer literals are always i32 at the moment
-            HirExpr::IntegerLiteral(_) => {
-                self.constrain_eq(expected_ty, self.get_integer32_type());
+            HirExpr::IntegerLiteral(e) => {
+                self.constrain_eq(
+                    expected_ty,
+                    self.get_integer32_type(),
+                    e.span.clone(),
+                    e.span.clone(),
+                );
                 Ok(())
             }
             // Booleans always have the bool type
-            HirExpr::BooleanLiteral(_) => {
-                self.constrain_eq(expected_ty, self.get_boolean_type());
+            HirExpr::BooleanLiteral(e) => {
+                self.constrain_eq(
+                    expected_ty,
+                    self.get_boolean_type(),
+                    e.span.clone(),
+                    e.span.clone(),
+                );
                 Ok(())
             }
             // We don't want assignments to be chained, so we infer them as unit
-            HirExpr::Assign(_) => {
-                self.constrain_eq(expected_ty, self.get_unit_type());
+            HirExpr::Assign(e) => {
+                self.constrain_eq(
+                    expected_ty,
+                    self.get_unit_type(),
+                    e.span.clone(),
+                    e.lhs.span().clone(),
+                );
                 Ok(())
             }
             // If is a named type, we find the type in the local context, or throw a type reference
@@ -224,17 +331,32 @@ impl TypingContext {
                         name: e.name.name.to_owned(),
                         span: e.span.clone(),
                     }))?;
-                self.constrain_eq(expected_ty, ty.clone());
+                self.constrain_eq(expected_ty, ty.clone(), e.span.clone(), e.name.span.clone());
                 Ok(())
             }
             HirExpr::OffsetIndex(e) => {
                 // The index must be an integer type
-                self.constrain_eq(e.index.ty().clone(), self.get_integer32_type());
+                self.constrain_eq(
+                    self.get_integer32_type(),
+                    e.index.ty().clone(),
+                    e.span.clone(),
+                    e.index.span().clone(),
+                );
                 // The origin must be a pointer of the element type
                 let elem_ptr_ty = HirTy::new_ptr(Box::new(expected_ty.clone()));
-                self.constrain_eq(e.origin.ty().clone(), elem_ptr_ty);
+                self.constrain_eq(
+                    elem_ptr_ty,
+                    e.origin.ty().clone(),
+                    e.span.clone(),
+                    e.origin.span().clone(),
+                );
                 // The resulting type must be the element type
-                self.constrain_eq(expected_ty, e.ty.as_ref().clone());
+                self.constrain_eq(
+                    expected_ty,
+                    e.ty.as_ref().clone(),
+                    e.span.clone(),
+                    e.origin.span().clone(),
+                );
                 Ok(())
             }
             HirExpr::ConstantIndex(e) => {
@@ -243,7 +365,12 @@ impl TypingContext {
                     e.index.clone(),
                     expected_ty.clone(),
                 );
-                self.constrain_eq(expected_ty, e.ty.as_ref().clone());
+                self.constrain_eq(
+                    expected_ty,
+                    e.ty.as_ref().clone(),
+                    e.span.clone(),
+                    e.origin.span().clone(),
+                );
                 Ok(())
             }
             HirExpr::Call(e) => {
@@ -254,8 +381,20 @@ impl TypingContext {
                     .collect::<Vec<_>>();
                 let expected_signature =
                     HirTy::new_fun(Box::new(expected_ty.clone()), expected_args);
-                self.unify_eq(e.callee.ty().clone(), expected_signature)?;
-                self.unify_eq(e.ty.as_ref().clone(), expected_ty)?;
+                self.unify_eq(EqualityConstraint {
+                    expected: expected_signature,
+                    actual: e.callee.ty().clone(),
+                    expected_loc: e.span.clone(),
+                    actual_loc: e.callee.span().clone(),
+                })?;
+
+                // Constrain the return type of the expression to the wanted type
+                self.unify_eq(EqualityConstraint {
+                    expected: expected_ty,
+                    actual: e.ty.as_ref().clone(),
+                    expected_loc: e.span.clone(),
+                    actual_loc: e.callee.span().clone(),
+                })?;
                 Ok(())
             }
             HirExpr::Construct(e) => {
@@ -270,24 +409,59 @@ impl TypingContext {
                 // TODO: Check that the number of arguments matches the number of fields
                 let pairs = ty.fields.iter().zip(e.arguments.iter()).collect::<Vec<_>>();
                 for ((_, expected_ty), arg) in pairs {
-                    self.unify_eq(arg.expr.ty().clone(), expected_ty.r#type.as_ref().clone())?;
+                    self.unify_eq(EqualityConstraint {
+                        expected: arg.expr.ty().clone(),
+                        expected_loc: arg.expr.span().clone(),
+                        actual: expected_ty.r#type.as_ref().clone(),
+                        actual_loc: expected_ty.span.clone(),
+                    })?;
                 }
-                self.unify_eq(e.ty.as_ref().clone(), e.callee.as_ref().clone())?;
-                self.unify_eq(e.ty.as_ref().clone(), expected_ty)?;
+                self.unify_eq(EqualityConstraint {
+                    expected: e.ty.as_ref().clone(),
+                    expected_loc: e.span.clone(),
+                    actual: e.callee.as_ref().clone(),
+                    actual_loc: e.span.clone(),
+                })?;
+                self.unify_eq(EqualityConstraint {
+                    expected: e.ty.as_ref().clone(),
+                    expected_loc: e.span.clone(),
+                    actual: expected_ty,
+                    actual_loc: e.span.clone(),
+                })?;
                 Ok(())
             }
             HirExpr::AddressOf(e) => {
                 // &a means that e is *inner, and expected_ty is *inner
                 let result_ty = HirTy::new_ptr(Box::new(e.inner.ty().clone()));
-                self.constrain_eq(expected_ty, result_ty.clone());
-                self.constrain_eq(e.ty.as_ref().clone(), result_ty);
+                self.constrain_eq(
+                    expected_ty,
+                    result_ty.clone(),
+                    e.span.clone(),
+                    e.inner.span().clone(),
+                );
+                self.constrain_eq(
+                    e.ty.as_ref().clone(),
+                    result_ty,
+                    e.span.clone(),
+                    e.inner.span().clone(),
+                );
                 Ok(())
             }
             HirExpr::Deref(e) => {
                 // *a means inner is a pointer type, and expected and e are unbox inner
                 let inner_ptr = HirTy::new_ptr(Box::new(expected_ty.clone()));
-                self.constrain_eq(e.inner.ty().clone(), inner_ptr.clone());
-                self.constrain_eq(e.ty.as_ref().clone(), expected_ty);
+                self.constrain_eq(
+                    e.inner.ty().clone(),
+                    inner_ptr.clone(),
+                    e.span.clone(),
+                    e.inner.span().clone(),
+                );
+                self.constrain_eq(
+                    e.ty.as_ref().clone(),
+                    expected_ty,
+                    e.span.clone(),
+                    e.inner.span().clone(),
+                );
                 Ok(())
             }
             // Grouping expressions take the type of the inner expression
