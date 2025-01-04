@@ -7,7 +7,7 @@ use crate::expr::HirExpr;
 use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
-use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirReferenceTy, HirTy};
+use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirTy};
 use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
 use hachi_span::Span;
@@ -150,9 +150,6 @@ impl TypingContext {
                 Ok(())
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {
-                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
-            }
-            (HirTy::Reference(a), HirTy::Reference(b)) => {
                 self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
             }
             (HirTy::Integer32(_), HirTy::Integer32(_)) => Ok(()),
@@ -401,19 +398,14 @@ impl TypingContext {
                 self.substitute(&mut p.inner)?;
                 Ok(())
             }
-            // We substitute reference types by substituting the inner type
-            HirTy::Reference(r) => {
-                self.substitute(&mut r.inner)?;
-                Ok(())
-            }
             // Anything else is not a type variable or a constructor type, so there is nothing to
             // be done here.
-            HirTy::Nominal(_) => ice!("nominal type should not be substituted"),
+            HirTy::Uninitialized => ice!("uninitialized type should not be substituted"),
             HirTy::Integer32(_)
             | HirTy::Boolean(_)
             | HirTy::Unit(_)
             | HirTy::Variable(_)
-            | HirTy::Uninitialized => Ok(()),
+            | HirTy::Nominal(_) => Ok(()),
         }
     }
 
@@ -444,13 +436,12 @@ impl TypingContext {
                     || t.parameters.iter().any(|p| self.occurs_in(var, p))
             }
             // Non-constructor types cannot possibly occur in other types.
-            HirTy::Nominal(_) => ice!("nominal type should not be substituted"),
+            HirTy::Uninitialized => ice!("uninitialized type should not be substituted"),
             HirTy::Integer32(_)
             | HirTy::Boolean(_)
             | HirTy::Unit(_)
-            | HirTy::Uninitialized
-            | HirTy::Pointer(_)
-            | HirTy::Reference(_) => false,
+            | HirTy::Nominal(_)
+            | HirTy::Pointer(_) => false,
         }
     }
 }
@@ -565,16 +556,14 @@ impl TypeChecker {
     ///
     /// A record type is infinitely recursive if any of its fields are unable to break the cycle.
     /// Types that can be break the cycle are pointer types. This means that if a type directly
-    /// references itself by name, or by reference of any depth, it is infinitely recursive.
+    /// references itself by name
     pub fn visit_hir_record(cx: &mut TypingContext, node: &mut HirRecord) -> HirResult<()> {
         for field in node.fields.values_mut() {
             Self::visit_type(cx, &mut field.ty)?;
             // Check if the field directly references itself
             let is_directly_self_referential =
                 matches!(field.ty.as_ref(), HirTy::Nominal(n) if n.name.name == node.name.name);
-            // Check if the field directly references itself through a reference of any depth
-            let is_indirectly_self_referential = matches!(field.ty.as_ref(), HirTy::Reference(r) if matches!(r.get_deep_inner(), HirTy::Nominal(n) if n.name.name == node.name.name));
-            if is_directly_self_referential || is_indirectly_self_referential {
+            if is_directly_self_referential {
                 return Err(HirError::TypeFieldInfiniteRecursion(
                     TypeFieldInfiniteRecursionError {
                         type_name: node.name.name.to_owned(),
@@ -598,7 +587,6 @@ impl TypeChecker {
             HirTy::Nominal(t) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
             HirTy::Pointer(t) => Self::visit_pointer_ty(cx, t),
-            HirTy::Reference(t) => Self::visit_reference_ty(cx, t),
             HirTy::Variable(_) | HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) => Ok(()),
             // If the type was uninitialized by the lowering pass, we need to replace it with a
             // fresh type variable here.
@@ -635,11 +623,6 @@ impl TypeChecker {
 
     /// Visit a pointer type.
     pub fn visit_pointer_ty(cx: &mut TypingContext, node: &mut HirPointerTy) -> HirResult<()> {
-        Self::visit_type(cx, &mut node.inner)
-    }
-
-    /// Visit a reference type.
-    pub fn visit_reference_ty(cx: &mut TypingContext, node: &mut HirReferenceTy) -> HirResult<()> {
         Self::visit_type(cx, &mut node.inner)
     }
 

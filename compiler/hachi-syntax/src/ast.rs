@@ -361,7 +361,6 @@ declare_ast_variant! {
         Unit(Box<UnitType>),
         Integer32(Box<Integer32Type>),
         Pointer(Box<PointerType>),
-        Reference(Box<ReferenceType>),
         Named(Box<NamedType>),
         Boolean(Box<BooleanType>),
     }
@@ -374,7 +373,6 @@ impl Type {
             Type::Unit(t) => &t.span,
             Type::Integer32(t) => &t.span,
             Type::Pointer(t) => &t.span,
-            Type::Reference(t) => &t.span,
             Type::Named(t) => &t.span,
             Type::Boolean(t) => &t.span,
         }
@@ -404,14 +402,6 @@ declare_ast_node! {
 
 declare_ast_node! {
     pub struct PointerType {
-        id: NodeId,
-        span: Span,
-        pub inner: Box<Type>,
-    }
-}
-
-declare_ast_node! {
-    pub struct ReferenceType {
         id: NodeId,
         span: Span,
         pub inner: Box<Type>,

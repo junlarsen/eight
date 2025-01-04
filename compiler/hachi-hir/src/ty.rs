@@ -61,10 +61,6 @@ pub enum HirTy {
     ///
     /// The pointer has a single parameter type, which is the inner pointee type.
     Pointer(HirPointerTy),
-    /// A reference constructor type.
-    ///
-    /// The reference has a single parameter type, which is the referent type.
-    Reference(HirReferenceTy),
     /// A nominal type.
     ///
     /// This is used for structs at the moment, but could also be used for enums in the future.
@@ -98,7 +94,6 @@ impl HirTy {
             (HirTy::Unit(_), HirTy::Unit(_)) => true,
             (HirTy::Variable(v), HirTy::Variable(o)) => v.var == o.var,
             (HirTy::Pointer(v), HirTy::Pointer(o)) => v.inner.is_trivially_equal(&o.inner),
-            (HirTy::Reference(v), HirTy::Reference(o)) => v.inner.is_trivially_equal(&o.inner),
             (HirTy::Function(v), HirTy::Function(o)) => {
                 v.return_type.is_trivially_equal(&o.return_type)
                     && v.parameters.len() == o.parameters.len()
@@ -146,14 +141,6 @@ impl HirTy {
         })
     }
 
-    /// Create a new reference type.
-    pub fn new_ref(inner: Box<HirTy>, span: &Span) -> Self {
-        Self::Reference(HirReferenceTy {
-            inner,
-            span: span.clone(),
-        })
-    }
-
     /// Create a new nominal type.
     pub fn new_nominal(name: HirName, span: &Span) -> Self {
         Self::Nominal(HirNominalTy {
@@ -185,7 +172,6 @@ impl Debug for HirTy {
             HirTy::Unit(_) => write!(f, "unit"),
             HirTy::Uninitialized => write!(f, "_"),
             HirTy::Pointer(t) => write!(f, "*{:?}", t.inner),
-            HirTy::Reference(t) => write!(f, "&{:?}", t.inner),
             HirTy::Nominal(t) => write!(f, "{}", t.name.name),
         }
     }
@@ -208,10 +194,6 @@ impl HirTy {
         matches!(self, HirTy::Pointer(_))
     }
 
-    pub fn is_reference(&self) -> bool {
-        matches!(self, HirTy::Reference(_))
-    }
-
     pub fn is_record(&self) -> bool {
         matches!(self, HirTy::Nominal(_))
     }
@@ -228,9 +210,8 @@ impl HirTy {
             HirTy::Boolean(b) => &b.span,
             HirTy::Unit(u) => &u.span,
             HirTy::Pointer(p) => &p.span,
-            HirTy::Reference(r) => &r.span,
             HirTy::Nominal(r) => &r.span,
-            HirTy::Uninitialized => todo!(),
+            HirTy::Uninitialized => ice!("attempted to read span of uninitialized type"),
         }
     }
 }
@@ -273,26 +254,6 @@ pub struct HirFunctionTy {
 pub struct HirPointerTy {
     pub inner: Box<HirTy>,
     pub span: Span,
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
-pub struct HirReferenceTy {
-    pub inner: Box<HirTy>,
-    pub span: Span,
-}
-
-impl HirReferenceTy {
-    pub fn get_inner(&self) -> &HirTy {
-        &self.inner
-    }
-
-    pub fn get_deep_inner(&self) -> &HirTy {
-        match self.inner.as_ref() {
-            HirTy::Reference(t) => t.get_deep_inner(),
-            t => t,
-        }
-    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

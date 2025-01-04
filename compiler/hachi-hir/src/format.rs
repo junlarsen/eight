@@ -21,7 +21,7 @@ use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirReferenceTy, HirTy, HirVariableTy};
+use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy};
 use crate::HirModule;
 use hachi_diagnostics::ice;
 use pretty::RcDoc;
@@ -472,7 +472,6 @@ impl HirModuleFormatter {
             HirTy::Function(t) => Self::format_hir_function_ty(t),
             HirTy::Nominal(t) => Self::format_hir_nominal_ty(t),
             HirTy::Pointer(t) => Self::format_hir_pointer_ty(t),
-            HirTy::Reference(t) => Self::format_hir_reference_ty(t),
             HirTy::Uninitialized => Self::format_hir_uninitialized_ty(ty),
         }
     }
@@ -503,10 +502,6 @@ impl HirModuleFormatter {
 
     pub fn format_hir_pointer_ty(ty: &HirPointerTy) -> RcDoc<()> {
         RcDoc::text("*").append(Self::format_hir_ty(&ty.inner))
-    }
-
-    pub fn format_hir_reference_ty(ty: &HirReferenceTy) -> RcDoc<()> {
-        RcDoc::text("&").append(Self::format_hir_ty(&ty.inner))
     }
 
     pub fn format_hir_uninitialized_ty(_: &HirTy) -> RcDoc<()> {

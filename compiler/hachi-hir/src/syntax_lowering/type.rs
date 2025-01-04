@@ -36,7 +36,6 @@ impl SyntaxLoweringPass<'_> {
                 None => HirTy::new_nominal(self.visit_identifier(t.name.as_ref())?, node.span()),
             },
             Type::Pointer(t) => HirTy::new_ptr(self.visit_type(t.inner.as_ref())?, node.span()),
-            Type::Reference(t) => HirTy::new_ref(self.visit_type(t.inner.as_ref())?, node.span()),
         };
         Ok(Box::new(ty))
     }

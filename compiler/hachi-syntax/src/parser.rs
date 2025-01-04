@@ -9,8 +9,7 @@ use crate::ast::{
 use crate::lexer::Lexer;
 use crate::{
     BooleanLiteralExpr, BooleanType, FunctionTypeParameterItem, IntrinsicFunctionItem, NodeId,
-    ParseError, ParseResult, ReferenceType, Token, TokenType, UnexpectedEndOfFileError,
-    UnexpectedTokenError,
+    ParseError, ParseResult, Token, TokenType, UnexpectedEndOfFileError, UnexpectedTokenError,
 };
 use hachi_span::Span;
 use std::sync::atomic::AtomicUsize;
@@ -1160,7 +1159,6 @@ impl Parser<'_> {
                 _ => Ok(Box::new(Type::Named(self.parse_named_type()?))),
             },
             TokenType::Star => Ok(Box::new(Type::Pointer(self.parse_pointer_type()?))),
-            TokenType::AddressOf => Ok(Box::new(Type::Reference(self.parse_reference_type()?))),
             _ => {
                 let token = self.eat()?;
                 Err(ParseError::from(UnexpectedTokenError {
@@ -1191,22 +1189,6 @@ impl Parser<'_> {
         let indirection = self.check(&TokenType::Star)?;
         let inner = self.parse_type()?;
         let node = PointerType::new(
-            self.next_node_id(),
-            Span::from_pair(&indirection.span, inner.span()),
-            inner,
-        );
-        Ok(Box::new(node))
-    }
-
-    /// Parse a reference type.
-    ///
-    /// ```text
-    /// reference_type ::= STAR type
-    /// ```
-    pub fn parse_reference_type(&mut self) -> ParseResult<Box<ReferenceType>> {
-        let indirection = self.check(&TokenType::AddressOf)?;
-        let inner = self.parse_type()?;
-        let node = ReferenceType::new(
             self.next_node_id(),
             Span::from_pair(&indirection.span, inner.span()),
             inner,
@@ -1264,14 +1246,6 @@ mod tests {
         let prod = assert_ok!(prod);
         assert!(matches!(*prod, Type::Pointer(_)));
         if let Type::Pointer(ptr) = *prod {
-            let inner = ptr.inner.as_ref();
-            assert!(matches!(inner, Type::Integer32(_)));
-        }
-
-        let prod = assert_parse("&i32", |p| p.parse_type());
-        let prod = assert_ok!(prod);
-        assert!(matches!(*prod, Type::Reference(_)));
-        if let Type::Reference(ptr) = *prod {
             let inner = ptr.inner.as_ref();
             assert!(matches!(inner, Type::Integer32(_)));
         }
