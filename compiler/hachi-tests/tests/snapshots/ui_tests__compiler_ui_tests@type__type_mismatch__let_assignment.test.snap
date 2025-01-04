@@ -15,12 +15,10 @@ exit_code: 1
 Error: sema::type_mismatch
 
   × type mismatch
-   ╭─[tests/ui/type/type_mismatch/let_assignment.test:1:12]
+   ╭─[tests/ui/type/type_mismatch/let_assignment.test:1:1]
  1 │ fn test(v: bool) {
-   ·            ──┬─
-   ·              ╰── the expression has type bool
+   · ▲▲
+   · │╰── expected type i32
+   · ╰── the expression has type bool
  2 │   let k: i32 = v;
-   ·          ─┬─
-   ·           ╰── expected type i32
- 3 │ }
    ╰────

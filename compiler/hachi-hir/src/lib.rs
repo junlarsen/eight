@@ -43,24 +43,9 @@ impl HirModule {
             records: BTreeMap::new(),
             functions: BTreeMap::new(),
             scalars: BTreeMap::from([
-                (
-                    "i32".to_owned(),
-                    HirTy::Integer32(HirInteger32Ty {
-                        span: Span::empty(),
-                    }),
-                ),
-                (
-                    "bool".to_owned(),
-                    HirTy::Boolean(HirBooleanTy {
-                        span: Span::empty(),
-                    }),
-                ),
-                (
-                    "unit".to_owned(),
-                    HirTy::Unit(HirUnitTy {
-                        span: Span::empty(),
-                    }),
-                ),
+                ("i32".to_owned(), HirTy::Integer32(HirInteger32Ty {})),
+                ("bool".to_owned(), HirTy::Boolean(HirBooleanTy {})),
+                ("unit".to_owned(), HirTy::Unit(HirUnitTy {})),
             ]),
         }
     }

@@ -106,7 +106,7 @@ impl TypingContext {
                 let Some(field) = ty.fields.get(&field.name) else {
                     ice!("field not found in record type");
                 };
-                self.unify_eq(field.ty.as_ref().clone(), inner)?;
+                self.unify_eq(field.r#type.as_ref().clone(), inner)?;
                 Ok(())
             }
             _ => {
@@ -132,8 +132,8 @@ impl TypingContext {
             (HirTy::Variable(v), _) => {
                 if self.occurs_in(v.var, &rhs) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: lhs.span().clone(),
-                        right: rhs.span().clone(),
+                        left: Span::empty(),
+                        right: Span::empty(),
                     }));
                 }
                 self.substitutions[v.var] = rhs.clone();
@@ -142,8 +142,8 @@ impl TypingContext {
             (_, HirTy::Variable(v)) => {
                 if self.occurs_in(v.var, &lhs) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: lhs.span().clone(),
-                        right: rhs.span().clone(),
+                        left: Span::empty(),
+                        right: Span::empty(),
                     }));
                 }
                 self.substitutions[v.var] = lhs.clone();
@@ -159,7 +159,7 @@ impl TypingContext {
                 if a.parameters.len() != b.parameters.len() {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
                         expected_ty: b.clone(),
-                        span: a.span.clone(),
+                        span: Span::empty(),
                     }));
                 }
                 self.unify_eq(
@@ -175,8 +175,8 @@ impl TypingContext {
                 ice!("tried to unify with uninitialized type")
             }
             (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
-                actual_loc: rhs.span().clone(),
-                expected_loc: lhs.span().clone(),
+                actual_loc: Span::empty(),
+                expected_loc: Span::empty(),
                 actual_type: rhs.clone(),
                 expected_type: lhs.clone(),
             })),
@@ -185,7 +185,7 @@ impl TypingContext {
 
     /// Create a fresh type variable.
     pub fn fresh_type_variable(&mut self) -> HirTy {
-        let ty = HirTy::new_var(self.substitutions.len(), Span::empty());
+        let ty = HirTy::new_var(self.substitutions.len());
         self.substitutions.push(ty.clone());
         ty
     }
@@ -231,7 +231,7 @@ impl TypingContext {
                 // The index must be an integer type
                 self.constrain_eq(e.index.ty().clone(), self.get_integer32_type());
                 // The origin must be a pointer of the element type
-                let elem_ptr_ty = HirTy::new_ptr(Box::new(expected_ty.clone()), &e.span);
+                let elem_ptr_ty = HirTy::new_ptr(Box::new(expected_ty.clone()));
                 self.constrain_eq(e.origin.ty().clone(), elem_ptr_ty);
                 // The resulting type must be the element type
                 self.constrain_eq(expected_ty, e.ty.as_ref().clone());
@@ -253,7 +253,7 @@ impl TypingContext {
                     .map(|a| Box::new(a.ty().clone()))
                     .collect::<Vec<_>>();
                 let expected_signature =
-                    HirTy::new_fun(Box::new(expected_ty.clone()), expected_args, &e.span);
+                    HirTy::new_fun(Box::new(expected_ty.clone()), expected_args);
                 self.unify_eq(e.callee.ty().clone(), expected_signature)?;
                 self.unify_eq(e.ty.as_ref().clone(), expected_ty)?;
                 Ok(())
@@ -270,7 +270,7 @@ impl TypingContext {
                 // TODO: Check that the number of arguments matches the number of fields
                 let pairs = ty.fields.iter().zip(e.arguments.iter()).collect::<Vec<_>>();
                 for ((_, expected_ty), arg) in pairs {
-                    self.unify_eq(arg.expr.ty().clone(), expected_ty.ty.as_ref().clone())?;
+                    self.unify_eq(arg.expr.ty().clone(), expected_ty.r#type.as_ref().clone())?;
                 }
                 self.unify_eq(e.ty.as_ref().clone(), e.callee.as_ref().clone())?;
                 self.unify_eq(e.ty.as_ref().clone(), expected_ty)?;
@@ -278,14 +278,14 @@ impl TypingContext {
             }
             HirExpr::AddressOf(e) => {
                 // &a means that e is *inner, and expected_ty is *inner
-                let result_ty = HirTy::new_ptr(Box::new(e.inner.ty().clone()), &e.span);
+                let result_ty = HirTy::new_ptr(Box::new(e.inner.ty().clone()));
                 self.constrain_eq(expected_ty, result_ty.clone());
                 self.constrain_eq(e.ty.as_ref().clone(), result_ty);
                 Ok(())
             }
             HirExpr::Deref(e) => {
                 // *a means inner is a pointer type, and expected and e are unbox inner
-                let inner_ptr = HirTy::new_ptr(Box::new(expected_ty.clone()), &e.span);
+                let inner_ptr = HirTy::new_ptr(Box::new(expected_ty.clone()));
                 self.constrain_eq(e.inner.ty().clone(), inner_ptr.clone());
                 self.constrain_eq(e.ty.as_ref().clone(), expected_ty);
                 Ok(())
@@ -518,7 +518,7 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         Self::visit_type(cx, &mut node.return_type)?;
         for p in node.parameters.iter_mut() {
-            Self::visit_type(cx, &mut p.ty)?;
+            Self::visit_type(cx, &mut p.r#type)?;
         }
         Ok(())
     }
@@ -530,7 +530,7 @@ impl HirModuleTypeCheckerPass {
     pub fn visit_function(cx: &mut TypingContext, node: &mut HirFunction) -> HirResult<()> {
         // Create substitutions for all the type parameters.
         for ty in node.type_parameters.iter() {
-            let substitution = HirTy::new_var(ty.name, ty.span.clone());
+            let substitution = HirTy::new_var(ty.name);
             cx.substitutions.push(substitution);
         }
         Self::visit_type(cx, &mut node.return_type)?;
@@ -540,8 +540,8 @@ impl HirModuleTypeCheckerPass {
         cx.locals.enter_scope();
         // Push all the function parameters into the local context.
         for p in node.parameters.iter_mut() {
-            Self::visit_type(cx, &mut p.ty)?;
-            cx.locals.add(&p.name.name, p.ty.as_ref().clone());
+            Self::visit_type(cx, &mut p.r#type)?;
+            cx.locals.add(&p.name.name, p.r#type.as_ref().clone());
         }
         // Recurse down into the body.
         for stmt in node.body.iter_mut() {
@@ -563,10 +563,10 @@ impl HirModuleTypeCheckerPass {
     /// references itself by name
     pub fn visit_hir_record(cx: &mut TypingContext, node: &mut HirRecord) -> HirResult<()> {
         for field in node.fields.values_mut() {
-            Self::visit_type(cx, &mut field.ty)?;
+            Self::visit_type(cx, &mut field.r#type)?;
             // Check if the field directly references itself
             let is_directly_self_referential =
-                matches!(field.ty.as_ref(), HirTy::Nominal(n) if n.name.name == node.name.name);
+                matches!(field.r#type.as_ref(), HirTy::Nominal(n) if n.name.name == node.name.name);
             if is_directly_self_referential {
                 return Err(HirError::TypeFieldInfiniteRecursion(
                     TypeFieldInfiniteRecursionError {

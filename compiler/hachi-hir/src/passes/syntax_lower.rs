@@ -282,18 +282,17 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
         self.generic_substitutions.enter_scope();
         let mut type_parameters = Vec::new();
         for (variable, type_parameter) in node.type_parameters.iter().enumerate() {
-            self.generic_substitutions.add(
-                &type_parameter.name.name,
-                HirTy::new_var(variable, type_parameter.span().clone()),
-            );
+            self.generic_substitutions
+                .add(&type_parameter.name.name, HirTy::new_var(variable));
             // We also build the HIR representation, preserving the original name that was written
             // in code.
             let hir = self.visit_function_type_parameter(type_parameter, variable)?;
             type_parameters.push(hir);
         }
+        let return_type_annotation = node.return_type.as_ref().map(|t| t.span().clone());
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
-            None => Box::new(HirTy::new_unit(&Span::empty())),
+            None => Box::new(HirTy::new_unit()),
         };
         let parameters = node
             .parameters
@@ -312,6 +311,7 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
             type_parameters,
             parameters,
             return_type,
+            return_type_annotation,
             body,
         });
         self.generic_substitutions.leave_scope();
@@ -328,16 +328,15 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
         self.generic_substitutions.enter_scope();
         let mut type_parameters = Vec::new();
         for (variable, type_parameter) in node.type_parameters.iter().enumerate() {
-            self.generic_substitutions.add(
-                &type_parameter.name.name,
-                HirTy::new_var(variable, type_parameter.span().clone()),
-            );
+            self.generic_substitutions
+                .add(&type_parameter.name.name, HirTy::new_var(variable));
             // We also build the HIR representation, preserving the original name that was written
             // in code.
             let hir = self.visit_function_type_parameter(type_parameter, variable)?;
             type_parameters.push(hir);
         }
 
+        let return_type_annotation = node.return_type.span().clone();
         let return_type = self.visit_type(node.return_type.as_ref())?;
         let parameters = node
             .parameters
@@ -351,6 +350,7 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
             type_parameters,
             parameters,
             return_type,
+            return_type_annotation,
         });
         self.generic_substitutions.leave_scope();
 
@@ -367,7 +367,8 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
         let hir = HirFunctionParameter {
             span: node.span().clone(),
             name,
-            ty,
+            r#type: ty,
+            type_annotation: node.r#type.span().clone(),
         };
         Ok(Box::new(hir))
     }
@@ -412,7 +413,8 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
                 let ty = self.visit_type(member.r#type.as_ref())?;
                 let field = HirRecordField {
                     name: self.visit_identifier(member.name.as_ref())?,
-                    ty,
+                    r#type: ty,
+                    type_annotation: member.r#type.span().clone(),
                     span: member.span().clone(),
                 };
                 Ok((member.name.name.to_owned(), Box::new(field)))
@@ -450,6 +452,7 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
             span: node.span().clone(),
             name,
             r#type,
+            type_annotation: node.r#type.as_ref().map(|t| t.span().clone()),
             value,
         });
         Ok(Box::new(hir))
@@ -500,6 +503,7 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
                     span: i.span().clone(),
                     name: self.visit_identifier(i.name.as_ref())?,
                     r#type: Box::new(HirTy::Uninitialized),
+                    type_annotation: None,
                     value: self.visit_expr(i.initializer.as_ref())?,
                 })
             })
@@ -637,16 +641,16 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
     #[allow(clippy::only_used_in_recursion)]
     pub fn visit_type(&mut self, node: &Type) -> HirResult<Box<HirTy>> {
         let ty = match node {
-            Type::Unit(_) => HirTy::new_unit(node.span()),
-            Type::Integer32(_) => HirTy::new_i32(node.span()),
-            Type::Boolean(_) => HirTy::new_bool(node.span()),
+            Type::Unit(_) => HirTy::new_unit(),
+            Type::Integer32(_) => HirTy::new_i32(),
+            Type::Boolean(_) => HirTy::new_bool(),
             // If the type is referring to a generic type that we have substituted before, we
             // use replace it with the substitution
             Type::Named(t) => match self.generic_substitutions.find(&t.name.name) {
                 Some(ty) => ty.clone(),
-                None => HirTy::new_nominal(self.visit_identifier(t.name.as_ref())?, node.span()),
+                None => HirTy::new_nominal(self.visit_identifier(t.name.as_ref())?),
             },
-            Type::Pointer(t) => HirTy::new_ptr(self.visit_type(t.inner.as_ref())?, node.span()),
+            Type::Pointer(t) => HirTy::new_ptr(self.visit_type(t.inner.as_ref())?),
         };
         Ok(Box::new(ty))
     }

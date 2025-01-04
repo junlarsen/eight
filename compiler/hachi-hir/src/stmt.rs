@@ -37,6 +37,7 @@ pub struct HirLetStmt {
     pub span: Span,
     pub name: HirName,
     pub r#type: Box<HirTy>,
+    pub type_annotation: Option<Span>,
     pub value: Box<HirExpr>,
 }
 

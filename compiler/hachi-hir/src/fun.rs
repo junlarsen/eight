@@ -53,6 +53,7 @@ pub struct HirFunction {
     pub type_parameters: Vec<Box<HirFunctionTypeParameter>>,
     pub parameters: Vec<Box<HirFunctionParameter>>,
     pub return_type: Box<HirTy>,
+    pub return_type_annotation: Option<Span>,
     pub body: Vec<Box<HirStmt>>,
 }
 
@@ -60,8 +61,7 @@ impl HirFunction {
     pub fn get_type(&self) -> HirFunctionTy {
         HirFunctionTy {
             return_type: self.return_type.clone(),
-            parameters: self.parameters.iter().map(|p| p.ty.clone()).collect(),
-            span: self.span.clone(),
+            parameters: self.parameters.iter().map(|p| p.r#type.clone()).collect(),
         }
     }
 }
@@ -75,14 +75,14 @@ pub struct HirIntrinsicFunction {
     pub type_parameters: Vec<Box<HirFunctionTypeParameter>>,
     pub parameters: Vec<Box<HirFunctionParameter>>,
     pub return_type: Box<HirTy>,
+    pub return_type_annotation: Span,
 }
 
 impl HirIntrinsicFunction {
     pub fn get_type(&self) -> HirFunctionTy {
         HirFunctionTy {
             return_type: self.return_type.clone(),
-            parameters: self.parameters.iter().map(|p| p.ty.clone()).collect(),
-            span: self.span.clone(),
+            parameters: self.parameters.iter().map(|p| p.r#type.clone()).collect(),
         }
     }
 }
@@ -106,5 +106,6 @@ pub struct HirFunctionTypeParameter {
 pub struct HirFunctionParameter {
     pub span: Span,
     pub name: HirName,
-    pub ty: Box<HirTy>,
+    pub r#type: Box<HirTy>,
+    pub type_annotation: Span,
 }

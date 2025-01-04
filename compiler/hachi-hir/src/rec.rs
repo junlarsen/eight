@@ -17,5 +17,6 @@ pub struct HirRecord {
 pub struct HirRecordField {
     pub span: Span,
     pub name: HirName,
-    pub ty: Box<HirTy>,
+    pub r#type: Box<HirTy>,
+    pub type_annotation: Span,
 }

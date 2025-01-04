@@ -1,6 +1,5 @@
 use crate::HirName;
 use hachi_diagnostics::ice;
-use hachi_span::Span;
 use std::fmt::{Debug, Display};
 
 /// A single type in the HIR representation.
@@ -120,45 +119,38 @@ impl HirTy {
 
 impl HirTy {
     /// Create a new variable type.
-    pub fn new_var(var: usize, span: Span) -> Self {
-        Self::Variable(HirVariableTy { var, span })
+    pub fn new_var(var: usize) -> Self {
+        Self::Variable(HirVariableTy { var })
     }
 
     /// Create a new function type.
-    pub fn new_fun(return_type: Box<HirTy>, parameters: Vec<Box<HirTy>>, span: &Span) -> Self {
+    pub fn new_fun(return_type: Box<HirTy>, parameters: Vec<Box<HirTy>>) -> Self {
         Self::Function(HirFunctionTy {
             return_type,
             parameters,
-            span: span.clone(),
         })
     }
 
     /// Create a new pointer type.
-    pub fn new_ptr(inner: Box<HirTy>, span: &Span) -> Self {
-        Self::Pointer(HirPointerTy {
-            inner,
-            span: span.clone(),
-        })
+    pub fn new_ptr(inner: Box<HirTy>) -> Self {
+        Self::Pointer(HirPointerTy { inner })
     }
 
     /// Create a new nominal type.
-    pub fn new_nominal(name: HirName, span: &Span) -> Self {
-        Self::Nominal(HirNominalTy {
-            name,
-            span: span.clone(),
-        })
+    pub fn new_nominal(name: HirName) -> Self {
+        Self::Nominal(HirNominalTy { name })
     }
 
-    pub fn new_i32(span: &Span) -> Self {
-        Self::Integer32(HirInteger32Ty { span: span.clone() })
+    pub fn new_i32() -> Self {
+        Self::Integer32(HirInteger32Ty {})
     }
 
-    pub fn new_bool(span: &Span) -> Self {
-        Self::Boolean(HirBooleanTy { span: span.clone() })
+    pub fn new_bool() -> Self {
+        Self::Boolean(HirBooleanTy {})
     }
 
-    pub fn new_unit(span: &Span) -> Self {
-        Self::Unit(HirUnitTy { span: span.clone() })
+    pub fn new_unit() -> Self {
+        Self::Unit(HirUnitTy {})
     }
 }
 
@@ -208,26 +200,11 @@ impl HirTy {
     pub fn is_uninitialized(&self) -> bool {
         matches!(self, HirTy::Uninitialized)
     }
-
-    pub fn span(&self) -> &Span {
-        match self {
-            HirTy::Variable(v) => &v.span,
-            HirTy::Function(f) => &f.span,
-            HirTy::Integer32(i) => &i.span,
-            HirTy::Boolean(b) => &b.span,
-            HirTy::Unit(u) => &u.span,
-            HirTy::Pointer(p) => &p.span,
-            HirTy::Nominal(r) => &r.span,
-            HirTy::Uninitialized => ice!("attempted to read span of uninitialized type"),
-        }
-    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct HirInteger32Ty {
-    pub span: Span,
-}
+pub struct HirInteger32Ty {}
 
 impl Display for HirInteger32Ty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -237,9 +214,7 @@ impl Display for HirInteger32Ty {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct HirBooleanTy {
-    pub span: Span,
-}
+pub struct HirBooleanTy {}
 
 impl Display for HirBooleanTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -249,9 +224,7 @@ impl Display for HirBooleanTy {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct HirUnitTy {
-    pub span: Span,
-}
+pub struct HirUnitTy {}
 
 impl Display for HirUnitTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -263,7 +236,6 @@ impl Display for HirUnitTy {
 #[derive(Debug, Clone)]
 pub struct HirVariableTy {
     pub var: usize,
-    pub span: Span,
 }
 
 impl Display for HirVariableTy {
@@ -277,7 +249,6 @@ impl Display for HirVariableTy {
 pub struct HirFunctionTy {
     pub return_type: Box<HirTy>,
     pub parameters: Vec<Box<HirTy>>,
-    pub span: Span,
 }
 
 impl Display for HirFunctionTy {
@@ -296,7 +267,6 @@ impl Display for HirFunctionTy {
 #[derive(Debug, Clone)]
 pub struct HirPointerTy {
     pub inner: Box<HirTy>,
-    pub span: Span,
 }
 
 impl Display for HirPointerTy {
@@ -309,7 +279,6 @@ impl Display for HirPointerTy {
 #[derive(Debug, Clone)]
 pub struct HirNominalTy {
     pub name: HirName,
-    pub span: Span,
 }
 
 impl Display for HirNominalTy {
