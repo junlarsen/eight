@@ -16,6 +16,8 @@ pub enum HirExpr {
     Call(HirCallExpr),
     Construct(HirConstructExpr),
     Group(HirGroupExpr),
+    AddressOf(HirAddressOfExpr),
+    Deref(HirDerefExpr),
 }
 
 impl HirExpr {
@@ -32,6 +34,8 @@ impl HirExpr {
             HirExpr::Construct(e) => &e.span,
             HirExpr::Group(e) => &e.span,
             HirExpr::Reference(e) => &e.span,
+            HirExpr::AddressOf(e) => &e.span,
+            HirExpr::Deref(e) => &e.span,
         }
     }
 
@@ -48,6 +52,8 @@ impl HirExpr {
             HirExpr::Construct(e) => &e.ty,
             HirExpr::Group(e) => &e.ty,
             HirExpr::Reference(e) => &e.ty,
+            HirExpr::AddressOf(e) => &e.ty,
+            HirExpr::Deref(e) => &e.ty,
         }
     }
 }
@@ -99,6 +105,14 @@ pub struct HirBinaryOpExpr {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirAddressOfExpr {
+    pub span: Span,
+    pub inner: Box<HirExpr>,
+    pub ty: Box<HirTy>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct HirDerefExpr {
     pub span: Span,
     pub inner: Box<HirExpr>,
     pub ty: Box<HirTy>,
@@ -175,8 +189,6 @@ pub struct HirGroupExpr {
 pub enum HirUnaryOp {
     Not,
     Neg,
-    Deref,
-    AddressOf,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

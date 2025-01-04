@@ -3,7 +3,7 @@ use crate::error::{
     FunctionTypeMismatchError, HirError, HirResult, InvalidReferenceError,
     SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
 };
-use crate::expr::{HirConstructExprArgument, HirExpr};
+use crate::expr::HirExpr;
 use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
@@ -275,6 +275,20 @@ impl TypingContext {
                 self.unify_eq(e.ty.as_ref().clone(), expected_ty)?;
                 Ok(())
             }
+            HirExpr::AddressOf(e) => {
+                // &a means that e is *inner, and expected_ty is *inner
+                let result_ty = HirTy::new_ptr(Box::new(e.inner.ty().clone()), &e.span);
+                self.constrain_eq(expected_ty, result_ty.clone());
+                self.constrain_eq(e.ty.as_ref().clone(), result_ty);
+                Ok(())
+            }
+            HirExpr::Deref(e) => {
+                // *a means inner is a pointer type, and expected and e are unbox inner
+                let inner_ptr = HirTy::new_ptr(Box::new(expected_ty.clone()), &e.span);
+                self.constrain_eq(e.inner.ty().clone(), inner_ptr.clone());
+                self.constrain_eq(e.ty.as_ref().clone(), expected_ty);
+                Ok(())
+            }
             // Grouping expressions take the type of the inner expression
             HirExpr::Group(e) => {
                 self.infer(&mut e.inner, expected_ty.clone())?;
@@ -328,6 +342,16 @@ impl TypingContext {
                 for arg in e.arguments.iter_mut() {
                     self.substitute_expr(arg.expr.as_mut())?;
                 }
+                self.substitute(&mut e.ty)?;
+                Ok(())
+            }
+            HirExpr::AddressOf(e) => {
+                self.substitute_expr(&mut e.inner)?;
+                self.substitute(&mut e.ty)?;
+                Ok(())
+            }
+            HirExpr::Deref(e) => {
+                self.substitute_expr(&mut e.inner)?;
                 self.substitute(&mut e.ty)?;
                 Ok(())
             }
@@ -408,8 +432,6 @@ impl TypingContext {
             // If the variable points to a substitution of itself, it occurs in itself
             HirTy::Variable(v) if !self.is_substitution_equal_to_self(v.var) => true,
             HirTy::Variable(v) => v.var == var,
-            HirTy::Pointer(t) => self.occurs_in(var, &t.inner),
-            HirTy::Reference(t) => self.occurs_in(var, &t.inner),
             HirTy::Function(t) => {
                 self.occurs_in(var, &t.return_type)
                     || t.parameters.iter().any(|p| self.occurs_in(var, p))
@@ -620,6 +642,8 @@ impl TypeChecker {
             e @ HirExpr::ConstantIndex(_) => Self::visit_constant_index_expr(cx, e),
             e @ HirExpr::Call(_) => Self::visit_call_expr(cx, e),
             e @ HirExpr::Construct(_) => Self::visit_construct_expr(cx, e),
+            e @ HirExpr::AddressOf(_) => Self::visit_address_of_expr(cx, e),
+            e @ HirExpr::Deref(_) => Self::visit_deref_expr(cx, e),
             _ => Ok(()),
         }
     }
@@ -743,6 +767,26 @@ impl TypeChecker {
         Ok(())
     }
 
+    pub fn visit_address_of_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::AddressOf(e) = node else {
+            ice!("visit_address_of_expr called with non-address of expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        Self::visit_expr(cx, &mut e.inner)?;
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
+    pub fn visit_deref_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::Deref(e) = node else {
+            ice!("visit_deref_expr called with non-deref expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        Self::visit_expr(cx, &mut e.inner)?;
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
     /// Visit a statement.
     pub fn visit_stmt(cx: &mut TypingContext, node: &mut HirStmt) -> HirResult<()> {
         match node {
@@ -761,7 +805,6 @@ impl TypeChecker {
         Self::visit_type(cx, &mut node.r#type)?;
         Self::visit_expr(cx, &mut node.value)?;
         cx.infer(&mut node.value, node.r#type.as_ref().clone())?;
-        // TODO: Consider if we should unify at a later stage than the let-binding.
         cx.solve_constraints()?;
         cx.substitute(&mut node.r#type)?;
         cx.substitute_expr(&mut node.value)?;

@@ -1,11 +1,13 @@
 use crate::error::HirResult;
 use crate::expr::{
-    HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
-    HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirExpr, HirGroupExpr,
-    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
+    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
+    HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
+    HirUnaryOpExpr,
 };
 use crate::syntax_lowering::SyntaxLoweringPass;
 use crate::ty::HirTy;
+use hachi_diagnostics::ice;
 use hachi_syntax::{
     AssignExpr, BinaryOp, BinaryOpExpr, BooleanLiteralExpr, BracketIndexExpr, CallExpr,
     ConstructExpr, ConstructorExprArgument, DotIndexExpr, Expr, GroupExpr, IntegerLiteralExpr,
@@ -117,13 +119,29 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         Ok(Box::new(hir))
     }
 
+    /// Visit a unary operator expression.
+    ///
+    /// We translate the AddressOf and Deref operators into separate expressions, as they produce
+    /// different types
     pub fn visit_unary_op_expr(&mut self, node: &'ast UnaryOpExpr) -> HirResult<Box<HirExpr>> {
-        let hir = HirExpr::UnaryOp(HirUnaryOpExpr {
-            span: node.span().clone(),
-            operand: self.visit_expr(node.operand.as_ref())?,
-            op: self.visit_unary_op(&node.op)?,
-            ty: Box::new(HirTy::Uninitialized),
-        });
+        let hir = match &node.op {
+            UnaryOp::Not | UnaryOp::Neg => HirExpr::UnaryOp(HirUnaryOpExpr {
+                span: node.span().clone(),
+                operand: self.visit_expr(node.operand.as_ref())?,
+                op: self.visit_unary_op(&node.op)?,
+                ty: Box::new(HirTy::Uninitialized),
+            }),
+            UnaryOp::Deref => HirExpr::Deref(HirDerefExpr {
+                span: node.span().clone(),
+                inner: self.visit_expr(node.operand.as_ref())?,
+                ty: Box::new(HirTy::Uninitialized),
+            }),
+            UnaryOp::AddressOf => HirExpr::AddressOf(HirAddressOfExpr {
+                span: node.span().clone(),
+                inner: self.visit_expr(node.operand.as_ref())?,
+                ty: Box::new(HirTy::Uninitialized),
+            }),
+        };
         Ok(Box::new(hir))
     }
 
@@ -174,8 +192,7 @@ impl<'ast> SyntaxLoweringPass<'ast> {
         match node {
             UnaryOp::Not => Ok(HirUnaryOp::Not),
             UnaryOp::Neg => Ok(HirUnaryOp::Neg),
-            UnaryOp::Deref => Ok(HirUnaryOp::Deref),
-            UnaryOp::AddressOf => Ok(HirUnaryOp::AddressOf),
+            _ => ice!("visit_unary_op called addressof or deref operator"),
         }
     }
 

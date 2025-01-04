@@ -8,9 +8,10 @@
 //! invents syntax not found in the base language, such as statement blocks and while loops.
 
 use crate::expr::{
-    HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
-    HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirExpr, HirGroupExpr,
-    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
+    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
+    HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
+    HirUnaryOpExpr,
 };
 use crate::fun::{
     HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
@@ -325,6 +326,8 @@ impl HirModuleFormatter {
             HirExpr::Call(e) => Self::format_hir_call_expr(e),
             HirExpr::Construct(e) => Self::format_hir_construct_expr(e),
             HirExpr::Group(e) => Self::format_hir_group_expr(e),
+            HirExpr::AddressOf(e) => Self::format_hir_address_of_expr(e),
+            HirExpr::Deref(e) => Self::format_hir_deref_expr(e),
         };
         inner
             .append(RcDoc::text("::"))
@@ -349,8 +352,6 @@ impl HirModuleFormatter {
         RcDoc::text(match &expr.op {
             HirUnaryOp::Not => "!",
             HirUnaryOp::Neg => "-",
-            HirUnaryOp::Deref => "*",
-            HirUnaryOp::AddressOf => "&",
         })
         .append(Self::format_hir_expr(&expr.operand))
     }
@@ -452,6 +453,14 @@ impl HirModuleFormatter {
         RcDoc::text("(")
             .append(Self::format_hir_expr(&expr.inner))
             .append(RcDoc::text(")"))
+    }
+
+    pub fn format_hir_address_of_expr(expr: &HirAddressOfExpr) -> RcDoc<()> {
+        RcDoc::text("&").append(Self::format_hir_expr(&expr.inner))
+    }
+
+    pub fn format_hir_deref_expr(expr: &HirDerefExpr) -> RcDoc<()> {
+        RcDoc::text("*").append(Self::format_hir_expr(&expr.inner))
     }
 
     pub fn format_hir_ty(ty: &HirTy) -> RcDoc<()> {

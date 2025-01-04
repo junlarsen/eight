@@ -1,0 +1,7 @@
+fn address_of(a: i32) -> unit {
+  let k = &1;
+}
+
+fn deref(a: i32, b: **i32) -> unit {
+  let m = **b;
+}

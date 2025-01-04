@@ -43,5 +43,11 @@ fn test_function_calls() {
 
 #[test]
 fn test_construction() {
-    inference_test!("data/inference/construction.test");
+    inference_test!("data/inference/construction.te\
+    st");
+}
+
+#[test]
+fn test_pointer_deref() {
+    inference_test!("data/inference/pointer_deref.test");
 }
