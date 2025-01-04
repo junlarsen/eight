@@ -294,7 +294,8 @@ impl TypingContext {
                 self.infer(&mut e.inner, expected_ty.clone())?;
                 Ok(())
             }
-            _ => Ok(()),
+            HirExpr::UnaryOp(e) => todo!(),
+            HirExpr::BinaryOp(e) => todo!(),
         }
     }
 
@@ -360,7 +361,8 @@ impl TypingContext {
                 self.substitute(&mut e.ty)?;
                 Ok(())
             }
-            _ => Ok(()),
+            HirExpr::UnaryOp(e) => todo!(),
+            HirExpr::BinaryOp(e) => todo!(),
         }
     }
 
@@ -406,7 +408,12 @@ impl TypingContext {
             }
             // Anything else is not a type variable or a constructor type, so there is nothing to
             // be done here.
-            _ => Ok(()),
+            HirTy::Nominal(_) => ice!("nominal type should not be substituted"),
+            HirTy::Integer32(_)
+            | HirTy::Boolean(_)
+            | HirTy::Unit(_)
+            | HirTy::Variable(_)
+            | HirTy::Uninitialized => Ok(()),
         }
     }
 
@@ -437,7 +444,13 @@ impl TypingContext {
                     || t.parameters.iter().any(|p| self.occurs_in(var, p))
             }
             // Non-constructor types cannot possibly occur in other types.
-            _ => false,
+            HirTy::Nominal(_) => ice!("nominal type should not be substituted"),
+            HirTy::Integer32(_)
+            | HirTy::Boolean(_)
+            | HirTy::Unit(_)
+            | HirTy::Uninitialized
+            | HirTy::Pointer(_)
+            | HirTy::Reference(_) => false,
         }
     }
 }
@@ -644,7 +657,8 @@ impl TypeChecker {
             e @ HirExpr::Construct(_) => Self::visit_construct_expr(cx, e),
             e @ HirExpr::AddressOf(_) => Self::visit_address_of_expr(cx, e),
             e @ HirExpr::Deref(_) => Self::visit_deref_expr(cx, e),
-            _ => Ok(()),
+            e @ HirExpr::UnaryOp(_) => todo!(),
+            e @ HirExpr::BinaryOp(_) => todo!(),
         }
     }
 
@@ -792,7 +806,12 @@ impl TypeChecker {
         match node {
             HirStmt::Let(s) => Self::visit_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::visit_expr_stmt(cx, e),
-            _ => Ok(()),
+            HirStmt::Loop(_) => todo!(),
+            HirStmt::Return(_) => todo!(),
+            HirStmt::If(_) => todo!(),
+            HirStmt::Break(_) => todo!(),
+            HirStmt::Continue(_) => todo!(),
+            HirStmt::Block(_) => todo!(),
         }
     }
 

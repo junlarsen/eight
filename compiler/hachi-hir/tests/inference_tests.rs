@@ -43,8 +43,10 @@ fn test_function_calls() {
 
 #[test]
 fn test_construction() {
-    inference_test!("data/inference/construction.te\
-    st");
+    inference_test!(
+        "data/inference/construction.te\
+    st"
+    );
 }
 
 #[test]
