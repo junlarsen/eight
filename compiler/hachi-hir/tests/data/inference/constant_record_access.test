@@ -1,0 +1,7 @@
+type Agent = {
+  name: i32,
+}
+
+fn test(agent: Agent) {
+  let z = agent.name;
+}

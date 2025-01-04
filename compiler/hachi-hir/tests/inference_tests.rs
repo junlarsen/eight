@@ -30,3 +30,8 @@ fn test_chaining_infers_unit() {
 fn test_offset_index_yields_inner() {
     inference_test!("data/inference/offset_index_yields_inner.test");
 }
+
+#[test]
+fn test_constant_record_access() {
+    inference_test!("data/inference/constant_record_access.test");
+}

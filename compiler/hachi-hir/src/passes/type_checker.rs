@@ -8,7 +8,7 @@ use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirReferenceTy, HirTy};
-use crate::HirModule;
+use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
 use hachi_span::Span;
 use std::collections::{BTreeMap, VecDeque};
@@ -16,6 +16,7 @@ use std::collections::{BTreeMap, VecDeque};
 #[derive(Debug)]
 pub enum Constraint {
     Eq(HirTy, HirTy),
+    FieldProjection(HirTy, HirName, HirTy),
 }
 
 #[derive(Debug)]
@@ -61,6 +62,11 @@ impl TypingContext {
         }
     }
 
+    pub fn constrain_field_projection(&mut self, ty: HirTy, field: HirName, inner: HirTy) {
+        self.constraints
+            .push(Constraint::FieldProjection(ty, field, inner))
+    }
+
     pub fn constrain_eq(&mut self, a: HirTy, b: HirTy) {
         self.constraints.push(Constraint::Eq(a, b))
     }
@@ -70,9 +76,110 @@ impl TypingContext {
         for constraint in constraints {
             match constraint {
                 Constraint::Eq(lhs, rhs) => self.unify_eq(lhs, rhs)?,
+                Constraint::FieldProjection(ty, field, inner) => {
+                    self.unify_field_projection(ty, field, inner)?
+                }
             }
         }
         Ok(())
+    }
+
+    /// Perform unification of a field projection.
+    ///
+    /// A field projection constraint requires that the type `ty` is a record type, and that the
+    /// field `field` has type `inner`. This function unifies the two types.
+    pub fn unify_field_projection(
+        &mut self,
+        ty: HirTy,
+        field: HirName,
+        inner: HirTy,
+    ) -> HirResult<()> {
+        match ty {
+            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v.var) => {
+                self.unify_field_projection(self.substitutions[v.var].clone(), field, inner)
+            }
+            HirTy::Nominal(n) => {
+                let ty = self
+                    .records
+                    .get(&n.name.name)
+                    .unwrap_or_else(|| ice!("record type not found"));
+                let Some(field) = ty.fields.get(&field.name) else {
+                    ice!("field not found in record type");
+                };
+                self.unify_eq(field.ty.as_ref().clone(), inner)?;
+                Ok(())
+            }
+            _ => {
+                ice!("field projection constraint on non-record type");
+            }
+        }
+    }
+
+    /// Perform unification of two types.
+    ///
+    /// Unification is the process of determining if two types can be unified into a single type.
+    /// Because we currently do not support subtyping, this is always an equivalence check.
+    pub fn unify_eq(&mut self, lhs: HirTy, rhs: HirTy) -> HirResult<()> {
+        match (&lhs, &rhs) {
+            (HirTy::Variable(lhs), HirTy::Variable(rhs)) if lhs.var == rhs.var => Ok(()),
+            (HirTy::Nominal(a), HirTy::Nominal(b)) if a.name.name == b.name.name => Ok(()),
+            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v.var) => {
+                self.unify_eq(self.substitutions[v.var].clone(), rhs)
+            }
+            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v.var) => {
+                self.unify_eq(lhs, self.substitutions[v.var].clone())
+            }
+            (HirTy::Variable(v), _) => {
+                if self.occurs_in(v.var, &rhs) {
+                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
+                        left: lhs.span().clone(),
+                        right: rhs.span().clone(),
+                    }));
+                }
+                self.substitutions[v.var] = rhs.clone();
+                Ok(())
+            }
+            (_, HirTy::Variable(v)) => {
+                if self.occurs_in(v.var, &lhs) {
+                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
+                        left: lhs.span().clone(),
+                        right: rhs.span().clone(),
+                    }));
+                }
+                self.substitutions[v.var] = lhs.clone();
+                Ok(())
+            }
+            (HirTy::Pointer(a), HirTy::Pointer(b)) => {
+                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
+            }
+            (HirTy::Reference(a), HirTy::Reference(b)) => {
+                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
+            }
+            (HirTy::Integer32(_), HirTy::Integer32(_)) => Ok(()),
+            (HirTy::Boolean(_), HirTy::Boolean(_)) => Ok(()),
+            (HirTy::Unit(_), HirTy::Unit(_)) => Ok(()),
+            (HirTy::Function(a), HirTy::Function(b)) => {
+                if a.parameters.len() != b.parameters.len() {
+                    return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
+                        span: Span::empty(),
+                    }));
+                }
+                self.unify_eq(
+                    a.return_type.as_ref().clone(),
+                    b.return_type.as_ref().clone(),
+                )?;
+                for (a, b) in a.parameters.iter().zip(b.parameters.iter()) {
+                    self.unify_eq(a.as_ref().clone(), b.as_ref().clone())?;
+                }
+                Ok(())
+            }
+            (HirTy::Uninitialized, _) | (_, HirTy::Uninitialized) => {
+                ice!("tried to unify with uninitialized type")
+            }
+            _ => Err(HirError::TypeMismatch(TypeMismatchError {
+                span: Span::empty(),
+            })),
+        }
     }
 
     /// Create a fresh type variable.
@@ -126,6 +233,15 @@ impl TypingContext {
                 let elem_ptr_ty = HirTy::new_ptr(Box::new(expected_ty.clone()), &e.span);
                 self.constrain_eq(e.origin.ty().clone(), elem_ptr_ty);
                 // The resulting type must be the element type
+                self.constrain_eq(expected_ty, e.ty.as_ref().clone());
+                Ok(())
+            }
+            HirExpr::ConstantIndex(e) => {
+                self.constrain_field_projection(
+                    e.origin.ty().clone(),
+                    e.index.clone(),
+                    expected_ty.clone(),
+                );
                 self.constrain_eq(expected_ty, e.ty.as_ref().clone());
                 Ok(())
             }
@@ -255,73 +371,6 @@ impl TypingContext {
             }
             // Non-constructor types cannot possibly occur in other types.
             _ => false,
-        }
-    }
-
-    /// Perform unification of two types.
-    ///
-    /// Unification is the process of determining if two types can be unified into a single type.
-    /// Because we currently do not support subtyping, this is always an equivalence check.
-    pub fn unify_eq(&mut self, lhs: HirTy, rhs: HirTy) -> HirResult<()> {
-        match (&lhs, &rhs) {
-            (HirTy::Variable(lhs), HirTy::Variable(rhs)) if lhs.var == rhs.var => Ok(()),
-            (HirTy::Nominal(a), HirTy::Nominal(b)) if a.name.name == b.name.name => Ok(()),
-            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v.var) => {
-                self.unify_eq(self.substitutions[v.var].clone(), rhs)
-            }
-            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v.var) => {
-                self.unify_eq(lhs, self.substitutions[v.var].clone())
-            }
-            (HirTy::Variable(v), _) => {
-                if self.occurs_in(v.var, &rhs) {
-                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: lhs.span().clone(),
-                        right: rhs.span().clone(),
-                    }));
-                }
-                self.substitutions[v.var] = rhs.clone();
-                Ok(())
-            }
-            (_, HirTy::Variable(v)) => {
-                if self.occurs_in(v.var, &lhs) {
-                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: lhs.span().clone(),
-                        right: rhs.span().clone(),
-                    }));
-                }
-                self.substitutions[v.var] = lhs.clone();
-                Ok(())
-            }
-            (HirTy::Pointer(a), HirTy::Pointer(b)) => {
-                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
-            }
-            (HirTy::Reference(a), HirTy::Reference(b)) => {
-                self.unify_eq(a.inner.as_ref().clone(), b.inner.as_ref().clone())
-            }
-            (HirTy::Integer32(_), HirTy::Integer32(_)) => Ok(()),
-            (HirTy::Boolean(_), HirTy::Boolean(_)) => Ok(()),
-            (HirTy::Unit(_), HirTy::Unit(_)) => Ok(()),
-            (HirTy::Function(a), HirTy::Function(b)) => {
-                if a.parameters.len() != b.parameters.len() {
-                    return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
-                        span: Span::empty(),
-                    }));
-                }
-                self.unify_eq(
-                    a.return_type.as_ref().clone(),
-                    b.return_type.as_ref().clone(),
-                )?;
-                for (a, b) in a.parameters.iter().zip(b.parameters.iter()) {
-                    self.unify_eq(a.as_ref().clone(), b.as_ref().clone())?;
-                }
-                Ok(())
-            }
-            (HirTy::Uninitialized, _) | (_, HirTy::Uninitialized) => {
-                ice!("tried to unify with uninitialized type")
-            }
-            _ => Err(HirError::TypeMismatch(TypeMismatchError {
-                span: Span::empty(),
-            })),
         }
     }
 }
@@ -523,6 +572,7 @@ impl TypeChecker {
             e @ HirExpr::Reference(_) => Self::visit_reference_expr(cx, e),
             e @ HirExpr::Assign(_) => Self::visit_assign_expr(cx, e),
             e @ HirExpr::OffsetIndex(_) => Self::visit_offset_index_expr(cx, e),
+            e @ HirExpr::ConstantIndex(_) => Self::visit_constant_index_expr(cx, e),
             _ => Ok(()),
         }
     }
@@ -605,6 +655,16 @@ impl TypeChecker {
         Self::visit_type(cx, &mut e.ty)?;
         Self::visit_expr(cx, &mut e.origin)?;
         Self::visit_expr(cx, &mut e.index)?;
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
+    pub fn visit_constant_index_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::ConstantIndex(e) = node else {
+            ice!("visit_constant_index_expr called with non-constant index expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        Self::visit_expr(cx, &mut e.origin)?;
         cx.infer(node, node.ty().clone())?;
         Ok(())
     }
