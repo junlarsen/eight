@@ -1,0 +1,21 @@
+---
+source: compiler/hachi-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module types
+  
+  
+  // module functions
+  fn bar<>(x: i32) -> i32 {
+    return k::_;
+  }
+  fn foo<>() -> unit {
+    let k: i32 = bar::fn((i32))->i32::<>(123::i32)::i32;
+    let z: i32 = generic::fn((i32))->i32::<>(k::i32)::i32;
+  }
+  fn generic<$0>(x: $0) -> $0 {
+    return x::_;
+  }
+}

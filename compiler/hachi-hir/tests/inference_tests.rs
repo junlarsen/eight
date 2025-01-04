@@ -35,3 +35,13 @@ fn test_offset_index_yields_inner() {
 fn test_constant_record_access() {
     inference_test!("data/inference/constant_record_access.test");
 }
+
+#[test]
+fn test_function_calls() {
+    inference_test!("data/inference/function_calls.test");
+}
+
+#[test]
+fn test_construction() {
+    inference_test!("data/inference/construction.test");
+}

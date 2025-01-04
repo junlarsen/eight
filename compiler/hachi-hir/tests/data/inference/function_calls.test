@@ -1,0 +1,12 @@
+fn bar(x: i32) -> i32 {
+  return k;
+}
+
+fn generic<T>(x: T) -> T {
+  return x;
+}
+
+fn foo() {
+  let k = bar(123);
+  let z = generic(k);
+}

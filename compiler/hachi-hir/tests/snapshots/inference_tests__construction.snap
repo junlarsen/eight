@@ -1,0 +1,21 @@
+---
+source: compiler/hachi-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module types
+  type Vec2 = {
+    x: i32,
+    y: i32,
+  }
+  
+  // module functions
+  fn origin<>() -> Vec2 {
+    let v: Vec2 = new Vec2 {
+      x: 0::i32,
+      y: 0::i32,
+    }::Vec2;
+    return v::_;
+  }
+}

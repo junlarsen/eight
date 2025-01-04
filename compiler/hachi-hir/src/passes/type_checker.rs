@@ -3,7 +3,7 @@ use crate::error::{
     FunctionTypeMismatchError, HirError, HirResult, InvalidReferenceError,
     SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
 };
-use crate::expr::HirExpr;
+use crate::expr::{HirConstructExprArgument, HirExpr};
 use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
@@ -245,6 +245,36 @@ impl TypingContext {
                 self.constrain_eq(expected_ty, e.ty.as_ref().clone());
                 Ok(())
             }
+            HirExpr::Call(e) => {
+                let expected_args = e
+                    .arguments
+                    .iter()
+                    .map(|a| Box::new(a.ty().clone()))
+                    .collect::<Vec<_>>();
+                let expected_signature =
+                    HirTy::new_fun(Box::new(expected_ty.clone()), expected_args, &e.span);
+                self.unify_eq(e.callee.ty().clone(), expected_signature)?;
+                self.unify_eq(e.ty.as_ref().clone(), expected_ty)?;
+                Ok(())
+            }
+            HirExpr::Construct(e) => {
+                let HirTy::Nominal(n) = e.callee.as_ref() else {
+                    ice!("construct expression callee is not a nominal type");
+                };
+                let ty = self
+                    .records
+                    .get(&n.name.name)
+                    .unwrap_or_else(|| ice!("record type not found"))
+                    .clone();
+                // TODO: Check that the number of arguments matches the number of fields
+                let pairs = ty.fields.iter().zip(e.arguments.iter()).collect::<Vec<_>>();
+                for ((_, expected_ty), arg) in pairs {
+                    self.unify_eq(arg.expr.ty().clone(), expected_ty.ty.as_ref().clone())?;
+                }
+                self.unify_eq(e.ty.as_ref().clone(), e.callee.as_ref().clone())?;
+                self.unify_eq(e.ty.as_ref().clone(), expected_ty)?;
+                Ok(())
+            }
             // Grouping expressions take the type of the inner expression
             HirExpr::Group(e) => {
                 self.infer(&mut e.inner, expected_ty.clone())?;
@@ -283,6 +313,21 @@ impl TypingContext {
             }
             HirExpr::ConstantIndex(e) => {
                 self.substitute_expr(&mut e.origin)?;
+                self.substitute(&mut e.ty)?;
+                Ok(())
+            }
+            HirExpr::Call(e) => {
+                self.substitute_expr(&mut e.callee)?;
+                for arg in e.arguments.iter_mut() {
+                    self.substitute_expr(arg)?;
+                }
+                self.substitute(&mut e.ty)?;
+                Ok(())
+            }
+            HirExpr::Construct(e) => {
+                for arg in e.arguments.iter_mut() {
+                    self.substitute_expr(arg.expr.as_mut())?;
+                }
                 self.substitute(&mut e.ty)?;
                 Ok(())
             }
@@ -361,7 +406,7 @@ impl TypingContext {
     pub fn occurs_in(&self, var: usize, ty: &HirTy) -> bool {
         match ty {
             // If the variable points to a substitution of itself, it occurs in itself
-            HirTy::Variable(v) if self.is_substitution_equal_to_self(v.var) => true,
+            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v.var) => true,
             HirTy::Variable(v) => v.var == var,
             HirTy::Pointer(t) => self.occurs_in(var, &t.inner),
             HirTy::Reference(t) => self.occurs_in(var, &t.inner),
@@ -573,6 +618,8 @@ impl TypeChecker {
             e @ HirExpr::Assign(_) => Self::visit_assign_expr(cx, e),
             e @ HirExpr::OffsetIndex(_) => Self::visit_offset_index_expr(cx, e),
             e @ HirExpr::ConstantIndex(_) => Self::visit_constant_index_expr(cx, e),
+            e @ HirExpr::Call(_) => Self::visit_call_expr(cx, e),
+            e @ HirExpr::Construct(_) => Self::visit_construct_expr(cx, e),
             _ => Ok(()),
         }
     }
@@ -665,6 +712,33 @@ impl TypeChecker {
         };
         Self::visit_type(cx, &mut e.ty)?;
         Self::visit_expr(cx, &mut e.origin)?;
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
+    pub fn visit_call_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::Call(e) = node else {
+            ice!("visit_call_expr called with non-call expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        Self::visit_expr(cx, &mut e.callee)?;
+        for arg in e.arguments.iter_mut() {
+            Self::visit_expr(cx, arg)?;
+        }
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
+    pub fn visit_construct_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::Construct(e) = node else {
+            ice!("visit_construct_expr called with non-construct expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        for arg in e.arguments.iter_mut() {
+            Self::visit_expr(cx, arg.expr.as_mut())?;
+            let ty = arg.expr.ty().clone();
+            cx.infer(arg.expr.as_mut(), ty)?;
+        }
         cx.infer(node, node.ty().clone())?;
         Ok(())
     }

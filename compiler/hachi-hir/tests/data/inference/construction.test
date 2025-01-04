@@ -1,0 +1,13 @@
+type Vec2 = {
+  x: i32,
+  y: i32,
+}
+
+fn origin() -> Vec2 {
+  let v = new Vec2 {
+    x: 0,
+    y: 0,
+  };
+
+  return v;
+}
