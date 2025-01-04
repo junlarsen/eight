@@ -35,7 +35,7 @@ pub struct UnknownTypeError {
 #[error("invalid reference to {name}")]
 pub struct InvalidReferenceError {
     pub name: String,
-    #[label = "could not find value named {name}"]
+    #[label = "no value in scope named {name}"]
     pub span: Span,
 }
 

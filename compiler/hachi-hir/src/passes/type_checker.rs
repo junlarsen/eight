@@ -205,8 +205,8 @@ impl TypingContext {
             (HirTy::Variable(v), _) => {
                 if self.occurs_in(v.var, &actual) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: Span::empty(),
-                        right: Span::empty(),
+                        left: actual_loc,
+                        right: expected_loc,
                     }));
                 }
                 self.substitutions[v.var] = actual.clone();
@@ -215,8 +215,8 @@ impl TypingContext {
             (_, HirTy::Variable(v)) => {
                 if self.occurs_in(v.var, &expected) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: Span::empty(),
-                        right: Span::empty(),
+                        left: expected_loc,
+                        right: actual_loc,
                     }));
                 }
                 self.substitutions[v.var] = expected.clone();
@@ -238,7 +238,7 @@ impl TypingContext {
                 if definition.parameters.len() != application.parameters.len() {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
                         expected_ty: application.clone(),
-                        span: Span::empty(),
+                        span: expected_loc,
                     }));
                 }
                 let constraint = EqualityConstraint {
@@ -267,8 +267,8 @@ impl TypingContext {
                 ice!("tried to unify with uninitialized type")
             }
             (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
-                actual_loc: Span::empty(),
-                expected_loc: Span::empty(),
+                actual_loc,
+                expected_loc,
                 actual_type: rhs.clone(),
                 expected_type: lhs.clone(),
             })),
