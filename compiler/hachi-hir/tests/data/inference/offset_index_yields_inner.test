@@ -1,0 +1,4 @@
+fn test(v: *i32) {
+  let k = v[0];
+  let q = v[k];
+}

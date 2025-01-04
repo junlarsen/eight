@@ -108,20 +108,30 @@ impl TypingContext {
             }
             // If is a named type, we find the type in the local context, or throw a type reference
             // error if it doesn't exist.
-            HirExpr::Reference(r) => {
+            HirExpr::Reference(e) => {
                 let ty = self
                     .locals
-                    .find(&r.name.name)
+                    .find(&e.name.name)
                     .ok_or(HirError::InvalidReference(InvalidReferenceError {
-                        name: r.name.name.to_owned(),
-                        span: r.span.clone(),
+                        name: e.name.name.to_owned(),
+                        span: e.span.clone(),
                     }))?;
                 self.constrain_eq(expected_ty, ty.clone());
                 Ok(())
             }
+            HirExpr::OffsetIndex(e) => {
+                // The index must be an integer type
+                self.constrain_eq(e.index.ty().clone(), self.get_integer32_type());
+                // The origin must be a pointer of the element type
+                let elem_ptr_ty = HirTy::new_ptr(Box::new(expected_ty.clone()), &e.span);
+                self.constrain_eq(e.origin.ty().clone(), elem_ptr_ty);
+                // The resulting type must be the element type
+                self.constrain_eq(expected_ty, e.ty.as_ref().clone());
+                Ok(())
+            }
             // Grouping expressions take the type of the inner expression
-            HirExpr::Group(g) => {
-                self.infer(&mut g.inner, expected_ty.clone())?;
+            HirExpr::Group(e) => {
+                self.infer(&mut e.inner, expected_ty.clone())?;
                 Ok(())
             }
             _ => Ok(()),
@@ -146,6 +156,17 @@ impl TypingContext {
             HirExpr::Assign(e) => {
                 self.substitute_expr(&mut e.lhs)?;
                 self.substitute_expr(&mut e.rhs)?;
+                self.substitute(&mut e.ty)?;
+                Ok(())
+            }
+            HirExpr::OffsetIndex(e) => {
+                self.substitute_expr(&mut e.origin)?;
+                self.substitute_expr(&mut e.index)?;
+                self.substitute(&mut e.ty)?;
+                Ok(())
+            }
+            HirExpr::ConstantIndex(e) => {
+                self.substitute_expr(&mut e.origin)?;
                 self.substitute(&mut e.ty)?;
                 Ok(())
             }
@@ -501,6 +522,7 @@ impl TypeChecker {
             e @ HirExpr::Group(_) => Self::visit_group_expr(cx, e),
             e @ HirExpr::Reference(_) => Self::visit_reference_expr(cx, e),
             e @ HirExpr::Assign(_) => Self::visit_assign_expr(cx, e),
+            e @ HirExpr::OffsetIndex(_) => Self::visit_offset_index_expr(cx, e),
             _ => Ok(()),
         }
     }
@@ -572,6 +594,17 @@ impl TypeChecker {
         Self::visit_type(cx, &mut e.ty)?;
         Self::visit_expr(cx, &mut e.lhs)?;
         Self::visit_expr(cx, &mut e.rhs)?;
+        cx.infer(node, node.ty().clone())?;
+        Ok(())
+    }
+
+    pub fn visit_offset_index_expr(cx: &mut TypingContext, node: &mut HirExpr) -> HirResult<()> {
+        let HirExpr::OffsetIndex(e) = node else {
+            ice!("visit_offset_index_expr called with non-offset index expression");
+        };
+        Self::visit_type(cx, &mut e.ty)?;
+        Self::visit_expr(cx, &mut e.origin)?;
+        Self::visit_expr(cx, &mut e.index)?;
         cx.infer(node, node.ty().clone())?;
         Ok(())
     }
