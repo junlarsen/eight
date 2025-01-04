@@ -1,0 +1,20 @@
+[package]
+name = "hachi-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hachi-diagnostics = { path = "../hachi-diagnostics" }
+hachi-macros = { path = "../hachi-macros" }
+hachi-span = { path = "../hachi-span" }
+hachi-syntax = { path = "../hachi-syntax" }
+hachi-hir = { path = "../hachi-hir" }
+hachi-mir = { path = "../hachi-mir" }
+miette = { workspace = true }
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+hachi-macros = { path = "../hachi-macros", features = ["assertion-macros"] }
+insta = { workspace = true }
+insta-cmd = { workspace = true }
+ron = { workspace = true }
