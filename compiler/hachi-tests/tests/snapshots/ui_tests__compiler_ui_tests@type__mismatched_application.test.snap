@@ -15,10 +15,10 @@ exit_code: 1
 Error: sema::function_type_mismatch
 
   × function types do not take the same number of arguments
-    ╭─[tests/ui/type/mismatched_application.test:10:10]
+    ╭─[tests/ui/type/mismatched_application.test:10:11]
   9 │ fn test() {
  10 │   let k = apply_to_me(123);
-    ·          ─────┬─────
-    ·               ╰── the function has type fn(i32, bool) -> i32
+    ·           ─────┬─────
+    ·                ╰── the function has type fn(i32, bool) -> i32
  11 │ }
     ╰────

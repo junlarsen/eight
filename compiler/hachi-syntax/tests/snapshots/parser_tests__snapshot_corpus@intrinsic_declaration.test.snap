@@ -15,7 +15,7 @@ TranslationUnit(
       id: NodeId(11),
       span: Span(
         low: 0,
-        high: 39,
+        high: 40,
       ),
       name: Identifier(
         id: NodeId(1),
@@ -69,21 +69,21 @@ TranslationUnit(
       return_type: Pointer(PointerType(
         id: NodeId(10),
         span: Span(
-          low: 36,
-          high: 38,
+          low: 37,
+          high: 39,
         ),
         inner: Named(NamedType(
           id: NodeId(9),
           span: Span(
-            low: 37,
-            high: 38,
+            low: 38,
+            high: 39,
           ),
           name: Identifier(
             id: NodeId(8),
             name: "T",
             span: Span(
-              low: 37,
-              high: 38,
+              low: 38,
+              high: 39,
             ),
           ),
         )),

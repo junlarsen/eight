@@ -112,11 +112,11 @@ impl<'a> Parser<'a> {
     /// As indicated by the name, this function fails the parser if the lexer cannot produce a
     /// next token.
     pub fn lookahead_or_err(&mut self) -> ParseResult<&Token> {
-        let span = Span::pos(self.input.lexer.pos());
+        let pos = self.input.lexer.pos();
         self.input
             .lookahead()?
             .ok_or(ParseError::UnexpectedEndOfFile(UnexpectedEndOfFileError {
-                span,
+                span: Span::new(pos..pos),
             }))
     }
 
@@ -1238,6 +1238,7 @@ mod tests {
     fn test_parse_named_type() {
         let prod = assert_parse("Matrix", |p| p.parse_type());
         let prod = assert_ok!(prod);
+        assert_eq!(prod.span(), &Span::new(0..6));
         assert!(matches!(*prod, Type::Named(inner) if inner.name.name == "Matrix"));
     }
 
@@ -1332,7 +1333,7 @@ mod tests {
 
     #[test]
     fn test_parse_fn_item() {
-        let prod = assert_parse("fn x(y: i32) -> i32 {}", |p| p.parse_fn_item());
+        let prod = assert_parse("fn x(x: i32) -> i32 {}", |p| p.parse_fn_item());
         let prod = assert_ok!(prod);
 
         let name = prod.name.as_ref();
@@ -1527,6 +1528,10 @@ mod tests {
             let name = inner.as_ref().name.as_ref();
             assert!(matches!(name, Identifier { name, .. } if name == "x"));
         };
+
+        let prod = assert_parse("  x  ", |p| p.parse_expr());
+        let prod = assert_ok!(prod);
+        assert_eq!(prod.span(), &Span::new(2..3));
     }
 
     #[test]

@@ -14,9 +14,11 @@ exit_code: 1
 ----- stderr -----
 Error: sema::unknown_type
 
-  × Everything does not name a known type
-   ╭─[tests/ui/type/unknown_type_reference.test:1:13]
- 1 │ fn test() -> Everything {}
-   ·             ─────┬────
-   ·                  ╰── could not find type Everything
+  × Unknown does not name a known type
+   ╭─[tests/ui/type/unknown_type_reference.test:2:10]
+ 1 │ fn test() {
+ 2 │   let k: Unknown = 123;
+   ·          ───┬───
+   ·             ╰── could not find type Unknown
+ 3 │ }
    ╰────

@@ -62,8 +62,10 @@ impl<'a> LexerInput<'a> {
         }))?;
         match ch {
             c if *c == expected => {
-                self.input.next();
-                Ok(Token::new(production, Span::new(start..self.pos + 1)))
+                self.next().unwrap_or_else(|_| {
+                    ice!("lexer should never fail to produce an already peeked token")
+                });
+                Ok(Token::new(production, Span::new(start..self.pos)))
             }
             _ => Err(ParseError::from(UnexpectedCharacterError {
                 ch: *ch,
@@ -90,10 +92,10 @@ impl<'a> LexerInput<'a> {
         match self.peek() {
             Some(ch) => match f(ch) {
                 Some(typ) => {
-                    self.input.next().unwrap_or_else(|| {
+                    self.next().unwrap_or_else(|_| {
                         ice!("lexer should never fail to produce an already peeked token")
                     });
-                    Ok(Token::new(typ, Span::new(start..self.pos + 1)))
+                    Ok(Token::new(typ, Span::new(start..self.pos)))
                 }
                 None => Ok(Token::new(default, Span::pos(start))),
             },
@@ -120,74 +122,84 @@ impl<'a> Lexer<'a> {
 
     /// Produce the next token from the input stream
     pub fn produce(&mut self) -> ParseResult<Token> {
-        let pos = self.pos();
+        let pos_before_eat = self.pos();
         let ch = self.input.next()?;
         match ch {
             '0'..='9' => self.produce_integer_literal(ch),
             'a'..='z' | 'A'..='Z' | '_' => self.produce_keyword_or_identifier(ch),
             // Single-character operators
-            '.' => Ok(Token::new(TokenType::Dot, Span::pos(pos))),
-            ';' => Ok(Token::new(TokenType::Semicolon, Span::pos(pos))),
-            ',' => Ok(Token::new(TokenType::Comma, Span::pos(pos))),
-            '+' => Ok(Token::new(TokenType::Plus, Span::pos(pos))),
-            '*' => Ok(Token::new(TokenType::Star, Span::pos(pos))),
-            '/' => Ok(Token::new(TokenType::Slash, Span::pos(pos))),
-            '%' => Ok(Token::new(TokenType::Percent, Span::pos(pos))),
+            '.' => Ok(Token::new(TokenType::Dot, Span::pos(pos_before_eat))),
+            ';' => Ok(Token::new(TokenType::Semicolon, Span::pos(pos_before_eat))),
+            ',' => Ok(Token::new(TokenType::Comma, Span::pos(pos_before_eat))),
+            '+' => Ok(Token::new(TokenType::Plus, Span::pos(pos_before_eat))),
+            '*' => Ok(Token::new(TokenType::Star, Span::pos(pos_before_eat))),
+            '/' => Ok(Token::new(TokenType::Slash, Span::pos(pos_before_eat))),
+            '%' => Ok(Token::new(TokenType::Percent, Span::pos(pos_before_eat))),
             // Double-character operations
             '=' => self
                 .input
-                .select_peek(TokenType::Equal, pos, |ch| match ch {
+                .select_peek(TokenType::Equal, pos_before_eat, |ch| match ch {
                     '=' => Some(TokenType::EqualEqual),
                     _ => None,
                 }),
             '<' => self
                 .input
-                .select_peek(TokenType::OpenAngle, pos, |ch| match ch {
+                .select_peek(TokenType::OpenAngle, pos_before_eat, |ch| match ch {
                     '=' => Some(TokenType::LessThanEqual),
                     _ => None,
                 }),
             '>' => self
                 .input
-                .select_peek(TokenType::CloseAngle, pos, |ch| match ch {
+                .select_peek(TokenType::CloseAngle, pos_before_eat, |ch| match ch {
                     '=' => Some(TokenType::GreaterThanEqual),
                     _ => None,
                 }),
-            '!' => self.input.select_peek(TokenType::Bang, pos, |ch| match ch {
-                '=' => Some(TokenType::BangEqual),
-                _ => None,
-            }),
+            '!' => self
+                .input
+                .select_peek(TokenType::Bang, pos_before_eat, |ch| match ch {
+                    '=' => Some(TokenType::BangEqual),
+                    _ => None,
+                }),
             ':' => self
                 .input
-                .select_peek(TokenType::Colon, pos, |ch| match ch {
+                .select_peek(TokenType::Colon, pos_before_eat, |ch| match ch {
                     ':' => Some(TokenType::ColonColon),
                     _ => None,
                 }),
             '-' => self
                 .input
-                .select_peek(TokenType::Minus, pos, |ch| match ch {
+                .select_peek(TokenType::Minus, pos_before_eat, |ch| match ch {
                     '>' => Some(TokenType::Arrow),
                     _ => None,
                 }),
             '&' => self
                 .input
-                .select_peek(TokenType::AddressOf, pos, |ch| match ch {
+                .select_peek(TokenType::AddressOf, pos_before_eat, |ch| match ch {
                     '&' => Some(TokenType::LogicalAnd),
                     _ => None,
                 }),
-            '|' => self.input.expect_peek('|', pos, TokenType::LogicalOr),
+            '|' => self
+                .input
+                .expect_peek('|', pos_before_eat, TokenType::LogicalOr),
             // Bracket pairs
-            '(' => Ok(Token::new(TokenType::OpenParen, Span::pos(pos))),
-            ')' => Ok(Token::new(TokenType::CloseParen, Span::pos(pos))),
-            '[' => Ok(Token::new(TokenType::OpenBracket, Span::pos(pos))),
-            ']' => Ok(Token::new(TokenType::CloseBracket, Span::pos(pos))),
-            '{' => Ok(Token::new(TokenType::OpenBrace, Span::pos(pos))),
-            '}' => Ok(Token::new(TokenType::CloseBrace, Span::pos(pos))),
+            '(' => Ok(Token::new(TokenType::OpenParen, Span::pos(pos_before_eat))),
+            ')' => Ok(Token::new(TokenType::CloseParen, Span::pos(pos_before_eat))),
+            '[' => Ok(Token::new(
+                TokenType::OpenBracket,
+                Span::pos(pos_before_eat),
+            )),
+            ']' => Ok(Token::new(
+                TokenType::CloseBracket,
+                Span::pos(pos_before_eat),
+            )),
+            '{' => Ok(Token::new(TokenType::OpenBrace, Span::pos(pos_before_eat))),
+            '}' => Ok(Token::new(TokenType::CloseBrace, Span::pos(pos_before_eat))),
             // Whitespace is consumed and ignored by the lexer.
             ' ' | '\t' | '\n' | '\r' => self.produce(),
             // Anything else is an obvious error
             unrecognized_char => Err(ParseError::from(UnexpectedCharacterError {
                 ch: unrecognized_char,
-                span: Span::pos(pos),
+                span: Span::pos(pos_before_eat),
             })),
         }
     }
@@ -376,6 +388,26 @@ mod tests {
             Token::new(TokenType::Colon, Span::new(2..3))
         );
         assert_lexer_parse!("->", Token::new(TokenType::Arrow, Span::new(0..2)));
+        assert_lexer_parse!(
+            "-> x",
+            Token::new(TokenType::Arrow, Span::new(0..2)),
+            Token::new(TokenType::Identifier("x".to_string()), Span::new(3..4))
+        );
+        assert_lexer_parse!(
+            "- x",
+            Token::new(TokenType::Minus, Span::new(0..1)),
+            Token::new(TokenType::Identifier("x".to_string()), Span::new(2..3))
+        );
+        assert_lexer_parse!(
+            "&& -",
+            Token::new(TokenType::LogicalAnd, Span::new(0..2)),
+            Token::new(TokenType::Minus, Span::new(3..4))
+        );
+        assert_lexer_parse!(
+            "x   x",
+            Token::new(TokenType::Identifier("x".to_string()), Span::new(0..1)),
+            Token::new(TokenType::Identifier("x".to_string()), Span::new(4..5))
+        );
     }
 
     #[test]

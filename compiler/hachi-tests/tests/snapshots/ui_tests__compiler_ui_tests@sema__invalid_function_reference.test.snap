@@ -19,6 +19,6 @@ Error: sema::invalid_reference
  1 │ fn test() {
  2 │   let z = tell_the_world_im_coming_home();
    ·           ──────────────┬──────────────
-   ·                         ╰── could not find value named tell_the_world_im_coming_home
+   ·                         ╰── no value in scope named tell_the_world_im_coming_home
  3 │ }
    ╰────

@@ -15,9 +15,7 @@ exit_code: 1
 Error: syntax::unexpected_end_of_file
 
   × expected more characters after this
-   ╭─[tests/ui/syntax/trivial/unexpected_end_of_file.test:1:13]
+   ╭─[tests/ui/syntax/trivial/unexpected_end_of_file.test:1:14]
  1 │ fn foo() -> *
-   ·             ┬
-   ·             ╰── required more input to parse
    ╰────
   help: add more input to form a valid program

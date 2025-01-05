@@ -19,6 +19,6 @@ Error: sema::invalid_reference
  1 │ fn foo() {
  2 │   let k = undefined;
    ·           ────┬────
-   ·               ╰── could not find value named undefined
+   ·               ╰── no value in scope named undefined
  3 │ }
    ╰────
