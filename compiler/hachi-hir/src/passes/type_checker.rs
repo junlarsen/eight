@@ -1,8 +1,5 @@
 use crate::context::LocalContext;
-use crate::error::{
-    FunctionTypeMismatchError, HirError, HirResult, InvalidReferenceError,
-    SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
-};
+use crate::error::{FunctionTypeMismatchError, HirError, HirResult, InvalidReferenceError, InvalidStructFieldReferenceError, SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError};
 use crate::expr::HirExpr;
 use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
@@ -151,7 +148,11 @@ impl TypingContext {
                     .get(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"));
                 let Some(record_field) = ty.fields.get(&field.name) else {
-                    ice!("field not found in record type");
+                    return Err(HirError::InvalidStructFieldReference(InvalidStructFieldReferenceError {
+                        type_name: n.name.name.to_owned(),
+                        name: field.name.to_owned(),
+                        span: field.span.clone(),
+                    }));
                 };
                 let constraint = EqualityConstraint {
                     expected: record_field.r#type.as_ref().clone(),

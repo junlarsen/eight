@@ -15,6 +15,7 @@ declare_error_type! {
         TypeMismatch(TypeMismatchError),
         FunctionTypeMismatch(FunctionTypeMismatchError),
         SelfReferentialType(SelfReferentialTypeError),
+        InvalidStructFieldReference(InvalidStructFieldReferenceError),
     }
 }
 
@@ -94,4 +95,14 @@ pub struct SelfReferentialTypeError {
     pub left: Span,
     #[label = "this type refers to itself"]
     pub right: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::invalid_struct_field_reference))]
+#[error("invalid field reference to {name} in type {type_name}")]
+pub struct InvalidStructFieldReferenceError {
+    pub type_name: String,
+    pub name: String,
+    #[label = "unknown field {name}"]
+    pub span: Span,
 }
