@@ -8,6 +8,7 @@ path = "src/bin/hcc.rs"
 name = "hcc"
 
 [dependencies]
+bumpalo = { workspace = true }
 clap = { version = "4.5.23", features = ["derive"] }
 miette = { workspace = true, features = ["fancy"] }
 ron = { workspace = true }

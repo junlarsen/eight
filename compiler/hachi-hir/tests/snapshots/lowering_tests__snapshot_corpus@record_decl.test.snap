@@ -5,6 +5,14 @@ input_file: compiler/hachi-hir/tests/data/lowering/record_decl.test
 snapshot_kind: text
 ---
 module {
+  // module intrinsic scalar types
+  intrinsic_scalar bool;
+  intrinsic_scalar i32;
+  intrinsic_scalar unit;
+  
+  // module intrinsic functions
+  
+  
   // module types
   type Node = {
     next: *Node,
@@ -12,22 +20,22 @@ module {
   }
   
   // module functions
-  fn append<>(node: Node, value: i32) -> unit {
+  fn append(node: Node, value: i32) -> unit {
     {
-      let curr: _ = node::_;
-      while (curr::_.next::_ != 0::_::_) {
-        curr::_ = curr::_.next::_::_;
+      let curr: _ = (node as _);
+      while ((((curr as _).next as _) != (0 as _) as _)) {
+        ((curr as _) = ((curr as _).next as _) as _);
       }
     }
-    let node: _ = malloc::_::<Node>(8::_ + 4::_::_)::_;
-    node::_.value::_ = value::_::_;
-    node::_.next::_ = 0::_::_;
-    curr::_.next::_ = node::_::_;
+    let node: _ = ((malloc as _)::<Node>(((8 as _) + (4 as _) as _)) as _);
+    (((node as _).value as _) = (value as _) as _);
+    (((node as _).next as _) = (0 as _) as _);
+    (((curr as _).next as _) = (node as _) as _);
   }
-  fn prepend<>(node: Node, value: i32) -> Node {
-    return new Node {
-      value: value::_,
-      next: node::_,
-    }::_;
+  fn prepend(node: Node, value: i32) -> Node {
+    return (new Node {
+      value: (value as _),
+      next: (node as _),
+    } as _);
   }
 }

@@ -1,5 +1,5 @@
 use crate::stmt::HirStmt;
-use crate::ty::{HirFunctionTy, HirTy};
+use crate::ty::HirTy;
 use crate::HirName;
 use hachi_span::Span;
 
@@ -12,84 +12,64 @@ use hachi_span::Span;
 /// only store the types and parameters.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct HirFunctionSignature {
+pub struct HirFunctionSignature<'ta> {
     pub span: Span,
     pub type_parameters: Vec<HirFunctionTypeParameter>,
-    pub parameters: Vec<HirFunctionParameter>,
-    pub return_type: HirTy,
-}
-
-impl From<&HirFunction> for HirFunctionSignature {
-    fn from(fun: &HirFunction) -> Self {
-        Self {
-            span: fun.span.clone(),
-            type_parameters: fun
-                .type_parameters
-                .iter()
-                .map(|p| p.as_ref().clone())
-                .collect(),
-            parameters: fun.parameters.iter().map(|p| p.as_ref().clone()).collect(),
-            return_type: fun.return_type.as_ref().clone(),
-        }
-    }
-}
-
-impl From<&HirIntrinsicFunction> for HirFunctionSignature {
-    fn from(fun: &HirIntrinsicFunction) -> Self {
-        Self {
-            span: fun.span.clone(),
-            type_parameters: fun
-                .type_parameters
-                .iter()
-                .map(|p| p.as_ref().clone())
-                .collect(),
-            parameters: fun.parameters.iter().map(|p| p.as_ref().clone()).collect(),
-            return_type: fun.return_type.as_ref().clone(),
-        }
-    }
+    pub parameters: Vec<HirFunctionParameter<'ta>>,
+    pub return_type: &'ta HirTy<'ta>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirFunction {
+pub struct HirFunction<'ta> {
     /// Span encapsulating the entire function definition.
     pub span: Span,
     pub name: HirName,
-    pub type_parameters: Vec<Box<HirFunctionTypeParameter>>,
-    pub parameters: Vec<Box<HirFunctionParameter>>,
-    pub return_type: Box<HirTy>,
+    pub type_parameters: Vec<HirFunctionTypeParameter>,
+    pub parameters: Vec<HirFunctionParameter<'ta>>,
+    pub return_type: &'ta HirTy<'ta>,
     pub return_type_annotation: Option<Span>,
-    pub body: Vec<Box<HirStmt>>,
+    pub body: Vec<HirStmt<'ta>>,
 }
 
-impl HirFunction {
-    pub fn get_type(&self) -> HirFunctionTy {
-        HirFunctionTy {
-            return_type: self.return_type.clone(),
-            parameters: self.parameters.iter().map(|p| p.r#type.clone()).collect(),
+impl<'ta> HirFunction<'ta> {
+    pub fn signature(&self) -> HirFunctionSignature<'ta> {
+        let type_parameters = self.type_parameters.clone();
+        let parameters = self.parameters.clone();
+        let return_type = self.return_type;
+        HirFunctionSignature {
+            span: self.span.clone(),
+            type_parameters,
+            parameters,
+            return_type,
+        }
+    }
+}
+
+impl<'ta> HirIntrinsicFunction<'ta> {
+    pub fn signature(&self) -> HirFunctionSignature<'ta> {
+        let type_parameters = self.type_parameters.clone();
+        let parameters = self.parameters.clone();
+        let return_type = self.return_type;
+        HirFunctionSignature {
+            span: self.span.clone(),
+            type_parameters,
+            parameters,
+            return_type,
         }
     }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirIntrinsicFunction {
+pub struct HirIntrinsicFunction<'ta> {
     /// Span encapsulating the entire function definition.
     pub span: Span,
     pub name: HirName,
-    pub type_parameters: Vec<Box<HirFunctionTypeParameter>>,
-    pub parameters: Vec<Box<HirFunctionParameter>>,
-    pub return_type: Box<HirTy>,
+    pub type_parameters: Vec<HirFunctionTypeParameter>,
+    pub parameters: Vec<HirFunctionParameter<'ta>>,
+    pub return_type: &'ta HirTy<'ta>,
     pub return_type_annotation: Span,
-}
-
-impl HirIntrinsicFunction {
-    pub fn get_type(&self) -> HirFunctionTy {
-        HirFunctionTy {
-            return_type: self.return_type.clone(),
-            parameters: self.parameters.iter().map(|p| p.r#type.clone()).collect(),
-        }
-    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -106,9 +86,9 @@ pub struct HirFunctionTypeParameter {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct HirFunctionParameter {
+pub struct HirFunctionParameter<'ta> {
     pub span: Span,
     pub name: HirName,
-    pub r#type: Box<HirTy>,
+    pub r#type: &'ta HirTy<'ta>,
     pub type_annotation: Span,
 }

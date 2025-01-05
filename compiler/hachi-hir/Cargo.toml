@@ -12,6 +12,8 @@ hachi-diagnostics = { path = "../hachi-diagnostics" }
 hachi-macros = { path = "../hachi-macros" }
 hachi-span = { path = "../hachi-span" }
 hachi-syntax = { path = "../hachi-syntax" }
+
+bumpalo = { workspace = true }
 miette = { workspace = true }
 pretty = "0.12.3"
 serde = { workspace = true, optional = true }

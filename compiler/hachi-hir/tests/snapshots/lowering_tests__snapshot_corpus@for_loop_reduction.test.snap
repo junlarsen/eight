@@ -5,16 +5,24 @@ input_file: compiler/hachi-hir/tests/data/lowering/for_loop_reduction.test
 snapshot_kind: text
 ---
 module {
+  // module intrinsic scalar types
+  intrinsic_scalar bool;
+  intrinsic_scalar i32;
+  intrinsic_scalar unit;
+  
+  // module intrinsic functions
+  
+  
   // module types
   
   
   // module functions
-  fn loop_transform<>() -> unit {
+  fn loop_transform() -> unit {
     {
-      let i: _ = 0::_;
-      while (i::_ < 10::_::_) {
-        let x: _ = i::_;
-        i::_ = i::_ + 1::_::_::_;
+      let i: _ = (0 as _);
+      while (((i as _) < (10 as _) as _)) {
+        let x: _ = (i as _);
+        ((i as _) = ((i as _) + (1 as _) as _) as _);
       }
     }
   }

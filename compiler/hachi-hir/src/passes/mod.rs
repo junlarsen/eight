@@ -4,4 +4,4 @@ mod type_checker;
 
 pub use debug::HirModuleDebugPass;
 pub use syntax_lower::ASTSyntaxLoweringPass;
-pub use type_checker::HirModuleTypeCheckerPass;
+pub use type_checker::{HirModuleTypeCheckerPass, TypingContext};

@@ -5,6 +5,15 @@ input_file: compiler/hachi-hir/tests/data/lowering/kitchen_sink.test
 snapshot_kind: text
 ---
 module {
+  // module intrinsic scalar types
+  intrinsic_scalar bool;
+  intrinsic_scalar i32;
+  intrinsic_scalar unit;
+  
+  // module intrinsic functions
+  intrinsic_fn free(ptr: *T) -> unit;
+  intrinsic_fn malloc(size: i32) -> *T;
+  
   // module types
   type Matrix = {
     buf: *i32,
@@ -13,40 +22,38 @@ module {
   }
   
   // module functions
-  intrinsic_fn free<$0>(ptr: *$0) -> unit;
-  intrinsic_fn malloc<$0>(size: i32) -> *$0;
-  fn matrix_matrix_multiply<>(a: Matrix, b: Matrix) -> Matrix {
-    if (a::_.r::_ != b::_.c::_::_){
-      panic::_::<>()::_;
+  fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
+    if ((((a as _).r as _) != ((b as _).c as _) as _)){
+      ((panic as _)::<>() as _);
     } else {
     
     }
-    let c: _ = new Matrix {
-      r: a::_.r::_,
-      c: b::_.c::_,
-      buf: malloc::_::<>(a::_.r::_ * b::_.c::_ * 4::_::_::_)::_,
-    }::_;
+    let c: _ = (new Matrix {
+      r: ((a as _).r as _),
+      c: ((b as _).c as _),
+      buf: ((malloc as _)::<>((((a as _).r as _) * (((b as _).c as _) * (4 as _) as _) as _)) as _),
+    } as _);
     {
-      let i: _ = 0::_;
-      while (i::_ < a::_.r::_::_) {
+      let i: _ = (0 as _);
+      while (((i as _) < ((a as _).r as _) as _)) {
         {
-          let j: _ = 0::_;
-          while (j::_ < b::_.c::_::_) {
-            let sum: _ = 0::_;
+          let j: _ = (0 as _);
+          while (((j as _) < ((b as _).c as _) as _)) {
+            let sum: _ = (0 as _);
             {
-              let k: _ = 0::_;
-              while (k::_ < a::_.c::_::_) {
-                sum::_ = sum::_ + a::_.buf::_[i::_ * a::_.c::_::_ + k::_::_]::_ * b::_.buf::_[k::_ * b::_.c::_::_ + j::_::_]::_::_::_::_;
-                k::_ = k::_ + 1::_::_::_;
+              let k: _ = (0 as _);
+              while (((k as _) < ((a as _).c as _) as _)) {
+                ((sum as _) = ((sum as _) + ((((a as _).buf as _)[(((i as _) * ((a as _).c as _) as _) + (k as _) as _)] as _) * (((b as _).buf as _)[(((k as _) * ((b as _).c as _) as _) + (j as _) as _)] as _) as _) as _) as _);
+                ((k as _) = ((k as _) + (1 as _) as _) as _);
               }
             }
-            c::_.buf::_[i::_ * b::_.c::_::_ + j::_::_]::_ = sum::_::_;
-            j::_ = j::_ + 1::_::_::_;
+            ((((c as _).buf as _)[(((i as _) * ((b as _).c as _) as _) + (j as _) as _)] as _) = (sum as _) as _);
+            ((j as _) = ((j as _) + (1 as _) as _) as _);
           }
         }
-        i::_ = i::_ + 1::_::_::_;
+        ((i as _) = ((i as _) + (1 as _) as _) as _);
       }
     }
-    return c::_;
+    return (c as _);
   }
 }

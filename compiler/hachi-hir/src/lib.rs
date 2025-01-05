@@ -10,8 +10,8 @@
 
 use crate::fun::{HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
-use crate::ty::{HirBooleanTy, HirInteger32Ty, HirTy, HirUnitTy};
-use hachi_diagnostics::ice;
+use crate::scalar::HirIntrinsicScalar;
+use crate::ty::HirTyArena;
 use hachi_span::Span;
 use std::collections::BTreeMap;
 
@@ -21,6 +21,7 @@ pub mod expr;
 pub mod fun;
 pub mod passes;
 pub mod rec;
+pub mod scalar;
 pub mod stmt;
 pub mod ty;
 
@@ -30,58 +31,49 @@ pub mod ty;
 /// emitting code.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirModule {
-    pub intrinsic_scalars: BTreeMap<String, HirTy>,
-    pub records: BTreeMap<String, HirRecord>,
-    pub functions: BTreeMap<String, HirFunction>,
-    pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction>,
+pub struct HirModule<'ta> {
+    pub intrinsic_scalars: BTreeMap<String, HirIntrinsicScalar<'ta>>,
+    pub records: BTreeMap<String, HirRecord<'ta>>,
+    pub functions: BTreeMap<String, HirFunction<'ta>>,
+    pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction<'ta>>,
 }
 
-impl HirModule {
+impl<'ta> HirModule<'ta> {
     /// Create an empty Hir module.
-    pub fn new() -> Self {
+    pub fn new(arena: &'ta HirTyArena<'ta>) -> Self {
         Self {
             records: BTreeMap::new(),
             functions: BTreeMap::new(),
             intrinsic_functions: BTreeMap::new(),
             intrinsic_scalars: BTreeMap::from([
-                ("i32".to_owned(), HirTy::Integer32(HirInteger32Ty {})),
-                ("bool".to_owned(), HirTy::Boolean(HirBooleanTy {})),
-                ("unit".to_owned(), HirTy::Unit(HirUnitTy {})),
+                (
+                    "i32".to_owned(),
+                    HirIntrinsicScalar {
+                        name: "i32".to_owned(),
+                        ty: arena.get_integer32_ty(),
+                    },
+                ),
+                (
+                    "bool".to_owned(),
+                    HirIntrinsicScalar {
+                        name: "bool".to_owned(),
+                        ty: arena.get_boolean_ty(),
+                    },
+                ),
+                (
+                    "unit".to_owned(),
+                    HirIntrinsicScalar {
+                        name: "unit".to_owned(),
+                        ty: arena.get_unit_ty(),
+                    },
+                ),
             ]),
         }
-    }
-
-    /// Get the builtin integer32 type.
-    pub fn get_builtin_integer32_type(&self) -> &HirTy {
-        self.intrinsic_scalars
-            .get("i32")
-            .unwrap_or_else(|| ice!("builtin integer32 type not found"))
-    }
-
-    /// Get the builtin boolean type.
-    pub fn get_builtin_boolean_type(&self) -> &HirTy {
-        self.intrinsic_scalars
-            .get("bool")
-            .unwrap_or_else(|| ice!("builtin boolean type not found"))
-    }
-
-    /// Get the builtin unit type.
-    pub fn get_builtin_unit_type(&self) -> &HirTy {
-        self.intrinsic_scalars
-            .get("unit")
-            .unwrap_or_else(|| ice!("builtin unit type not found"))
     }
 
     /// Get a record type from the module with the given name.
     pub fn get_record_type(&self, name: &str) -> Option<&HirRecord> {
         self.records.get(name)
-    }
-}
-
-impl Default for HirModule {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

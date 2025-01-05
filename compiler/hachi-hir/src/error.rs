@@ -1,4 +1,3 @@
-use crate::ty::{HirFunctionTy, HirTy};
 use hachi_macros::declare_error_type;
 use hachi_span::Span;
 use miette::Diagnostic;
@@ -71,8 +70,8 @@ pub struct ContinueOutsideLoopError {
 #[diagnostic(code(sema::type_mismatch))]
 #[error("type mismatch")]
 pub struct TypeMismatchError {
-    pub actual_type: HirTy,
-    pub expected_type: HirTy,
+    pub actual_type: String,
+    pub expected_type: String,
     #[label = "the expression has type {actual_type}"]
     pub actual_loc: Span,
     #[label = "expected type {expected_type}"]
@@ -83,7 +82,7 @@ pub struct TypeMismatchError {
 #[diagnostic(code(sema::function_type_mismatch))]
 #[error("function types do not take the same number of arguments")]
 pub struct FunctionTypeMismatchError {
-    pub expected_ty: HirFunctionTy,
+    pub expected_ty: String,
     #[label = "the function has type {expected_ty}"]
     pub span: Span,
 }
@@ -112,7 +111,7 @@ pub struct InvalidStructFieldReferenceError {
 #[diagnostic(code(sema::invalid_field_reference_of_non_struct))]
 #[error("type {ty} is not a record type and does not have fields")]
 pub struct InvalidFieldReferenceOfNonStructError {
-    pub ty: HirTy,
+    pub ty: String,
     pub name: String,
     #[label = "unknown field {name}"]
     pub span: Span,

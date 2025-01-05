@@ -5,18 +5,18 @@ use std::collections::BTreeMap;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct HirRecord {
+pub struct HirRecord<'ta> {
     /// Span encapsulating the entire record definition.
     pub span: Span,
     pub name: HirName,
-    pub fields: BTreeMap<String, Box<HirRecordField>>,
+    pub fields: BTreeMap<String, HirRecordField<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct HirRecordField {
+pub struct HirRecordField<'ta> {
     pub span: Span,
     pub name: HirName,
-    pub r#type: Box<HirTy>,
+    pub r#type: &'ta HirTy<'ta>,
     pub type_annotation: Span,
 }
