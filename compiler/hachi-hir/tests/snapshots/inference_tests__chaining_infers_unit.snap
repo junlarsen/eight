@@ -17,7 +17,7 @@ module {
   
   // module functions
   fn test() -> unit {
-    let x: i32 = 0::i32;
-    x::i32 = 1::i32::unit;
+    let x: i32 = (0 as i32);
+    ((x as i32) = (1 as i32) as unit);
   }
 }

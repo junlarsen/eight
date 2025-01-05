@@ -17,7 +17,7 @@ module {
   
   // module functions
   fn test() -> unit {
-    let z: bool = id::fn((bool))->bool::<>(true::bool)::bool;
-    let k: i32 = id::fn((i32))->i32::<>(123::i32)::i32;
+    let z: bool = ((id as fn((bool))->bool)::<>((true as bool)) as bool);
+    let k: i32 = ((id as fn((i32))->i32)::<>((123 as i32)) as i32);
   }
 }

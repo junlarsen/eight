@@ -330,9 +330,13 @@ impl HirModuleDebugPass {
             HirExpr::AddressOf(e) => Self::format_hir_address_of_expr(e),
             HirExpr::Deref(e) => Self::format_hir_deref_expr(e),
         };
-        inner
-            .append(RcDoc::text("::"))
+        RcDoc::text("(")
+            .append(inner)
+            .append(RcDoc::space())
+            .append(RcDoc::text("as"))
+            .append(RcDoc::space())
             .append(Self::format_hir_ty(expr.ty()))
+            .append(RcDoc::text(")"))
     }
 
     pub fn format_hir_integer_literal_expr(expr: &HirIntegerLiteralExpr) -> RcDoc<()> {

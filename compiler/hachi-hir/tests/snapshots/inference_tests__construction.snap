@@ -20,10 +20,10 @@ module {
   
   // module functions
   fn origin() -> Vec2 {
-    let v: Vec2 = new Vec2 {
-      x: 0::i32,
-      y: 0::i32,
-    }::Vec2;
-    return v::_;
+    let v: Vec2 = (new Vec2 {
+      x: (0 as i32),
+      y: (0 as i32),
+    } as Vec2);
+    return (v as _);
   }
 }
