@@ -14,7 +14,7 @@ use crate::expr::{
     HirUnaryOpExpr,
 };
 use crate::fun::{
-    HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
+    HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
 };
 use crate::rec::HirRecord;
 use crate::stmt::{
@@ -43,6 +43,26 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("{"))
             .append(
                 RcDoc::hardline()
+                    .append("// module intrinsic scalar types")
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::intersperse(
+                        module
+                            .intrinsic_scalars.keys().map(|name| Self::format_hir_intrinsic_scalar(name)),
+                        RcDoc::hardline(),
+                    ))
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::hardline())
+                    .append("// module intrinsic functions")
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::intersperse(
+                        module
+                            .intrinsic_functions
+                            .values()
+                            .map(|fun| Self::format_hir_intrinsic_function(fun)),
+                        RcDoc::hardline(),
+                    ))
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::hardline())
                     .append("// module types")
                     .append(RcDoc::hardline())
                     .append(RcDoc::intersperse(
@@ -60,7 +80,7 @@ impl HirModuleDebugPass {
                         module
                             .functions
                             .values()
-                            .map(|fun| Self::format_hir_fun(fun)),
+                            .map(|fun| Self::format_hir_function(fun)),
                         RcDoc::hardline(),
                     ))
                     .append(RcDoc::hardline()),
@@ -68,13 +88,6 @@ impl HirModuleDebugPass {
             .nest(2)
             .group()
             .append(RcDoc::text("}"))
-    }
-
-    pub fn format_hir_fun(function: &HirFun) -> RcDoc<()> {
-        match function {
-            HirFun::Function(f) => Self::format_hir_function(f),
-            HirFun::Intrinsic(f) => Self::format_hir_intrinsic_function(f),
-        }
     }
 
     pub fn format_hir_function(function: &HirFunction) -> RcDoc<()> {
@@ -118,6 +131,13 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("->"))
             .append(RcDoc::space())
             .append(Self::format_hir_ty(&function.return_type))
+            .append(RcDoc::text(";"))
+    }
+
+    pub fn format_hir_intrinsic_scalar(name: &str) -> RcDoc<()> {
+        RcDoc::text("intrinsic_scalar")
+            .append(RcDoc::space())
+            .append(RcDoc::text(name))
             .append(RcDoc::text(";"))
     }
 
@@ -172,9 +192,7 @@ impl HirModuleDebugPass {
     ) -> RcDoc<()> {
         RcDoc::text("<")
             .append(RcDoc::intersperse(
-                parameters
-                    .iter()
-                    .map(|p| RcDoc::text("$").append(RcDoc::text(p.name.to_string()))),
+                parameters.iter().map(|p| RcDoc::text(&p.syntax_name.name)),
                 RcDoc::text(", "),
             ))
             .append(RcDoc::text(">"))

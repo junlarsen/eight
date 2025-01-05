@@ -8,7 +8,7 @@
 //! and abstractions that the syntax of the language provides, providing more information about the
 //! program than the AST.
 
-use crate::fun::HirFun;
+use crate::fun::{HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::ty::{HirBooleanTy, HirInteger32Ty, HirTy, HirUnitTy};
 use hachi_diagnostics::ice;
@@ -31,9 +31,10 @@ pub mod ty;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirModule {
-    pub scalars: BTreeMap<String, HirTy>,
+    pub intrinsic_scalars: BTreeMap<String, HirTy>,
     pub records: BTreeMap<String, HirRecord>,
-    pub functions: BTreeMap<String, HirFun>,
+    pub functions: BTreeMap<String, HirFunction>,
+    pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction>,
 }
 
 impl HirModule {
@@ -42,7 +43,8 @@ impl HirModule {
         Self {
             records: BTreeMap::new(),
             functions: BTreeMap::new(),
-            scalars: BTreeMap::from([
+            intrinsic_functions: BTreeMap::new(),
+            intrinsic_scalars: BTreeMap::from([
                 ("i32".to_owned(), HirTy::Integer32(HirInteger32Ty {})),
                 ("bool".to_owned(), HirTy::Boolean(HirBooleanTy {})),
                 ("unit".to_owned(), HirTy::Unit(HirUnitTy {})),
@@ -50,33 +52,23 @@ impl HirModule {
         }
     }
 
-    /// Get the named function from the module with the given name.
-    pub fn get_function(&self, name: &str) -> Option<&HirFun> {
-        self.functions.get(name)
-    }
-
-    /// Get the named type from the module with the given name.
-    pub fn get_scalar_type(&self, name: &str) -> Option<&HirTy> {
-        self.scalars.get(name)
-    }
-
     /// Get the builtin integer32 type.
     pub fn get_builtin_integer32_type(&self) -> &HirTy {
-        self.scalars
+        self.intrinsic_scalars
             .get("i32")
             .unwrap_or_else(|| ice!("builtin integer32 type not found"))
     }
 
     /// Get the builtin boolean type.
     pub fn get_builtin_boolean_type(&self) -> &HirTy {
-        self.scalars
+        self.intrinsic_scalars
             .get("bool")
             .unwrap_or_else(|| ice!("builtin boolean type not found"))
     }
 
     /// Get the builtin unit type.
     pub fn get_builtin_unit_type(&self) -> &HirTy {
-        self.scalars
+        self.intrinsic_scalars
             .get("unit")
             .unwrap_or_else(|| ice!("builtin unit type not found"))
     }

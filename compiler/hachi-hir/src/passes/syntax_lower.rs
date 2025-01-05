@@ -1,4 +1,3 @@
-use crate::context::LocalContext;
 use crate::error::{BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult};
 use crate::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
@@ -7,7 +6,7 @@ use crate::expr::{
     HirUnaryOpExpr,
 };
 use crate::fun::{
-    HirFun, HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
+    HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
 };
 use crate::rec::{HirRecord, HirRecordField};
 use crate::stmt::{
@@ -34,19 +33,16 @@ use std::collections::{BTreeMap, VecDeque};
 ///
 /// All types (note: generic types too) are preserved, meaning that a generic type like `T` will be
 /// lowered into a TConst type, despite the fact that the type checker will replace this with a
-/// fresh type variable.
+/// fresh type variable. This is to allow the type checker to generate a fresh type variable for
+/// each type parameter for the local context.
 pub struct ASTSyntaxLoweringPass<'ast> {
     loop_depth: VecDeque<&'ast ForStmt>,
-    generic_substitutions: LocalContext<HirTy>,
-    function_depth: VecDeque<&'ast FunctionItem>,
 }
 
 impl ASTSyntaxLoweringPass<'_> {
     pub fn new() -> Self {
         Self {
             loop_depth: VecDeque::new(),
-            generic_substitutions: LocalContext::new(),
-            function_depth: VecDeque::new(),
         }
     }
 }
@@ -274,21 +270,11 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
         module: &mut HirModule,
         node: &'ast FunctionItem,
     ) -> HirResult<()> {
-        self.function_depth.push_back(node);
-        // When we enter a function, we substitute all the type parameters with fresh type variables
-        // so that the type checker knows these are generic types, and not constants. It is
-        // currently safe to assume index for the type parameters, as we don't have higher order
-        // functions or lambdas.
-        self.generic_substitutions.enter_scope();
-        let mut type_parameters = Vec::new();
-        for (variable, type_parameter) in node.type_parameters.iter().enumerate() {
-            self.generic_substitutions
-                .add(&type_parameter.name.name, HirTy::new_var(variable));
-            // We also build the HIR representation, preserving the original name that was written
-            // in code.
-            let hir = self.visit_function_type_parameter(type_parameter, variable)?;
-            type_parameters.push(hir);
-        }
+        let type_parameters = node
+            .type_parameters
+            .iter()
+            .map(|p| self.visit_function_type_parameter(p))
+            .collect::<HirResult<Vec<_>>>()?;
         let return_type_annotation = node.return_type.as_ref().map(|t| t.span().clone());
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
@@ -304,8 +290,7 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
             .iter()
             .map(|stmt| self.visit_stmt(stmt))
             .collect::<HirResult<Vec<_>>>()?;
-
-        let fun = HirFun::Function(HirFunction {
+        let fun = HirFunction {
             span: node.span().clone(),
             name: self.visit_identifier(node.name.as_ref())?,
             type_parameters,
@@ -313,9 +298,7 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
             return_type,
             return_type_annotation,
             body,
-        });
-        self.generic_substitutions.leave_scope();
-        self.function_depth.pop_back();
+        };
         module.functions.insert(node.name.name.to_owned(), fun);
         Ok(())
     }
@@ -325,17 +308,11 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
         module: &mut HirModule,
         node: &'ast IntrinsicFunctionItem,
     ) -> HirResult<()> {
-        self.generic_substitutions.enter_scope();
-        let mut type_parameters = Vec::new();
-        for (variable, type_parameter) in node.type_parameters.iter().enumerate() {
-            self.generic_substitutions
-                .add(&type_parameter.name.name, HirTy::new_var(variable));
-            // We also build the HIR representation, preserving the original name that was written
-            // in code.
-            let hir = self.visit_function_type_parameter(type_parameter, variable)?;
-            type_parameters.push(hir);
-        }
-
+        let type_parameters = node
+            .type_parameters
+            .iter()
+            .map(|p| self.visit_function_type_parameter(p))
+            .collect::<HirResult<Vec<_>>>()?;
         let return_type_annotation = node.return_type.span().clone();
         let return_type = self.visit_type(node.return_type.as_ref())?;
         let parameters = node
@@ -344,17 +321,17 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
             .map(|p| self.visit_function_parameter(p))
             .collect::<HirResult<Vec<_>>>()?;
 
-        let fun = HirFun::Intrinsic(HirIntrinsicFunction {
+        let fun = HirIntrinsicFunction {
             span: node.span().clone(),
             name: self.visit_identifier(node.name.as_ref())?,
             type_parameters,
             parameters,
             return_type,
             return_type_annotation,
-        });
-        self.generic_substitutions.leave_scope();
-
-        module.functions.insert(node.name.name.to_owned(), fun);
+        };
+        module
+            .intrinsic_functions
+            .insert(node.name.name.to_owned(), fun);
         Ok(())
     }
 
@@ -376,12 +353,10 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
     pub fn visit_function_type_parameter(
         &mut self,
         node: &'ast FunctionTypeParameterItem,
-        substitution_name: usize,
     ) -> HirResult<Box<HirFunctionTypeParameter>> {
         let name = self.visit_identifier(node.name.as_ref())?;
         let hir = HirFunctionTypeParameter {
             span: node.span().clone(),
-            name: substitution_name,
             syntax_name: name,
         };
         Ok(Box::new(hir))
@@ -644,12 +619,7 @@ impl<'ast> ASTSyntaxLoweringPass<'ast> {
             Type::Unit(_) => HirTy::new_unit(),
             Type::Integer32(_) => HirTy::new_i32(),
             Type::Boolean(_) => HirTy::new_bool(),
-            // If the type is referring to a generic type that we have substituted before, we
-            // use replace it with the substitution
-            Type::Named(t) => match self.generic_substitutions.find(&t.name.name) {
-                Some(ty) => ty.clone(),
-                None => HirTy::new_nominal(self.visit_identifier(t.name.as_ref())?),
-            },
+            Type::Named(t) => HirTy::new_nominal(self.visit_identifier(t.name.as_ref())?),
             Type::Pointer(t) => HirTy::new_ptr(self.visit_type(t.inner.as_ref())?),
         };
         Ok(Box::new(ty))

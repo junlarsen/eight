@@ -5,7 +5,7 @@ use crate::error::{
     TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
 };
 use crate::expr::HirExpr;
-use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
+use crate::fun::{HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirTy};
@@ -76,12 +76,16 @@ impl TypingContext {
     pub fn explore_module(&mut self, module: &HirModule) {
         for fun in module.functions.values() {
             self.locals
-                .add(&fun.name().name, HirTy::Function(fun.get_type()));
+                .add(&fun.name.name, HirTy::Function(fun.get_type()));
+        }
+        for fun in module.intrinsic_functions.values() {
+            self.locals
+                .add(&fun.name.name, HirTy::Function(fun.get_type()));
         }
         for rec in module.records.values() {
             self.records.insert(rec.name.name.to_owned(), rec.clone());
         }
-        for (name, scalar) in module.scalars.iter() {
+        for (name, scalar) in module.intrinsic_scalars.iter() {
             self.scalars.insert(name.to_owned(), scalar.clone());
         }
     }
@@ -115,7 +119,7 @@ impl TypingContext {
 
     /// Solve the constraints that have been implied on the context so far.
     pub fn solve_constraints(&mut self) -> HirResult<()> {
-        let mut constraints = self.constraints.drain(..).collect::<Vec<_>>();
+        let constraints = self.constraints.drain(..).collect::<Vec<_>>();
 
         for constraint in constraints {
             match constraint {
@@ -675,20 +679,15 @@ impl HirModuleTypeCheckerPass {
     /// Traverse the Hir module.
     pub fn visit_hir_module(cx: &mut TypingContext, node: &mut HirModule) -> HirResult<()> {
         for fun in node.functions.values_mut() {
-            Self::visit_hir_function(cx, fun)?;
+            Self::visit_function(cx, fun)?;
+        }
+        for fun in node.intrinsic_functions.values_mut() {
+            Self::visit_intrinsic_function(cx, fun)?;
         }
         for rec in node.records.values_mut() {
             Self::visit_hir_record(cx, rec)?;
         }
         Ok(())
-    }
-
-    /// Traverse the function.
-    pub fn visit_hir_function(cx: &mut TypingContext, node: &mut HirFun) -> HirResult<()> {
-        match node {
-            HirFun::Function(f) => Self::visit_function(cx, f),
-            HirFun::Intrinsic(f) => Self::visit_intrinsic_function(cx, f),
-        }
     }
 
     /// Traverse the intrinsic function.
@@ -715,8 +714,8 @@ impl HirModuleTypeCheckerPass {
     /// recurses down into the function body.
     pub fn visit_function(cx: &mut TypingContext, node: &mut HirFunction) -> HirResult<()> {
         // Create substitutions for all the type parameters.
-        for ty in node.type_parameters.iter() {
-            let substitution = HirTy::new_var(ty.name);
+        for _ in node.type_parameters.iter() {
+            let substitution = cx.fresh_type_variable();
             cx.substitutions.push(substitution);
         }
         Self::visit_type(cx, &mut node.return_type)?;

@@ -3,47 +3,6 @@ use crate::ty::{HirFunctionTy, HirTy};
 use crate::HirName;
 use hachi_span::Span;
 
-/// A function defined in a HIR module.
-///
-/// Functions are either user-defined with code, or forward-declared intrinsic functions. We do
-/// currently not have any syntax to specify linkage types of intrinsic functions, so for now it's
-/// safe to assume everything comes from if it's intrinsic.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-pub enum HirFun {
-    Function(HirFunction),
-    Intrinsic(HirIntrinsicFunction),
-}
-
-impl HirFun {
-    pub fn is_intrinsic(&self) -> bool {
-        matches!(self, HirFun::Intrinsic(_))
-    }
-
-    /// Determine if the function has type parameters.
-    pub fn has_type_parameters(&self) -> bool {
-        match self {
-            HirFun::Function(f) => !f.type_parameters.is_empty(),
-            HirFun::Intrinsic(f) => !f.type_parameters.is_empty(),
-        }
-    }
-
-    pub fn name(&self) -> &HirName {
-        match self {
-            HirFun::Function(f) => &f.name,
-            HirFun::Intrinsic(f) => &f.name,
-        }
-    }
-
-    /// Derive a function type matching the function's signature.
-    pub fn get_type(&self) -> HirFunctionTy {
-        match self {
-            HirFun::Function(f) => f.get_type(),
-            HirFun::Intrinsic(f) => f.get_type(),
-        }
-    }
-}
-
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirFunction {
@@ -95,8 +54,6 @@ pub struct HirFunctionTypeParameter {
     /// This is effectively the same as the span of the HirName, but in the future we may want to
     /// allow bounds or sub-typing on type parameters.
     pub span: Span,
-    /// The type variable index in the type environment.
-    pub name: usize,
     /// The name that was actually written by the programmer.
     pub syntax_name: HirName,
 }
