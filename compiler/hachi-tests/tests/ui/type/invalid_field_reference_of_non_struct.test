@@ -1,0 +1,3 @@
+fn test(q: i32) {
+  let k = q.z;
+}

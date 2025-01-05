@@ -1,5 +1,9 @@
 use crate::context::LocalContext;
-use crate::error::{FunctionTypeMismatchError, HirError, HirResult, InvalidReferenceError, InvalidStructFieldReferenceError, SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError};
+use crate::error::{
+    FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
+    InvalidReferenceError, InvalidStructFieldReferenceError, SelfReferentialTypeError,
+    TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
+};
 use crate::expr::HirExpr;
 use crate::fun::{HirFun, HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
@@ -111,7 +115,8 @@ impl TypingContext {
 
     /// Solve the constraints that have been implied on the context so far.
     pub fn solve_constraints(&mut self) -> HirResult<()> {
-        let constraints = self.constraints.drain(..).collect::<Vec<_>>();
+        let mut constraints = self.constraints.drain(..).collect::<Vec<_>>();
+
         for constraint in constraints {
             match constraint {
                 Constraint::Equality(c) => self.unify_eq(c)?,
@@ -148,11 +153,13 @@ impl TypingContext {
                     .get(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"));
                 let Some(record_field) = ty.fields.get(&field.name) else {
-                    return Err(HirError::InvalidStructFieldReference(InvalidStructFieldReferenceError {
-                        type_name: n.name.name.to_owned(),
-                        name: field.name.to_owned(),
-                        span: field.span.clone(),
-                    }));
+                    return Err(HirError::InvalidStructFieldReference(
+                        InvalidStructFieldReferenceError {
+                            type_name: n.name.name.to_owned(),
+                            name: field.name.to_owned(),
+                            span: field.span.clone(),
+                        },
+                    ));
                 };
                 let constraint = EqualityConstraint {
                     expected: record_field.r#type.as_ref().clone(),
@@ -163,9 +170,13 @@ impl TypingContext {
                 self.unify_eq(constraint)?;
                 Ok(())
             }
-            _ => {
-                ice!("field projection constraint on non-record type");
-            }
+            _ => Err(HirError::InvalidFieldReferenceOfNonStruct(
+                InvalidFieldReferenceOfNonStructError {
+                    ty: resolved_type,
+                    name: field.name.to_owned(),
+                    span: field.span.clone(),
+                },
+            )),
         }
     }
 
@@ -361,16 +372,16 @@ impl TypingContext {
                 Ok(())
             }
             HirExpr::ConstantIndex(e) => {
-                self.constrain_field_projection(
-                    e.origin.ty().clone(),
-                    e.index.clone(),
-                    expected_ty.clone(),
-                );
                 self.constrain_eq(
-                    expected_ty,
+                    expected_ty.clone(),
                     e.ty.as_ref().clone(),
                     e.span.clone(),
                     e.origin.span().clone(),
+                );
+                self.constrain_field_projection(
+                    e.origin.ty().clone(),
+                    e.index.clone(),
+                    expected_ty,
                 );
                 Ok(())
             }

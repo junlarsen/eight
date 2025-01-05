@@ -16,6 +16,7 @@ declare_error_type! {
         FunctionTypeMismatch(FunctionTypeMismatchError),
         SelfReferentialType(SelfReferentialTypeError),
         InvalidStructFieldReference(InvalidStructFieldReferenceError),
+        InvalidFieldReferenceOfNonStruct(InvalidFieldReferenceOfNonStructError),
     }
 }
 
@@ -102,6 +103,16 @@ pub struct SelfReferentialTypeError {
 #[error("invalid field reference to {name} in type {type_name}")]
 pub struct InvalidStructFieldReferenceError {
     pub type_name: String,
+    pub name: String,
+    #[label = "unknown field {name}"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::invalid_field_reference_of_non_struct))]
+#[error("type {ty} is not a record type and does not have fields")]
+pub struct InvalidFieldReferenceOfNonStructError {
+    pub ty: HirTy,
     pub name: String,
     #[label = "unknown field {name}"]
     pub span: Span,
