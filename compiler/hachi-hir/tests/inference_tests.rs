@@ -53,3 +53,8 @@ fn test_construction() {
 fn test_pointer_deref() {
     inference_test!("data/inference/pointer_deref.test");
 }
+
+#[test]
+fn test_generic_fn_ref() {
+    inference_test!("data/inference/generic_fn_ref.test");
+}

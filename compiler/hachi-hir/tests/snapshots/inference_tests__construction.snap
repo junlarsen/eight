@@ -19,7 +19,7 @@ module {
   }
   
   // module functions
-  fn origin<>() -> Vec2 {
+  fn origin() -> Vec2 {
     let v: Vec2 = new Vec2 {
       x: 0::i32,
       y: 0::i32,

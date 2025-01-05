@@ -13,9 +13,7 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::fun::{
-    HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
-};
+use crate::fun::{HirFunction, HirFunctionParameter, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -47,7 +45,9 @@ impl HirModuleDebugPass {
                     .append(RcDoc::hardline())
                     .append(RcDoc::intersperse(
                         module
-                            .intrinsic_scalars.keys().map(|name| Self::format_hir_intrinsic_scalar(name)),
+                            .intrinsic_scalars
+                            .keys()
+                            .map(|name| Self::format_hir_intrinsic_scalar(name)),
                         RcDoc::hardline(),
                     ))
                     .append(RcDoc::hardline())
@@ -94,9 +94,6 @@ impl HirModuleDebugPass {
         RcDoc::text("fn")
             .append(RcDoc::space())
             .append(RcDoc::text(function.name.name.as_str()))
-            .append(Self::format_function_type_parameters(
-                &function.type_parameters,
-            ))
             .append(Self::format_function_parameters(&function.parameters))
             .append(RcDoc::space())
             .append(RcDoc::text("->"))
@@ -123,9 +120,6 @@ impl HirModuleDebugPass {
         RcDoc::text("intrinsic_fn")
             .append(RcDoc::space())
             .append(RcDoc::text(function.name.name.as_str()))
-            .append(Self::format_function_type_parameters(
-                &function.type_parameters,
-            ))
             .append(Self::format_function_parameters(&function.parameters))
             .append(RcDoc::space())
             .append(RcDoc::text("->"))
@@ -185,17 +179,6 @@ impl HirModuleDebugPass {
                 RcDoc::text(", "),
             ))
             .append(RcDoc::text(")"))
-    }
-
-    pub(crate) fn format_function_type_parameters(
-        parameters: &[Box<HirFunctionTypeParameter>],
-    ) -> RcDoc<()> {
-        RcDoc::text("<")
-            .append(RcDoc::intersperse(
-                parameters.iter().map(|p| RcDoc::text(&p.syntax_name.name)),
-                RcDoc::text(", "),
-            ))
-            .append(RcDoc::text(">"))
     }
 
     pub fn format_hir_stmt(stmt: &HirStmt) -> RcDoc<()> {

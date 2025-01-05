@@ -10,13 +10,14 @@ module {
   intrinsic_scalar unit;
   
   // module intrinsic functions
-  
+  intrinsic_fn id(x: $10) -> $10;
   
   // module types
   
   
   // module functions
-  fn foo(x: i32) -> i32 {
-    let k: i32 = (123::i32)::i32;
+  fn test() -> unit {
+    let z: bool = id::fn((bool))->bool::<>(true::bool)::bool;
+    let k: i32 = id::fn((i32))->i32::<>(123::i32)::i32;
   }
 }

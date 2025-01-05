@@ -16,11 +16,11 @@ module {
   
   
   // module functions
-  fn test<>() -> unit {
+  fn test() -> unit {
     let loc: i32 = 123::i32;
     let x: i32 = loc::i32;
   }
-  fn test_refer_function<>() -> unit {
+  fn test_refer_function() -> unit {
     let loc: fn(())->unit = test::fn(())->unit;
   }
 }

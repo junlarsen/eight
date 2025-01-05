@@ -4,18 +4,26 @@ expression: doc
 snapshot_kind: text
 ---
 module {
+  // module intrinsic scalar types
+  intrinsic_scalar bool;
+  intrinsic_scalar i32;
+  intrinsic_scalar unit;
+  
+  // module intrinsic functions
+  
+  
   // module types
   
   
   // module functions
-  fn bar<>(x: i32) -> i32 {
+  fn bar(x: i32) -> i32 {
     return k::_;
   }
-  fn foo<>() -> unit {
+  fn foo() -> unit {
     let k: i32 = bar::fn((i32))->i32::<>(123::i32)::i32;
     let z: i32 = generic::fn((i32))->i32::<>(k::i32)::i32;
   }
-  fn generic<$0>(x: $0) -> $0 {
+  fn generic(x: $9) -> $9 {
     return x::_;
   }
 }

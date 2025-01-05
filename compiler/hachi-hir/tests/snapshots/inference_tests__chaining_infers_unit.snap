@@ -16,7 +16,7 @@ module {
   
   
   // module functions
-  fn test<>() -> unit {
+  fn test() -> unit {
     let x: i32 = 0::i32;
     x::i32 = 1::i32::unit;
   }

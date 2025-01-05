@@ -5,14 +5,14 @@ use crate::error::{
     TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
 };
 use crate::expr::HirExpr;
-use crate::fun::{HirFunction, HirIntrinsicFunction};
+use crate::fun::{HirFunction, HirFunctionSignature, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
-use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirTy};
+use crate::ty::{HirFunctionTy, HirPointerTy, HirTy};
 use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
 use hachi_span::Span;
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 #[derive(Debug)]
 pub enum Constraint {
@@ -48,10 +48,19 @@ pub struct TypingContext {
     constraints: Vec<Constraint>,
     substitutions: Vec<HirTy>,
     locals: LocalContext<HirTy>,
+    /// Type parameters that are currently being substituted in the current function.
+    ///
+    /// This is required when traversing function bodies, as we need to substitute `let x: T = 1;`
+    /// with a matching type variable from the function's signature.
+    ///
+    /// We currently don't support nested functions or lambdas, so this does not necessarily have to
+    /// be a VecDeque, but it's here for future use.
+    local_type_parameter_substitutions: LocalContext<HirTy>,
     current_function: VecDeque<HirFunctionTy>,
     /// Types derived from the module that we are type checking.
-    records: BTreeMap<String, HirRecord>,
-    scalars: BTreeMap<String, HirTy>,
+    record_types: BTreeMap<String, HirRecord>,
+    scalar_types: BTreeMap<String, HirTy>,
+    functions: BTreeMap<String, HirFunctionSignature>,
 }
 
 impl Default for TypingContext {
@@ -60,9 +69,11 @@ impl Default for TypingContext {
             constraints: Vec::new(),
             substitutions: Vec::new(),
             locals: LocalContext::new(),
+            local_type_parameter_substitutions: LocalContext::new(),
             current_function: VecDeque::new(),
-            scalars: BTreeMap::new(),
-            records: BTreeMap::new(),
+            scalar_types: BTreeMap::new(),
+            functions: BTreeMap::new(),
+            record_types: BTreeMap::new(),
         }
     }
 }
@@ -75,18 +86,19 @@ impl TypingContext {
     /// Crawl all the items from the module and insert them into the typing context.s
     pub fn explore_module(&mut self, module: &HirModule) {
         for fun in module.functions.values() {
-            self.locals
-                .add(&fun.name.name, HirTy::Function(fun.get_type()));
+            self.functions
+                .insert(fun.name.name.to_owned(), HirFunctionSignature::from(fun));
         }
         for fun in module.intrinsic_functions.values() {
-            self.locals
-                .add(&fun.name.name, HirTy::Function(fun.get_type()));
+            self.functions
+                .insert(fun.name.name.to_owned(), HirFunctionSignature::from(fun));
         }
         for rec in module.records.values() {
-            self.records.insert(rec.name.name.to_owned(), rec.clone());
+            self.record_types
+                .insert(rec.name.name.to_owned(), rec.clone());
         }
         for (name, scalar) in module.intrinsic_scalars.iter() {
-            self.scalars.insert(name.to_owned(), scalar.clone());
+            self.scalar_types.insert(name.to_owned(), scalar.clone());
         }
     }
 
@@ -153,7 +165,7 @@ impl TypingContext {
             }
             HirTy::Nominal(n) => {
                 let ty = self
-                    .records
+                    .record_types
                     .get(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"));
                 let Some(record_field) = ty.fields.get(&field.name) else {
@@ -337,16 +349,68 @@ impl TypingContext {
                 );
                 Ok(())
             }
-            // If is a named type, we find the type in the local context, or throw a type reference
-            // error if it doesn't exist.
             HirExpr::Reference(e) => {
-                let ty = self
-                    .locals
-                    .find(&e.name.name)
-                    .ok_or(HirError::InvalidReference(InvalidReferenceError {
-                        name: e.name.name.to_owned(),
-                        span: e.span.clone(),
-                    }))?;
+                // We attempt to look up a local variable first. This is cheaper than attempting to
+                // instantiate a generic function.
+                if let Some(local_ty) = self.locals.find(&e.name.name) {
+                    self.constrain_eq(
+                        expected_ty,
+                        local_ty.clone(),
+                        e.span.clone(),
+                        e.name.span.clone(),
+                    );
+                    return Ok(());
+                }
+
+                // If the function refers to a function signature, we attempt to instantiate it if
+                // it is generic.
+                let Some(signature) = self.functions.get(&e.name.name) else {
+                    ice!("called infer() on a name that doesn't exist in the context");
+                };
+                // Non-generic functions are already "instantiated" and can be constrained directly.
+                if signature.type_parameters.is_empty() {
+                    let parameters = signature
+                        .parameters
+                        .iter()
+                        .map(|p| Box::new(p.r#type.as_ref().clone()))
+                        .collect::<Vec<_>>();
+                    let return_type = Box::new(signature.return_type.clone());
+                    let ty = HirTy::new_fun(return_type, parameters);
+                    self.constrain_eq(expected_ty, ty.clone(), e.span.clone(), e.name.span.clone());
+                    return Ok(());
+                }
+
+                // Otherwise, we need to instantiate the generic parameters of the function, and
+                // substitute the parameters and return types if they refer to one of the generic
+                // type parameters.
+                // TODO: Prevent this clone
+                let signature = signature.clone();
+                let mut type_parameter_substitutions = HashMap::new();
+                for type_parameter in signature.type_parameters.iter() {
+                    type_parameter_substitutions.insert(
+                        type_parameter.syntax_name.name.to_owned(),
+                        self.fresh_type_variable(),
+                    );
+                }
+                let parameters = signature
+                    .parameters
+                    .iter()
+                    .map(|p| match &p.r#type.as_ref() {
+                        HirTy::Nominal(n) => match type_parameter_substitutions.get(&n.name.name) {
+                            Some(sub) => Box::new(sub.clone()),
+                            _ => Box::new(p.r#type.as_ref().clone()),
+                        },
+                        _ => Box::new(p.r#type.as_ref().clone()),
+                    })
+                    .collect::<Vec<_>>();
+                let return_type = match &signature.return_type {
+                    HirTy::Nominal(n) => match type_parameter_substitutions.get(&n.name.name) {
+                        Some(sub) => Box::new(sub.clone()),
+                        _ => Box::new(signature.return_type.clone()),
+                    },
+                    _ => Box::new(signature.return_type.clone()),
+                };
+                let ty = HirTy::new_fun(return_type, parameters);
                 self.constrain_eq(expected_ty, ty.clone(), e.span.clone(), e.name.span.clone());
                 Ok(())
             }
@@ -418,7 +482,7 @@ impl TypingContext {
                     ice!("construct expression callee is not a nominal type");
                 };
                 let ty = self
-                    .records
+                    .record_types
                     .get(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"))
                     .clone();
@@ -642,21 +706,21 @@ impl TypingContext {
 
 impl TypingContext {
     pub fn get_integer32_type(&self) -> HirTy {
-        self.scalars
+        self.scalar_types
             .get("i32")
             .unwrap_or_else(|| ice!("builtin integer32 type not found"))
             .clone()
     }
 
     pub fn get_boolean_type(&self) -> HirTy {
-        self.scalars
+        self.scalar_types
             .get("bool")
             .unwrap_or_else(|| ice!("builtin boolean type not found"))
             .clone()
     }
 
     pub fn get_unit_type(&self) -> HirTy {
-        self.scalars
+        self.scalar_types
             .get("unit")
             .unwrap_or_else(|| ice!("builtin unit type not found"))
             .clone()
@@ -701,10 +765,18 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext,
         node: &mut HirIntrinsicFunction,
     ) -> HirResult<()> {
+        cx.local_type_parameter_substitutions.enter_scope();
+        for type_parameter in node.type_parameters.iter() {
+            let substitution = cx.fresh_type_variable();
+            cx.substitutions.push(substitution.clone());
+            cx.local_type_parameter_substitutions
+                .add(&type_parameter.syntax_name.name, substitution);
+        }
         Self::visit_type(cx, &mut node.return_type)?;
         for p in node.parameters.iter_mut() {
             Self::visit_type(cx, &mut p.r#type)?;
         }
+        cx.local_type_parameter_substitutions.leave_scope();
         Ok(())
     }
 
@@ -714,9 +786,12 @@ impl HirModuleTypeCheckerPass {
     /// recurses down into the function body.
     pub fn visit_function(cx: &mut TypingContext, node: &mut HirFunction) -> HirResult<()> {
         // Create substitutions for all the type parameters.
-        for _ in node.type_parameters.iter() {
+        cx.local_type_parameter_substitutions.enter_scope();
+        for type_parameter in node.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
-            cx.substitutions.push(substitution);
+            cx.substitutions.push(substitution.clone());
+            cx.local_type_parameter_substitutions
+                .add(&type_parameter.syntax_name.name, substitution);
         }
         Self::visit_type(cx, &mut node.return_type)?;
         // Push the function's type onto the current stack, so that return statements can be checked
@@ -734,6 +809,7 @@ impl HirModuleTypeCheckerPass {
         }
 
         cx.locals.leave_scope();
+        cx.local_type_parameter_substitutions.leave_scope();
         // All the substitutions should have been drained by this point.
         // assert_eq!(cx.substitutions.len(), 0);
         Ok(())
@@ -773,7 +849,7 @@ impl HirModuleTypeCheckerPass {
     /// uninitialized types with fresh type variables here.
     pub fn visit_type(cx: &mut TypingContext, node: &mut HirTy) -> HirResult<()> {
         match node {
-            HirTy::Nominal(t) => Self::visit_nominal_ty(cx, t),
+            t @ HirTy::Nominal(_) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
             HirTy::Pointer(t) => Self::visit_pointer_ty(cx, t),
             HirTy::Variable(_) | HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) => Ok(()),
@@ -786,19 +862,31 @@ impl HirModuleTypeCheckerPass {
         }
     }
 
-    /// A named type is either a user-defined record type or a builtin type.
+    /// A named type is either a user-defined record, a builtin type, or a generic type parameter.
     ///
-    /// If the given type is neither, we issue a type error.
-    pub fn visit_nominal_ty(cx: &mut TypingContext, node: &mut HirNominalTy) -> HirResult<()> {
-        if cx.locals.find(&node.name.name).is_some() {
+    /// If it is a generic type parameter, we substitute it with the matching substitution from the
+    /// local type parameter substitution context.
+    ///
+    /// It is important that we check for local type parameter substitutions first, as they can
+    /// shadow global names.
+    pub fn visit_nominal_ty(cx: &mut TypingContext, node: &mut HirTy) -> HirResult<()> {
+        let HirTy::Nominal(n) = node else {
+            ice!("visit_nominal_ty called with non-nominal type");
+        };
+        if let Some(sub) = cx.local_type_parameter_substitutions.find(&n.name.name) {
+            *node = sub.clone();
             return Ok(());
         }
-        if cx.records.contains_key(&node.name.name) {
+        // Check if the name is a builtin or record type.
+        if cx.scalar_types.contains_key(&n.name.name) {
+            return Ok(());
+        }
+        if cx.record_types.contains_key(&n.name.name) {
             return Ok(());
         }
         Err(HirError::UnknownType(UnknownTypeError {
-            name: node.name.name.to_owned(),
-            span: node.name.span.clone(),
+            name: n.name.name.to_owned(),
+            span: n.name.span.clone(),
         }))
     }
 
@@ -880,12 +968,14 @@ impl HirModuleTypeCheckerPass {
             ice!("visit_reference_expr called with non-reference expression");
         };
         Self::visit_type(cx, &mut e.ty)?;
-        let Some(_) = cx.locals.find(&e.name.name) else {
+        // See if the name resolves to a local let-binding or a function name.
+        if cx.locals.find(&e.name.name).is_none() && !cx.functions.contains_key(&e.name.name) {
             return Err(HirError::InvalidReference(InvalidReferenceError {
                 name: e.name.name.to_owned(),
                 span: e.span.clone(),
             }));
-        };
+        }
+
         cx.infer(node, node.ty().clone())?;
         Ok(())
     }
