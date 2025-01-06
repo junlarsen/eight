@@ -3,8 +3,8 @@ source: compiler/hachi-tests/tests/ui_tests.rs
 info:
   program: hcc
   args:
-    - tests/ui/type/mismatched_application.test
-input_file: compiler/hachi-tests/tests/ui/type/mismatched_application.test
+    - tests/ui/type/call_mismatched_argument_count.test
+input_file: compiler/hachi-tests/tests/ui/type/call_mismatched_argument_count.test
 snapshot_kind: text
 ---
 success: false
@@ -15,7 +15,7 @@ exit_code: 1
 Error: sema::function_type_mismatch
 
   × function types do not take the same number of arguments
-    ╭─[tests/ui/type/mismatched_application.test:10:11]
+    ╭─[tests/ui/type/call_mismatched_argument_count.test:10:11]
   9 │ fn test() {
  10 │   let k = apply_to_me(123);
     ·           ─────┬─────

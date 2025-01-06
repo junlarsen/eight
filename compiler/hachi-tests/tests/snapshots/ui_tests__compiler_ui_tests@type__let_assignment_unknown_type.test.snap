@@ -3,8 +3,8 @@ source: compiler/hachi-tests/tests/ui_tests.rs
 info:
   program: hcc
   args:
-    - tests/ui/type/unknown_type_reference.test
-input_file: compiler/hachi-tests/tests/ui/type/unknown_type_reference.test
+    - tests/ui/type/let_assignment_unknown_type.test
+input_file: compiler/hachi-tests/tests/ui/type/let_assignment_unknown_type.test
 snapshot_kind: text
 ---
 success: false
@@ -15,7 +15,7 @@ exit_code: 1
 Error: sema::unknown_type
 
   × Unknown does not name a known type
-   ╭─[tests/ui/type/unknown_type_reference.test:2:10]
+   ╭─[tests/ui/type/let_assignment_unknown_type.test:2:10]
  1 │ fn test() {
  2 │   let k: Unknown = 123;
    ·          ───┬───

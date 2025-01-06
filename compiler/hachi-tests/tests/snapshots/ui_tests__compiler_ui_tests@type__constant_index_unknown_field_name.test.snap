@@ -1,0 +1,24 @@
+---
+source: compiler/hachi-tests/tests/ui_tests.rs
+info:
+  program: hcc
+  args:
+    - tests/ui/type/constant_index_unknown_field_name.test
+input_file: compiler/hachi-tests/tests/ui/type/constant_index_unknown_field_name.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::invalid_struct_field_reference
+
+  × invalid field reference to z in type Shape
+   ╭─[tests/ui/type/constant_index_unknown_field_name.test:7:20]
+ 6 │ fn get_shape_size(shape: Shape) -> i32 {
+ 7 │   let size = shape.z;
+   ·                    ┬
+   ·                    ╰── unknown field z
+ 8 │ }
+   ╰────

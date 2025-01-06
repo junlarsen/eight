@@ -3,8 +3,8 @@ source: compiler/hachi-tests/tests/ui_tests.rs
 info:
   program: hcc
   args:
-    - tests/ui/type/let_assignment.test
-input_file: compiler/hachi-tests/tests/ui/type/let_assignment.test
+    - tests/ui/type/let_assignment_type_mismatch.test
+input_file: compiler/hachi-tests/tests/ui/type/let_assignment_type_mismatch.test
 snapshot_kind: text
 ---
 success: false
@@ -15,7 +15,7 @@ exit_code: 1
 Error: sema::type_mismatch
 
   × type mismatch
-   ╭─[tests/ui/type/let_assignment.test:2:16]
+   ╭─[tests/ui/type/let_assignment_type_mismatch.test:2:16]
  1 │ fn test(v: bool) {
  2 │   let k: i32 = v;
    ·                ┬┬
