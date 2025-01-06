@@ -16,6 +16,9 @@ declare_error_type! {
         SelfReferentialType(SelfReferentialTypeError),
         InvalidStructFieldReference(InvalidStructFieldReferenceError),
         InvalidFieldReferenceOfNonStruct(InvalidFieldReferenceOfNonStructError),
+        UnknownField(UnknownFieldError),
+        DuplicateField(DuplicateFieldError),
+        MissingField(MissingFieldError),
     }
 }
 
@@ -115,4 +118,36 @@ pub struct InvalidFieldReferenceOfNonStructError {
     pub name: String,
     #[label = "unknown field {name}"]
     pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::unknown_field))]
+#[error("the type {type_name} does not have a field named {field_name}")]
+pub struct UnknownFieldError {
+    pub field_name: String,
+    pub type_name: String,
+    #[label = "this field does not exist"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::duplicate_field))]
+#[error("the field {field_name} has already been provided")]
+pub struct DuplicateFieldError {
+    pub field_name: String,
+    #[label = "this field does not exist"]
+    pub span: Span,
+    pub first_location: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::missing_field))]
+#[error("the field {field_name} is missing in construction of {type_name}")]
+pub struct MissingFieldError {
+    pub type_name: String,
+    pub field_name: String,
+    #[label = "construction does not name field {field_name}"]
+    pub span: Span,
+    #[label = "field {field_name} defined here"]
+    pub defined_at: Span,
 }

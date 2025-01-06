@@ -1,0 +1,11 @@
+type Point = {
+  x: i32,
+  y: i32,
+}
+
+fn test() {
+  let p = new Point {
+    x: 123,
+    y: true,
+  };
+}

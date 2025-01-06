@@ -1,19 +1,20 @@
 use crate::context::LocalContext;
 use crate::error::{
-    FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
-    InvalidReferenceError, InvalidStructFieldReferenceError, SelfReferentialTypeError,
-    TypeFieldInfiniteRecursionError, TypeMismatchError, UnknownTypeError,
+    FunctionTypeMismatchError, HirError, HirResult,
+    InvalidFieldReferenceOfNonStructError, InvalidReferenceError, InvalidStructFieldReferenceError,
+    MissingFieldError, SelfReferentialTypeError, TypeFieldInfiniteRecursionError,
+    TypeMismatchError, UnknownFieldError, UnknownTypeError,
 };
 use crate::expr::HirExpr;
 use crate::fun::{HirFunction, HirFunctionSignature, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::scalar::HirIntrinsicScalar;
 use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
-use crate::ty::{HirFunctionTy, HirPointerTy, HirTy, HirTyArena};
+use crate::ty::{HirArena, HirFunctionTy, HirPointerTy, HirTy};
 use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
 use hachi_span::Span;
-use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::collections::{BTreeMap, HashSet, VecDeque};
 
 #[derive(Debug)]
 pub enum Constraint<'ta> {
@@ -46,7 +47,7 @@ pub struct FieldProjectionConstraint<'ta> {
 
 #[derive(Debug)]
 pub struct TypingContext<'ta> {
-    arena: &'ta HirTyArena<'ta>,
+    arena: &'ta HirArena<'ta>,
     constraints: Vec<Constraint<'ta>>,
     substitutions: Vec<&'ta HirTy<'ta>>,
     locals: LocalContext<&'ta HirTy<'ta>>,
@@ -66,7 +67,7 @@ pub struct TypingContext<'ta> {
 }
 
 impl<'ta> TypingContext<'ta> {
-    pub fn new(arena: &'ta HirTyArena<'ta>) -> Self {
+    pub fn new(arena: &'ta HirArena<'ta>) -> Self {
         Self {
             arena,
             constraints: Vec::new(),
@@ -83,9 +84,9 @@ impl<'ta> TypingContext<'ta> {
     /// Imply a new field projection constraint
     pub fn constrain_field_projection(
         &mut self,
-        ty: &'ta HirTy,
+        ty: &'ta HirTy<'ta>,
         field: HirName,
-        inner: &'ta HirTy,
+        inner: &'ta HirTy<'ta>,
     ) {
         self.constraints
             .push(Constraint::FieldProjection(FieldProjectionConstraint {
@@ -342,7 +343,7 @@ impl<'ta> TypingContext<'ta> {
                 if let Some(local_ty) = self.locals.find(&e.name.name) {
                     self.constrain_eq(
                         expected_ty,
-                        local_ty.clone(),
+                        local_ty,
                         e.span.clone(),
                         e.name.span.clone(),
                     );
@@ -373,31 +374,21 @@ impl<'ta> TypingContext<'ta> {
                 // type parameters.
                 // TODO: Prevent this clone
                 let signature = signature.clone();
-                let mut type_parameter_substitutions = HashMap::new();
+                self.local_type_parameter_substitutions.enter_scope();
                 for type_parameter in signature.type_parameters.iter() {
-                    type_parameter_substitutions.insert(
-                        type_parameter.syntax_name.name.to_owned(),
-                        self.fresh_type_variable(),
-                    );
+                    let ty = self.fresh_type_variable();
+                    self.local_type_parameter_substitutions
+                        .add(&type_parameter.syntax_name.name, ty);
                 }
+                // The types of the signature can refer to the type parameters at arbitrary depths,
+                // e.g. `**T`, so we just recurse down to substitute.
                 let parameters = signature
                     .parameters
                     .iter()
-                    .map(|p| match &p.r#type {
-                        HirTy::Nominal(n) => match type_parameter_substitutions.get(&n.name.name) {
-                            Some(sub) => sub,
-                            _ => p.r#type,
-                        },
-                        _ => p.r#type,
-                    })
-                    .collect::<Vec<_>>();
-                let return_type = match &signature.return_type {
-                    HirTy::Nominal(n) => match type_parameter_substitutions.get(&n.name.name) {
-                        Some(sub) => sub,
-                        _ => signature.return_type,
-                    },
-                    _ => signature.return_type,
-                };
+                    .map(|p| HirModuleTypeCheckerPass::visit_type(self, p.r#type))
+                    .collect::<HirResult<Vec<_>>>()?;
+                let return_type =
+                    HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
                 let ty = self.arena.get_function_ty(return_type, parameters);
                 self.constrain_eq(expected_ty, ty, e.span.clone(), e.name.span.clone());
                 Ok(())
@@ -455,16 +446,36 @@ impl<'ta> TypingContext<'ta> {
                     .get(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"))
                     .clone();
-                // TODO: Check that the number of arguments matches the number of fields
-                let pairs = ty.fields.iter().zip(e.arguments.iter()).collect::<Vec<_>>();
-                for ((_, expected_ty), arg) in pairs {
+                let mut visited_fields = HashSet::new();
+                for provided_field in e.arguments.iter() {
+                    let Some(field_definition) = ty.fields.get(&provided_field.field.name) else {
+                        return Err(HirError::UnknownField(UnknownFieldError {
+                            field_name: provided_field.field.name.to_owned(),
+                            type_name: n.name.name.to_owned(),
+                            span: provided_field.field.span.clone(),
+                        }));
+                    };
+                    visited_fields.insert(provided_field.field.name.clone());
                     self.unify_eq(EqualityConstraint {
-                        expected: arg.expr.ty(),
-                        expected_loc: arg.expr.span().clone(),
-                        actual: expected_ty.r#type,
-                        actual_loc: expected_ty.span.clone(),
+                        actual: provided_field.expr.ty(),
+                        actual_loc: provided_field.expr.span().clone(),
+                        expected: field_definition.r#type,
+                        expected_loc: field_definition.span.clone(),
                     })?;
                 }
+                // If some of the fields from the struct are missing
+                for field in ty.fields.values() {
+                    if !visited_fields.contains(&field.name.name) {
+                        return Err(HirError::MissingField(MissingFieldError {
+                            type_name: n.name.name.to_owned(),
+                            field_name: field.name.name.to_owned(),
+                            span: e.span.clone(),
+                            defined_at: field.span.clone(),
+                        }));
+                    }
+                }
+                // Constrain the expected type to the callee type, and the callee to the type being
+                // constructed.
                 self.unify_eq(EqualityConstraint {
                     expected: e.ty,
                     expected_loc: e.span.clone(),
@@ -673,6 +684,7 @@ impl<'ta> TypingContext<'ta> {
 }
 
 impl<'ta> TypingContext<'ta> {
+    /// Copy the records frs from the given module into the context.
     pub fn install_module_records(&mut self, records: &BTreeMap<String, HirRecord<'ta>>) {
         for rec in records.values() {
             self.record_types
@@ -680,6 +692,7 @@ impl<'ta> TypingContext<'ta> {
         }
     }
 
+    /// Copy the functions from the given module into the context.
     pub fn install_module_functions(&mut self, functions: &BTreeMap<String, HirFunction<'ta>>) {
         let signatures = functions
             .iter()
@@ -689,6 +702,7 @@ impl<'ta> TypingContext<'ta> {
         }
     }
 
+    /// Copy the intrinsic functions from the given module into the context.
     pub fn install_module_intrinsic_functions(
         &mut self,
         functions: &BTreeMap<String, HirIntrinsicFunction<'ta>>,
@@ -698,6 +712,7 @@ impl<'ta> TypingContext<'ta> {
         }
     }
 
+    /// Copy the intrinsic scalars from the given module into the context.
     pub fn install_module_intrinsic_scalars(
         &mut self,
         scalars: &BTreeMap<String, HirIntrinsicScalar<'ta>>,
@@ -726,6 +741,7 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
+    /// Traverse the functions in the given module.
     pub fn visit_module_functions<'ta>(
         cx: &mut TypingContext<'ta>,
         functions: &mut BTreeMap<String, HirFunction<'ta>>,
@@ -736,6 +752,7 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
+    /// Traverse the intrinsic functions in the given module.
     pub fn visit_module_intrinsic_functions<'ta>(
         cx: &mut TypingContext<'ta>,
         functions: &mut BTreeMap<String, HirIntrinsicFunction<'ta>>,
@@ -746,6 +763,7 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
+    /// Traverse the records in the given module.
     pub fn visit_module_records<'ta>(
         cx: &mut TypingContext<'ta>,
         records: &mut BTreeMap<String, HirRecord<'ta>>,
@@ -767,18 +785,18 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'ta>,
         node: &mut HirIntrinsicFunction<'ta>,
     ) -> HirResult<()> {
-        cx.local_type_parameter_substitutions.enter_scope();
-        for type_parameter in node.type_parameters.iter() {
-            let substitution = cx.fresh_type_variable();
-            cx.substitutions.push(substitution);
-            cx.local_type_parameter_substitutions
-                .add(&type_parameter.syntax_name.name, substitution);
-        }
-        node.return_type = Self::visit_type(cx, node.return_type)?;
-        for p in node.parameters.iter_mut() {
-            p.r#type = Self::visit_type(cx, p.r#type)?;
-        }
-        cx.local_type_parameter_substitutions.leave_scope();
+        // cx.local_type_parameter_substitutions.enter_scope();
+        // for type_parameter in node.type_parameters.iter() {
+        //     let substitution = cx.fresh_type_variable();
+        //     cx.substitutions.push(substitution);
+        //     cx.local_type_parameter_substitutions
+        //         .add(&type_parameter.syntax_name.name, substitution);
+        // }
+        // node.return_type = Self::visit_type(cx, node.return_type)?;
+        // for p in node.parameters.iter_mut() {
+        //     p.r#type = Self::visit_type(cx, p.r#type)?;
+        // }
+        // cx.local_type_parameter_substitutions.leave_scope();
         Ok(())
     }
 
@@ -794,7 +812,6 @@ impl HirModuleTypeCheckerPass {
         cx.local_type_parameter_substitutions.enter_scope();
         for type_parameter in node.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
-            cx.substitutions.push(substitution);
             cx.local_type_parameter_substitutions
                 .add(&type_parameter.syntax_name.name, substitution);
         }

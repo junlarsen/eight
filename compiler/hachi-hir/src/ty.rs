@@ -8,7 +8,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 
 /// An interned identifier for a type.
 ///
-/// This is used to represent a HirTy in the [`HirTyArena`].
+/// This is used to represent a HirTy in the [`HirArena`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct HirTyId(u64);
 
@@ -93,12 +93,12 @@ impl<'ta> From<&'ta HirTy<'ta>> for HirTyId {
 ///
 /// It also simplifies comparison of types to pointer equality.
 #[derive(Debug)]
-pub struct HirTyArena<'a> {
+pub struct HirArena<'a> {
     arena: &'a Bump,
     type_store: RefCell<HashMap<HirTyId, &'a HirTy<'a>>>,
 }
 
-impl<'arena> HirTyArena<'arena> {
+impl<'arena> HirArena<'arena> {
     pub fn new(bump: &'arena Bump) -> Self {
         Self {
             arena: bump,
@@ -194,6 +194,7 @@ impl<'arena> HirTyArena<'arena> {
 ///
 /// 1. Pointer and reference types, which effectively are Abs types.
 /// 2. Record types, which are indexable abstract types.
+#[must_use]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum HirTy<'ta> {
     /// The builtin type `i32`.

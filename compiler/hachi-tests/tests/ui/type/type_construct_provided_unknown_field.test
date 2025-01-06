@@ -1,0 +1,10 @@
+type BrandedBool = {
+  brand: bool,
+}
+
+fn test(v: bool) -> BrandedBool {
+  let b = new BrandedBool {
+    brand: v,
+    unknown: 123,
+  };
+}

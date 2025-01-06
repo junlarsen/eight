@@ -2,7 +2,7 @@ use bumpalo::Bump;
 use hachi_hir::passes::{
     ASTSyntaxLoweringPass, HirModuleDebugPass, HirModuleTypeCheckerPass, TypingContext,
 };
-use hachi_hir::ty::HirTyArena;
+use hachi_hir::ty::HirArena;
 
 pub struct PipelineOptions {
     pub emit_ast: bool,
@@ -23,7 +23,7 @@ impl Pipeline {
         let mut parser = hachi_syntax::Parser::new(&mut lexer);
 
         let bump = Bump::new();
-        let arena = HirTyArena::new(&bump);
+        let arena = HirArena::new(&bump);
 
         let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let tu = parser.parse()?;

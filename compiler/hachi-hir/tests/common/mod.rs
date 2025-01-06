@@ -5,7 +5,7 @@ macro_rules! assert_hir_module_compiles {
     ($input:expr) => {{
         use bumpalo::Bump;
         use hachi_hir::passes::ASTSyntaxLoweringPass;
-        use hachi_hir::ty::HirTyArena;
+        use hachi_hir::ty::HirArena;
         use hachi_syntax::Lexer;
         use hachi_syntax::Parser;
 
@@ -16,7 +16,7 @@ macro_rules! assert_hir_module_compiles {
             .expect("failed to parse corpus file into syntax tree");
 
         let bump = Bump::new();
-        let arena = HirTyArena::new(&bump);
+        let arena = HirArena::new(&bump);
 
         let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let module = lowering_pass
@@ -34,7 +34,7 @@ macro_rules! assert_hir_module_infers {
         use hachi_hir::passes::ASTSyntaxLoweringPass;
         use hachi_hir::passes::HirModuleTypeCheckerPass;
         use hachi_hir::passes::TypingContext;
-        use hachi_hir::ty::HirTyArena;
+        use hachi_hir::ty::HirArena;
         use hachi_syntax::Lexer;
         use hachi_syntax::Parser;
 
@@ -45,7 +45,7 @@ macro_rules! assert_hir_module_infers {
             .expect("failed to parse corpus file into syntax tree");
 
         let bump = Bump::new();
-        let arena = HirTyArena::new(&bump);
+        let arena = HirArena::new(&bump);
 
         let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let mut module = lowering_pass

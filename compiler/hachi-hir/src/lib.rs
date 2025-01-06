@@ -11,7 +11,7 @@
 use crate::fun::{HirFunction, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::scalar::HirIntrinsicScalar;
-use crate::ty::HirTyArena;
+use crate::ty::HirArena;
 use hachi_span::Span;
 use std::collections::BTreeMap;
 
@@ -40,7 +40,7 @@ pub struct HirModule<'ta> {
 
 impl<'ta> HirModule<'ta> {
     /// Create an empty Hir module.
-    pub fn new(arena: &'ta HirTyArena<'ta>) -> Self {
+    pub fn new(arena: &'ta HirArena<'ta>) -> Self {
         Self {
             records: BTreeMap::new(),
             functions: BTreeMap::new(),

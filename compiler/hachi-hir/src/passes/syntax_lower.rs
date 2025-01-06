@@ -13,7 +13,7 @@ use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirTy, HirTyArena};
+use crate::ty::{HirArena, HirTy};
 use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
 use hachi_span::Span;
@@ -36,12 +36,12 @@ use std::collections::{BTreeMap, VecDeque};
 /// fresh type variable. This is to allow the type checker to generate a fresh type variable for
 /// each type parameter for the local context.
 pub struct ASTSyntaxLoweringPass<'ast, 'ta> {
-    arena: &'ta HirTyArena<'ta>,
+    arena: &'ta HirArena<'ta>,
     loop_depth: VecDeque<&'ast ForStmt>,
 }
 
 impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
-    pub fn new(arena: &'ta HirTyArena<'ta>) -> Self {
+    pub fn new(arena: &'ta HirArena<'ta>) -> Self {
         Self {
             arena,
             loop_depth: VecDeque::new(),
