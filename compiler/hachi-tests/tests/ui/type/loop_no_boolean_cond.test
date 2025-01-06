@@ -1,0 +1,5 @@
+fn loop() {
+  for (let i = 0; i;) {
+    let k = i;
+  }
+}

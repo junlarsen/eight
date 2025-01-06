@@ -1,15 +1,15 @@
 use crate::context::LocalContext;
 use crate::error::{
-    FunctionTypeMismatchError, HirError, HirResult,
-    InvalidFieldReferenceOfNonStructError, InvalidReferenceError, InvalidStructFieldReferenceError,
-    MissingFieldError, SelfReferentialTypeError, TypeFieldInfiniteRecursionError,
-    TypeMismatchError, UnknownFieldError, UnknownTypeError,
+    FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
+    InvalidReferenceError, InvalidStructFieldReferenceError, MissingFieldError,
+    SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError,
+    UnknownFieldError, UnknownTypeError,
 };
 use crate::expr::HirExpr;
 use crate::fun::{HirFunction, HirFunctionSignature, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::scalar::HirIntrinsicScalar;
-use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
+use crate::stmt::{HirBlockStmt, HirExprStmt, HirLetStmt, HirLoopStmt, HirStmt};
 use crate::ty::{HirArena, HirFunctionTy, HirPointerTy, HirTy};
 use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
@@ -341,12 +341,7 @@ impl<'ta> TypingContext<'ta> {
                 // We attempt to look up a local variable first. This is cheaper than attempting to
                 // instantiate a generic function.
                 if let Some(local_ty) = self.locals.find(&e.name.name) {
-                    self.constrain_eq(
-                        expected_ty,
-                        local_ty,
-                        e.span.clone(),
-                        e.name.span.clone(),
-                    );
+                    self.constrain_eq(expected_ty, local_ty, e.span.clone(), e.name.span.clone());
                     return Ok(());
                 }
 
@@ -1147,12 +1142,12 @@ impl HirModuleTypeCheckerPass {
         match node {
             HirStmt::Let(s) => Self::visit_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::visit_expr_stmt(cx, e),
-            HirStmt::Loop(_) => todo!(),
+            HirStmt::Loop(l) => Self::visit_loop_stmt(cx, l),
             HirStmt::Return(_) => Ok(()),
             HirStmt::If(_) => todo!(),
-            HirStmt::Break(_) => todo!(),
-            HirStmt::Continue(_) => todo!(),
-            HirStmt::Block(_) => todo!(),
+            HirStmt::Break(_) => Self::visit_break_stmt(cx, node),
+            HirStmt::Continue(_) => Self::visit_continue_stmt(cx, node),
+            HirStmt::Block(b) => Self::visit_block_stmt(cx, b),
         }
     }
 
@@ -1182,6 +1177,52 @@ impl HirModuleTypeCheckerPass {
         Self::visit_expr(cx, &mut node.expr)?;
         cx.solve_constraints()?;
         cx.substitute_expr(&mut node.expr)?;
+        Ok(())
+    }
+
+    pub fn visit_loop_stmt<'ta>(
+        cx: &mut TypingContext<'ta>,
+        node: &mut HirLoopStmt<'ta>,
+    ) -> HirResult<()> {
+        Self::visit_expr(cx, &mut node.condition)?;
+        cx.infer(&mut node.condition, cx.arena.get_boolean_ty())?;
+        cx.locals.enter_scope();
+        for stmt in node.body.iter_mut() {
+            Self::visit_stmt(cx, stmt)?;
+        }
+        cx.solve_constraints()?;
+        cx.locals.leave_scope();
+        cx.solve_constraints()?;
+        cx.substitute_expr(&mut node.condition)?;
+        Ok(())
+    }
+
+    pub fn visit_block_stmt<'ta>(
+        cx: &mut TypingContext<'ta>,
+        node: &mut HirBlockStmt<'ta>,
+    ) -> HirResult<()> {
+        cx.locals.enter_scope();
+        for stmt in node.body.iter_mut() {
+            Self::visit_stmt(cx, stmt)?;
+            cx.solve_constraints()?;
+        }
+        cx.locals.leave_scope();
+        Ok(())
+    }
+
+    pub fn visit_break_stmt<'ta>(
+        cx: &mut TypingContext<'ta>,
+        _: &mut HirStmt<'ta>,
+    ) -> HirResult<()> {
+        cx.solve_constraints()?;
+        Ok(())
+    }
+
+    pub fn visit_continue_stmt<'ta>(
+        cx: &mut TypingContext<'ta>,
+        _: &mut HirStmt<'ta>,
+    ) -> HirResult<()> {
+        cx.solve_constraints()?;
         Ok(())
     }
 }
