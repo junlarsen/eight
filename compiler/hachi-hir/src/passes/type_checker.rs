@@ -9,7 +9,10 @@ use crate::expr::HirExpr;
 use crate::fun::{HirFunction, HirFunctionSignature, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::scalar::HirIntrinsicScalar;
-use crate::stmt::{HirBlockStmt, HirExprStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt};
+use crate::stmt::{
+    HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
+    HirReturnStmt, HirStmt,
+};
 use crate::ty::{HirArena, HirFunctionTy, HirPointerTy, HirTy};
 use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
@@ -1144,7 +1147,7 @@ impl HirModuleTypeCheckerPass {
             HirStmt::Expr(e) => Self::visit_expr_stmt(cx, e),
             HirStmt::Loop(l) => Self::visit_loop_stmt(cx, l),
             HirStmt::Return(r) => Self::visit_return_stmt(cx, r),
-            HirStmt::If(_) => todo!(),
+            HirStmt::If(i) => Self::visit_if_stmt(cx, i),
             HirStmt::Break(_) => Self::visit_break_stmt(cx, node),
             HirStmt::Continue(_) => Self::visit_continue_stmt(cx, node),
             HirStmt::Block(b) => Self::visit_block_stmt(cx, b),
@@ -1254,6 +1257,35 @@ impl HirModuleTypeCheckerPass {
             cx.substitute_expr(inner)?;
         }
         cx.solve_constraints()?;
+        Ok(())
+    }
+
+    pub fn visit_if_stmt<'ta>(
+        cx: &mut TypingContext<'ta>,
+        node: &mut HirIfStmt<'ta>,
+    ) -> HirResult<()> {
+        Self::visit_expr(cx, &mut node.condition)?;
+        cx.infer(&mut node.condition, cx.arena.get_boolean_ty())?;
+
+        if !node.happy_path.is_empty() {
+            cx.locals.enter_scope();
+            for stmt in node.happy_path.iter_mut() {
+                Self::visit_stmt(cx, stmt)?;
+            }
+            cx.solve_constraints()?;
+            cx.locals.leave_scope();
+        }
+
+        if !node.unhappy_path.is_empty() {
+            cx.locals.enter_scope();
+            for stmt in node.unhappy_path.iter_mut() {
+                Self::visit_stmt(cx, stmt)?;
+            }
+            cx.solve_constraints()?;
+            cx.locals.leave_scope();
+        }
+        cx.solve_constraints()?;
+        cx.substitute_expr(&mut node.condition)?;
         Ok(())
     }
 }
