@@ -24,6 +24,6 @@ module {
       x: (0 as i32),
       y: (0 as i32),
     } as Vec2);
-    return (v as _);
+    return (v as Vec2);
   }
 }

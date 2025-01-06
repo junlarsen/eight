@@ -9,7 +9,7 @@ use crate::expr::HirExpr;
 use crate::fun::{HirFunction, HirFunctionSignature, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::scalar::HirIntrinsicScalar;
-use crate::stmt::{HirBlockStmt, HirExprStmt, HirLetStmt, HirLoopStmt, HirStmt};
+use crate::stmt::{HirBlockStmt, HirExprStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt};
 use crate::ty::{HirArena, HirFunctionTy, HirPointerTy, HirTy};
 use crate::{HirModule, HirName};
 use hachi_diagnostics::ice;
@@ -829,6 +829,7 @@ impl HirModuleTypeCheckerPass {
         // Recurse down into the body.
         for stmt in node.body.iter_mut() {
             Self::visit_stmt(cx, stmt)?;
+            cx.solve_constraints()?;
         }
 
         cx.locals.leave_scope();
@@ -1143,7 +1144,7 @@ impl HirModuleTypeCheckerPass {
             HirStmt::Let(s) => Self::visit_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::visit_expr_stmt(cx, e),
             HirStmt::Loop(l) => Self::visit_loop_stmt(cx, l),
-            HirStmt::Return(_) => Ok(()),
+            HirStmt::Return(r) => Self::visit_return_stmt(cx, r),
             HirStmt::If(_) => todo!(),
             HirStmt::Break(_) => Self::visit_break_stmt(cx, node),
             HirStmt::Continue(_) => Self::visit_continue_stmt(cx, node),
@@ -1204,8 +1205,8 @@ impl HirModuleTypeCheckerPass {
         cx.locals.enter_scope();
         for stmt in node.body.iter_mut() {
             Self::visit_stmt(cx, stmt)?;
-            cx.solve_constraints()?;
         }
+        cx.solve_constraints()?;
         cx.locals.leave_scope();
         Ok(())
     }
@@ -1223,6 +1224,37 @@ impl HirModuleTypeCheckerPass {
         _: &mut HirStmt<'ta>,
     ) -> HirResult<()> {
         cx.solve_constraints()?;
+        Ok(())
+    }
+
+    pub fn visit_return_stmt<'ta>(
+        cx: &mut TypingContext<'ta>,
+        node: &mut HirReturnStmt<'ta>,
+    ) -> HirResult<()> {
+        if let Some(inner) = node.value.as_mut() {
+            Self::visit_expr(cx, inner)?;
+        }
+        let parent = cx
+            .current_function
+            .front()
+            // In the future syntax like this might be legal, but even then it should be caught in
+            // the AST lowering pass.
+            .unwrap_or_else(|| ice!("tried to infer return statement outside of function"));
+        let local_ty = node
+            .value
+            .as_ref()
+            .map(|e| e.ty())
+            .unwrap_or_else(|| cx.arena.get_unit_ty());
+        cx.unify_eq(EqualityConstraint {
+            expected: parent.return_type,
+            expected_loc: node.span.clone(),
+            actual: local_ty,
+            actual_loc: node.span.clone(),
+        })?;
+        cx.solve_constraints()?;
+        if let Some(inner) = node.value.as_mut() {
+            cx.substitute_expr(inner)?;
+        }
         Ok(())
     }
 }
