@@ -17,13 +17,14 @@ module {
   
   // module functions
   fn bar(x: i32) -> i32 {
-    return (k as _);
+    return (x as i32);
   }
   fn foo() -> unit {
     let k: i32 = ((bar as fn((i32))->i32)::<>((123 as i32)) as i32);
     let z: i32 = ((generic as fn((i32))->i32)::<>((k as i32)) as i32);
+    let z: bool = ((generic as fn((bool))->bool)::<>((true as bool)) as bool);
   }
-  fn generic(x: $9) -> $9 {
-    return (x as _);
+  fn generic(x: $15) -> $15 {
+    return (x as i32);
   }
 }

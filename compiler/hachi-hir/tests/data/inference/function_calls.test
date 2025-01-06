@@ -1,5 +1,5 @@
 fn bar(x: i32) -> i32 {
-  return k;
+  return x;
 }
 
 fn generic<T>(x: T) -> T {
@@ -9,4 +9,5 @@ fn generic<T>(x: T) -> T {
 fn foo() {
   let k = bar(123);
   let z = generic(k);
+  let z = generic(true);
 }
