@@ -10,7 +10,7 @@ module {
   intrinsic_scalar unit;
   
   // module intrinsic functions
-  intrinsic_fn id(x: T) -> T;
+  intrinsic_fn id(x: $10) -> $10;
   
   // module types
   

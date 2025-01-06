@@ -780,18 +780,18 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'ta>,
         node: &mut HirIntrinsicFunction<'ta>,
     ) -> HirResult<()> {
-        // cx.local_type_parameter_substitutions.enter_scope();
-        // for type_parameter in node.type_parameters.iter() {
-        //     let substitution = cx.fresh_type_variable();
-        //     cx.substitutions.push(substitution);
-        //     cx.local_type_parameter_substitutions
-        //         .add(&type_parameter.syntax_name.name, substitution);
-        // }
-        // node.return_type = Self::visit_type(cx, node.return_type)?;
-        // for p in node.parameters.iter_mut() {
-        //     p.r#type = Self::visit_type(cx, p.r#type)?;
-        // }
-        // cx.local_type_parameter_substitutions.leave_scope();
+        cx.local_type_parameter_substitutions.enter_scope();
+        for type_parameter in node.type_parameters.iter() {
+            let substitution = cx.fresh_type_variable();
+            cx.substitutions.push(substitution);
+            cx.local_type_parameter_substitutions
+                .add(&type_parameter.syntax_name.name, substitution);
+        }
+        node.return_type = Self::visit_type(cx, node.return_type)?;
+        for p in node.parameters.iter_mut() {
+            p.r#type = Self::visit_type(cx, p.r#type)?;
+        }
+        cx.local_type_parameter_substitutions.leave_scope();
         Ok(())
     }
 
@@ -882,10 +882,9 @@ impl HirModuleTypeCheckerPass {
             t @ HirTy::Nominal(_) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
             HirTy::Pointer(t) => Self::visit_pointer_ty(cx, t),
-            t @ HirTy::Variable(_)
-            | t @ HirTy::Integer32(_)
-            | t @ HirTy::Boolean(_)
-            | t @ HirTy::Unit(_) => Ok(node),
+            HirTy::Variable(_) | HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) => {
+                Ok(node)
+            }
             // If the type was uninitialized by the lowering pass, we need to replace it with a
             // fresh type variable here.
             HirTy::Uninitialized(_) => {
@@ -1251,10 +1250,10 @@ impl HirModuleTypeCheckerPass {
             actual: local_ty,
             actual_loc: node.span.clone(),
         })?;
-        cx.solve_constraints()?;
         if let Some(inner) = node.value.as_mut() {
             cx.substitute_expr(inner)?;
         }
+        cx.solve_constraints()?;
         Ok(())
     }
 }
