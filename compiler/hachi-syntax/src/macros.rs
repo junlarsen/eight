@@ -18,11 +18,6 @@ macro_rules! declare_ast_node {
                 Self { $($field),* }
             }
 
-            /// Get the node ID of the AST node.
-            pub fn node_id(&self) -> &$crate::ast::NodeId {
-                &self.id
-            }
-
             pub fn span(&self) -> &hachi_span::Span {
                 &self.span
             }
@@ -43,15 +38,6 @@ macro_rules! declare_ast_variant {
         #[derive(Debug)]
         $vis enum $name {
             $($field($ty),)*
-        }
-
-        impl $name {
-            /// Get the node ID of the AST node.
-            pub fn node_id(&self) -> &$crate::ast::NodeId {
-                match self {
-                    $(Self::$field(v) => &v.node_id()),*
-                }
-            }
         }
     }
 }

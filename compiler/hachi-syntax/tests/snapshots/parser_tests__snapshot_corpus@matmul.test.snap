@@ -5,20 +5,17 @@ input_file: compiler/hachi-syntax/tests/data/matmul.test
 snapshot_kind: text
 ---
 TranslationUnit(
-  id: NodeId(0),
   span: Span(
     low: 0,
     high: 0,
   ),
   items: [
     Type(TypeItem(
-      id: NodeId(15),
       span: Span(
         low: 0,
         high: 50,
       ),
       name: Identifier(
-        id: NodeId(1),
         name: "Matrix",
         span: Span(
           low: 5,
@@ -27,13 +24,11 @@ TranslationUnit(
       ),
       members: [
         TypeMemberItem(
-          id: NodeId(5),
           span: Span(
             low: 18,
             high: 25,
           ),
           name: Identifier(
-            id: NodeId(2),
             name: "r",
             span: Span(
               low: 18,
@@ -41,7 +36,6 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
-            id: NodeId(4),
             span: Span(
               low: 21,
               high: 24,
@@ -49,13 +43,11 @@ TranslationUnit(
           )),
         ),
         TypeMemberItem(
-          id: NodeId(9),
           span: Span(
             low: 28,
             high: 35,
           ),
           name: Identifier(
-            id: NodeId(6),
             name: "c",
             span: Span(
               low: 28,
@@ -63,7 +55,6 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
-            id: NodeId(8),
             span: Span(
               low: 31,
               high: 34,
@@ -71,13 +62,11 @@ TranslationUnit(
           )),
         ),
         TypeMemberItem(
-          id: NodeId(14),
           span: Span(
             low: 38,
             high: 48,
           ),
           name: Identifier(
-            id: NodeId(10),
             name: "buf",
             span: Span(
               low: 38,
@@ -85,13 +74,11 @@ TranslationUnit(
             ),
           ),
           type: Pointer(PointerType(
-            id: NodeId(13),
             span: Span(
               low: 43,
               high: 47,
             ),
             inner: Integer32(Integer32Type(
-              id: NodeId(12),
               span: Span(
                 low: 44,
                 high: 47,
@@ -102,13 +89,11 @@ TranslationUnit(
       ],
     )),
     Function(FunctionItem(
-      id: NodeId(177),
       span: Span(
         low: 52,
         high: 466,
       ),
       name: Identifier(
-        id: NodeId(16),
         name: "matrix_matrix_multiply",
         span: Span(
           low: 55,
@@ -117,13 +102,11 @@ TranslationUnit(
       ),
       parameters: [
         FunctionParameterItem(
-          id: NodeId(20),
           span: Span(
             low: 78,
             high: 87,
           ),
           name: Identifier(
-            id: NodeId(17),
             name: "a",
             span: Span(
               low: 78,
@@ -131,13 +114,11 @@ TranslationUnit(
             ),
           ),
           type: Named(NamedType(
-            id: NodeId(19),
             span: Span(
               low: 81,
               high: 87,
             ),
             name: Identifier(
-              id: NodeId(18),
               name: "Matrix",
               span: Span(
                 low: 81,
@@ -147,13 +128,11 @@ TranslationUnit(
           )),
         ),
         FunctionParameterItem(
-          id: NodeId(24),
           span: Span(
             low: 89,
             high: 98,
           ),
           name: Identifier(
-            id: NodeId(21),
             name: "b",
             span: Span(
               low: 89,
@@ -161,13 +140,11 @@ TranslationUnit(
             ),
           ),
           type: Named(NamedType(
-            id: NodeId(23),
             span: Span(
               low: 92,
               high: 98,
             ),
             name: Identifier(
-              id: NodeId(22),
               name: "Matrix",
               span: Span(
                 low: 92,
@@ -179,13 +156,11 @@ TranslationUnit(
       ],
       type_parameters: [],
       return_type: Some(Named(NamedType(
-        id: NodeId(26),
         span: Span(
           low: 103,
           high: 109,
         ),
         name: Identifier(
-          id: NodeId(25),
           name: "Matrix",
           span: Span(
             low: 103,
@@ -195,13 +170,11 @@ TranslationUnit(
       ))),
       body: [
         Let(LetStmt(
-          id: NodeId(59),
           span: Span(
             low: 114,
             high: 195,
           ),
           name: Identifier(
-            id: NodeId(27),
             name: "c",
             span: Span(
               low: 118,
@@ -210,19 +183,16 @@ TranslationUnit(
           ),
           type: None,
           value: Construct(ConstructExpr(
-            id: NodeId(58),
             span: Span(
               low: 122,
               high: 194,
             ),
             callee: Named(NamedType(
-              id: NodeId(29),
               span: Span(
                 low: 126,
                 high: 132,
               ),
               name: Identifier(
-                id: NodeId(28),
                 name: "Matrix",
                 span: Span(
                   low: 126,
@@ -232,13 +202,11 @@ TranslationUnit(
             )),
             arguments: [
               ConstructorExprArgument(
-                id: NodeId(35),
                 span: Span(
                   low: 139,
                   high: 145,
                 ),
                 field: Identifier(
-                  id: NodeId(30),
                   name: "r",
                   span: Span(
                     low: 139,
@@ -246,19 +214,16 @@ TranslationUnit(
                   ),
                 ),
                 expr: DotIndex(DotIndexExpr(
-                  id: NodeId(34),
                   span: Span(
                     low: 142,
                     high: 145,
                   ),
                   origin: Reference(ReferenceExpr(
-                    id: NodeId(32),
                     span: Span(
                       low: 142,
                       high: 143,
                     ),
                     name: Identifier(
-                      id: NodeId(31),
                       name: "a",
                       span: Span(
                         low: 142,
@@ -267,7 +232,6 @@ TranslationUnit(
                     ),
                   )),
                   index: Identifier(
-                    id: NodeId(33),
                     name: "r",
                     span: Span(
                       low: 144,
@@ -277,13 +241,11 @@ TranslationUnit(
                 )),
               ),
               ConstructorExprArgument(
-                id: NodeId(41),
                 span: Span(
                   low: 151,
                   high: 157,
                 ),
                 field: Identifier(
-                  id: NodeId(36),
                   name: "c",
                   span: Span(
                     low: 151,
@@ -291,19 +253,16 @@ TranslationUnit(
                   ),
                 ),
                 expr: DotIndex(DotIndexExpr(
-                  id: NodeId(40),
                   span: Span(
                     low: 154,
                     high: 157,
                   ),
                   origin: Reference(ReferenceExpr(
-                    id: NodeId(38),
                     span: Span(
                       low: 154,
                       high: 155,
                     ),
                     name: Identifier(
-                      id: NodeId(37),
                       name: "b",
                       span: Span(
                         low: 154,
@@ -312,7 +271,6 @@ TranslationUnit(
                     ),
                   )),
                   index: Identifier(
-                    id: NodeId(39),
                     name: "c",
                     span: Span(
                       low: 156,
@@ -322,13 +280,11 @@ TranslationUnit(
                 )),
               ),
               ConstructorExprArgument(
-                id: NodeId(57),
                 span: Span(
                   low: 163,
                   high: 189,
                 ),
                 field: Identifier(
-                  id: NodeId(42),
                   name: "buf",
                   span: Span(
                     low: 163,
@@ -336,19 +292,16 @@ TranslationUnit(
                   ),
                 ),
                 expr: Call(CallExpr(
-                  id: NodeId(56),
                   span: Span(
                     low: 168,
                     high: 189,
                   ),
                   callee: Reference(ReferenceExpr(
-                    id: NodeId(44),
                     span: Span(
                       low: 168,
                       high: 174,
                     ),
                     name: Identifier(
-                      id: NodeId(43),
                       name: "malloc",
                       span: Span(
                         low: 168,
@@ -358,25 +311,21 @@ TranslationUnit(
                   )),
                   arguments: [
                     BinaryOp(BinaryOpExpr(
-                      id: NodeId(55),
                       span: Span(
                         low: 175,
                         high: 188,
                       ),
                       lhs: DotIndex(DotIndexExpr(
-                        id: NodeId(48),
                         span: Span(
                           low: 175,
                           high: 178,
                         ),
                         origin: Reference(ReferenceExpr(
-                          id: NodeId(46),
                           span: Span(
                             low: 175,
                             high: 176,
                           ),
                           name: Identifier(
-                            id: NodeId(45),
                             name: "a",
                             span: Span(
                               low: 175,
@@ -385,7 +334,6 @@ TranslationUnit(
                           ),
                         )),
                         index: Identifier(
-                          id: NodeId(47),
                           name: "r",
                           span: Span(
                             low: 177,
@@ -394,25 +342,21 @@ TranslationUnit(
                         ),
                       )),
                       rhs: BinaryOp(BinaryOpExpr(
-                        id: NodeId(54),
                         span: Span(
                           low: 181,
                           high: 188,
                         ),
                         lhs: DotIndex(DotIndexExpr(
-                          id: NodeId(52),
                           span: Span(
                             low: 181,
                             high: 184,
                           ),
                           origin: Reference(ReferenceExpr(
-                            id: NodeId(50),
                             span: Span(
                               low: 181,
                               high: 182,
                             ),
                             name: Identifier(
-                              id: NodeId(49),
                               name: "b",
                               span: Span(
                                 low: 181,
@@ -421,7 +365,6 @@ TranslationUnit(
                             ),
                           )),
                           index: Identifier(
-                            id: NodeId(51),
                             name: "c",
                             span: Span(
                               low: 183,
@@ -430,7 +373,6 @@ TranslationUnit(
                           ),
                         )),
                         rhs: IntegerLiteral(IntegerLiteralExpr(
-                          id: NodeId(53),
                           span: Span(
                             low: 187,
                             high: 188,
@@ -449,19 +391,16 @@ TranslationUnit(
           )),
         )),
         For(ForStmt(
-          id: NodeId(173),
           span: Span(
             low: 199,
             high: 452,
           ),
           initializer: Some(ForStmtInitializer(
-            id: NodeId(62),
             span: Span(
               low: 204,
               high: 213,
             ),
             name: Identifier(
-              id: NodeId(60),
               name: "i",
               span: Span(
                 low: 208,
@@ -469,7 +408,6 @@ TranslationUnit(
               ),
             ),
             initializer: IntegerLiteral(IntegerLiteralExpr(
-              id: NodeId(61),
               span: Span(
                 low: 212,
                 high: 213,
@@ -478,19 +416,16 @@ TranslationUnit(
             )),
           )),
           condition: Some(BinaryOp(BinaryOpExpr(
-            id: NodeId(69),
             span: Span(
               low: 215,
               high: 222,
             ),
             lhs: Reference(ReferenceExpr(
-              id: NodeId(64),
               span: Span(
                 low: 215,
                 high: 216,
               ),
               name: Identifier(
-                id: NodeId(63),
                 name: "i",
                 span: Span(
                   low: 215,
@@ -499,19 +434,16 @@ TranslationUnit(
               ),
             )),
             rhs: DotIndex(DotIndexExpr(
-              id: NodeId(68),
               span: Span(
                 low: 219,
                 high: 222,
               ),
               origin: Reference(ReferenceExpr(
-                id: NodeId(66),
                 span: Span(
                   low: 219,
                   high: 220,
                 ),
                 name: Identifier(
-                  id: NodeId(65),
                   name: "a",
                   span: Span(
                     low: 219,
@@ -520,7 +452,6 @@ TranslationUnit(
                 ),
               )),
               index: Identifier(
-                id: NodeId(67),
                 name: "r",
                 span: Span(
                   low: 221,
@@ -531,19 +462,16 @@ TranslationUnit(
             op: Lt,
           ))),
           increment: Some(Assign(AssignExpr(
-            id: NodeId(76),
             span: Span(
               low: 224,
               high: 233,
             ),
             lhs: Reference(ReferenceExpr(
-              id: NodeId(71),
               span: Span(
                 low: 224,
                 high: 225,
               ),
               name: Identifier(
-                id: NodeId(70),
                 name: "i",
                 span: Span(
                   low: 224,
@@ -552,19 +480,16 @@ TranslationUnit(
               ),
             )),
             rhs: BinaryOp(BinaryOpExpr(
-              id: NodeId(75),
               span: Span(
                 low: 228,
                 high: 233,
               ),
               lhs: Reference(ReferenceExpr(
-                id: NodeId(73),
                 span: Span(
                   low: 228,
                   high: 229,
                 ),
                 name: Identifier(
-                  id: NodeId(72),
                   name: "i",
                   span: Span(
                     low: 228,
@@ -573,7 +498,6 @@ TranslationUnit(
                 ),
               )),
               rhs: IntegerLiteral(IntegerLiteralExpr(
-                id: NodeId(74),
                 span: Span(
                   low: 232,
                   high: 233,
@@ -585,19 +509,16 @@ TranslationUnit(
           ))),
           body: [
             For(ForStmt(
-              id: NodeId(172),
               span: Span(
                 low: 241,
                 high: 448,
               ),
               initializer: Some(ForStmtInitializer(
-                id: NodeId(79),
                 span: Span(
                   low: 246,
                   high: 255,
                 ),
                 name: Identifier(
-                  id: NodeId(77),
                   name: "j",
                   span: Span(
                     low: 250,
@@ -605,7 +526,6 @@ TranslationUnit(
                   ),
                 ),
                 initializer: IntegerLiteral(IntegerLiteralExpr(
-                  id: NodeId(78),
                   span: Span(
                     low: 254,
                     high: 255,
@@ -614,19 +534,16 @@ TranslationUnit(
                 )),
               )),
               condition: Some(BinaryOp(BinaryOpExpr(
-                id: NodeId(86),
                 span: Span(
                   low: 257,
                   high: 264,
                 ),
                 lhs: Reference(ReferenceExpr(
-                  id: NodeId(81),
                   span: Span(
                     low: 257,
                     high: 258,
                   ),
                   name: Identifier(
-                    id: NodeId(80),
                     name: "j",
                     span: Span(
                       low: 257,
@@ -635,19 +552,16 @@ TranslationUnit(
                   ),
                 )),
                 rhs: DotIndex(DotIndexExpr(
-                  id: NodeId(85),
                   span: Span(
                     low: 261,
                     high: 264,
                   ),
                   origin: Reference(ReferenceExpr(
-                    id: NodeId(83),
                     span: Span(
                       low: 261,
                       high: 262,
                     ),
                     name: Identifier(
-                      id: NodeId(82),
                       name: "b",
                       span: Span(
                         low: 261,
@@ -656,7 +570,6 @@ TranslationUnit(
                     ),
                   )),
                   index: Identifier(
-                    id: NodeId(84),
                     name: "c",
                     span: Span(
                       low: 263,
@@ -667,19 +580,16 @@ TranslationUnit(
                 op: Lt,
               ))),
               increment: Some(Assign(AssignExpr(
-                id: NodeId(93),
                 span: Span(
                   low: 266,
                   high: 275,
                 ),
                 lhs: Reference(ReferenceExpr(
-                  id: NodeId(88),
                   span: Span(
                     low: 266,
                     high: 267,
                   ),
                   name: Identifier(
-                    id: NodeId(87),
                     name: "j",
                     span: Span(
                       low: 266,
@@ -688,19 +598,16 @@ TranslationUnit(
                   ),
                 )),
                 rhs: BinaryOp(BinaryOpExpr(
-                  id: NodeId(92),
                   span: Span(
                     low: 270,
                     high: 275,
                   ),
                   lhs: Reference(ReferenceExpr(
-                    id: NodeId(90),
                     span: Span(
                       low: 270,
                       high: 271,
                     ),
                     name: Identifier(
-                      id: NodeId(89),
                       name: "j",
                       span: Span(
                         low: 270,
@@ -709,7 +616,6 @@ TranslationUnit(
                     ),
                   )),
                   rhs: IntegerLiteral(IntegerLiteralExpr(
-                    id: NodeId(91),
                     span: Span(
                       low: 274,
                       high: 275,
@@ -721,13 +627,11 @@ TranslationUnit(
               ))),
               body: [
                 Let(LetStmt(
-                  id: NodeId(96),
                   span: Span(
                     low: 285,
                     high: 297,
                   ),
                   name: Identifier(
-                    id: NodeId(94),
                     name: "sum",
                     span: Span(
                       low: 289,
@@ -736,7 +640,6 @@ TranslationUnit(
                   ),
                   type: None,
                   value: IntegerLiteral(IntegerLiteralExpr(
-                    id: NodeId(95),
                     span: Span(
                       low: 295,
                       high: 296,
@@ -745,19 +648,16 @@ TranslationUnit(
                   )),
                 )),
                 For(ForStmt(
-                  id: NodeId(152),
                   span: Span(
                     low: 304,
                     high: 410,
                   ),
                   initializer: Some(ForStmtInitializer(
-                    id: NodeId(99),
                     span: Span(
                       low: 309,
                       high: 318,
                     ),
                     name: Identifier(
-                      id: NodeId(97),
                       name: "k",
                       span: Span(
                         low: 313,
@@ -765,7 +665,6 @@ TranslationUnit(
                       ),
                     ),
                     initializer: IntegerLiteral(IntegerLiteralExpr(
-                      id: NodeId(98),
                       span: Span(
                         low: 317,
                         high: 318,
@@ -774,19 +673,16 @@ TranslationUnit(
                     )),
                   )),
                   condition: Some(BinaryOp(BinaryOpExpr(
-                    id: NodeId(106),
                     span: Span(
                       low: 320,
                       high: 327,
                     ),
                     lhs: Reference(ReferenceExpr(
-                      id: NodeId(101),
                       span: Span(
                         low: 320,
                         high: 321,
                       ),
                       name: Identifier(
-                        id: NodeId(100),
                         name: "k",
                         span: Span(
                           low: 320,
@@ -795,19 +691,16 @@ TranslationUnit(
                       ),
                     )),
                     rhs: DotIndex(DotIndexExpr(
-                      id: NodeId(105),
                       span: Span(
                         low: 324,
                         high: 327,
                       ),
                       origin: Reference(ReferenceExpr(
-                        id: NodeId(103),
                         span: Span(
                           low: 324,
                           high: 325,
                         ),
                         name: Identifier(
-                          id: NodeId(102),
                           name: "a",
                           span: Span(
                             low: 324,
@@ -816,7 +709,6 @@ TranslationUnit(
                         ),
                       )),
                       index: Identifier(
-                        id: NodeId(104),
                         name: "c",
                         span: Span(
                           low: 326,
@@ -827,19 +719,16 @@ TranslationUnit(
                     op: Lt,
                   ))),
                   increment: Some(Assign(AssignExpr(
-                    id: NodeId(113),
                     span: Span(
                       low: 329,
                       high: 338,
                     ),
                     lhs: Reference(ReferenceExpr(
-                      id: NodeId(108),
                       span: Span(
                         low: 329,
                         high: 330,
                       ),
                       name: Identifier(
-                        id: NodeId(107),
                         name: "k",
                         span: Span(
                           low: 329,
@@ -848,19 +737,16 @@ TranslationUnit(
                       ),
                     )),
                     rhs: BinaryOp(BinaryOpExpr(
-                      id: NodeId(112),
                       span: Span(
                         low: 333,
                         high: 338,
                       ),
                       lhs: Reference(ReferenceExpr(
-                        id: NodeId(110),
                         span: Span(
                           low: 333,
                           high: 334,
                         ),
                         name: Identifier(
-                          id: NodeId(109),
                           name: "k",
                           span: Span(
                             low: 333,
@@ -869,7 +755,6 @@ TranslationUnit(
                         ),
                       )),
                       rhs: IntegerLiteral(IntegerLiteralExpr(
-                        id: NodeId(111),
                         span: Span(
                           low: 337,
                           high: 338,
@@ -881,25 +766,21 @@ TranslationUnit(
                   ))),
                   body: [
                     Expr(ExprStmt(
-                      id: NodeId(151),
                       span: Span(
                         low: 350,
                         high: 402,
                       ),
                       expr: Assign(AssignExpr(
-                        id: NodeId(150),
                         span: Span(
                           low: 350,
                           high: 401,
                         ),
                         lhs: Reference(ReferenceExpr(
-                          id: NodeId(115),
                           span: Span(
                             low: 350,
                             high: 353,
                           ),
                           name: Identifier(
-                            id: NodeId(114),
                             name: "sum",
                             span: Span(
                               low: 350,
@@ -908,19 +789,16 @@ TranslationUnit(
                           ),
                         )),
                         rhs: BinaryOp(BinaryOpExpr(
-                          id: NodeId(149),
                           span: Span(
                             low: 356,
                             high: 401,
                           ),
                           lhs: Reference(ReferenceExpr(
-                            id: NodeId(117),
                             span: Span(
                               low: 356,
                               high: 359,
                             ),
                             name: Identifier(
-                              id: NodeId(116),
                               name: "sum",
                               span: Span(
                                 low: 356,
@@ -929,31 +807,26 @@ TranslationUnit(
                             ),
                           )),
                           rhs: BinaryOp(BinaryOpExpr(
-                            id: NodeId(148),
                             span: Span(
                               low: 362,
                               high: 401,
                             ),
                             lhs: BracketIndex(BracketIndexExpr(
-                              id: NodeId(132),
                               span: Span(
                                 low: 362,
                                 high: 380,
                               ),
                               origin: DotIndex(DotIndexExpr(
-                                id: NodeId(121),
                                 span: Span(
                                   low: 362,
                                   high: 367,
                                 ),
                                 origin: Reference(ReferenceExpr(
-                                  id: NodeId(119),
                                   span: Span(
                                     low: 362,
                                     high: 363,
                                   ),
                                   name: Identifier(
-                                    id: NodeId(118),
                                     name: "a",
                                     span: Span(
                                       low: 362,
@@ -962,7 +835,6 @@ TranslationUnit(
                                   ),
                                 )),
                                 index: Identifier(
-                                  id: NodeId(120),
                                   name: "buf",
                                   span: Span(
                                     low: 364,
@@ -971,25 +843,21 @@ TranslationUnit(
                                 ),
                               )),
                               index: BinaryOp(BinaryOpExpr(
-                                id: NodeId(131),
                                 span: Span(
                                   low: 368,
                                   high: 379,
                                 ),
                                 lhs: BinaryOp(BinaryOpExpr(
-                                  id: NodeId(128),
                                   span: Span(
                                     low: 368,
                                     high: 375,
                                   ),
                                   lhs: Reference(ReferenceExpr(
-                                    id: NodeId(123),
                                     span: Span(
                                       low: 368,
                                       high: 369,
                                     ),
                                     name: Identifier(
-                                      id: NodeId(122),
                                       name: "i",
                                       span: Span(
                                         low: 368,
@@ -998,19 +866,16 @@ TranslationUnit(
                                     ),
                                   )),
                                   rhs: DotIndex(DotIndexExpr(
-                                    id: NodeId(127),
                                     span: Span(
                                       low: 372,
                                       high: 375,
                                     ),
                                     origin: Reference(ReferenceExpr(
-                                      id: NodeId(125),
                                       span: Span(
                                         low: 372,
                                         high: 373,
                                       ),
                                       name: Identifier(
-                                        id: NodeId(124),
                                         name: "a",
                                         span: Span(
                                           low: 372,
@@ -1019,7 +884,6 @@ TranslationUnit(
                                       ),
                                     )),
                                     index: Identifier(
-                                      id: NodeId(126),
                                       name: "c",
                                       span: Span(
                                         low: 374,
@@ -1030,13 +894,11 @@ TranslationUnit(
                                   op: Mul,
                                 )),
                                 rhs: Reference(ReferenceExpr(
-                                  id: NodeId(130),
                                   span: Span(
                                     low: 378,
                                     high: 379,
                                   ),
                                   name: Identifier(
-                                    id: NodeId(129),
                                     name: "k",
                                     span: Span(
                                       low: 378,
@@ -1048,25 +910,21 @@ TranslationUnit(
                               )),
                             )),
                             rhs: BracketIndex(BracketIndexExpr(
-                              id: NodeId(147),
                               span: Span(
                                 low: 383,
                                 high: 401,
                               ),
                               origin: DotIndex(DotIndexExpr(
-                                id: NodeId(136),
                                 span: Span(
                                   low: 383,
                                   high: 388,
                                 ),
                                 origin: Reference(ReferenceExpr(
-                                  id: NodeId(134),
                                   span: Span(
                                     low: 383,
                                     high: 384,
                                   ),
                                   name: Identifier(
-                                    id: NodeId(133),
                                     name: "b",
                                     span: Span(
                                       low: 383,
@@ -1075,7 +933,6 @@ TranslationUnit(
                                   ),
                                 )),
                                 index: Identifier(
-                                  id: NodeId(135),
                                   name: "buf",
                                   span: Span(
                                     low: 385,
@@ -1084,25 +941,21 @@ TranslationUnit(
                                 ),
                               )),
                               index: BinaryOp(BinaryOpExpr(
-                                id: NodeId(146),
                                 span: Span(
                                   low: 389,
                                   high: 400,
                                 ),
                                 lhs: BinaryOp(BinaryOpExpr(
-                                  id: NodeId(143),
                                   span: Span(
                                     low: 389,
                                     high: 396,
                                   ),
                                   lhs: Reference(ReferenceExpr(
-                                    id: NodeId(138),
                                     span: Span(
                                       low: 389,
                                       high: 390,
                                     ),
                                     name: Identifier(
-                                      id: NodeId(137),
                                       name: "k",
                                       span: Span(
                                         low: 389,
@@ -1111,19 +964,16 @@ TranslationUnit(
                                     ),
                                   )),
                                   rhs: DotIndex(DotIndexExpr(
-                                    id: NodeId(142),
                                     span: Span(
                                       low: 393,
                                       high: 396,
                                     ),
                                     origin: Reference(ReferenceExpr(
-                                      id: NodeId(140),
                                       span: Span(
                                         low: 393,
                                         high: 394,
                                       ),
                                       name: Identifier(
-                                        id: NodeId(139),
                                         name: "b",
                                         span: Span(
                                           low: 393,
@@ -1132,7 +982,6 @@ TranslationUnit(
                                       ),
                                     )),
                                     index: Identifier(
-                                      id: NodeId(141),
                                       name: "c",
                                       span: Span(
                                         low: 395,
@@ -1143,13 +992,11 @@ TranslationUnit(
                                   op: Mul,
                                 )),
                                 rhs: Reference(ReferenceExpr(
-                                  id: NodeId(145),
                                   span: Span(
                                     low: 399,
                                     high: 400,
                                   ),
                                   name: Identifier(
-                                    id: NodeId(144),
                                     name: "j",
                                     span: Span(
                                       low: 399,
@@ -1169,37 +1016,31 @@ TranslationUnit(
                   ],
                 )),
                 Expr(ExprStmt(
-                  id: NodeId(171),
                   span: Span(
                     low: 417,
                     high: 442,
                   ),
                   expr: Assign(AssignExpr(
-                    id: NodeId(170),
                     span: Span(
                       low: 417,
                       high: 441,
                     ),
                     lhs: BracketIndex(BracketIndexExpr(
-                      id: NodeId(167),
                       span: Span(
                         low: 417,
                         high: 435,
                       ),
                       origin: DotIndex(DotIndexExpr(
-                        id: NodeId(156),
                         span: Span(
                           low: 417,
                           high: 422,
                         ),
                         origin: Reference(ReferenceExpr(
-                          id: NodeId(154),
                           span: Span(
                             low: 417,
                             high: 418,
                           ),
                           name: Identifier(
-                            id: NodeId(153),
                             name: "c",
                             span: Span(
                               low: 417,
@@ -1208,7 +1049,6 @@ TranslationUnit(
                           ),
                         )),
                         index: Identifier(
-                          id: NodeId(155),
                           name: "buf",
                           span: Span(
                             low: 419,
@@ -1217,25 +1057,21 @@ TranslationUnit(
                         ),
                       )),
                       index: BinaryOp(BinaryOpExpr(
-                        id: NodeId(166),
                         span: Span(
                           low: 423,
                           high: 434,
                         ),
                         lhs: BinaryOp(BinaryOpExpr(
-                          id: NodeId(163),
                           span: Span(
                             low: 423,
                             high: 430,
                           ),
                           lhs: Reference(ReferenceExpr(
-                            id: NodeId(158),
                             span: Span(
                               low: 423,
                               high: 424,
                             ),
                             name: Identifier(
-                              id: NodeId(157),
                               name: "i",
                               span: Span(
                                 low: 423,
@@ -1244,19 +1080,16 @@ TranslationUnit(
                             ),
                           )),
                           rhs: DotIndex(DotIndexExpr(
-                            id: NodeId(162),
                             span: Span(
                               low: 427,
                               high: 430,
                             ),
                             origin: Reference(ReferenceExpr(
-                              id: NodeId(160),
                               span: Span(
                                 low: 427,
                                 high: 428,
                               ),
                               name: Identifier(
-                                id: NodeId(159),
                                 name: "b",
                                 span: Span(
                                   low: 427,
@@ -1265,7 +1098,6 @@ TranslationUnit(
                               ),
                             )),
                             index: Identifier(
-                              id: NodeId(161),
                               name: "c",
                               span: Span(
                                 low: 429,
@@ -1276,13 +1108,11 @@ TranslationUnit(
                           op: Mul,
                         )),
                         rhs: Reference(ReferenceExpr(
-                          id: NodeId(165),
                           span: Span(
                             low: 433,
                             high: 434,
                           ),
                           name: Identifier(
-                            id: NodeId(164),
                             name: "j",
                             span: Span(
                               low: 433,
@@ -1294,13 +1124,11 @@ TranslationUnit(
                       )),
                     )),
                     rhs: Reference(ReferenceExpr(
-                      id: NodeId(169),
                       span: Span(
                         low: 438,
                         high: 441,
                       ),
                       name: Identifier(
-                        id: NodeId(168),
                         name: "sum",
                         span: Span(
                           low: 438,
@@ -1315,19 +1143,16 @@ TranslationUnit(
           ],
         )),
         Return(ReturnStmt(
-          id: NodeId(176),
           span: Span(
             low: 455,
             high: 464,
           ),
           value: Some(Reference(ReferenceExpr(
-            id: NodeId(175),
             span: Span(
               low: 462,
               high: 463,
             ),
             name: Identifier(
-              id: NodeId(174),
               name: "c",
               span: Span(
                 low: 462,

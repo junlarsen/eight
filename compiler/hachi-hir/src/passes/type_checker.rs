@@ -10,7 +10,7 @@ use crate::fun::{HirFunction, HirFunctionSignature, HirIntrinsicFunction};
 use crate::rec::HirRecord;
 use crate::scalar::HirIntrinsicScalar;
 use crate::stmt::{
-    HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
+    HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
 use crate::ty::{HirArena, HirFunctionTy, HirPointerTy, HirTy};

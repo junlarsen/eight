@@ -5,20 +5,17 @@ input_file: compiler/hachi-syntax/tests/data/intrinsic_declaration.test
 snapshot_kind: text
 ---
 TranslationUnit(
-  id: NodeId(0),
   span: Span(
     low: 0,
     high: 0,
   ),
   items: [
     IntrinsicFunction(IntrinsicFunctionItem(
-      id: NodeId(11),
       span: Span(
         low: 0,
         high: 40,
       ),
       name: Identifier(
-        id: NodeId(1),
         name: "malloc",
         span: Span(
           low: 13,
@@ -27,13 +24,11 @@ TranslationUnit(
       ),
       parameters: [
         FunctionParameterItem(
-          id: NodeId(7),
           span: Span(
             low: 23,
             high: 32,
           ),
           name: Identifier(
-            id: NodeId(4),
             name: "size",
             span: Span(
               low: 23,
@@ -41,7 +36,6 @@ TranslationUnit(
             ),
           ),
           type: Integer32(Integer32Type(
-            id: NodeId(6),
             span: Span(
               low: 29,
               high: 32,
@@ -51,13 +45,11 @@ TranslationUnit(
       ],
       type_parameters: [
         FunctionTypeParameterItem(
-          id: NodeId(3),
           span: Span(
             low: 20,
             high: 21,
           ),
           name: Identifier(
-            id: NodeId(2),
             name: "T",
             span: Span(
               low: 20,
@@ -67,19 +59,16 @@ TranslationUnit(
         ),
       ],
       return_type: Pointer(PointerType(
-        id: NodeId(10),
         span: Span(
           low: 37,
           high: 39,
         ),
         inner: Named(NamedType(
-          id: NodeId(9),
           span: Span(
             low: 38,
             high: 39,
           ),
           name: Identifier(
-            id: NodeId(8),
             name: "T",
             span: Span(
               low: 38,
