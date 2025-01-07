@@ -38,7 +38,7 @@ impl<'ta> HirFunction<'ta> {
         let parameters = self.parameters.clone();
         let return_type = self.return_type;
         HirFunctionSignature {
-            span: self.span.clone(),
+            span: self.span,
             type_parameters,
             parameters,
             return_type,
@@ -52,7 +52,7 @@ impl<'ta> HirIntrinsicFunction<'ta> {
         let parameters = self.parameters.clone();
         let return_type = self.return_type;
         HirFunctionSignature {
-            span: self.span.clone(),
+            span: self.span,
             type_parameters,
             parameters,
             return_type,

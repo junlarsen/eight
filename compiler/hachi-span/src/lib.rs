@@ -9,7 +9,7 @@ pub type SourcePosition = u32;
 ///
 /// It has the same semantics as Rust's x..y range syntax.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Default, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Copy, Clone)]
 pub struct Span {
     pub low: SourcePosition,
     pub high: SourcePosition,

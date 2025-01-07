@@ -118,7 +118,7 @@ impl<'a> Parser<'a> {
         match token {
             token if token.ty == *ty => Ok(token),
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
-                span: token.span.clone(),
+                span: token.span,
                 token,
             })),
         }
@@ -225,7 +225,7 @@ impl Parser<'_> {
             _ => {
                 let token = self.eat()?;
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
-                    span: token.span.clone(),
+                    span: token.span,
                     token,
                 }));
             }
@@ -310,7 +310,7 @@ impl Parser<'_> {
     pub fn parse_fn_type_parameter_item(&mut self) -> ParseResult<AstFunctionTypeParameterItem> {
         // TODO: Parse this as a type
         let id = self.parse_identifier()?;
-        let node = AstFunctionTypeParameterItem::new(id.span().clone(), id);
+        let node = AstFunctionTypeParameterItem::new(*id.span(), id);
         Ok(node)
     }
 
@@ -973,7 +973,7 @@ impl Parser<'_> {
         );
         if is_reference {
             let id = self.parse_identifier()?;
-            let node = AstReferenceExpr::new(id.span().clone(), id);
+            let node = AstReferenceExpr::new(*id.span(), id);
             return Ok(AstExpr::Reference(node));
         }
         self.parse_literal_expr()
@@ -1027,7 +1027,7 @@ impl Parser<'_> {
         };
         let token = self.eat()?;
         Err(ParseError::UnexpectedToken(UnexpectedTokenError {
-            span: token.span.clone(),
+            span: token.span,
             token,
         }))
     }
@@ -1048,7 +1048,7 @@ impl Parser<'_> {
                 Ok(node)
             }
             _ => Err(ParseError::from(UnexpectedTokenError {
-                span: token.span.clone(),
+                span: token.span,
                 token,
             })),
         }
@@ -1069,17 +1069,17 @@ impl Parser<'_> {
             TokenType::Identifier(v) => match v.as_str() {
                 "i32" => {
                     let id = self.parse_identifier()?;
-                    let node = AstInteger32Type::new(id.span().clone());
+                    let node = AstInteger32Type::new(*id.span());
                     Ok(AstType::Integer32(node))
                 }
                 "bool" => {
                     let id = self.parse_identifier()?;
-                    let node = AstBooleanType::new(id.span().clone());
+                    let node = AstBooleanType::new(*id.span());
                     Ok(AstType::Boolean(node))
                 }
                 "unit" => {
                     let id = self.parse_identifier()?;
-                    let node = AstUnitType::new(id.span().clone());
+                    let node = AstUnitType::new(*id.span());
                     Ok(AstType::Unit(node))
                 }
                 _ => Ok(AstType::Named(self.parse_named_type()?)),
@@ -1088,7 +1088,7 @@ impl Parser<'_> {
             _ => {
                 let token = self.eat()?;
                 Err(ParseError::from(UnexpectedTokenError {
-                    span: token.span.clone(),
+                    span: token.span,
                     token,
                 }))
             }
@@ -1102,7 +1102,7 @@ impl Parser<'_> {
     /// ```
     pub fn parse_named_type(&mut self) -> ParseResult<AstNamedType> {
         let id = self.parse_identifier()?;
-        let node = AstNamedType::new(id.span().clone(), id);
+        let node = AstNamedType::new(*id.span(), id);
         Ok(node)
     }
 

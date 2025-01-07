@@ -159,14 +159,14 @@ impl<'ta> TypingContext<'ta> {
                         InvalidStructFieldReferenceError {
                             type_name: n.name.name.to_owned(),
                             name: field.name.to_owned(),
-                            span: field.span.clone(),
+                            span: field.span,
                         },
                     ));
                 };
                 let constraint = EqualityConstraint {
                     expected: record_field.r#type,
-                    expected_loc: record_field.span.clone(),
-                    actual_loc: n.name.span.clone(),
+                    expected_loc: record_field.span,
+                    actual_loc: n.name.span,
                     actual: resolved_type,
                 };
                 self.unify_eq(constraint)?;
@@ -176,7 +176,7 @@ impl<'ta> TypingContext<'ta> {
                 InvalidFieldReferenceOfNonStructError {
                     ty: format!("{}", resolved_type),
                     name: field.name.to_owned(),
-                    span: field.span.clone(),
+                    span: field.span,
                 },
             )),
         }
@@ -257,9 +257,9 @@ impl<'ta> TypingContext<'ta> {
                 }
                 let constraint = EqualityConstraint {
                     expected: definition.return_type,
-                    expected_loc: expected_loc.clone(),
+                    expected_loc,
                     actual: application.return_type,
-                    actual_loc: actual_loc.clone(),
+                    actual_loc,
                 };
                 self.unify_eq(constraint)?;
                 for (parameter, argument) in definition
@@ -269,9 +269,9 @@ impl<'ta> TypingContext<'ta> {
                 {
                     let constraint = EqualityConstraint {
                         expected: parameter,
-                        expected_loc: expected_loc.clone(),
+                        expected_loc,
                         actual: argument,
-                        actual_loc: actual_loc.clone(),
+                        actual_loc,
                     };
                     self.unify_eq(constraint)?;
                 }
@@ -314,8 +314,8 @@ impl<'ta> TypingContext<'ta> {
                 self.constrain_eq(
                     expected_ty,
                     self.arena.get_integer32_ty(),
-                    e.span.clone(),
-                    e.span.clone(),
+                    e.span,
+                    e.span,
                 );
                 Ok(())
             }
@@ -324,8 +324,8 @@ impl<'ta> TypingContext<'ta> {
                 self.constrain_eq(
                     expected_ty,
                     self.arena.get_boolean_ty(),
-                    e.span.clone(),
-                    e.span.clone(),
+                    e.span,
+                    e.span,
                 );
                 Ok(())
             }
@@ -334,8 +334,8 @@ impl<'ta> TypingContext<'ta> {
                 self.constrain_eq(
                     expected_ty,
                     self.arena.get_unit_ty(),
-                    e.span.clone(),
-                    e.lhs.span().clone(),
+                    e.span,
+                    *e.lhs.span(),
                 );
                 Ok(())
             }
@@ -343,7 +343,7 @@ impl<'ta> TypingContext<'ta> {
                 // We attempt to look up a local variable first. This is cheaper than attempting to
                 // instantiate a generic function.
                 if let Some(local_ty) = self.locals.find(&e.name.name) {
-                    self.constrain_eq(expected_ty, local_ty, e.span.clone(), e.name.span.clone());
+                    self.constrain_eq(expected_ty, local_ty, e.span, e.name.span);
                     return Ok(());
                 }
 
@@ -362,7 +362,7 @@ impl<'ta> TypingContext<'ta> {
                     let ty = self
                         .arena
                         .get_function_ty(signature.return_type, parameters);
-                    self.constrain_eq(expected_ty, ty, e.span.clone(), e.name.span.clone());
+                    self.constrain_eq(expected_ty, ty, e.span, e.name.span);
                     return Ok(());
                 }
 
@@ -387,7 +387,7 @@ impl<'ta> TypingContext<'ta> {
                 let return_type =
                     HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
                 let ty = self.arena.get_function_ty(return_type, parameters);
-                self.constrain_eq(expected_ty, ty, e.span.clone(), e.name.span.clone());
+                self.constrain_eq(expected_ty, ty, e.span, e.name.span);
                 Ok(())
             }
             HirExpr::OffsetIndex(e) => {
@@ -395,23 +395,23 @@ impl<'ta> TypingContext<'ta> {
                 self.constrain_eq(
                     self.arena.get_integer32_ty(),
                     e.index.ty(),
-                    e.span.clone(),
-                    e.index.span().clone(),
+                    e.span,
+                    *e.index.span(),
                 );
                 // The origin must be a pointer of the element type
                 let elem_ptr_ty = self.arena.get_pointer_ty(expected_ty);
                 self.constrain_eq(
                     elem_ptr_ty,
                     e.origin.ty(),
-                    e.span.clone(),
-                    e.origin.span().clone(),
+                    e.span,
+                    *e.origin.span(),
                 );
                 // The resulting type must be the element type
-                self.constrain_eq(expected_ty, e.ty, e.span.clone(), e.origin.span().clone());
+                self.constrain_eq(expected_ty, e.ty, e.span, *e.origin.span());
                 Ok(())
             }
             HirExpr::ConstantIndex(e) => {
-                self.constrain_eq(expected_ty, e.ty, e.span.clone(), e.origin.span().clone());
+                self.constrain_eq(expected_ty, e.ty, e.span, *e.origin.span());
                 self.constrain_field_projection(e.origin.ty(), e.index.clone(), expected_ty);
                 Ok(())
             }
@@ -421,16 +421,16 @@ impl<'ta> TypingContext<'ta> {
                 self.unify_eq(EqualityConstraint {
                     expected: expected_signature,
                     actual: e.callee.ty(),
-                    expected_loc: e.span.clone(),
-                    actual_loc: e.callee.span().clone(),
+                    expected_loc: e.span,
+                    actual_loc: *e.callee.span(),
                 })?;
 
                 // Constrain the return type of the expression to the wanted type
                 self.unify_eq(EqualityConstraint {
                     expected: expected_ty,
                     actual: e.ty,
-                    expected_loc: e.span.clone(),
-                    actual_loc: e.callee.span().clone(),
+                    expected_loc: e.span,
+                    actual_loc: *e.callee.span(),
                 })?;
                 Ok(())
             }
@@ -449,15 +449,15 @@ impl<'ta> TypingContext<'ta> {
                         return Err(HirError::UnknownField(UnknownFieldError {
                             field_name: provided_field.field.name.to_owned(),
                             type_name: n.name.name.to_owned(),
-                            span: provided_field.field.span.clone(),
+                            span: provided_field.field.span,
                         }));
                     };
                     visited_fields.insert(provided_field.field.name.clone());
                     self.unify_eq(EqualityConstraint {
                         actual: provided_field.expr.ty(),
-                        actual_loc: provided_field.expr.span().clone(),
+                        actual_loc: *provided_field.expr.span(),
                         expected: field_definition.r#type,
-                        expected_loc: field_definition.span.clone(),
+                        expected_loc: field_definition.span,
                     })?;
                 }
                 // If some of the fields from the struct are missing
@@ -466,8 +466,8 @@ impl<'ta> TypingContext<'ta> {
                         return Err(HirError::MissingField(MissingFieldError {
                             type_name: n.name.name.to_owned(),
                             field_name: field.name.name.to_owned(),
-                            span: e.span.clone(),
-                            defined_at: field.span.clone(),
+                            span: e.span,
+                            defined_at: field.span,
                         }));
                     }
                 }
@@ -475,15 +475,15 @@ impl<'ta> TypingContext<'ta> {
                 // constructed.
                 self.unify_eq(EqualityConstraint {
                     expected: e.ty,
-                    expected_loc: e.span.clone(),
+                    expected_loc: e.span,
                     actual: e.callee,
-                    actual_loc: e.span.clone(),
+                    actual_loc: e.span,
                 })?;
                 self.unify_eq(EqualityConstraint {
                     expected: e.ty,
-                    expected_loc: e.span.clone(),
+                    expected_loc: e.span,
                     actual: expected_ty,
-                    actual_loc: e.span.clone(),
+                    actual_loc: e.span,
                 })?;
                 Ok(())
             }
@@ -493,10 +493,10 @@ impl<'ta> TypingContext<'ta> {
                 self.constrain_eq(
                     expected_ty,
                     result_ty,
-                    e.span.clone(),
-                    e.inner.span().clone(),
+                    e.span,
+                    *e.inner.span(),
                 );
-                self.constrain_eq(e.ty, result_ty, e.span.clone(), e.inner.span().clone());
+                self.constrain_eq(e.ty, result_ty, e.span, *e.inner.span());
                 Ok(())
             }
             HirExpr::Deref(e) => {
@@ -505,10 +505,10 @@ impl<'ta> TypingContext<'ta> {
                 self.constrain_eq(
                     e.inner.ty(),
                     inner_ptr,
-                    e.span.clone(),
-                    e.inner.span().clone(),
+                    e.span,
+                    *e.inner.span(),
                 );
-                self.constrain_eq(e.ty, expected_ty, e.span.clone(), e.inner.span().clone());
+                self.constrain_eq(e.ty, expected_ty, e.span, *e.inner.span());
                 Ok(())
             }
             // Grouping expressions take the type of the inner expression
@@ -862,7 +862,7 @@ impl HirModuleTypeCheckerPass {
                     TypeFieldInfiniteRecursionError {
                         type_name: node.name.name.to_owned(),
                         offending_field: field.name.name.to_owned(),
-                        span: field.span.clone(),
+                        span: field.span,
                     },
                 ));
             }
@@ -922,7 +922,7 @@ impl HirModuleTypeCheckerPass {
         }
         Err(HirError::UnknownType(UnknownTypeError {
             name: n.name.name.to_owned(),
-            span: n.name.span.clone(),
+            span: n.name.span,
         }))
     }
 
@@ -1030,7 +1030,7 @@ impl HirModuleTypeCheckerPass {
         if cx.locals.find(&e.name.name).is_none() && !cx.functions.contains_key(&e.name.name) {
             return Err(HirError::InvalidReference(InvalidReferenceError {
                 name: e.name.name.to_owned(),
-                span: e.span.clone(),
+                span: e.span,
             }));
         }
         cx.infer(node, node.ty())?;
@@ -1248,9 +1248,9 @@ impl HirModuleTypeCheckerPass {
             .unwrap_or_else(|| cx.arena.get_unit_ty());
         cx.unify_eq(EqualityConstraint {
             expected: parent.return_type,
-            expected_loc: node.span.clone(),
+            expected_loc: node.span,
             actual: local_ty,
-            actual_loc: node.span.clone(),
+            actual_loc: node.span,
         })?;
         if let Some(inner) = node.value.as_mut() {
             cx.substitute_expr(inner)?;
