@@ -585,9 +585,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .ok_or(HirError::BreakOutsideLoop(BreakOutsideLoopError {
                 span: *node.span(),
             }))?;
-        let hir = HirStmt::Break(HirBreakStmt {
-            span: *node.span(),
-        });
+        let hir = HirStmt::Break(HirBreakStmt { span: *node.span() });
         Ok(hir)
     }
 
@@ -606,9 +604,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .ok_or(HirError::ContinueOutsideLoop(ContinueOutsideLoopError {
                 span: *node.span(),
             }))?;
-        let hir = HirStmt::Continue(HirContinueStmt {
-            span: *node.span(),
-        });
+        let hir = HirStmt::Continue(HirContinueStmt { span: *node.span() });
         Ok(hir)
     }
 

@@ -311,32 +311,17 @@ impl<'ta> TypingContext<'ta> {
         match expr {
             // Integer literals are always i32 at the moment
             HirExpr::IntegerLiteral(e) => {
-                self.constrain_eq(
-                    expected_ty,
-                    self.arena.get_integer32_ty(),
-                    e.span,
-                    e.span,
-                );
+                self.constrain_eq(expected_ty, self.arena.get_integer32_ty(), e.span, e.span);
                 Ok(())
             }
             // Booleans always have the bool type
             HirExpr::BooleanLiteral(e) => {
-                self.constrain_eq(
-                    expected_ty,
-                    self.arena.get_boolean_ty(),
-                    e.span,
-                    e.span,
-                );
+                self.constrain_eq(expected_ty, self.arena.get_boolean_ty(), e.span, e.span);
                 Ok(())
             }
             // We don't want assignments to be chained, so we infer them as unit
             HirExpr::Assign(e) => {
-                self.constrain_eq(
-                    expected_ty,
-                    self.arena.get_unit_ty(),
-                    e.span,
-                    *e.lhs.span(),
-                );
+                self.constrain_eq(expected_ty, self.arena.get_unit_ty(), e.span, *e.lhs.span());
                 Ok(())
             }
             HirExpr::Reference(e) => {
@@ -400,12 +385,7 @@ impl<'ta> TypingContext<'ta> {
                 );
                 // The origin must be a pointer of the element type
                 let elem_ptr_ty = self.arena.get_pointer_ty(expected_ty);
-                self.constrain_eq(
-                    elem_ptr_ty,
-                    e.origin.ty(),
-                    e.span,
-                    *e.origin.span(),
-                );
+                self.constrain_eq(elem_ptr_ty, e.origin.ty(), e.span, *e.origin.span());
                 // The resulting type must be the element type
                 self.constrain_eq(expected_ty, e.ty, e.span, *e.origin.span());
                 Ok(())
@@ -490,24 +470,14 @@ impl<'ta> TypingContext<'ta> {
             HirExpr::AddressOf(e) => {
                 // &a means that e is *inner, and expected_ty is *inner
                 let result_ty = self.arena.get_pointer_ty(e.inner.ty());
-                self.constrain_eq(
-                    expected_ty,
-                    result_ty,
-                    e.span,
-                    *e.inner.span(),
-                );
+                self.constrain_eq(expected_ty, result_ty, e.span, *e.inner.span());
                 self.constrain_eq(e.ty, result_ty, e.span, *e.inner.span());
                 Ok(())
             }
             HirExpr::Deref(e) => {
                 // *a means inner is a pointer type, and expected and e are unbox inner
                 let inner_ptr = self.arena.get_pointer_ty(expected_ty);
-                self.constrain_eq(
-                    e.inner.ty(),
-                    inner_ptr,
-                    e.span,
-                    *e.inner.span(),
-                );
+                self.constrain_eq(e.inner.ty(), inner_ptr, e.span, *e.inner.span());
                 self.constrain_eq(e.ty, expected_ty, e.span, *e.inner.span());
                 Ok(())
             }

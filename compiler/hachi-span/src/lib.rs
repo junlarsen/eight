@@ -8,12 +8,18 @@ pub type SourcePosition = u32;
 /// A span represents a range of characters in an input string.
 ///
 /// It has the same semantics as Rust's x..y range syntax.
+///
+/// Because a Span has a size of 8, we allow it to be [`Copy`]. It is now the same cost as passing a
+/// reference or pointer around.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default, PartialEq, Eq, Copy, Clone)]
 pub struct Span {
     pub low: SourcePosition,
     pub high: SourcePosition,
 }
+
+/// Ensure that the size of a Span is 8 bytes.
+const _: () = [(); 1][(size_of::<Span>() == 8) as usize ^ 1];
 
 impl From<Span> for SourceSpan {
     fn from(val: Span) -> Self {
