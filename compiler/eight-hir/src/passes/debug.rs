@@ -13,10 +13,9 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::fun::{
-    HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
+use crate::item::{
+    HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction, HirRecord,
 };
-use crate::rec::HirRecord;
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,

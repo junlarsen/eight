@@ -10,9 +10,9 @@ use crate::expr::{
     HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr, HirIntegerLiteralExpr,
     HirOffsetIndexExpr, HirReferenceExpr,
 };
-use crate::fun::{HirFunction, HirFunctionSignature, HirIntrinsicFunction};
-use crate::rec::HirRecord;
-use crate::scalar::HirIntrinsicScalar;
+use crate::item::{
+    HirFunction, HirFunctionSignature, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord,
+};
 use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };

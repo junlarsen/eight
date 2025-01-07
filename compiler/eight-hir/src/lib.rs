@@ -8,9 +8,7 @@
 //! and abstractions that the syntax of the language provides, providing more information about the
 //! program than the AST.
 
-use crate::fun::{HirFunction, HirIntrinsicFunction};
-use crate::rec::HirRecord;
-use crate::scalar::HirIntrinsicScalar;
+use crate::item::{HirFunction, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord};
 use crate::ty::HirArena;
 use eight_span::Span;
 use std::collections::BTreeMap;
@@ -18,10 +16,8 @@ use std::collections::BTreeMap;
 pub mod context;
 pub mod error;
 pub mod expr;
-pub mod fun;
+pub mod item;
 pub mod passes;
-pub mod rec;
-pub mod scalar;
 pub mod stmt;
 pub mod ty;
 
