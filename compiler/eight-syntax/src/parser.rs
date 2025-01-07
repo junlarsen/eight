@@ -9,9 +9,9 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::{
-    AstBooleanLiteralExpr, AstBooleanType, AstFunctionTypeParameterItem, AstIntrinsicFunctionItem,
-    AstIntrinsicScalarItem, ParseError, ParseResult, Token, TokenType, UnexpectedEndOfFileError,
-    UnexpectedTokenError,
+    AstBooleanLiteralExpr, AstBooleanType, AstInstanceItem, AstIntrinsicFunctionItem,
+    AstIntrinsicScalarItem, AstTraitFunctionItem, AstTraitItem, AstTypeParameterItem, ParseError,
+    ParseResult, Token, TokenType, UnexpectedEndOfFileError, UnexpectedTokenError,
 };
 use eight_span::Span;
 
@@ -213,7 +213,7 @@ impl Parser<'_> {
     /// Parse an item.
     ///
     /// ```text
-    /// item ::= fn_item | type_item | intrinsic_fn_item
+    /// item ::= fn_item | type_item | intrinsic_fn_item | trait_item | instance_item
     /// ```
     pub fn parse_item(&mut self) -> ParseResult<AstItem> {
         let token = self.lookahead_or_err()?;
@@ -226,6 +226,8 @@ impl Parser<'_> {
             TokenType::KeywordIntrinsicScalar => {
                 AstItem::IntrinsicScalar(self.parse_intrinsic_scalar_item()?)
             }
+            TokenType::KeywordTrait => AstItem::Trait(self.parse_trait_item()?),
+            TokenType::KeywordInstance => AstItem::Instance(self.parse_instance_item()?),
             _ => {
                 let token = self.eat()?;
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
@@ -241,7 +243,7 @@ impl Parser<'_> {
     ///
     /// ```text
     /// fn_item ::= KEYWORD_FN IDENTIFIER
-    ///             (OPEN_ANGLE ((fn_type_parameter_item COMMA)+ fn_type_parameter_item)? CLOSE_ANGLE)?
+    ///             (OPEN_ANGLE ((type_parameter_item COMMA)+ type_parameter_item)? CLOSE_ANGLE)?
     ///             OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
     ///             CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
     /// ```
@@ -256,7 +258,7 @@ impl Parser<'_> {
                     let type_parameters = p.parser_combinator_delimited(
                         &TokenType::Comma,
                         &TokenType::CloseAngle,
-                        |p| p.parse_fn_type_parameter_item(),
+                        |p| p.parse_type_parameter_item(),
                     )?;
                     p.check(&TokenType::CloseAngle)?;
                     Ok(type_parameters)
@@ -313,11 +315,11 @@ impl Parser<'_> {
     /// Parse a function type parameter item.
     ///
     /// ```text
-    /// fn_type_parameter_item ::= identifier
+    /// type_parameter_item ::= identifier
     /// ```
-    pub fn parse_fn_type_parameter_item(&mut self) -> ParseResult<AstFunctionTypeParameterItem> {
+    pub fn parse_type_parameter_item(&mut self) -> ParseResult<AstTypeParameterItem> {
         let id = self.parse_identifier()?;
-        let node = AstFunctionTypeParameterItem {
+        let node = AstTypeParameterItem {
             span: id.span,
             name: id,
         };
@@ -369,7 +371,7 @@ impl Parser<'_> {
     ///
     /// ```text
     /// intrinsic_fn_item ::= KEYWORD_INTRINSIC_FN IDENTIFIER
-    ///                       (OPEN_ANGLE ((fn_type_parameter_item COMMA)+ fn_type_parameter_item)? CLOSE_ANGLE)?
+    ///                       (OPEN_ANGLE ((type_parameter_item COMMA)+ type_parameter_item)? CLOSE_ANGLE)?
     ///                       OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
     ///                       ARROW type SEMICOLON
     /// ```
@@ -384,7 +386,7 @@ impl Parser<'_> {
                     let type_parameters = p.parser_combinator_delimited(
                         &TokenType::Comma,
                         &TokenType::CloseAngle,
-                        |p| p.parse_fn_type_parameter_item(),
+                        |p| p.parse_type_parameter_item(),
                     )?;
                     p.check(&TokenType::CloseAngle)?;
                     Ok(type_parameters)
@@ -422,6 +424,135 @@ impl Parser<'_> {
         let node = AstIntrinsicScalarItem {
             span: Span::from_pair(&start.span, &end.span),
             name: id,
+        };
+        Ok(node)
+    }
+
+    /// Parse a trait item.
+    ///
+    /// At the moment, we require at least one type parameter on the trait. Otherwise, it would not
+    /// make sense to have an instance of it.
+    ///
+    /// TODO: Consider if we should change syntax to `instance Trait for Type` syntax instead.
+    ///
+    /// ```text
+    /// trait_item ::= KEYWORD_TRAIT IDENTIFIER
+    ///                OPEN_ANGLE ((type_parameter_item COMMA)+ type_parameter_item) CLOSE_ANGLE
+    ///                OPEN_BRACE trait_function_item* CLOSE_BRACE
+    ///
+    pub fn parse_trait_item(&mut self) -> ParseResult<AstTraitItem> {
+        let start = self.check(&TokenType::KeywordTrait)?;
+        let id = self.parse_identifier()?;
+        let type_parameters = self
+            .parser_combinator_take_if(
+                |t| t.ty == TokenType::OpenAngle,
+                |p| {
+                    p.check(&TokenType::OpenAngle)?;
+                    let type_parameters = p.parser_combinator_delimited(
+                        &TokenType::Comma,
+                        &TokenType::CloseAngle,
+                        |p| p.parse_type_parameter_item(),
+                    )?;
+                    p.check(&TokenType::CloseAngle)?;
+                    Ok(type_parameters)
+                },
+            )?
+            .unwrap_or(vec![]);
+        self.check(&TokenType::OpenBrace)?;
+        let members =
+            self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_trait_function_item())?;
+        let end = self.check(&TokenType::CloseBrace)?;
+        let node = AstTraitItem {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
+            type_parameters,
+            members,
+        };
+        Ok(node)
+    }
+
+    /// Parse a trait function item.
+    ///
+    /// ```text
+    /// trait_function_item ::= KEYWORD_FN IDENTIFIER
+    ///                         (OPEN_ANGLE ((type_parameter_item COMMA)+ type_parameter_item)? CLOSE_ANGLE)?
+    ///                         OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
+    ///                         (ARROW type)? SEMICOLON
+    pub fn parse_trait_function_item(&mut self) -> ParseResult<AstTraitFunctionItem> {
+        let start = self.check(&TokenType::KeywordFn)?;
+        let id = self.parse_identifier()?;
+        let type_parameters = self
+            .parser_combinator_take_if(
+                |t| t.ty == TokenType::OpenAngle,
+                |p| {
+                    p.check(&TokenType::OpenAngle)?;
+                    let type_parameters = p.parser_combinator_delimited(
+                        &TokenType::Comma,
+                        &TokenType::CloseAngle,
+                        |p| p.parse_type_parameter_item(),
+                    )?;
+                    p.check(&TokenType::CloseAngle)?;
+                    Ok(type_parameters)
+                },
+            )?
+            .unwrap_or(vec![]);
+        self.check(&TokenType::OpenParen)?;
+        let parameters =
+            self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseParen, |p| {
+                p.parse_fn_parameter_item()
+            })?;
+        self.check(&TokenType::CloseParen)?;
+        let return_type = self.parser_combinator_take_if(
+            |t| t.ty == TokenType::Arrow,
+            |p| {
+                p.check(&TokenType::Arrow)?;
+                p.parse_type()
+            },
+        )?;
+        let end = self.check(&TokenType::Semicolon)?;
+        let node = AstTraitFunctionItem {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
+            type_parameters,
+            parameters,
+            return_type,
+        };
+        Ok(node)
+    }
+
+    /// Parse an instance item.
+    ///
+    /// ```text
+    /// instance_item ::= KEYWORD_INSTANCE IDENTIFIER
+    ///                   OPEN_ANGLE ((type (COMMA type)*)? CLOSE_ANGLE)?
+    ///                   OPEN_BRACE fn_item* CLOSE_BRACE
+    /// ```
+    pub fn parse_instance_item(&mut self) -> ParseResult<AstInstanceItem> {
+        let start = self.check(&TokenType::KeywordInstance)?;
+        let id = self.parse_identifier()?;
+        let instantiation_type_parameters = self
+            .parser_combinator_take_if(
+                |t| t.ty == TokenType::OpenAngle,
+                |p| {
+                    p.check(&TokenType::OpenAngle)?;
+                    let type_parameters = p.parser_combinator_delimited(
+                        &TokenType::Comma,
+                        &TokenType::CloseAngle,
+                        |p| p.parse_type(),
+                    )?;
+                    p.check(&TokenType::CloseAngle)?;
+                    Ok(type_parameters)
+                },
+            )?
+            .unwrap_or(vec![]);
+        self.check(&TokenType::OpenBrace)?;
+        let members = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_fn_item())?;
+        let end = self.check(&TokenType::CloseBrace)?;
+        let node = AstInstanceItem {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
+            instantiation_type_parameters,
+            members,
         };
         Ok(node)
     }
@@ -1372,8 +1503,8 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_fn_type_parameter_item() {
-        let prod = assert_parse("T", |p| p.parse_fn_type_parameter_item());
+    fn test_parse_type_parameter_item() {
+        let prod = assert_parse("T", |p| p.parse_type_parameter_item());
         let prod = assert_ok!(prod);
         let name = prod.name;
         assert!(matches!(name, AstIdentifier { name, .. } if name == "T"));
@@ -1409,6 +1540,32 @@ mod tests {
         let prod = assert_ok!(prod);
         let name = prod.name;
         assert!(matches!(name, AstIdentifier { name, .. } if name == "i32"));
+    }
+
+    #[test]
+    fn test_parse_trait_item() {
+        let prod = assert_parse("trait Foo<K> { fn bar() -> K; }", |p| p.parse_trait_item());
+        let prod = assert_ok!(prod);
+        let name = prod.name;
+        let type_parameters = prod.type_parameters;
+        let members = prod.members;
+        assert!(matches!(name, AstIdentifier { name, .. } if name == "Foo"));
+        assert_eq!(type_parameters.len(), 1);
+        assert_eq!(members.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_instance_item() {
+        let prod = assert_parse("instance Foo<i32> { fn bar() -> i32 { return 0; } }", |p| {
+            p.parse_instance_item()
+        });
+        let prod = assert_ok!(prod);
+        let name = prod.name;
+        let instantiation_type_parameters = prod.instantiation_type_parameters;
+        let members = prod.members;
+        assert!(matches!(name, AstIdentifier { name, .. } if name == "Foo"));
+        assert_eq!(instantiation_type_parameters.len(), 1);
+        assert_eq!(members.len(), 1);
     }
 
     #[test]

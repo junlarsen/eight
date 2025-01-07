@@ -266,6 +266,8 @@ impl<'a> Lexer<'a> {
             "new" => TokenType::KeywordNew,
             "intrinsic_fn" => TokenType::KeywordIntrinsicFn,
             "intrinsic_scalar" => TokenType::KeywordIntrinsicScalar,
+            "trait" => TokenType::KeywordTrait,
+            "instance" => TokenType::KeywordInstance,
             "true" => TokenType::BooleanLiteral(true),
             "false" => TokenType::BooleanLiteral(false),
             _ => TokenType::Identifier(value),

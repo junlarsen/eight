@@ -40,7 +40,7 @@ AstTranslationUnit(
         ),
       ],
       type_parameters: [
-        AstFunctionTypeParameterItem(
+        AstTypeParameterItem(
           span: Span(
             low: 20,
             high: 21,

@@ -20,6 +20,8 @@ pub enum AstItem {
     IntrinsicFunction(AstIntrinsicFunctionItem),
     IntrinsicScalar(AstIntrinsicScalarItem),
     Type(AstTypeItem),
+    Trait(AstTraitItem),
+    Instance(AstInstanceItem),
 }
 
 impl AstItem {
@@ -29,6 +31,8 @@ impl AstItem {
             AstItem::IntrinsicFunction(f) => &f.span,
             AstItem::IntrinsicScalar(f) => &f.span,
             AstItem::Type(f) => &f.span,
+            AstItem::Trait(f) => &f.span,
+            AstItem::Instance(f) => &f.span,
         }
     }
 }
@@ -39,7 +43,7 @@ pub struct AstFunctionItem {
     pub span: Span,
     pub name: AstIdentifier,
     pub parameters: Vec<AstFunctionParameterItem>,
-    pub type_parameters: Vec<AstFunctionTypeParameterItem>,
+    pub type_parameters: Vec<AstTypeParameterItem>,
     pub return_type: Option<AstType>,
     pub body: Vec<AstStmt>,
 }
@@ -50,13 +54,13 @@ pub struct AstIntrinsicFunctionItem {
     pub span: Span,
     pub name: AstIdentifier,
     pub parameters: Vec<AstFunctionParameterItem>,
-    pub type_parameters: Vec<AstFunctionTypeParameterItem>,
+    pub type_parameters: Vec<AstTypeParameterItem>,
     pub return_type: AstType,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstFunctionTypeParameterItem {
+pub struct AstTypeParameterItem {
     pub span: Span,
     pub name: AstIdentifier,
 }
@@ -90,6 +94,35 @@ pub struct AstTypeMemberItem {
     pub span: Span,
     pub name: AstIdentifier,
     pub ty: AstType,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct AstTraitItem {
+    pub span: Span,
+    pub name: AstIdentifier,
+    pub type_parameters: Vec<AstTypeParameterItem>,
+    pub members: Vec<AstTraitFunctionItem>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct AstTraitFunctionItem {
+    pub span: Span,
+    pub name: AstIdentifier,
+    pub type_parameters: Vec<AstTypeParameterItem>,
+    pub parameters: Vec<AstFunctionParameterItem>,
+    pub return_type: Option<AstType>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct AstInstanceItem {
+    pub span: Span,
+    pub name: AstIdentifier,
+    /// The type parameters the trait instance is for
+    pub instantiation_type_parameters: Vec<AstType>,
+    pub members: Vec<AstFunctionItem>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

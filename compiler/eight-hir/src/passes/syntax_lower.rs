@@ -22,9 +22,9 @@ use eight_syntax::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBracketIndexExpr,
     AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument, AstContinueStmt,
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,
-    AstFunctionTypeParameterItem, AstGroupExpr, AstIdentifier, AstIfStmt, AstIntegerLiteralExpr,
-    AstIntrinsicFunctionItem, AstIntrinsicScalarItem, AstItem, AstLetStmt, AstReferenceExpr,
-    AstReturnStmt, AstStmt, AstTranslationUnit, AstType, AstTypeItem, AstUnaryOp, AstUnaryOpExpr,
+    AstGroupExpr, AstIdentifier, AstIfStmt, AstIntegerLiteralExpr, AstIntrinsicFunctionItem,
+    AstIntrinsicScalarItem, AstItem, AstLetStmt, AstReferenceExpr, AstReturnStmt, AstStmt,
+    AstTranslationUnit, AstType, AstTypeItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
 use std::collections::{BTreeMap, VecDeque};
 
@@ -280,6 +280,8 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             AstItem::IntrinsicFunction(f) => self.visit_intrinsic_function_item(module, f),
             AstItem::Type(t) => self.visit_type_item(module, t),
             AstItem::IntrinsicScalar(s) => self.visit_intrinsic_scalar_item(module, s),
+            AstItem::Trait(_) => todo!(),
+            AstItem::Instance(_) => todo!(),
         }
     }
 
@@ -370,7 +372,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
 
     pub fn visit_function_type_parameter(
         &mut self,
-        node: &'ast AstFunctionTypeParameterItem,
+        node: &'ast AstTypeParameterItem,
     ) -> HirResult<HirFunctionTypeParameter<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let hir = HirFunctionTypeParameter {
