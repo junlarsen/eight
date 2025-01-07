@@ -31,7 +31,7 @@ AstTranslationUnit(
               high: 19,
             ),
           ),
-          type: Integer32(AstInteger32Type(
+          ty: Integer32(AstInteger32Type(
             span: Span(
               low: 21,
               high: 24,
@@ -50,7 +50,7 @@ AstTranslationUnit(
               high: 29,
             ),
           ),
-          type: Integer32(AstInteger32Type(
+          ty: Integer32(AstInteger32Type(
             span: Span(
               low: 31,
               high: 34,
@@ -69,7 +69,7 @@ AstTranslationUnit(
               high: 41,
             ),
           ),
-          type: Pointer(AstPointerType(
+          ty: Pointer(AstPointerType(
             span: Span(
               low: 43,
               high: 47,
@@ -109,7 +109,7 @@ AstTranslationUnit(
               high: 79,
             ),
           ),
-          type: Named(AstNamedType(
+          ty: Named(AstNamedType(
             span: Span(
               low: 81,
               high: 87,
@@ -135,7 +135,7 @@ AstTranslationUnit(
               high: 90,
             ),
           ),
-          type: Named(AstNamedType(
+          ty: Named(AstNamedType(
             span: Span(
               low: 92,
               high: 98,
@@ -177,7 +177,7 @@ AstTranslationUnit(
               high: 119,
             ),
           ),
-          type: None,
+          ty: None,
           value: Construct(AstConstructExpr(
             span: Span(
               low: 122,
@@ -634,7 +634,7 @@ AstTranslationUnit(
                       high: 292,
                     ),
                   ),
-                  type: None,
+                  ty: None,
                   value: IntegerLiteral(AstIntegerLiteralExpr(
                     span: Span(
                       low: 295,

@@ -31,7 +31,7 @@ AstTranslationUnit(
               high: 27,
             ),
           ),
-          type: Integer32(AstInteger32Type(
+          ty: Integer32(AstInteger32Type(
             span: Span(
               low: 29,
               high: 32,

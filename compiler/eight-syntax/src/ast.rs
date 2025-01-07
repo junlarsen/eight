@@ -66,7 +66,7 @@ pub struct AstFunctionTypeParameterItem {
 pub struct AstFunctionParameterItem {
     pub span: Span,
     pub name: AstIdentifier,
-    pub r#type: AstType,
+    pub ty: AstType,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -89,7 +89,7 @@ pub struct AstTypeItem {
 pub struct AstTypeMemberItem {
     pub span: Span,
     pub name: AstIdentifier,
-    pub r#type: AstType,
+    pub ty: AstType,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -124,7 +124,7 @@ impl AstStmt {
 pub struct AstLetStmt {
     pub span: Span,
     pub name: AstIdentifier,
-    pub r#type: Option<AstType>,
+    pub ty: Option<AstType>,
     pub value: AstExpr,
 }
 

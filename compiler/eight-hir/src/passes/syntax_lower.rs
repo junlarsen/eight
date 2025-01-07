@@ -358,12 +358,12 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         node: &'ast AstFunctionParameterItem,
     ) -> HirResult<HirFunctionParameter<'ta>> {
         let name = self.visit_identifier(&node.name)?;
-        let ty = self.visit_type(&node.r#type)?;
+        let ty = self.visit_type(&node.ty)?;
         let hir = HirFunctionParameter {
             span: node.span,
             name,
-            r#type: ty,
-            type_annotation: *node.r#type.span(),
+            ty,
+            type_annotation: *node.ty.span(),
         };
         Ok(hir)
     }
@@ -420,11 +420,11 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .members
             .iter()
             .map(|member| {
-                let ty = self.visit_type(&member.r#type)?;
+                let ty = self.visit_type(&member.ty)?;
                 let field = HirRecordField {
                     name: self.visit_identifier(&member.name)?,
-                    r#type: ty,
-                    type_annotation: *member.r#type.span(),
+                    ty,
+                    type_annotation: *member.ty.span(),
                     span: member.span,
                 };
                 Ok((member.name.name.to_owned(), field))
@@ -453,7 +453,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
 
     pub fn visit_let_stmt(&mut self, node: &'ast AstLetStmt) -> HirResult<HirStmt<'ta>> {
         let name = self.visit_identifier(&node.name)?;
-        let r#type = match &node.r#type {
+        let ty = match &node.ty {
             Some(t) => self.visit_type(t)?,
             None => self.arena.get_uninitialized_ty(),
         };
@@ -461,8 +461,8 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let hir = HirStmt::Let(HirLetStmt {
             span: node.span,
             name,
-            r#type,
-            type_annotation: node.r#type.as_ref().map(|t| *t.span()),
+            ty,
+            type_annotation: node.ty.as_ref().map(|t| *t.span()),
             value,
         });
         Ok(hir)
@@ -512,7 +512,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 Ok(HirLetStmt {
                     span: i.span,
                     name: self.visit_identifier(&i.name)?,
-                    r#type: self.arena.get_uninitialized_ty(),
+                    ty: self.arena.get_uninitialized_ty(),
                     type_annotation: None,
                     value: self.visit_expr(&i.initializer)?,
                 })

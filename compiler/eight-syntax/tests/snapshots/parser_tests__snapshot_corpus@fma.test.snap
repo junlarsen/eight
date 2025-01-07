@@ -31,7 +31,7 @@ AstTranslationUnit(
               high: 20,
             ),
           ),
-          type: Pointer(AstPointerType(
+          ty: Pointer(AstPointerType(
             span: Span(
               low: 22,
               high: 26,
@@ -71,7 +71,7 @@ AstTranslationUnit(
               high: 46,
             ),
           ),
-          type: Named(AstNamedType(
+          ty: Named(AstNamedType(
             span: Span(
               low: 48,
               high: 54,
@@ -97,7 +97,7 @@ AstTranslationUnit(
               high: 57,
             ),
           ),
-          type: Named(AstNamedType(
+          ty: Named(AstNamedType(
             span: Span(
               low: 59,
               high: 65,
@@ -123,7 +123,7 @@ AstTranslationUnit(
               high: 70,
             ),
           ),
-          type: Named(AstNamedType(
+          ty: Named(AstNamedType(
             span: Span(
               low: 72,
               high: 78,
@@ -165,7 +165,7 @@ AstTranslationUnit(
               high: 100,
             ),
           ),
-          type: None,
+          ty: None,
           value: Construct(AstConstructExpr(
             span: Span(
               low: 103,

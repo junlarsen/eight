@@ -305,7 +305,7 @@ impl Parser<'_> {
         let node = AstFunctionParameterItem {
             span: Span::from_pair(&id.span, ty.span()),
             name: id,
-            r#type: ty,
+            ty,
         };
         Ok(node)
     }
@@ -358,7 +358,7 @@ impl Parser<'_> {
         let node = AstTypeMemberItem {
             span: Span::from_pair(&id.span, &end.span),
             name: id,
-            r#type: ty,
+            ty,
         };
         Ok(node)
     }
@@ -472,7 +472,7 @@ impl Parser<'_> {
         let node = AstLetStmt {
             span: Span::from_pair(&start.span, &end.span),
             name: id,
-            r#type: ty,
+            ty,
             value: expr,
         };
         Ok(node)
@@ -1270,19 +1270,19 @@ mod tests {
         let prod = assert_parse("x: i32,", |p| p.parse_type_member_item());
         let prod = assert_ok!(prod);
         let name = prod.name;
-        let r#type = prod.r#type;
+        let ty = prod.ty;
 
         assert!(matches!(name, AstIdentifier { name, .. } if name == "x"));
-        assert!(matches!(&r#type, AstType::Integer32(_)));
+        assert!(matches!(&ty, AstType::Integer32(_)));
 
         let prod = assert_parse("x: *matrix,", |p| p.parse_type_member_item());
         let prod = assert_ok!(prod);
         let name = prod.name;
-        let r#type = prod.r#type;
+        let ty = prod.ty;
 
         assert!(matches!(name, AstIdentifier { name, .. } if name == "x"));
-        assert!(matches!(&r#type, AstType::Pointer(_)));
-        if let AstType::Pointer(ptr) = r#type {
+        assert!(matches!(&ty, AstType::Pointer(_)));
+        if let AstType::Pointer(ptr) = ty {
             assert!(matches!(*ptr.inner.as_ref(), AstType::Named(_)));
             let inner = ptr.inner.as_ref();
             assert!(matches!(inner, AstType::Named(name) if name.name.name == "matrix"));
@@ -1316,10 +1316,10 @@ mod tests {
         let prod = assert_ok!(prod);
 
         let name = prod.name;
-        let r#type = prod.r#type;
+        let ty = prod.ty;
 
         assert!(matches!(name, AstIdentifier { name, .. } if name == "x"));
-        assert!(matches!(&r#type, AstType::Integer32(_)));
+        assert!(matches!(&ty, AstType::Integer32(_)));
     }
 
     #[test]
@@ -1417,16 +1417,16 @@ mod tests {
         let prod = assert_ok!(prod);
         let name = prod.name;
         let initializer = prod.value;
-        let r#type = prod.r#type.as_ref();
+        let ty = prod.ty.as_ref();
         assert_eq!(name.name, "x");
         assert!(matches!(initializer, AstExpr::IntegerLiteral(_)));
-        assert_none!(r#type);
+        assert_none!(ty);
 
         let prod = assert_parse("let x: i32 = 1;", |p| p.parse_let_stmt());
         let prod = assert_ok!(prod);
-        let r#type = prod.r#type;
-        let r#type = assert_some!(r#type);
-        assert!(matches!(&r#type, AstType::Integer32(_)));
+        let ty = prod.ty;
+        let ty = assert_some!(ty);
+        assert!(matches!(&ty, AstType::Integer32(_)));
     }
 
     #[test]

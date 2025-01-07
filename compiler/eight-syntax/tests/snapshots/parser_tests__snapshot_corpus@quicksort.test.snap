@@ -31,7 +31,7 @@ AstTranslationUnit(
               high: 15,
             ),
           ),
-          type: Pointer(AstPointerType(
+          ty: Pointer(AstPointerType(
             span: Span(
               low: 17,
               high: 21,
@@ -56,7 +56,7 @@ AstTranslationUnit(
               high: 24,
             ),
           ),
-          type: Integer32(AstInteger32Type(
+          ty: Integer32(AstInteger32Type(
             span: Span(
               low: 26,
               high: 29,
@@ -75,7 +75,7 @@ AstTranslationUnit(
               high: 32,
             ),
           ),
-          type: Integer32(AstInteger32Type(
+          ty: Integer32(AstInteger32Type(
             span: Span(
               low: 34,
               high: 37,
@@ -137,7 +137,7 @@ AstTranslationUnit(
                   high: 65,
                 ),
               ),
-              type: None,
+              ty: None,
               value: Call(AstCallExpr(
                 span: Span(
                   low: 68,
@@ -392,7 +392,7 @@ AstTranslationUnit(
               high: 169,
             ),
           ),
-          type: Pointer(AstPointerType(
+          ty: Pointer(AstPointerType(
             span: Span(
               low: 171,
               high: 175,
@@ -417,7 +417,7 @@ AstTranslationUnit(
               high: 178,
             ),
           ),
-          type: Integer32(AstInteger32Type(
+          ty: Integer32(AstInteger32Type(
             span: Span(
               low: 180,
               high: 183,
@@ -436,7 +436,7 @@ AstTranslationUnit(
               high: 186,
             ),
           ),
-          type: Integer32(AstInteger32Type(
+          ty: Integer32(AstInteger32Type(
             span: Span(
               low: 188,
               high: 191,
@@ -464,7 +464,7 @@ AstTranslationUnit(
               high: 209,
             ),
           ),
-          type: None,
+          ty: None,
           value: BracketIndex(AstBracketIndexExpr(
             span: Span(
               low: 212,
@@ -510,7 +510,7 @@ AstTranslationUnit(
               high: 226,
             ),
           ),
-          type: None,
+          ty: None,
           value: BinaryOp(AstBinaryOpExpr(
             span: Span(
               low: 229,
@@ -1051,7 +1051,7 @@ AstTranslationUnit(
               high: 407,
             ),
           ),
-          type: Pointer(AstPointerType(
+          ty: Pointer(AstPointerType(
             span: Span(
               low: 409,
               high: 413,
@@ -1076,7 +1076,7 @@ AstTranslationUnit(
               high: 416,
             ),
           ),
-          type: Pointer(AstPointerType(
+          ty: Pointer(AstPointerType(
             span: Span(
               low: 418,
               high: 422,
@@ -1105,7 +1105,7 @@ AstTranslationUnit(
               high: 435,
             ),
           ),
-          type: None,
+          ty: None,
           value: UnaryOp(AstUnaryOpExpr(
             span: Span(
               low: 438,

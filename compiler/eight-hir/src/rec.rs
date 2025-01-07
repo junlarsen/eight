@@ -17,6 +17,6 @@ pub struct HirRecord<'ta> {
 pub struct HirRecordField<'ta> {
     pub span: Span,
     pub name: HirName,
-    pub r#type: &'ta HirTy<'ta>,
+    pub ty: &'ta HirTy<'ta>,
     pub type_annotation: Span,
 }

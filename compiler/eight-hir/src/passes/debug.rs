@@ -161,7 +161,7 @@ impl HirModuleDebugPass {
                                     RcDoc::text(name.as_str())
                                         .append(RcDoc::text(":"))
                                         .append(RcDoc::space())
-                                        .append(Self::format_hir_ty(ty.r#type))
+                                        .append(Self::format_hir_ty(ty.ty))
                                         .append(RcDoc::text(","))
                                 }),
                                 RcDoc::line(),
@@ -183,7 +183,7 @@ impl HirModuleDebugPass {
                     RcDoc::text(p.name.name.as_str()).append(
                         RcDoc::text(":")
                             .append(RcDoc::space())
-                            .append(Self::format_hir_ty(p.r#type)),
+                            .append(Self::format_hir_ty(p.ty)),
                     )
                 }),
                 RcDoc::text(", "),
@@ -227,7 +227,7 @@ impl HirModuleDebugPass {
             .append(RcDoc::text(stmt.name.name.as_str()))
             .append(RcDoc::text(":"))
             .append(RcDoc::space())
-            .append(Self::format_hir_ty(stmt.r#type))
+            .append(Self::format_hir_ty(stmt.ty))
             .append(RcDoc::space())
             .append(RcDoc::text("="))
             .append(RcDoc::space())

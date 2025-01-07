@@ -168,7 +168,7 @@ impl<'ta> TypingContext<'ta> {
                     ));
                 };
                 let constraint = EqualityConstraint {
-                    expected: record_field.r#type,
+                    expected: record_field.ty,
                     expected_loc: record_field.span,
                     actual_loc: n.name.span,
                     actual: resolved_type,
@@ -368,7 +368,7 @@ impl<'ta> TypingContext<'ta> {
             let parameters = signature
                 .parameters
                 .iter()
-                .map(|p| p.r#type)
+                .map(|p| p.ty)
                 .collect::<Vec<_>>();
             let ty = self
                 .arena
@@ -393,7 +393,7 @@ impl<'ta> TypingContext<'ta> {
         let parameters = signature
             .parameters
             .iter()
-            .map(|p| HirModuleTypeCheckerPass::visit_type(self, p.r#type))
+            .map(|p| HirModuleTypeCheckerPass::visit_type(self, p.ty))
             .collect::<HirResult<Vec<_>>>()?;
         let return_type = HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
         let ty = self.arena.get_function_ty(return_type, parameters);
@@ -490,7 +490,7 @@ impl<'ta> TypingContext<'ta> {
             self.unify_eq(EqualityConstraint {
                 actual: provided_field.expr.ty(),
                 actual_loc: *provided_field.expr.span(),
-                expected: field_definition.r#type,
+                expected: field_definition.ty,
                 expected_loc: field_definition.span,
             })?;
         }
@@ -791,7 +791,7 @@ impl HirModuleTypeCheckerPass {
         // against the expected return type.
         let HirTy::Function(self_ty) = cx.arena.get_function_ty(
             node.return_type,
-            node.parameters.iter().map(|p| p.r#type).collect(),
+            node.parameters.iter().map(|p| p.ty).collect(),
         ) else {
             ice!("freshly built function type should be a function");
         };
@@ -799,8 +799,8 @@ impl HirModuleTypeCheckerPass {
         cx.locals.enter_scope();
         // Push all the function parameters into the local context.
         for p in node.parameters.iter_mut() {
-            p.r#type = Self::visit_type(cx, p.r#type)?;
-            cx.locals.add(&p.name.name, p.r#type);
+            p.ty = Self::visit_type(cx, p.ty)?;
+            cx.locals.add(&p.name.name, p.ty);
         }
         // Type inference is done in two passes. First, we collect all the constraints for all the
         // child nodes of the function body, then we solve the type constraints, and finally we
@@ -831,10 +831,10 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirRecord<'ta>,
     ) -> HirResult<()> {
         for field in node.fields.values_mut() {
-            field.r#type = Self::visit_type(cx, field.r#type)?;
+            field.ty = Self::visit_type(cx, field.ty)?;
             // Check if the field directly references itself
             let is_directly_self_referential =
-                matches!(field.r#type, HirTy::Nominal(n) if n.name.name == node.name.name);
+                matches!(field.ty, HirTy::Nominal(n) if n.name.name == node.name.name);
             if is_directly_self_referential {
                 return Err(HirError::TypeFieldInfiniteRecursion(
                     TypeFieldInfiniteRecursionError {
@@ -1271,12 +1271,12 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirLetStmt<'ta>,
     ) -> HirResult<()> {
         // Replace any uninitialized types with a fresh type variable.
-        node.r#type = Self::visit_type(cx, node.r#type)?;
+        node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.value)?;
-        cx.infer(&mut node.value, node.r#type)?;
+        cx.infer(&mut node.value, node.ty)?;
         // Propagate the type of the expression to the type of the let-binding
-        node.r#type = node.value.ty();
-        cx.locals.add(&node.name.name, node.r#type);
+        node.ty = node.value.ty();
+        cx.locals.add(&node.name.name, node.ty);
         Ok(())
     }
 
@@ -1287,7 +1287,7 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.value)?;
         // Propagate the type of the expression to the type of the let-binding
-        node.r#type = node.value.ty();
+        node.ty = node.value.ty();
         Ok(())
     }
 

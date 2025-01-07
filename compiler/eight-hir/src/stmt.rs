@@ -36,7 +36,7 @@ impl HirStmt<'_> {
 pub struct HirLetStmt<'ta> {
     pub span: Span,
     pub name: HirName,
-    pub r#type: &'ta HirTy<'ta>,
+    pub ty: &'ta HirTy<'ta>,
     pub type_annotation: Option<Span>,
     pub value: HirExpr<'ta>,
 }
