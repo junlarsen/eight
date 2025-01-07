@@ -1,8 +1,11 @@
+use crate::ty::{
+    HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirNominalTy, HirPointerTy, HirTy, HirTyId,
+    HirUninitializedTy, HirUnitTy, HirVariableTy,
+};
+use crate::HirName;
 use bumpalo::Bump;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use crate::HirName;
-use crate::ty::{HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirNominalTy, HirPointerTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy};
 
 /// A type arena for Hir types.
 ///

@@ -1,3 +1,4 @@
+use crate::arena::HirArena;
 use crate::context::LocalContext;
 use crate::error::{
     FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
@@ -21,7 +22,6 @@ use crate::{HirModule, HirName};
 use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{BTreeMap, HashSet, VecDeque};
-use crate::arena::HirArena;
 
 #[derive(Debug)]
 pub enum Constraint<'ta> {

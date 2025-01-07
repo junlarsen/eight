@@ -40,7 +40,7 @@ pub struct HirRecordField<'ta> {
 #[derive(Debug, Clone)]
 pub struct HirFunctionSignature<'ta> {
     pub span: Span,
-    pub type_parameters: Vec<HirFunctionTypeParameter<'ta>>,
+    pub type_parameters: Vec<HirTypeParameter<'ta>>,
     pub parameters: Vec<HirFunctionParameter<'ta>>,
     pub return_type: &'ta HirTy<'ta>,
 }
@@ -51,7 +51,7 @@ pub struct HirFunction<'ta> {
     /// Span encapsulating the entire function definition.
     pub span: Span,
     pub name: HirName,
-    pub type_parameters: Vec<HirFunctionTypeParameter<'ta>>,
+    pub type_parameters: Vec<HirTypeParameter<'ta>>,
     pub parameters: Vec<HirFunctionParameter<'ta>>,
     pub return_type: &'ta HirTy<'ta>,
     pub return_type_annotation: Option<Span>,
@@ -92,7 +92,7 @@ pub struct HirIntrinsicFunction<'ta> {
     /// Span encapsulating the entire function definition.
     pub span: Span,
     pub name: HirName,
-    pub type_parameters: Vec<HirFunctionTypeParameter<'ta>>,
+    pub type_parameters: Vec<HirTypeParameter<'ta>>,
     pub parameters: Vec<HirFunctionParameter<'ta>>,
     pub return_type: &'ta HirTy<'ta>,
     pub return_type_annotation: Span,
@@ -100,7 +100,7 @@ pub struct HirIntrinsicFunction<'ta> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct HirFunctionTypeParameter<'ta> {
+pub struct HirTypeParameter<'ta> {
     /// Span containing only the type parameter name.
     ///
     /// This is effectively the same as the span of the HirName, but in the future we may want to
@@ -131,4 +131,43 @@ pub struct HirFunctionParameter<'ta> {
     pub name: HirName,
     pub ty: &'ta HirTy<'ta>,
     pub type_annotation: Span,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct HirTrait<'ta> {
+    pub span: Span,
+    pub name: HirName,
+    pub type_parameters: Vec<HirTypeParameter<'ta>>,
+    pub members: Vec<HirTraitFunctionItem<'ta>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct HirTraitFunctionItem<'ta> {
+    pub span: Span,
+    pub name: HirName,
+    pub type_parameters: Vec<HirTypeParameter<'ta>>,
+    pub parameters: Vec<HirFunctionParameter<'ta>>,
+    pub return_type: &'ta HirTy<'ta>,
+    pub return_type_annotation: Option<Span>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct HirInstance<'ta> {
+    pub span: Span,
+    pub name: HirName,
+    pub type_parameters: Vec<HirTypeParameter<'ta>>,
+    pub members: Vec<HirInstanceFunction<'ta>>,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct HirInstanceFunction<'ta> {
+    pub span: Span,
+    pub name: HirName,
+    pub type_parameters: Vec<HirTypeParameter<'ta>>,
+    pub parameters: Vec<HirFunctionParameter<'ta>>,
+    pub return_type: Option<&'ta HirTy<'ta>>,
 }

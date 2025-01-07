@@ -14,7 +14,8 @@ use crate::expr::{
     HirUnaryOpExpr,
 };
 use crate::item::{
-    HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction, HirRecord,
+    HirFunction, HirFunctionParameter, HirIntrinsicFunction, HirRecord, HirTrait,
+    HirTraitFunctionItem, HirTypeParameter,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -75,6 +76,17 @@ impl HirModuleDebugPass {
                     ))
                     .append(RcDoc::hardline())
                     .append(RcDoc::hardline())
+                    .append("// module traits")
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::intersperse(
+                        module
+                            .traits
+                            .values()
+                            .map(|r#trait| Self::format_hir_trait_item(r#trait)),
+                        RcDoc::hardline(),
+                    ))
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::hardline())
                     .append("// module functions")
                     .append(RcDoc::hardline())
                     .append(RcDoc::intersperse(
@@ -95,9 +107,7 @@ impl HirModuleDebugPass {
         RcDoc::text("fn")
             .append(RcDoc::space())
             .append(RcDoc::text(function.name.name.as_str()))
-            .append(Self::format_function_type_parameters(
-                &function.type_parameters,
-            ))
+            .append(Self::format_hir_type_parameters(&function.type_parameters))
             .append(Self::format_function_parameters(&function.parameters))
             .append(RcDoc::space())
             .append(RcDoc::text("->"))
@@ -126,9 +136,7 @@ impl HirModuleDebugPass {
         RcDoc::text("intrinsic_fn")
             .append(RcDoc::space())
             .append(RcDoc::text(function.name.name.as_str()))
-            .append(Self::format_function_type_parameters(
-                &function.type_parameters,
-            ))
+            .append(Self::format_hir_type_parameters(&function.type_parameters))
             .append(Self::format_function_parameters(&function.parameters))
             .append(RcDoc::space())
             .append(RcDoc::text("->"))
@@ -190,9 +198,7 @@ impl HirModuleDebugPass {
             .append(RcDoc::text(")"))
     }
 
-    pub fn format_function_type_parameters<'ta>(
-        parameters: &'ta [HirFunctionTypeParameter],
-    ) -> RcDoc<'ta, ()> {
+    pub fn format_hir_type_parameters<'ta>(parameters: &'ta [HirTypeParameter]) -> RcDoc<'ta, ()> {
         if parameters.is_empty() {
             return RcDoc::nil();
         }
@@ -205,6 +211,60 @@ impl HirModuleDebugPass {
                 RcDoc::text(", "),
             ))
             .append(RcDoc::text(">"))
+    }
+
+    pub fn format_hir_trait_item<'ta>(r#trait: &'ta HirTrait) -> RcDoc<'ta, ()> {
+        RcDoc::text("trait")
+            .append(RcDoc::space())
+            .append(RcDoc::text(r#trait.name.name.as_str()))
+            .append(Self::format_hir_type_parameters(
+                r#trait.type_parameters.as_slice(),
+            ))
+            .append(RcDoc::space())
+            .append(RcDoc::text("{"))
+            .append(
+                RcDoc::hardline()
+                    .append(RcDoc::intersperse(
+                        r#trait
+                            .members
+                            .iter()
+                            .map(|f| Self::format_hir_trait_function_item(f)),
+                        RcDoc::hardline(),
+                    ))
+                    .nest(2)
+                    .group(),
+            )
+            .append(RcDoc::hardline())
+            .append(RcDoc::text("}"))
+    }
+
+    pub fn format_hir_trait_function_item<'ta>(
+        function: &'ta HirTraitFunctionItem,
+    ) -> RcDoc<'ta, ()> {
+        RcDoc::text("fn")
+            .append(RcDoc::space())
+            .append(RcDoc::text(function.name.name.as_str()))
+            .append(Self::format_hir_type_parameters(
+                function.type_parameters.as_slice(),
+            ))
+            .append(RcDoc::space())
+            .append(RcDoc::text("("))
+            .append(RcDoc::intersperse(
+                function.parameters.iter().map(|p| {
+                    RcDoc::text(p.name.name.as_str()).append(
+                        RcDoc::text(":")
+                            .append(RcDoc::space())
+                            .append(Self::format_hir_ty(p.ty)),
+                    )
+                }),
+                RcDoc::text(", "),
+            ))
+            .append(RcDoc::text(")"))
+            .append(RcDoc::space())
+            .append(RcDoc::text("->"))
+            .append(RcDoc::space())
+            .append(Self::format_hir_ty(function.return_type))
+            .append(RcDoc::text(";"))
     }
 
     pub fn format_hir_stmt<'ta>(stmt: &'ta HirStmt) -> RcDoc<'ta, ()> {

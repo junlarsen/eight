@@ -8,11 +8,13 @@
 //! and abstractions that the syntax of the language provides, providing more information about the
 //! program than the AST.
 
-use crate::item::{HirFunction, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord};
-use arena::HirArena;
+use crate::item::{
+    HirFunction, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord, HirTrait,
+};
 use eight_span::Span;
 use std::collections::BTreeMap;
 
+pub mod arena;
 pub mod context;
 pub mod error;
 pub mod expr;
@@ -20,7 +22,6 @@ pub mod item;
 pub mod passes;
 pub mod stmt;
 pub mod ty;
-pub mod arena;
 
 /// A module containing all the types and functions defined in a program.
 ///
@@ -33,16 +34,26 @@ pub struct HirModule<'ta> {
     pub records: BTreeMap<String, HirRecord<'ta>>,
     pub functions: BTreeMap<String, HirFunction<'ta>>,
     pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction<'ta>>,
+    pub traits: BTreeMap<String, HirTrait<'ta>>,
+    pub instances: BTreeMap<String, Vec<HirInstance<'ta>>>,
+}
+
+impl<'ta> Default for HirModule<'ta> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<'ta> HirModule<'ta> {
     /// Create an empty Hir module.
-    pub fn new(arena: &'ta HirArena<'ta>) -> Self {
+    pub fn new() -> Self {
         Self {
             records: BTreeMap::new(),
             functions: BTreeMap::new(),
             intrinsic_functions: BTreeMap::new(),
             intrinsic_scalars: BTreeMap::new(),
+            traits: BTreeMap::new(),
+            instances: BTreeMap::new(),
         }
     }
 
