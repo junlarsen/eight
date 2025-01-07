@@ -1,0 +1,24 @@
+---
+source: compiler/eight-tests/tests/ui_tests.rs
+info:
+  program: hcc
+  args:
+    - tests/ui/sema/invalid_let_binding.test
+input_file: compiler/eight-tests/tests/ui/sema/invalid_let_binding.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::invalid_reference
+
+  × invalid reference to undefined
+   ╭─[tests/ui/sema/invalid_let_binding.test:2:11]
+ 1 │ fn foo() {
+ 2 │   let k = undefined;
+   ·           ────┬────
+   ·               ╰── no value in scope named undefined
+ 3 │ }
+   ╰────

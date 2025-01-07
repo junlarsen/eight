@@ -1,0 +1,21 @@
+---
+source: compiler/eight-hir/tests/lowering_tests.rs
+expression: doc
+input_file: compiler/eight-hir/tests/data/lowering/generic_substituion.test
+snapshot_kind: text
+---
+module {
+  // module intrinsic scalar types
+  
+  
+  // module intrinsic functions
+  
+  
+  // module types
+  
+  
+  // module functions
+  fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V {
+    return (d as _);
+  }
+}

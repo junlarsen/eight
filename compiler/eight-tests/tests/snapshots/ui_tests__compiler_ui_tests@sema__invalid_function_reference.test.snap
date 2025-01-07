@@ -1,0 +1,24 @@
+---
+source: compiler/eight-tests/tests/ui_tests.rs
+info:
+  program: hcc
+  args:
+    - tests/ui/sema/invalid_function_reference.test
+input_file: compiler/eight-tests/tests/ui/sema/invalid_function_reference.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::invalid_reference
+
+  × invalid reference to tell_the_world_im_coming_home
+   ╭─[tests/ui/sema/invalid_function_reference.test:2:11]
+ 1 │ fn test() {
+ 2 │   let z = tell_the_world_im_coming_home();
+   ·           ──────────────┬──────────────
+   ·                         ╰── no value in scope named tell_the_world_im_coming_home
+ 3 │ }
+   ╰────

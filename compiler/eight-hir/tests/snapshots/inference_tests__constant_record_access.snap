@@ -1,0 +1,22 @@
+---
+source: compiler/eight-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module intrinsic scalar types
+  
+  
+  // module intrinsic functions
+  
+  
+  // module types
+  type Agent = {
+    name: i32,
+  }
+  
+  // module functions
+  fn test(agent: Agent) -> unit {
+    let z: i32 = ((agent as Agent).name as i32);
+  }
+}

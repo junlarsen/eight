@@ -1,0 +1,17 @@
+[package]
+name = "eight-driver"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+path = "src/bin/eightc.rs"
+name = "eightc"
+
+[dependencies]
+bumpalo = { workspace = true }
+clap = { version = "4.5.23", features = ["derive"] }
+miette = { workspace = true, features = ["fancy"] }
+ron = { workspace = true }
+
+eight-hir = { path = "../eight-hir" }
+eight-syntax = { path = "../eight-syntax" }

@@ -1,0 +1,21 @@
+[package]
+name = "eight-syntax"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
+[dependencies]
+eight-macros = { path = "../eight-macros" }
+eight-diagnostics = { path = "../eight-diagnostics" }
+eight-span = { path = "../eight-span" }
+miette = { workspace = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }
+insta = { workspace = true }
+ron = { workspace = true }

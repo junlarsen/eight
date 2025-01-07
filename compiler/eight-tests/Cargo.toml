@@ -1,0 +1,20 @@
+[package]
+name = "eight-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eight-diagnostics = { path = "../eight-diagnostics" }
+eight-macros = { path = "../eight-macros" }
+eight-span = { path = "../eight-span" }
+eight-syntax = { path = "../eight-syntax" }
+eight-hir = { path = "../eight-hir" }
+eight-mir = { path = "../eight-mir" }
+miette = { workspace = true }
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }
+insta = { workspace = true }
+insta-cmd = { workspace = true }
+ron = { workspace = true }

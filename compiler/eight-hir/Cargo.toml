@@ -1,0 +1,25 @@
+[package]
+name = "eight-hir"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
+[dependencies]
+eight-diagnostics = { path = "../eight-diagnostics" }
+eight-macros = { path = "../eight-macros" }
+eight-span = { path = "../eight-span" }
+eight-syntax = { path = "../eight-syntax" }
+
+bumpalo = { workspace = true }
+miette = { workspace = true }
+pretty = "0.12.3"
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }
+insta = { workspace = true }
+ron = { workspace = true }

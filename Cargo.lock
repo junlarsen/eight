@@ -213,6 +213,104 @@ dependencies = [
 ]
 
 [[package]]
+name = "eight-diagnostics"
+version = "0.1.0"
+dependencies = [
+ "eight-macros",
+ "miette",
+ "serde",
+ "thiserror 2.0.6",
+]
+
+[[package]]
+name = "eight-driver"
+version = "0.1.0"
+dependencies = [
+ "bumpalo",
+ "clap",
+ "eight-hir",
+ "eight-syntax",
+ "miette",
+ "ron 0.8.1",
+]
+
+[[package]]
+name = "eight-hir"
+version = "0.1.0"
+dependencies = [
+ "bumpalo",
+ "eight-diagnostics",
+ "eight-macros",
+ "eight-span",
+ "eight-syntax",
+ "insta",
+ "miette",
+ "pretty",
+ "ron 0.8.1",
+ "serde",
+ "thiserror 2.0.6",
+]
+
+[[package]]
+name = "eight-macros"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "thiserror 2.0.6",
+]
+
+[[package]]
+name = "eight-mir"
+version = "0.1.0"
+dependencies = [
+ "eight-macros",
+ "insta",
+ "miette",
+ "ron 0.8.1",
+ "serde",
+ "thiserror 2.0.6",
+]
+
+[[package]]
+name = "eight-span"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "serde",
+]
+
+[[package]]
+name = "eight-syntax"
+version = "0.1.0"
+dependencies = [
+ "eight-diagnostics",
+ "eight-macros",
+ "eight-span",
+ "insta",
+ "miette",
+ "ron 0.8.1",
+ "serde",
+ "thiserror 2.0.6",
+]
+
+[[package]]
+name = "eight-tests"
+version = "0.1.0"
+dependencies = [
+ "eight-diagnostics",
+ "eight-hir",
+ "eight-macros",
+ "eight-mir",
+ "eight-span",
+ "eight-syntax",
+ "insta",
+ "insta-cmd",
+ "miette",
+ "ron 0.8.1",
+ "serde",
+]
+
+[[package]]
 name = "encode_unicode"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -245,104 +343,6 @@ dependencies = [
  "log",
  "regex-automata",
  "regex-syntax",
-]
-
-[[package]]
-name = "hachi-diagnostics"
-version = "0.1.0"
-dependencies = [
- "hachi-macros",
- "miette",
- "serde",
- "thiserror 2.0.6",
-]
-
-[[package]]
-name = "hachi-driver"
-version = "0.1.0"
-dependencies = [
- "bumpalo",
- "clap",
- "hachi-hir",
- "hachi-syntax",
- "miette",
- "ron 0.8.1",
-]
-
-[[package]]
-name = "hachi-hir"
-version = "0.1.0"
-dependencies = [
- "bumpalo",
- "hachi-diagnostics",
- "hachi-macros",
- "hachi-span",
- "hachi-syntax",
- "insta",
- "miette",
- "pretty",
- "ron 0.8.1",
- "serde",
- "thiserror 2.0.6",
-]
-
-[[package]]
-name = "hachi-macros"
-version = "0.1.0"
-dependencies = [
- "miette",
- "thiserror 2.0.6",
-]
-
-[[package]]
-name = "hachi-mir"
-version = "0.1.0"
-dependencies = [
- "hachi-macros",
- "insta",
- "miette",
- "ron 0.8.1",
- "serde",
- "thiserror 2.0.6",
-]
-
-[[package]]
-name = "hachi-span"
-version = "0.1.0"
-dependencies = [
- "miette",
- "serde",
-]
-
-[[package]]
-name = "hachi-syntax"
-version = "0.1.0"
-dependencies = [
- "hachi-diagnostics",
- "hachi-macros",
- "hachi-span",
- "insta",
- "miette",
- "ron 0.8.1",
- "serde",
- "thiserror 2.0.6",
-]
-
-[[package]]
-name = "hachi-tests"
-version = "0.1.0"
-dependencies = [
- "hachi-diagnostics",
- "hachi-hir",
- "hachi-macros",
- "hachi-mir",
- "hachi-span",
- "hachi-syntax",
- "insta",
- "insta-cmd",
- "miette",
- "ron 0.8.1",
- "serde",
 ]
 
 [[package]]

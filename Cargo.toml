@@ -1,14 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
-    "compiler/hachi-diagnostics",
-    "compiler/hachi-driver",
-    "compiler/hachi-hir",
-    "compiler/hachi-mir",
-    "compiler/hachi-macros",
-    "compiler/hachi-span",
-    "compiler/hachi-syntax",
-    "compiler/hachi-tests",
+    "compiler/eight-diagnostics",
+    "compiler/eight-driver",
+    "compiler/eight-hir",
+    "compiler/eight-mir",
+    "compiler/eight-macros",
+    "compiler/eight-span",
+    "compiler/eight-syntax",
+    "compiler/eight-tests",
 ]
 
 [profile.dev.package]

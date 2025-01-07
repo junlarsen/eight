@@ -1,0 +1,27 @@
+---
+source: compiler/eight-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module intrinsic scalar types
+  
+  
+  // module intrinsic functions
+  
+  
+  // module types
+  type Vec2 = {
+    x: i32,
+    y: i32,
+  }
+  
+  // module functions
+  fn origin() -> Vec2 {
+    let v: Vec2 = (new Vec2 {
+      x: (0 as i32),
+      y: (0 as i32),
+    } as Vec2);
+    return (v as Vec2);
+  }
+}

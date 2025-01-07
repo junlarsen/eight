@@ -1,0 +1,15 @@
+[package]
+name = "eight-mir"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eight-macros = { path = "../eight-macros" }
+miette = { workspace = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }
+insta = { workspace = true }
+ron = { workspace = true }

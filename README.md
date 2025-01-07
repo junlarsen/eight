@@ -1,6 +1,6 @@
-# Hachi
+# Eight
 
-Hachi is a toy programming language I'm building to learn about compiler optimization. The main research areas of the
+Eight is a toy programming language I'm building to learn about compiler optimization. The main research areas of the
 project are:
 
 1. Standard compiler optimizations such as constant folding, dead code elimination, and common subexpression

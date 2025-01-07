@@ -1,0 +1,82 @@
+---
+source: compiler/eight-syntax/tests/parser_tests.rs
+expression: translation_unit
+input_file: compiler/eight-syntax/tests/data/intrinsic_declaration.test
+snapshot_kind: text
+---
+AstTranslationUnit(
+  span: Span(
+    low: 0,
+    high: 0,
+  ),
+  items: [
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 0,
+        high: 40,
+      ),
+      name: AstIdentifier(
+        name: "malloc",
+        span: Span(
+          low: 13,
+          high: 19,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 23,
+            high: 32,
+          ),
+          name: AstIdentifier(
+            name: "size",
+            span: Span(
+              low: 23,
+              high: 27,
+            ),
+          ),
+          type: Integer32(AstInteger32Type(
+            span: Span(
+              low: 29,
+              high: 32,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [
+        AstFunctionTypeParameterItem(
+          span: Span(
+            low: 20,
+            high: 21,
+          ),
+          name: AstIdentifier(
+            name: "T",
+            span: Span(
+              low: 20,
+              high: 21,
+            ),
+          ),
+        ),
+      ],
+      return_type: Pointer(AstPointerType(
+        span: Span(
+          low: 37,
+          high: 39,
+        ),
+        inner: Named(AstNamedType(
+          span: Span(
+            low: 38,
+            high: 39,
+          ),
+          name: AstIdentifier(
+            name: "T",
+            span: Span(
+              low: 38,
+              high: 39,
+            ),
+          ),
+        )),
+      )),
+    )),
+  ],
+)

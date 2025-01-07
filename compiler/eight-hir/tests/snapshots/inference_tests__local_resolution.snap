@@ -1,0 +1,24 @@
+---
+source: compiler/eight-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module intrinsic scalar types
+  
+  
+  // module intrinsic functions
+  
+  
+  // module types
+  
+  
+  // module functions
+  fn test() -> unit {
+    let loc: i32 = (123 as i32);
+    let x: i32 = (loc as i32);
+  }
+  fn test_refer_function() -> unit {
+    let loc: fn(())->unit = (test as fn(())->unit);
+  }
+}
