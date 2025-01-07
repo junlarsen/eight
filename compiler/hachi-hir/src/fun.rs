@@ -14,7 +14,7 @@ use hachi_span::Span;
 #[derive(Debug, Clone)]
 pub struct HirFunctionSignature<'ta> {
     pub span: Span,
-    pub type_parameters: Vec<HirFunctionTypeParameter>,
+    pub type_parameters: Vec<HirFunctionTypeParameter<'ta>>,
     pub parameters: Vec<HirFunctionParameter<'ta>>,
     pub return_type: &'ta HirTy<'ta>,
 }
@@ -25,7 +25,7 @@ pub struct HirFunction<'ta> {
     /// Span encapsulating the entire function definition.
     pub span: Span,
     pub name: HirName,
-    pub type_parameters: Vec<HirFunctionTypeParameter>,
+    pub type_parameters: Vec<HirFunctionTypeParameter<'ta>>,
     pub parameters: Vec<HirFunctionParameter<'ta>>,
     pub return_type: &'ta HirTy<'ta>,
     pub return_type_annotation: Option<Span>,
@@ -66,7 +66,7 @@ pub struct HirIntrinsicFunction<'ta> {
     /// Span encapsulating the entire function definition.
     pub span: Span,
     pub name: HirName,
-    pub type_parameters: Vec<HirFunctionTypeParameter>,
+    pub type_parameters: Vec<HirFunctionTypeParameter<'ta>>,
     pub parameters: Vec<HirFunctionParameter<'ta>>,
     pub return_type: &'ta HirTy<'ta>,
     pub return_type_annotation: Span,
@@ -74,7 +74,7 @@ pub struct HirIntrinsicFunction<'ta> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone)]
-pub struct HirFunctionTypeParameter {
+pub struct HirFunctionTypeParameter<'ta> {
     /// Span containing only the type parameter name.
     ///
     /// This is effectively the same as the span of the HirName, but in the future we may want to
@@ -82,6 +82,20 @@ pub struct HirFunctionTypeParameter {
     pub span: Span,
     /// The name that was actually written by the programmer.
     pub syntax_name: HirName,
+    /// The type that was substituted in the current function.
+    ///
+    /// This is only for cosmetic purposes in the debug printing pass. This allows us to print the
+    /// substituted variable for a function type parameter.
+    ///
+    /// ```text
+    /// fn foo<T>(x: T) -> T {}
+    ///
+    /// // becomes
+    /// fn foo<$0>(x: $0) -> $0 {}
+    /// // or if the module is printed before type inference
+    /// fn foo<T>(x: T) -> T {}
+    /// ```
+    pub substitution_name: Option<&'ta HirTy<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

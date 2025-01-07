@@ -1,0 +1,23 @@
+---
+source: compiler/hachi-hir/tests/inference_tests.rs
+expression: doc
+snapshot_kind: text
+---
+module {
+  // module intrinsic scalar types
+  
+  
+  // module intrinsic functions
+  
+  
+  // module types
+  
+  
+  // module functions
+  fn id<$0>(x: $0) -> $0 {
+    return (x as $0);
+  }
+  fn many_id<$0>(x: $0) -> $0 {
+    return ((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>((x as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30);
+  }
+}

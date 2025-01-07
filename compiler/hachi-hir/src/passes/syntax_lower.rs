@@ -371,11 +371,12 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_function_type_parameter(
         &mut self,
         node: &'ast AstFunctionTypeParameterItem,
-    ) -> HirResult<HirFunctionTypeParameter> {
+    ) -> HirResult<HirFunctionTypeParameter<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let hir = HirFunctionTypeParameter {
             span: *node.span(),
             syntax_name: name,
+            substitution_name: None,
         };
         Ok(hir)
     }

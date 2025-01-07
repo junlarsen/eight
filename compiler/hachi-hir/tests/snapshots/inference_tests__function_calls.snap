@@ -22,7 +22,7 @@ module {
     let z: i32 = ((generic as fn((i32))->i32)::<>((k as i32)) as i32);
     let z: bool = ((generic as fn((bool))->bool)::<>((true as bool)) as bool);
   }
-  fn generic(x: $15) -> $15 {
-    return (x as i32);
+  fn generic<$0>(x: $0) -> $0 {
+    return (x as $0);
   }
 }

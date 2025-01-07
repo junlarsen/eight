@@ -1,0 +1,7 @@
+fn id<T>(x: T) -> T {
+  return x;
+}
+
+fn many_id<T>(x: T) -> T {
+  return id(id(id(id(id(id(id(id(id(id(x))))))))));
+}

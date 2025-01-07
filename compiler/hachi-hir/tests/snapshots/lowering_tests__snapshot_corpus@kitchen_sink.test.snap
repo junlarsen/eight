@@ -9,8 +9,8 @@ module {
   
   
   // module intrinsic functions
-  intrinsic_fn free(ptr: *T) -> unit;
-  intrinsic_fn malloc(size: i32) -> *T;
+  intrinsic_fn free<T>(ptr: *T) -> unit;
+  intrinsic_fn malloc<T>(size: i32) -> *T;
   
   // module types
   type Matrix = {

@@ -8,7 +8,7 @@ module {
   
   
   // module intrinsic functions
-  intrinsic_fn id(x: $10) -> $10;
+  intrinsic_fn id<T>(x: T) -> T;
   
   // module types
   

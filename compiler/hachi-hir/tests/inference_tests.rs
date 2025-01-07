@@ -56,3 +56,8 @@ fn test_pointer_deref() {
 fn test_generic_fn_ref() {
     inference_test!("data/inference/generic_fn_ref.test");
 }
+
+#[test]
+fn test_generic_substitution() {
+    inference_test!("data/inference/generic_substitution.test");
+}
