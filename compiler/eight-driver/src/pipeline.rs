@@ -2,7 +2,7 @@ use bumpalo::Bump;
 use eight_hir::passes::{
     ASTSyntaxLoweringPass, HirModuleDebugPass, HirModuleTypeCheckerPass, TypingContext,
 };
-use eight_hir::ty::HirArena;
+use eight_hir::arena::HirArena;
 
 pub struct PipelineOptions {
     pub emit_ast: bool,

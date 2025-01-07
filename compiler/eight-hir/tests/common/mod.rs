@@ -5,7 +5,7 @@ macro_rules! assert_hir_module_compiles {
     ($input:expr) => {{
         use bumpalo::Bump;
         use eight_hir::passes::ASTSyntaxLoweringPass;
-        use eight_hir::ty::HirArena;
+        use eight_hir::arena::HirArena;
         use eight_syntax::Lexer;
         use eight_syntax::Parser;
 
@@ -34,7 +34,7 @@ macro_rules! assert_hir_module_infers {
         use eight_hir::passes::ASTSyntaxLoweringPass;
         use eight_hir::passes::HirModuleTypeCheckerPass;
         use eight_hir::passes::TypingContext;
-        use eight_hir::ty::HirArena;
+        use eight_hir::arena::HirArena;
         use eight_syntax::Lexer;
         use eight_syntax::Parser;
 

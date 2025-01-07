@@ -16,11 +16,12 @@ use crate::item::{
 use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirArena, HirFunctionTy, HirPointerTy, HirTy};
+use crate::ty::{HirFunctionTy, HirPointerTy, HirTy};
 use crate::{HirModule, HirName};
 use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{BTreeMap, HashSet, VecDeque};
+use crate::arena::HirArena;
 
 #[derive(Debug)]
 pub enum Constraint<'ta> {

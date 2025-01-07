@@ -9,7 +9,7 @@
 //! program than the AST.
 
 use crate::item::{HirFunction, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord};
-use crate::ty::HirArena;
+use arena::HirArena;
 use eight_span::Span;
 use std::collections::BTreeMap;
 
@@ -20,6 +20,7 @@ pub mod item;
 pub mod passes;
 pub mod stmt;
 pub mod ty;
+pub mod arena;
 
 /// A module containing all the types and functions defined in a program.
 ///

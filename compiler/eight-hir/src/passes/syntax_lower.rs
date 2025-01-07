@@ -13,7 +13,7 @@ use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirArena, HirTy};
+use crate::ty::HirTy;
 use crate::{HirModule, HirName};
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -26,6 +26,7 @@ use eight_syntax::{
     AstTranslationUnit, AstType, AstTypeItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
 use std::collections::{BTreeMap, VecDeque};
+use crate::arena::HirArena;
 
 /// Translation pass that lowers the `eight-syntax` AST into the HIR representation.
 ///
