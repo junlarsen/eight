@@ -6,9 +6,7 @@ snapshot_kind: text
 ---
 module {
   // module intrinsic scalar types
-  intrinsic_scalar bool;
-  intrinsic_scalar i32;
-  intrinsic_scalar unit;
+  
   
   // module intrinsic functions
   

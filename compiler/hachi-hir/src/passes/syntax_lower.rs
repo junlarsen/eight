@@ -9,6 +9,7 @@ use crate::fun::{
     HirFunction, HirFunctionParameter, HirFunctionTypeParameter, HirIntrinsicFunction,
 };
 use crate::rec::{HirRecord, HirRecordField};
+use crate::scalar::HirIntrinsicScalar;
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
@@ -22,8 +23,8 @@ use hachi_syntax::{
     AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument, AstContinueStmt,
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,
     AstFunctionTypeParameterItem, AstGroupExpr, AstIdentifier, AstIfStmt, AstIntegerLiteralExpr,
-    AstIntrinsicFunctionItem, AstItem, AstLetStmt, AstReferenceExpr, AstReturnStmt, AstStmt,
-    AstTranslationUnit, AstType, AstTypeItem, AstUnaryOp, AstUnaryOpExpr,
+    AstIntrinsicFunctionItem, AstIntrinsicScalarItem, AstItem, AstLetStmt, AstReferenceExpr,
+    AstReturnStmt, AstStmt, AstTranslationUnit, AstType, AstTypeItem, AstUnaryOp, AstUnaryOpExpr,
 };
 use std::collections::{BTreeMap, VecDeque};
 
@@ -278,6 +279,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             AstItem::Function(f) => self.visit_function_item(module, f),
             AstItem::IntrinsicFunction(f) => self.visit_intrinsic_function_item(module, f),
             AstItem::Type(t) => self.visit_type_item(module, t),
+            AstItem::IntrinsicScalar(s) => self.visit_intrinsic_scalar_item(module, s),
         }
     }
 
@@ -376,6 +378,22 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             syntax_name: name,
         };
         Ok(hir)
+    }
+
+    pub fn visit_intrinsic_scalar_item(
+        &mut self,
+        module: &mut HirModule<'ta>,
+        node: &'ast AstIntrinsicScalarItem,
+    ) -> HirResult<()> {
+        let name = self.visit_identifier(&node.name)?;
+        let scalar = HirIntrinsicScalar {
+            name: name.name.to_owned(),
+            ty: self.arena.get_integer32_ty(),
+        };
+        module
+            .intrinsic_scalars
+            .insert(name.name.to_owned(), scalar);
+        Ok(())
     }
 
     /// Declare a type item.

@@ -10,7 +10,8 @@ use crate::ast::{
 use crate::lexer::Lexer;
 use crate::{
     AstBooleanLiteralExpr, AstBooleanType, AstFunctionTypeParameterItem, AstIntrinsicFunctionItem,
-    ParseError, ParseResult, Token, TokenType, UnexpectedEndOfFileError, UnexpectedTokenError,
+    AstIntrinsicScalarItem, ParseError, ParseResult, Token, TokenType, UnexpectedEndOfFileError,
+    UnexpectedTokenError,
 };
 use hachi_span::Span;
 
@@ -222,6 +223,9 @@ impl Parser<'_> {
             TokenType::KeywordIntrinsicFn => {
                 AstItem::IntrinsicFunction(self.parse_intrinsic_fn_item()?)
             }
+            TokenType::KeywordIntrinsicScalar => {
+                AstItem::IntrinsicScalar(self.parse_intrinsic_scalar_item()?)
+            }
             _ => {
                 let token = self.eat()?;
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
@@ -308,7 +312,6 @@ impl Parser<'_> {
     /// fn_type_parameter_item ::= identifier
     /// ```
     pub fn parse_fn_type_parameter_item(&mut self) -> ParseResult<AstFunctionTypeParameterItem> {
-        // TODO: Parse this as a type
         let id = self.parse_identifier()?;
         let node = AstFunctionTypeParameterItem::new(*id.span(), id);
         Ok(node)
@@ -389,6 +392,19 @@ impl Parser<'_> {
             type_parameters,
             return_type,
         );
+        Ok(node)
+    }
+
+    /// Parse an intrinsic scalar item.
+    ///
+    /// ```text
+    /// intrinsic_scalar_item ::= KEYWORD_INTRINSIC_FN IDENTIFIER SEMICOLON
+    /// ```
+    pub fn parse_intrinsic_scalar_item(&mut self) -> ParseResult<AstIntrinsicScalarItem> {
+        let start = self.check(&TokenType::KeywordIntrinsicScalar)?;
+        let id = self.parse_identifier()?;
+        let end = self.check(&TokenType::Semicolon)?;
+        let node = AstIntrinsicScalarItem::new(Span::from_pair(&start.span, &end.span), id);
         Ok(node)
     }
 
@@ -1337,6 +1353,14 @@ mod tests {
         let prod = assert_ok!(prod);
         let type_parameters = prod.type_parameters.as_slice();
         assert_eq!(type_parameters.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_intrinsic_scalar_item() {
+        let prod = assert_parse("intrinsic_scalar i32;", |p| p.parse_intrinsic_scalar_item());
+        let prod = assert_ok!(prod);
+        let name = prod.name;
+        assert!(matches!(name, AstIdentifier { name, .. } if name == "i32"));
     }
 
     #[test]

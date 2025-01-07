@@ -19,6 +19,7 @@ declare_ast_variant! {
     pub enum AstItem {
         Function(AstFunctionItem),
         IntrinsicFunction(AstIntrinsicFunctionItem),
+        IntrinsicScalar(AstIntrinsicScalarItem),
         Type(AstTypeItem),
     }
 }
@@ -56,6 +57,13 @@ declare_ast_node! {
         span: Span,
         pub name: AstIdentifier,
         pub r#type: AstType,
+    }
+}
+
+declare_ast_node! {
+    pub struct AstIntrinsicScalarItem {
+        span: Span,
+        pub name: AstIdentifier,
     }
 }
 

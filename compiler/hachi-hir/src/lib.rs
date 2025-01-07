@@ -45,29 +45,7 @@ impl<'ta> HirModule<'ta> {
             records: BTreeMap::new(),
             functions: BTreeMap::new(),
             intrinsic_functions: BTreeMap::new(),
-            intrinsic_scalars: BTreeMap::from([
-                (
-                    "i32".to_owned(),
-                    HirIntrinsicScalar {
-                        name: "i32".to_owned(),
-                        ty: arena.get_integer32_ty(),
-                    },
-                ),
-                (
-                    "bool".to_owned(),
-                    HirIntrinsicScalar {
-                        name: "bool".to_owned(),
-                        ty: arena.get_boolean_ty(),
-                    },
-                ),
-                (
-                    "unit".to_owned(),
-                    HirIntrinsicScalar {
-                        name: "unit".to_owned(),
-                        ty: arena.get_unit_ty(),
-                    },
-                ),
-            ]),
+            intrinsic_scalars: BTreeMap::new(),
         }
     }
 
