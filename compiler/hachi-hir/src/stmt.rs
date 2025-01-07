@@ -38,14 +38,14 @@ pub struct HirLetStmt<'ta> {
     pub name: HirName,
     pub r#type: &'ta HirTy<'ta>,
     pub type_annotation: Option<Span>,
-    pub value: Box<HirExpr<'ta>>,
+    pub value: HirExpr<'ta>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirIfStmt<'ta> {
     pub span: Span,
-    pub condition: Box<HirExpr<'ta>>,
+    pub condition: HirExpr<'ta>,
     pub happy_path: Vec<HirStmt<'ta>>,
     pub unhappy_path: Vec<HirStmt<'ta>>,
 }
@@ -54,7 +54,7 @@ pub struct HirIfStmt<'ta> {
 #[derive(Debug)]
 pub struct HirExprStmt<'ta> {
     pub span: Span,
-    pub expr: Box<HirExpr<'ta>>,
+    pub expr: HirExpr<'ta>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -64,7 +64,7 @@ pub struct HirLoopStmt<'ta> {
     /// The condition for the loop to continue.
     ///
     /// For infinite loops, this node should be a constant literal of boolean true.
-    pub condition: Box<HirExpr<'ta>>,
+    pub condition: HirExpr<'ta>,
     pub body: Vec<HirStmt<'ta>>,
 }
 
@@ -84,7 +84,7 @@ pub struct HirContinueStmt {
 #[derive(Debug)]
 pub struct HirReturnStmt<'ta> {
     pub span: Span,
-    pub value: Option<Box<HirExpr<'ta>>>,
+    pub value: Option<HirExpr<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

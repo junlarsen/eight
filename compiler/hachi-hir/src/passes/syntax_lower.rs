@@ -463,7 +463,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             name,
             r#type,
             type_annotation: node.r#type.as_ref().map(|t| *t.span()),
-            value: Box::new(value),
+            value,
         });
         Ok(hir)
     }
@@ -476,7 +476,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .transpose()?;
         let hir = HirStmt::Return(HirReturnStmt {
             span: *node.span(),
-            value: value.map(Box::new),
+            value,
         });
         Ok(hir)
     }
@@ -514,7 +514,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                     name: self.visit_identifier(&i.name)?,
                     r#type: self.arena.get_uninitialized_ty(),
                     type_annotation: None,
-                    value: Box::new(self.visit_expr(&i.initializer)?),
+                    value: self.visit_expr(&i.initializer)?,
                 })
             })
             .transpose()?;
@@ -553,13 +553,13 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 })),
                 Box::new(HirStmt::Loop(HirLoopStmt {
                     span: *node.span(),
-                    condition: Box::new(condition),
+                    condition,
                     body: {
                         let mut stmts = body;
                         if let Some(i) = increment {
                             stmts.push(HirStmt::Expr(HirExprStmt {
                                 span: *i.span(),
-                                expr: Box::new(i),
+                                expr: i,
                             }));
                         }
                         stmts
@@ -591,7 +591,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         };
         let hir = HirStmt::If(HirIfStmt {
             span: *node.span(),
-            condition: Box::new(condition),
+            condition,
             happy_path,
             unhappy_path,
         });
@@ -612,7 +612,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let expr = self.visit_expr(&node.expr)?;
         let hir = HirStmt::Expr(HirExprStmt {
             span: *node.span(),
-            expr: Box::new(expr),
+            expr,
         });
         Ok(hir)
     }
