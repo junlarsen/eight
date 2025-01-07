@@ -7,7 +7,7 @@ declare_ast_node! {
     /// The term translation unit is used here to refer to a single source file.
     pub struct TranslationUnit {
         span: Span,
-        pub items: Vec<Box<Item>>,
+        pub items: Vec<Item>,
     }
 }
 
@@ -17,73 +17,73 @@ declare_ast_variant! {
     /// An `Item` is anything that can be declared at the top-level scope of a translation unit. This
     /// currently means either functions or types.
     pub enum Item {
-        Function(Box<FunctionItem>),
-        IntrinsicFunction(Box<IntrinsicFunctionItem>),
-        Type(Box<TypeItem>),
+        Function(FunctionItem),
+        IntrinsicFunction(IntrinsicFunctionItem),
+        Type(TypeItem),
     }
 }
 
 declare_ast_node! {
     pub struct FunctionItem {
         span: Span,
-        pub name: Box<Identifier>,
-        pub parameters: Vec<Box<FunctionParameterItem>>,
-        pub type_parameters: Vec<Box<FunctionTypeParameterItem>>,
-        pub return_type: Option<Box<Type>>,
-        pub body: Vec<Box<Stmt>>,
+        pub name: Identifier,
+        pub parameters: Vec<FunctionParameterItem>,
+        pub type_parameters: Vec<FunctionTypeParameterItem>,
+        pub return_type: Option<Type>,
+        pub body: Vec<Stmt>,
     }
 }
 
 declare_ast_node! {
     pub struct IntrinsicFunctionItem {
         span: Span,
-        pub name: Box<Identifier>,
-        pub parameters: Vec<Box<FunctionParameterItem>>,
-        pub type_parameters: Vec<Box<FunctionTypeParameterItem>>,
-        pub return_type: Box<Type>,
+        pub name: Identifier,
+        pub parameters: Vec<FunctionParameterItem>,
+        pub type_parameters: Vec<FunctionTypeParameterItem>,
+        pub return_type: Type,
     }
 }
 
 declare_ast_node! {
     pub struct FunctionTypeParameterItem {
         span: Span,
-        pub name: Box<Identifier>,
+        pub name: Identifier,
     }
 }
 
 declare_ast_node! {
     pub struct FunctionParameterItem {
         span: Span,
-        pub name: Box<Identifier>,
-        pub r#type: Box<Type>,
+        pub name: Identifier,
+        pub r#type: Type,
     }
 }
 
 declare_ast_node! {
     pub struct TypeItem {
         span: Span,
-        pub name: Box<Identifier>,
-        pub members: Vec<Box<TypeMemberItem>>,
+        pub name: Identifier,
+        pub members: Vec<TypeMemberItem>,
     }
 }
 
 declare_ast_node! {
     pub struct TypeMemberItem {
         span: Span,
-        pub name: Box<Identifier>,
-        pub r#type: Box<Type>,
+        pub name: Identifier,
+        pub r#type: Type,
     }
 }
 
 declare_ast_variant! {
     pub enum Stmt {
-        Let(Box<LetStmt>),
-        Return(Box<ReturnStmt>),
-        For(Box<ForStmt>),
-        Break(Box<BreakStmt>),
-        Continue(Box<ContinueStmt>),
-        If(Box<IfStmt>),
-        Expr(Box<ExprStmt>),
+        Let(LetStmt),
+        Return(ReturnStmt),
+        For(ForStmt),
+        Break(BreakStmt),
+        Continue(ContinueStmt),
+        If(IfStmt),
+        Expr(ExprStmt),
     }
 }
 
@@ -105,34 +105,34 @@ impl Stmt {
 declare_ast_node! {
     pub struct LetStmt {
         span: Span,
-        pub name: Box<Identifier>,
-        pub r#type: Option<Box<Type>>,
-        pub value: Box<Expr>,
+        pub name: Identifier,
+        pub r#type: Option<Type>,
+        pub value: Expr,
     }
 }
 
 declare_ast_node! {
     pub struct ReturnStmt {
         span: Span,
-        pub value: Option<Box<Expr>>,
+        pub value: Option<Expr>,
     }
 }
 
 declare_ast_node! {
     pub struct ForStmt {
         span: Span,
-        pub initializer: Option<Box<ForStmtInitializer>>,
-        pub condition: Option<Box<Expr>>,
-        pub increment: Option<Box<Expr>>,
-        pub body: Vec<Box<Stmt>>,
+        pub initializer: Option<ForStmtInitializer>,
+        pub condition: Option<Expr>,
+        pub increment: Option<Expr>,
+        pub body: Vec<Stmt>,
     }
 }
 
 declare_ast_node! {
     pub struct ForStmtInitializer {
         span: Span,
-        pub name: Box<Identifier>,
-        pub initializer: Box<Expr>,
+        pub name: Identifier,
+        pub initializer: Expr,
     }
 }
 
@@ -151,32 +151,32 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct IfStmt {
         span: Span,
-        pub condition: Box<Expr>,
-        pub happy_path: Vec<Box<Stmt>>,
-        pub unhappy_path: Option<Vec<Box<Stmt>>>,
+        pub condition: Expr,
+        pub happy_path: Vec<Stmt>,
+        pub unhappy_path: Option<Vec<Stmt>>,
     }
 }
 
 declare_ast_node! {
     pub struct ExprStmt {
         span: Span,
-        pub expr: Box<Expr>,
+        pub expr: Expr,
     }
 }
 
 declare_ast_variant! {
     pub enum Expr {
-        Assign(Box<AssignExpr>),
-        BinaryOp(Box<BinaryOpExpr>),
-        UnaryOp(Box<UnaryOpExpr>),
-        IntegerLiteral(Box<IntegerLiteralExpr>),
-        BooleanLiteral(Box<BooleanLiteralExpr>),
-        DotIndex(Box<DotIndexExpr>),
-        BracketIndex(Box<BracketIndexExpr>),
-        Reference(Box<ReferenceExpr>),
-        Call(Box<CallExpr>),
-        Construct(Box<ConstructExpr>),
-        Group(Box<GroupExpr>),
+        Assign(AssignExpr),
+        BinaryOp(BinaryOpExpr),
+        UnaryOp(UnaryOpExpr),
+        IntegerLiteral(IntegerLiteralExpr),
+        BooleanLiteral(BooleanLiteralExpr),
+        DotIndex(DotIndexExpr),
+        BracketIndex(BracketIndexExpr),
+        Reference(ReferenceExpr),
+        Call(CallExpr),
+        Construct(ConstructExpr),
+        Group(GroupExpr),
     }
 }
 
@@ -242,7 +242,7 @@ declare_ast_node! {
     pub struct DotIndexExpr {
         span: Span,
         pub origin: Box<Expr>,
-        pub index: Box<Identifier>,
+        pub index: Identifier,
     }
 }
 
@@ -257,7 +257,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct ReferenceExpr {
         span: Span,
-        pub name: Box<Identifier>,
+        pub name: Identifier,
     }
 }
 
@@ -265,24 +265,24 @@ declare_ast_node! {
     pub struct CallExpr {
         span: Span,
         pub callee: Box<Expr>,
-        pub arguments: Vec<Box<Expr>>,
-        pub type_arguments: Vec<Box<Type>>,
+        pub arguments: Vec<Expr>,
+        pub type_arguments: Vec<Type>,
     }
 }
 
 declare_ast_node! {
     pub struct ConstructExpr {
         span: Span,
-        pub callee: Box<Type>,
-        pub arguments: Vec<Box<ConstructorExprArgument>>,
+        pub callee: Type,
+        pub arguments: Vec<ConstructorExprArgument>,
     }
 }
 
 declare_ast_node! {
     pub struct ConstructorExprArgument {
         span: Span,
-        pub field: Box<Identifier>,
-        pub expr: Box<Expr>,
+        pub field: Identifier,
+        pub expr: Expr,
     }
 }
 
@@ -306,11 +306,11 @@ declare_ast_node! {
 
 declare_ast_variant! {
     pub enum Type {
-        Unit(Box<UnitType>),
-        Integer32(Box<Integer32Type>),
-        Pointer(Box<PointerType>),
-        Named(Box<NamedType>),
-        Boolean(Box<BooleanType>),
+        Unit(UnitType),
+        Integer32(Integer32Type),
+        Pointer(PointerType),
+        Named(NamedType),
+        Boolean(BooleanType),
     }
 }
 
@@ -355,7 +355,7 @@ declare_ast_node! {
 declare_ast_node! {
     pub struct NamedType {
         span: Span,
-        pub name: Box<Identifier>,
+        pub name: Identifier,
     }
 }
 

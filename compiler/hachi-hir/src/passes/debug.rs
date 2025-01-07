@@ -167,7 +167,7 @@ impl HirModuleDebugPass {
     }
 
     pub(crate) fn format_function_parameters<'ta>(
-        parameters: &'ta Vec<HirFunctionParameter>,
+        parameters: &'ta [HirFunctionParameter],
     ) -> RcDoc<'ta, ()> {
         RcDoc::text("(")
             .append(RcDoc::intersperse(
