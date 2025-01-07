@@ -9,7 +9,7 @@ use std::str::Chars;
 
 pub struct LexerInput<'a> {
     input: Peekable<Chars<'a>>,
-    pos: usize,
+    pos: u32,
 }
 
 impl<'a> LexerInput<'a> {
@@ -42,7 +42,7 @@ impl<'a> LexerInput<'a> {
         ch
     }
 
-    pub fn pos(&self) -> usize {
+    pub fn pos(&self) -> u32 {
         self.pos
     }
 
@@ -116,7 +116,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn pos(&self) -> usize {
+    pub fn pos(&self) -> u32 {
         self.input.pos()
     }
 

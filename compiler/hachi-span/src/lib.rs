@@ -3,7 +3,7 @@ use std::cmp::{max, min};
 use std::ops::Range;
 
 /// Compact index of a character in the source code.
-pub type SourcePosition = usize;
+pub type SourcePosition = u32;
 
 /// A span represents a range of characters in an input string.
 ///
@@ -17,7 +17,10 @@ pub struct Span {
 
 impl From<Span> for SourceSpan {
     fn from(val: Span) -> Self {
-        SourceSpan::new(SourceOffset::from(val.low), val.high - val.low)
+        SourceSpan::new(
+            SourceOffset::from(val.low as usize),
+            val.high as usize - val.low as usize,
+        )
     }
 }
 
