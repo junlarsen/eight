@@ -1,0 +1,2312 @@
+---
+source: compiler/eight-syntax/tests/parser_tests.rs
+expression: translation_unit
+input_file: compiler/eight-syntax/tests/data/instances.test
+snapshot_kind: text
+---
+AstTranslationUnit(
+  items: [
+    IntrinsicScalar(AstIntrinsicScalarItem(
+      span: Span(
+        low: 0,
+        high: 21,
+      ),
+      name: AstIdentifier(
+        name: "i32",
+        span: Span(
+          low: 17,
+          high: 20,
+        ),
+      ),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 23,
+        high: 67,
+      ),
+      name: AstIdentifier(
+        name: "i32_add",
+        span: Span(
+          low: 36,
+          high: 43,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 44,
+            high: 50,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 44,
+              high: 45,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 47,
+              high: 50,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 52,
+            high: 58,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 52,
+              high: 53,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 55,
+              high: 58,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Integer32(AstInteger32Type(
+        span: Span(
+          low: 63,
+          high: 66,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 68,
+        high: 112,
+      ),
+      name: AstIdentifier(
+        name: "i32_sub",
+        span: Span(
+          low: 81,
+          high: 88,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 89,
+            high: 95,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 89,
+              high: 90,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 92,
+              high: 95,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 97,
+            high: 103,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 97,
+              high: 98,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 100,
+              high: 103,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Integer32(AstInteger32Type(
+        span: Span(
+          low: 108,
+          high: 111,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 113,
+        high: 157,
+      ),
+      name: AstIdentifier(
+        name: "i32_mul",
+        span: Span(
+          low: 126,
+          high: 133,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 134,
+            high: 140,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 134,
+              high: 135,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 137,
+              high: 140,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 142,
+            high: 148,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 142,
+              high: 143,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 145,
+              high: 148,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Integer32(AstInteger32Type(
+        span: Span(
+          low: 153,
+          high: 156,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 158,
+        high: 202,
+      ),
+      name: AstIdentifier(
+        name: "i32_div",
+        span: Span(
+          low: 171,
+          high: 178,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 179,
+            high: 185,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 179,
+              high: 180,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 182,
+              high: 185,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 187,
+            high: 193,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 187,
+              high: 188,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 190,
+              high: 193,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Integer32(AstInteger32Type(
+        span: Span(
+          low: 198,
+          high: 201,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 203,
+        high: 247,
+      ),
+      name: AstIdentifier(
+        name: "i32_rem",
+        span: Span(
+          low: 216,
+          high: 223,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 224,
+            high: 230,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 224,
+              high: 225,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 227,
+              high: 230,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 232,
+            high: 238,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 232,
+              high: 233,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 235,
+              high: 238,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Integer32(AstInteger32Type(
+        span: Span(
+          low: 243,
+          high: 246,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 249,
+        high: 293,
+      ),
+      name: AstIdentifier(
+        name: "i32_eq",
+        span: Span(
+          low: 262,
+          high: 268,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 269,
+            high: 275,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 269,
+              high: 270,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 272,
+              high: 275,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 277,
+            high: 283,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 277,
+              high: 278,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 280,
+              high: 283,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 288,
+          high: 292,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 294,
+        high: 339,
+      ),
+      name: AstIdentifier(
+        name: "i32_neq",
+        span: Span(
+          low: 307,
+          high: 314,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 315,
+            high: 321,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 315,
+              high: 316,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 318,
+              high: 321,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 323,
+            high: 329,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 323,
+              high: 324,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 326,
+              high: 329,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 334,
+          high: 338,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 340,
+        high: 384,
+      ),
+      name: AstIdentifier(
+        name: "i32_lt",
+        span: Span(
+          low: 353,
+          high: 359,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 360,
+            high: 366,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 360,
+              high: 361,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 363,
+              high: 366,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 368,
+            high: 374,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 368,
+              high: 369,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 371,
+              high: 374,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 379,
+          high: 383,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 385,
+        high: 429,
+      ),
+      name: AstIdentifier(
+        name: "i32_gt",
+        span: Span(
+          low: 398,
+          high: 404,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 405,
+            high: 411,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 405,
+              high: 406,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 408,
+              high: 411,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 413,
+            high: 419,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 413,
+              high: 414,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 416,
+              high: 419,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 424,
+          high: 428,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 430,
+        high: 474,
+      ),
+      name: AstIdentifier(
+        name: "i32_le",
+        span: Span(
+          low: 443,
+          high: 449,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 450,
+            high: 456,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 450,
+              high: 451,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 453,
+              high: 456,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 458,
+            high: 464,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 458,
+              high: 459,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 461,
+              high: 464,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 469,
+          high: 473,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 475,
+        high: 519,
+      ),
+      name: AstIdentifier(
+        name: "i32_ge",
+        span: Span(
+          low: 488,
+          high: 494,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 495,
+            high: 501,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 495,
+              high: 496,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 498,
+              high: 501,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 503,
+            high: 509,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 503,
+              high: 504,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 506,
+              high: 509,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 514,
+          high: 518,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 520,
+        high: 565,
+      ),
+      name: AstIdentifier(
+        name: "i32_lte",
+        span: Span(
+          low: 533,
+          high: 540,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 541,
+            high: 547,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 541,
+              high: 542,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 544,
+              high: 547,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 549,
+            high: 555,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 549,
+              high: 550,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 552,
+              high: 555,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 560,
+          high: 564,
+        ),
+      )),
+    )),
+    IntrinsicFunction(AstIntrinsicFunctionItem(
+      span: Span(
+        low: 566,
+        high: 611,
+      ),
+      name: AstIdentifier(
+        name: "i32_gte",
+        span: Span(
+          low: 579,
+          high: 586,
+        ),
+      ),
+      parameters: [
+        AstFunctionParameterItem(
+          span: Span(
+            low: 587,
+            high: 593,
+          ),
+          name: AstIdentifier(
+            name: "a",
+            span: Span(
+              low: 587,
+              high: 588,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 590,
+              high: 593,
+            ),
+          )),
+        ),
+        AstFunctionParameterItem(
+          span: Span(
+            low: 595,
+            high: 601,
+          ),
+          name: AstIdentifier(
+            name: "b",
+            span: Span(
+              low: 595,
+              high: 596,
+            ),
+          ),
+          ty: Integer32(AstInteger32Type(
+            span: Span(
+              low: 598,
+              high: 601,
+            ),
+          )),
+        ),
+      ],
+      type_parameters: [],
+      return_type: Boolean(AstBooleanType(
+        span: Span(
+          low: 606,
+          high: 610,
+        ),
+      )),
+    )),
+    Instance(AstInstanceItem(
+      span: Span(
+        low: 613,
+        high: 891,
+      ),
+      name: AstIdentifier(
+        name: "Ord",
+        span: Span(
+          low: 622,
+          high: 625,
+        ),
+      ),
+      instantiation_type_parameters: [
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 626,
+            high: 629,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 631,
+            high: 634,
+          ),
+        )),
+      ],
+      members: [
+        AstFunctionItem(
+          span: Span(
+            low: 640,
+            high: 700,
+          ),
+          name: AstIdentifier(
+            name: "lt",
+            span: Span(
+              low: 643,
+              high: 645,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 646,
+                high: 652,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 646,
+                  high: 647,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 649,
+                  high: 652,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 654,
+                high: 660,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 654,
+                  high: 655,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 657,
+                  high: 660,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 665,
+              high: 669,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 676,
+                high: 696,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 683,
+                  high: 695,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 683,
+                    high: 689,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_lt",
+                    span: Span(
+                      low: 683,
+                      high: 689,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 690,
+                      high: 691,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 690,
+                        high: 691,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 693,
+                      high: 694,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 693,
+                        high: 694,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+        AstFunctionItem(
+          span: Span(
+            low: 703,
+            high: 763,
+          ),
+          name: AstIdentifier(
+            name: "gt",
+            span: Span(
+              low: 706,
+              high: 708,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 709,
+                high: 715,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 709,
+                  high: 710,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 712,
+                  high: 715,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 717,
+                high: 723,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 717,
+                  high: 718,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 720,
+                  high: 723,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 728,
+              high: 732,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 739,
+                high: 759,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 746,
+                  high: 758,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 746,
+                    high: 752,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_gt",
+                    span: Span(
+                      low: 746,
+                      high: 752,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 753,
+                      high: 754,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 753,
+                        high: 754,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 756,
+                      high: 757,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 756,
+                        high: 757,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+        AstFunctionItem(
+          span: Span(
+            low: 766,
+            high: 826,
+          ),
+          name: AstIdentifier(
+            name: "le",
+            span: Span(
+              low: 769,
+              high: 771,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 772,
+                high: 778,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 772,
+                  high: 773,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 775,
+                  high: 778,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 780,
+                high: 786,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 780,
+                  high: 781,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 783,
+                  high: 786,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 791,
+              high: 795,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 802,
+                high: 822,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 809,
+                  high: 821,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 809,
+                    high: 815,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_le",
+                    span: Span(
+                      low: 809,
+                      high: 815,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 816,
+                      high: 817,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 816,
+                        high: 817,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 819,
+                      high: 820,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 819,
+                        high: 820,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+        AstFunctionItem(
+          span: Span(
+            low: 829,
+            high: 889,
+          ),
+          name: AstIdentifier(
+            name: "ge",
+            span: Span(
+              low: 832,
+              high: 834,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 835,
+                high: 841,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 835,
+                  high: 836,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 838,
+                  high: 841,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 843,
+                high: 849,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 843,
+                  high: 844,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 846,
+                  high: 849,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 854,
+              high: 858,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 865,
+                high: 885,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 872,
+                  high: 884,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 872,
+                    high: 878,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_ge",
+                    span: Span(
+                      low: 872,
+                      high: 878,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 879,
+                      high: 880,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 879,
+                        high: 880,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 882,
+                      high: 883,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 882,
+                        high: 883,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+      ],
+    )),
+    Instance(AstInstanceItem(
+      span: Span(
+        low: 893,
+        high: 988,
+      ),
+      name: AstIdentifier(
+        name: "Add",
+        span: Span(
+          low: 902,
+          high: 905,
+        ),
+      ),
+      instantiation_type_parameters: [
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 906,
+            high: 909,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 911,
+            high: 914,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 916,
+            high: 919,
+          ),
+        )),
+      ],
+      members: [
+        AstFunctionItem(
+          span: Span(
+            low: 925,
+            high: 986,
+          ),
+          name: AstIdentifier(
+            name: "add",
+            span: Span(
+              low: 928,
+              high: 931,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 932,
+                high: 938,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 932,
+                  high: 933,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 935,
+                  high: 938,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 940,
+                high: 946,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 940,
+                  high: 941,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 943,
+                  high: 946,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 951,
+              high: 954,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 961,
+                high: 982,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 968,
+                  high: 981,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 968,
+                    high: 975,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_add",
+                    span: Span(
+                      low: 968,
+                      high: 975,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 976,
+                      high: 977,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 976,
+                        high: 977,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 979,
+                      high: 980,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 979,
+                        high: 980,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+      ],
+    )),
+    Instance(AstInstanceItem(
+      span: Span(
+        low: 990,
+        high: 1085,
+      ),
+      name: AstIdentifier(
+        name: "Sub",
+        span: Span(
+          low: 999,
+          high: 1002,
+        ),
+      ),
+      instantiation_type_parameters: [
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1003,
+            high: 1006,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1008,
+            high: 1011,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1013,
+            high: 1016,
+          ),
+        )),
+      ],
+      members: [
+        AstFunctionItem(
+          span: Span(
+            low: 1022,
+            high: 1083,
+          ),
+          name: AstIdentifier(
+            name: "sub",
+            span: Span(
+              low: 1025,
+              high: 1028,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1029,
+                high: 1035,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 1029,
+                  high: 1030,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1032,
+                  high: 1035,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1037,
+                high: 1043,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 1037,
+                  high: 1038,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1040,
+                  high: 1043,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 1048,
+              high: 1051,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 1058,
+                high: 1079,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 1065,
+                  high: 1078,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 1065,
+                    high: 1072,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_sub",
+                    span: Span(
+                      low: 1065,
+                      high: 1072,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1073,
+                      high: 1074,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 1073,
+                        high: 1074,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1076,
+                      high: 1077,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 1076,
+                        high: 1077,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+      ],
+    )),
+    Instance(AstInstanceItem(
+      span: Span(
+        low: 1087,
+        high: 1182,
+      ),
+      name: AstIdentifier(
+        name: "Mul",
+        span: Span(
+          low: 1096,
+          high: 1099,
+        ),
+      ),
+      instantiation_type_parameters: [
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1100,
+            high: 1103,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1105,
+            high: 1108,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1110,
+            high: 1113,
+          ),
+        )),
+      ],
+      members: [
+        AstFunctionItem(
+          span: Span(
+            low: 1119,
+            high: 1180,
+          ),
+          name: AstIdentifier(
+            name: "mul",
+            span: Span(
+              low: 1122,
+              high: 1125,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1126,
+                high: 1132,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 1126,
+                  high: 1127,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1129,
+                  high: 1132,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1134,
+                high: 1140,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 1134,
+                  high: 1135,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1137,
+                  high: 1140,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 1145,
+              high: 1148,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 1155,
+                high: 1176,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 1162,
+                  high: 1175,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 1162,
+                    high: 1169,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_mul",
+                    span: Span(
+                      low: 1162,
+                      high: 1169,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1170,
+                      high: 1171,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 1170,
+                        high: 1171,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1173,
+                      high: 1174,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 1173,
+                        high: 1174,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+      ],
+    )),
+    Instance(AstInstanceItem(
+      span: Span(
+        low: 1184,
+        high: 1279,
+      ),
+      name: AstIdentifier(
+        name: "Div",
+        span: Span(
+          low: 1193,
+          high: 1196,
+        ),
+      ),
+      instantiation_type_parameters: [
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1197,
+            high: 1200,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1202,
+            high: 1205,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1207,
+            high: 1210,
+          ),
+        )),
+      ],
+      members: [
+        AstFunctionItem(
+          span: Span(
+            low: 1216,
+            high: 1277,
+          ),
+          name: AstIdentifier(
+            name: "div",
+            span: Span(
+              low: 1219,
+              high: 1222,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1223,
+                high: 1229,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 1223,
+                  high: 1224,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1226,
+                  high: 1229,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1231,
+                high: 1237,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 1231,
+                  high: 1232,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1234,
+                  high: 1237,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 1242,
+              high: 1245,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 1252,
+                high: 1273,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 1259,
+                  high: 1272,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 1259,
+                    high: 1266,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_div",
+                    span: Span(
+                      low: 1259,
+                      high: 1266,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1267,
+                      high: 1268,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 1267,
+                        high: 1268,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1270,
+                      high: 1271,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 1270,
+                        high: 1271,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+      ],
+    )),
+    Instance(AstInstanceItem(
+      span: Span(
+        low: 1281,
+        high: 1376,
+      ),
+      name: AstIdentifier(
+        name: "Rem",
+        span: Span(
+          low: 1290,
+          high: 1293,
+        ),
+      ),
+      instantiation_type_parameters: [
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1294,
+            high: 1297,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1299,
+            high: 1302,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1304,
+            high: 1307,
+          ),
+        )),
+      ],
+      members: [
+        AstFunctionItem(
+          span: Span(
+            low: 1313,
+            high: 1374,
+          ),
+          name: AstIdentifier(
+            name: "rem",
+            span: Span(
+              low: 1316,
+              high: 1319,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1320,
+                high: 1326,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 1320,
+                  high: 1321,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1323,
+                  high: 1326,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1328,
+                high: 1334,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 1328,
+                  high: 1329,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1331,
+                  high: 1334,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 1339,
+              high: 1342,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 1349,
+                high: 1370,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 1356,
+                  high: 1369,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 1356,
+                    high: 1363,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_rem",
+                    span: Span(
+                      low: 1356,
+                      high: 1363,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1364,
+                      high: 1365,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 1364,
+                        high: 1365,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1367,
+                      high: 1368,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 1367,
+                        high: 1368,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+      ],
+    )),
+    Instance(AstInstanceItem(
+      span: Span(
+        low: 1378,
+        high: 1531,
+      ),
+      name: AstIdentifier(
+        name: "Eq",
+        span: Span(
+          low: 1387,
+          high: 1389,
+        ),
+      ),
+      instantiation_type_parameters: [
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1390,
+            high: 1393,
+          ),
+        )),
+        Integer32(AstInteger32Type(
+          span: Span(
+            low: 1395,
+            high: 1398,
+          ),
+        )),
+      ],
+      members: [
+        AstFunctionItem(
+          span: Span(
+            low: 1404,
+            high: 1464,
+          ),
+          name: AstIdentifier(
+            name: "eq",
+            span: Span(
+              low: 1407,
+              high: 1409,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1410,
+                high: 1416,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 1410,
+                  high: 1411,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1413,
+                  high: 1416,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1418,
+                high: 1424,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 1418,
+                  high: 1419,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1421,
+                  high: 1424,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 1429,
+              high: 1433,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 1440,
+                high: 1460,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 1447,
+                  high: 1459,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 1447,
+                    high: 1453,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_eq",
+                    span: Span(
+                      low: 1447,
+                      high: 1453,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1454,
+                      high: 1455,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 1454,
+                        high: 1455,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1457,
+                      high: 1458,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 1457,
+                        high: 1458,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+        AstFunctionItem(
+          span: Span(
+            low: 1467,
+            high: 1529,
+          ),
+          name: AstIdentifier(
+            name: "neq",
+            span: Span(
+              low: 1470,
+              high: 1473,
+            ),
+          ),
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1474,
+                high: 1480,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 1474,
+                  high: 1475,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1477,
+                  high: 1480,
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 1482,
+                high: 1488,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 1482,
+                  high: 1483,
+                ),
+              ),
+              ty: Integer32(AstInteger32Type(
+                span: Span(
+                  low: 1485,
+                  high: 1488,
+                ),
+              )),
+            ),
+          ],
+          type_parameters: [],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 1493,
+              high: 1497,
+            ),
+          ))),
+          body: [
+            Return(AstReturnStmt(
+              span: Span(
+                low: 1504,
+                high: 1525,
+              ),
+              value: Some(Call(AstCallExpr(
+                span: Span(
+                  low: 1511,
+                  high: 1524,
+                ),
+                callee: Reference(AstReferenceExpr(
+                  span: Span(
+                    low: 1511,
+                    high: 1518,
+                  ),
+                  name: AstIdentifier(
+                    name: "i32_neq",
+                    span: Span(
+                      low: 1511,
+                      high: 1518,
+                    ),
+                  ),
+                )),
+                arguments: [
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1519,
+                      high: 1520,
+                    ),
+                    name: AstIdentifier(
+                      name: "a",
+                      span: Span(
+                        low: 1519,
+                        high: 1520,
+                      ),
+                    ),
+                  )),
+                  Reference(AstReferenceExpr(
+                    span: Span(
+                      low: 1522,
+                      high: 1523,
+                    ),
+                    name: AstIdentifier(
+                      name: "b",
+                      span: Span(
+                        low: 1522,
+                        high: 1523,
+                      ),
+                    ),
+                  )),
+                ],
+                type_arguments: [],
+              ))),
+            )),
+          ],
+        ),
+      ],
+    )),
+  ],
+)

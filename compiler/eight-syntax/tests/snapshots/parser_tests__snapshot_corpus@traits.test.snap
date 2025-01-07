@@ -1,0 +1,1597 @@
+---
+source: compiler/eight-syntax/tests/parser_tests.rs
+expression: translation_unit
+input_file: compiler/eight-syntax/tests/data/traits.test
+snapshot_kind: text
+---
+AstTranslationUnit(
+  items: [
+    Trait(AstTraitItem(
+      span: Span(
+        low: 0,
+        high: 49,
+      ),
+      name: AstIdentifier(
+        name: "Add",
+        span: Span(
+          low: 6,
+          high: 9,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 10,
+            high: 11,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 10,
+              high: 11,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 13,
+            high: 14,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 13,
+              high: 14,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 16,
+            high: 17,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 16,
+              high: 17,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 23,
+            high: 47,
+          ),
+          name: AstIdentifier(
+            name: "add",
+            span: Span(
+              low: 26,
+              high: 29,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 30,
+                high: 34,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 30,
+                  high: 31,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 33,
+                  high: 34,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 33,
+                    high: 34,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 36,
+                high: 40,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 36,
+                  high: 37,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 39,
+                  high: 40,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 39,
+                    high: 40,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 45,
+              high: 46,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 45,
+                high: 46,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 51,
+        high: 100,
+      ),
+      name: AstIdentifier(
+        name: "Sub",
+        span: Span(
+          low: 57,
+          high: 60,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 61,
+            high: 62,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 61,
+              high: 62,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 64,
+            high: 65,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 64,
+              high: 65,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 67,
+            high: 68,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 67,
+              high: 68,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 74,
+            high: 98,
+          ),
+          name: AstIdentifier(
+            name: "sub",
+            span: Span(
+              low: 77,
+              high: 80,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 81,
+                high: 85,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 81,
+                  high: 82,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 84,
+                  high: 85,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 84,
+                    high: 85,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 87,
+                high: 91,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 87,
+                  high: 88,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 90,
+                  high: 91,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 90,
+                    high: 91,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 96,
+              high: 97,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 96,
+                high: 97,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 102,
+        high: 151,
+      ),
+      name: AstIdentifier(
+        name: "Mul",
+        span: Span(
+          low: 108,
+          high: 111,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 112,
+            high: 113,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 112,
+              high: 113,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 115,
+            high: 116,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 115,
+              high: 116,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 118,
+            high: 119,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 118,
+              high: 119,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 125,
+            high: 149,
+          ),
+          name: AstIdentifier(
+            name: "mul",
+            span: Span(
+              low: 128,
+              high: 131,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 132,
+                high: 136,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 132,
+                  high: 133,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 135,
+                  high: 136,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 135,
+                    high: 136,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 138,
+                high: 142,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 138,
+                  high: 139,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 141,
+                  high: 142,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 141,
+                    high: 142,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 147,
+              high: 148,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 147,
+                high: 148,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 153,
+        high: 202,
+      ),
+      name: AstIdentifier(
+        name: "Div",
+        span: Span(
+          low: 159,
+          high: 162,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 163,
+            high: 164,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 163,
+              high: 164,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 166,
+            high: 167,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 166,
+              high: 167,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 169,
+            high: 170,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 169,
+              high: 170,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 176,
+            high: 200,
+          ),
+          name: AstIdentifier(
+            name: "div",
+            span: Span(
+              low: 179,
+              high: 182,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 183,
+                high: 187,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 183,
+                  high: 184,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 186,
+                  high: 187,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 186,
+                    high: 187,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 189,
+                high: 193,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 189,
+                  high: 190,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 192,
+                  high: 193,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 192,
+                    high: 193,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 198,
+              high: 199,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 198,
+                high: 199,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 204,
+        high: 253,
+      ),
+      name: AstIdentifier(
+        name: "Rem",
+        span: Span(
+          low: 210,
+          high: 213,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 214,
+            high: 215,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 214,
+              high: 215,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 217,
+            high: 218,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 217,
+              high: 218,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 220,
+            high: 221,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 220,
+              high: 221,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 227,
+            high: 251,
+          ),
+          name: AstIdentifier(
+            name: "rem",
+            span: Span(
+              low: 230,
+              high: 233,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 234,
+                high: 238,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 234,
+                  high: 235,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 237,
+                  high: 238,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 237,
+                    high: 238,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 240,
+                high: 244,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 240,
+                  high: 241,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 243,
+                  high: 244,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 243,
+                    high: 244,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 249,
+              high: 250,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 249,
+                high: 250,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 255,
+        high: 332,
+      ),
+      name: AstIdentifier(
+        name: "Eq",
+        span: Span(
+          low: 261,
+          high: 263,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 264,
+            high: 265,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 264,
+              high: 265,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 267,
+            high: 268,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 267,
+              high: 268,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 274,
+            high: 300,
+          ),
+          name: AstIdentifier(
+            name: "eq",
+            span: Span(
+              low: 277,
+              high: 279,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 280,
+                high: 284,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 280,
+                  high: 281,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 283,
+                  high: 284,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 283,
+                    high: 284,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 286,
+                high: 290,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 286,
+                  high: 287,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 289,
+                  high: 290,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 289,
+                    high: 290,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 295,
+              high: 299,
+            ),
+          ))),
+        ),
+        AstTraitFunctionItem(
+          span: Span(
+            low: 303,
+            high: 330,
+          ),
+          name: AstIdentifier(
+            name: "neq",
+            span: Span(
+              low: 306,
+              high: 309,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 310,
+                high: 314,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 310,
+                  high: 311,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 313,
+                  high: 314,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 313,
+                    high: 314,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 316,
+                high: 320,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 316,
+                  high: 317,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 319,
+                  high: 320,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 319,
+                    high: 320,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Boolean(AstBooleanType(
+            span: Span(
+              low: 325,
+              high: 329,
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 334,
+        high: 465,
+      ),
+      name: AstIdentifier(
+        name: "Ord",
+        span: Span(
+          low: 340,
+          high: 343,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 344,
+            high: 345,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 344,
+              high: 345,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 347,
+            high: 348,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 347,
+              high: 348,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 354,
+            high: 379,
+          ),
+          name: AstIdentifier(
+            name: "lt",
+            span: Span(
+              low: 357,
+              high: 359,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 360,
+                high: 364,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 360,
+                  high: 361,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 363,
+                  high: 364,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 363,
+                    high: 364,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 366,
+                high: 370,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 366,
+                  high: 367,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 369,
+                  high: 370,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 369,
+                    high: 370,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 375,
+              high: 378,
+            ),
+          ))),
+        ),
+        AstTraitFunctionItem(
+          span: Span(
+            low: 382,
+            high: 407,
+          ),
+          name: AstIdentifier(
+            name: "gt",
+            span: Span(
+              low: 385,
+              high: 387,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 388,
+                high: 392,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 388,
+                  high: 389,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 391,
+                  high: 392,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 391,
+                    high: 392,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 394,
+                high: 398,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 394,
+                  high: 395,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 397,
+                  high: 398,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 397,
+                    high: 398,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 403,
+              high: 406,
+            ),
+          ))),
+        ),
+        AstTraitFunctionItem(
+          span: Span(
+            low: 410,
+            high: 435,
+          ),
+          name: AstIdentifier(
+            name: "le",
+            span: Span(
+              low: 413,
+              high: 415,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 416,
+                high: 420,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 416,
+                  high: 417,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 419,
+                  high: 420,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 419,
+                    high: 420,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 422,
+                high: 426,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 422,
+                  high: 423,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 425,
+                  high: 426,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 425,
+                    high: 426,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 431,
+              high: 434,
+            ),
+          ))),
+        ),
+        AstTraitFunctionItem(
+          span: Span(
+            low: 438,
+            high: 463,
+          ),
+          name: AstIdentifier(
+            name: "ge",
+            span: Span(
+              low: 441,
+              high: 443,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 444,
+                high: 448,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 444,
+                  high: 445,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 447,
+                  high: 448,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 447,
+                    high: 448,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 450,
+                high: 454,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 450,
+                  high: 451,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 453,
+                  high: 454,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 453,
+                    high: 454,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Integer32(AstInteger32Type(
+            span: Span(
+              low: 459,
+              high: 462,
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 467,
+        high: 507,
+      ),
+      name: AstIdentifier(
+        name: "Neg",
+        span: Span(
+          low: 473,
+          high: 476,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 477,
+            high: 478,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 477,
+              high: 478,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 480,
+            high: 481,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 480,
+              high: 481,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 487,
+            high: 505,
+          ),
+          name: AstIdentifier(
+            name: "neg",
+            span: Span(
+              low: 490,
+              high: 493,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 494,
+                high: 498,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 494,
+                  high: 495,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 497,
+                  high: 498,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 497,
+                    high: 498,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 503,
+              high: 504,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 503,
+                high: 504,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 509,
+        high: 558,
+      ),
+      name: AstIdentifier(
+        name: "And",
+        span: Span(
+          low: 515,
+          high: 518,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 519,
+            high: 520,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 519,
+              high: 520,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 522,
+            high: 523,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 522,
+              high: 523,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 525,
+            high: 526,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 525,
+              high: 526,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 532,
+            high: 556,
+          ),
+          name: AstIdentifier(
+            name: "and",
+            span: Span(
+              low: 535,
+              high: 538,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 539,
+                high: 543,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 539,
+                  high: 540,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 542,
+                  high: 543,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 542,
+                    high: 543,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 545,
+                high: 549,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 545,
+                  high: 546,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 548,
+                  high: 549,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 548,
+                    high: 549,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 554,
+              high: 555,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 554,
+                high: 555,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+    Trait(AstTraitItem(
+      span: Span(
+        low: 560,
+        high: 607,
+      ),
+      name: AstIdentifier(
+        name: "Or",
+        span: Span(
+          low: 566,
+          high: 568,
+        ),
+      ),
+      type_parameters: [
+        AstTypeParameterItem(
+          span: Span(
+            low: 569,
+            high: 570,
+          ),
+          name: AstIdentifier(
+            name: "A",
+            span: Span(
+              low: 569,
+              high: 570,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 572,
+            high: 573,
+          ),
+          name: AstIdentifier(
+            name: "B",
+            span: Span(
+              low: 572,
+              high: 573,
+            ),
+          ),
+        ),
+        AstTypeParameterItem(
+          span: Span(
+            low: 575,
+            high: 576,
+          ),
+          name: AstIdentifier(
+            name: "R",
+            span: Span(
+              low: 575,
+              high: 576,
+            ),
+          ),
+        ),
+      ],
+      members: [
+        AstTraitFunctionItem(
+          span: Span(
+            low: 582,
+            high: 605,
+          ),
+          name: AstIdentifier(
+            name: "or",
+            span: Span(
+              low: 585,
+              high: 587,
+            ),
+          ),
+          type_parameters: [],
+          parameters: [
+            AstFunctionParameterItem(
+              span: Span(
+                low: 588,
+                high: 592,
+              ),
+              name: AstIdentifier(
+                name: "a",
+                span: Span(
+                  low: 588,
+                  high: 589,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 591,
+                  high: 592,
+                ),
+                name: AstIdentifier(
+                  name: "A",
+                  span: Span(
+                    low: 591,
+                    high: 592,
+                  ),
+                ),
+              )),
+            ),
+            AstFunctionParameterItem(
+              span: Span(
+                low: 594,
+                high: 598,
+              ),
+              name: AstIdentifier(
+                name: "b",
+                span: Span(
+                  low: 594,
+                  high: 595,
+                ),
+              ),
+              ty: Named(AstNamedType(
+                span: Span(
+                  low: 597,
+                  high: 598,
+                ),
+                name: AstIdentifier(
+                  name: "B",
+                  span: Span(
+                    low: 597,
+                    high: 598,
+                  ),
+                ),
+              )),
+            ),
+          ],
+          return_type: Some(Named(AstNamedType(
+            span: Span(
+              low: 603,
+              high: 604,
+            ),
+            name: AstIdentifier(
+              name: "R",
+              span: Span(
+                low: 603,
+                high: 604,
+              ),
+            ),
+          ))),
+        ),
+      ],
+    )),
+  ],
+)

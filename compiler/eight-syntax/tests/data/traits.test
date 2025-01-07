@@ -1,0 +1,43 @@
+trait Add<A, B, R> {
+  fn add(a: A, b: B) -> R;
+}
+
+trait Sub<A, B, R> {
+  fn sub(a: A, b: B) -> R;
+}
+
+trait Mul<A, B, R> {
+  fn mul(a: A, b: B) -> R;
+}
+
+trait Div<A, B, R> {
+  fn div(a: A, b: B) -> R;
+}
+
+trait Rem<A, B, R> {
+  fn rem(a: A, b: B) -> R;
+}
+
+trait Eq<A, B> {
+  fn eq(a: A, b: B) -> bool;
+  fn neq(a: A, b: B) -> bool;
+}
+
+trait Ord<A, B> {
+  fn lt(a: A, b: B) -> i32;
+  fn gt(a: A, b: B) -> i32;
+  fn le(a: A, b: B) -> i32;
+  fn ge(a: A, b: B) -> i32;
+}
+
+trait Neg<A, R> {
+  fn neg(a: A) -> R;
+}
+
+trait And<A, B, R> {
+  fn and(a: A, b: B) -> R;
+}
+
+trait Or<A, B, R> {
+  fn or(a: A, b: B) -> R;
+}

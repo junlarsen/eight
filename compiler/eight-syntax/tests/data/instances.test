@@ -1,0 +1,70 @@
+intrinsic_scalar i32;
+
+intrinsic_fn i32_add(a: i32, b: i32) -> i32;
+intrinsic_fn i32_sub(a: i32, b: i32) -> i32;
+intrinsic_fn i32_mul(a: i32, b: i32) -> i32;
+intrinsic_fn i32_div(a: i32, b: i32) -> i32;
+intrinsic_fn i32_rem(a: i32, b: i32) -> i32;
+
+intrinsic_fn i32_eq(a: i32, b: i32) -> bool;
+intrinsic_fn i32_neq(a: i32, b: i32) -> bool;
+intrinsic_fn i32_lt(a: i32, b: i32) -> bool;
+intrinsic_fn i32_gt(a: i32, b: i32) -> bool;
+intrinsic_fn i32_le(a: i32, b: i32) -> bool;
+intrinsic_fn i32_ge(a: i32, b: i32) -> bool;
+intrinsic_fn i32_lte(a: i32, b: i32) -> bool;
+intrinsic_fn i32_gte(a: i32, b: i32) -> bool;
+
+instance Ord<i32, i32> {
+  fn lt(a: i32, b: i32) -> bool {
+    return i32_lt(a, b);
+  }
+  fn gt(a: i32, b: i32) -> bool {
+    return i32_gt(a, b);
+  }
+  fn le(a: i32, b: i32) -> bool {
+    return i32_le(a, b);
+  }
+  fn ge(a: i32, b: i32) -> bool {
+    return i32_ge(a, b);
+  }
+}
+
+instance Add<i32, i32, i32> {
+  fn add(a: i32, b: i32) -> i32 {
+    return i32_add(a, b);
+  }
+}
+
+instance Sub<i32, i32, i32> {
+  fn sub(a: i32, b: i32) -> i32 {
+    return i32_sub(a, b);
+  }
+}
+
+instance Mul<i32, i32, i32> {
+  fn mul(a: i32, b: i32) -> i32 {
+    return i32_mul(a, b);
+  }
+}
+
+instance Div<i32, i32, i32> {
+  fn div(a: i32, b: i32) -> i32 {
+    return i32_div(a, b);
+  }
+}
+
+instance Rem<i32, i32, i32> {
+  fn rem(a: i32, b: i32) -> i32 {
+    return i32_rem(a, b);
+  }
+}
+
+instance Eq<i32, i32> {
+  fn eq(a: i32, b: i32) -> bool {
+    return i32_eq(a, b);
+  }
+  fn neq(a: i32, b: i32) -> bool {
+    return i32_neq(a, b);
+  }
+}
