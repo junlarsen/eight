@@ -309,10 +309,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 Ok(())
             }
             AstItem::Instance(i) => {
-                let instances = module
-                    .instances
-                    .entry(i.name.name.to_owned())
-                    .or_default();
+                let instances = module.instances.entry(i.name.name.to_owned()).or_default();
                 instances.push(self.visit_instance_item(i)?);
                 Ok(())
             }

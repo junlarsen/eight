@@ -286,6 +286,15 @@ impl HirModuleDebugPass {
         RcDoc::text("instance")
             .append(RcDoc::space())
             .append(&instance.name.name)
+            .append(RcDoc::text("<"))
+            .append(RcDoc::intersperse(
+                instance
+                    .instantiation_type_parameters
+                    .iter()
+                    .map(|p| Self::format_hir_ty(p)),
+                RcDoc::text(", "),
+            ))
+            .append(RcDoc::text(">"))
             .append(RcDoc::space())
             .append(
                 RcDoc::text("{")
