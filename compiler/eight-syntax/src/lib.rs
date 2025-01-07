@@ -1,7 +1,6 @@
 mod ast;
 mod error;
 mod lexer;
-mod macros;
 mod parser;
 mod tok;
 

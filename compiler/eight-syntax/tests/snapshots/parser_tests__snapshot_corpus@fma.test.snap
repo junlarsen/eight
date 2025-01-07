@@ -5,10 +5,6 @@ input_file: compiler/eight-syntax/tests/data/fma.test
 snapshot_kind: text
 ---
 AstTranslationUnit(
-  span: Span(
-    low: 0,
-    high: 0,
-  ),
   items: [
     Type(AstTypeItem(
       span: Span(

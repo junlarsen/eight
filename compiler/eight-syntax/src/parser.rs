@@ -206,7 +206,7 @@ impl Parser<'_> {
             items.push(self.parse_item()?);
         }
         // The translation unit doesn't record a span
-        let node = AstTranslationUnit::new(Span::empty(), items);
+        let node = AstTranslationUnit { items };
         Ok(node)
     }
 
@@ -282,14 +282,14 @@ impl Parser<'_> {
         self.check(&TokenType::OpenBrace)?;
         let body = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
         let end = self.check(&TokenType::CloseBrace)?;
-        let node = AstFunctionItem::new(
-            Span::from_pair(&start.span, &end.span),
-            id,
+        let node = AstFunctionItem {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
             parameters,
             type_parameters,
             return_type,
             body,
-        );
+        };
         Ok(node)
     }
 
@@ -302,7 +302,11 @@ impl Parser<'_> {
         let id = self.parse_identifier()?;
         self.check(&TokenType::Colon)?;
         let ty = self.parse_type()?;
-        let node = AstFunctionParameterItem::new(Span::from_pair(id.span(), ty.span()), id, ty);
+        let node = AstFunctionParameterItem {
+            span: Span::from_pair(&id.span, ty.span()),
+            name: id,
+            r#type: ty,
+        };
         Ok(node)
     }
 
@@ -313,7 +317,10 @@ impl Parser<'_> {
     /// ```
     pub fn parse_fn_type_parameter_item(&mut self) -> ParseResult<AstFunctionTypeParameterItem> {
         let id = self.parse_identifier()?;
-        let node = AstFunctionTypeParameterItem::new(*id.span(), id);
+        let node = AstFunctionTypeParameterItem {
+            span: id.span,
+            name: id,
+        };
         Ok(node)
     }
 
@@ -330,7 +337,11 @@ impl Parser<'_> {
         let members =
             self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_type_member_item())?;
         let end = self.check(&TokenType::CloseBrace)?;
-        let node = AstTypeItem::new(Span::from_pair(&start.span, &end.span), id, members);
+        let node = AstTypeItem {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
+            members,
+        };
         Ok(node)
     }
 
@@ -344,7 +355,11 @@ impl Parser<'_> {
         self.check(&TokenType::Colon)?;
         let ty = self.parse_type()?;
         let end = self.check(&TokenType::Comma)?;
-        let node = AstTypeMemberItem::new(Span::from_pair(id.span(), &end.span), id, ty);
+        let node = AstTypeMemberItem {
+            span: Span::from_pair(&id.span, &end.span),
+            name: id,
+            r#type: ty,
+        };
         Ok(node)
     }
 
@@ -385,13 +400,13 @@ impl Parser<'_> {
         self.check(&TokenType::Arrow)?;
         let return_type = self.parse_type()?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstIntrinsicFunctionItem::new(
-            Span::from_pair(&start.span, &end.span),
-            id,
+        let node = AstIntrinsicFunctionItem {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
             parameters,
             type_parameters,
             return_type,
-        );
+        };
         Ok(node)
     }
 
@@ -404,7 +419,10 @@ impl Parser<'_> {
         let start = self.check(&TokenType::KeywordIntrinsicScalar)?;
         let id = self.parse_identifier()?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstIntrinsicScalarItem::new(Span::from_pair(&start.span, &end.span), id);
+        let node = AstIntrinsicScalarItem {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
+        };
         Ok(node)
     }
 
@@ -451,7 +469,12 @@ impl Parser<'_> {
         self.check(&TokenType::Equal)?;
         let expr = self.parse_expr()?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstLetStmt::new(Span::from_pair(&start.span, &end.span), id, ty, expr);
+        let node = AstLetStmt {
+            span: Span::from_pair(&start.span, &end.span),
+            name: id,
+            r#type: ty,
+            value: expr,
+        };
         Ok(node)
     }
 
@@ -465,7 +488,10 @@ impl Parser<'_> {
         let value =
             self.parser_combinator_take_if(|t| t.ty != TokenType::Semicolon, |p| p.parse_expr())?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstReturnStmt::new(Span::from_pair(&start.span, &end.span), value);
+        let node = AstReturnStmt {
+            span: Span::from_pair(&start.span, &end.span),
+            value,
+        };
         Ok(node)
     }
 
@@ -491,13 +517,13 @@ impl Parser<'_> {
         self.check(&TokenType::OpenBrace)?;
         let body = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
         let end = self.check(&TokenType::CloseBrace)?;
-        let node = AstForStmt::new(
-            Span::from_pair(&start.span, &end.span),
+        let node = AstForStmt {
+            span: Span::from_pair(&start.span, &end.span),
             initializer,
             condition,
             increment,
             body,
-        );
+        };
         Ok(node)
     }
 
@@ -511,11 +537,11 @@ impl Parser<'_> {
         let name = self.parse_identifier()?;
         self.check(&TokenType::Equal)?;
         let initializer = self.parse_expr()?;
-        let node = AstForStmtInitializer::new(
-            Span::from_pair(&start.span, initializer.span()),
+        let node = AstForStmtInitializer {
+            span: Span::from_pair(&start.span, initializer.span()),
             name,
             initializer,
-        );
+        };
         Ok(node)
     }
 
@@ -527,7 +553,9 @@ impl Parser<'_> {
     pub fn parse_break_stmt(&mut self) -> ParseResult<AstBreakStmt> {
         let start = self.check(&TokenType::KeywordBreak)?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstBreakStmt::new(Span::from_pair(&start.span, &end.span));
+        let node = AstBreakStmt {
+            span: Span::from_pair(&start.span, &end.span),
+        };
         Ok(node)
     }
 
@@ -539,7 +567,9 @@ impl Parser<'_> {
     pub fn parse_continue_stmt(&mut self) -> ParseResult<AstContinueStmt> {
         let start = self.check(&TokenType::KeywordContinue)?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstContinueStmt::new(Span::from_pair(&start.span, &end.span));
+        let node = AstContinueStmt {
+            span: Span::from_pair(&start.span, &end.span),
+        };
         Ok(node)
     }
 
@@ -568,12 +598,12 @@ impl Parser<'_> {
                 Ok(r#else)
             },
         )?;
-        let node = AstIfStmt::new(
-            Span::from_pair(&start.span, &end.span),
+        let node = AstIfStmt {
+            span: Span::from_pair(&start.span, &end.span),
             condition,
-            body,
-            r#else,
-        );
+            happy_path: body,
+            unhappy_path: r#else,
+        };
         Ok(node)
     }
 
@@ -584,7 +614,10 @@ impl Parser<'_> {
     pub fn parse_expr_stmt(&mut self) -> ParseResult<AstExprStmt> {
         let expr = self.parse_expr()?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstExprStmt::new(Span::from_pair(expr.span(), &end.span), expr);
+        let node = AstExprStmt {
+            span: Span::from_pair(expr.span(), &end.span),
+            expr,
+        };
         Ok(node)
     }
 
@@ -631,11 +664,11 @@ impl Parser<'_> {
         if self.lookahead_check(&TokenType::Equal)? {
             self.check(&TokenType::Equal)?;
             let rhs = self.parse_assign_expr()?;
-            let node = AstAssignExpr::new(
-                Span::from_pair(expr.span(), rhs.span()),
-                Box::new(expr),
-                Box::new(rhs),
-            );
+            let node = AstAssignExpr {
+                span: Span::from_pair(expr.span(), rhs.span()),
+                lhs: Box::new(expr),
+                rhs: Box::new(rhs),
+            };
             return Ok(AstExpr::Assign(node));
         };
 
@@ -653,12 +686,12 @@ impl Parser<'_> {
         if self.lookahead_check(&TokenType::LogicalOr)? {
             self.check(&TokenType::LogicalOr)?;
             let rhs = self.parse_logical_or_expr()?;
-            let node = AstBinaryOpExpr::new(
-                Span::from_pair(lhs.span(), rhs.span()),
-                Box::new(lhs),
-                Box::new(rhs),
-                AstBinaryOp::Or,
-            );
+            let node = AstBinaryOpExpr {
+                span: Span::from_pair(lhs.span(), rhs.span()),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                op: AstBinaryOp::Or,
+            };
             return Ok(AstExpr::BinaryOp(node));
         };
 
@@ -676,12 +709,12 @@ impl Parser<'_> {
         if self.lookahead_check(&TokenType::LogicalAnd)? {
             self.check(&TokenType::LogicalAnd)?;
             let rhs = self.parse_logical_and_expr()?;
-            let node = AstBinaryOpExpr::new(
-                Span::from_pair(lhs.span(), rhs.span()),
-                Box::new(lhs),
-                Box::new(rhs),
-                AstBinaryOp::And,
-            );
+            let node = AstBinaryOpExpr {
+                span: Span::from_pair(lhs.span(), rhs.span()),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                op: AstBinaryOp::And,
+            };
             return Ok(AstExpr::BinaryOp(node));
         };
 
@@ -715,12 +748,12 @@ impl Parser<'_> {
                 _ => unreachable!(),
             };
             let rhs = self.parse_comparison_expr()?;
-            let node = AstBinaryOpExpr::new(
-                Span::from_pair(lhs.span(), rhs.span()),
-                Box::new(lhs),
-                Box::new(rhs),
+            let node = AstBinaryOpExpr {
+                span: Span::from_pair(lhs.span(), rhs.span()),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
                 op,
-            );
+            };
             return Ok(AstExpr::BinaryOp(node));
         }
 
@@ -746,12 +779,12 @@ impl Parser<'_> {
                 _ => unreachable!(),
             };
             let rhs = self.parse_additive_expr()?;
-            let node = AstBinaryOpExpr::new(
-                Span::from_pair(lhs.span(), rhs.span()),
-                Box::new(lhs),
-                Box::new(rhs),
+            let node = AstBinaryOpExpr {
+                span: Span::from_pair(lhs.span(), rhs.span()),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
                 op,
-            );
+            };
             return Ok(AstExpr::BinaryOp(node));
         }
 
@@ -779,12 +812,12 @@ impl Parser<'_> {
                 _ => unreachable!(),
             };
             let rhs = self.parse_multiplicative_expr()?;
-            let node = AstBinaryOpExpr::new(
-                Span::from_pair(lhs.span(), rhs.span()),
-                Box::new(lhs),
-                Box::new(rhs),
+            let node = AstBinaryOpExpr {
+                span: Span::from_pair(lhs.span(), rhs.span()),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
                 op,
-            );
+            };
             return Ok(AstExpr::BinaryOp(node));
         }
 
@@ -804,41 +837,41 @@ impl Parser<'_> {
             TokenType::Minus => {
                 let op = self.check(&TokenType::Minus)?;
                 let rhs = self.parse_unary_expr()?;
-                let node = AstUnaryOpExpr::new(
-                    Span::from_pair(&op.span, rhs.span()),
-                    Box::new(rhs),
-                    AstUnaryOp::Neg,
-                );
+                let node = AstUnaryOpExpr {
+                    span: Span::from_pair(&op.span, rhs.span()),
+                    operand: Box::new(rhs),
+                    op: AstUnaryOp::Neg,
+                };
                 Ok(AstExpr::UnaryOp(node))
             }
             TokenType::Bang => {
                 let op = self.check(&TokenType::Bang)?;
                 let rhs = self.parse_unary_expr()?;
-                let node = AstUnaryOpExpr::new(
-                    Span::from_pair(&op.span, rhs.span()),
-                    Box::new(rhs),
-                    AstUnaryOp::Not,
-                );
+                let node = AstUnaryOpExpr {
+                    span: Span::from_pair(&op.span, rhs.span()),
+                    operand: Box::new(rhs),
+                    op: AstUnaryOp::Not,
+                };
                 Ok(AstExpr::UnaryOp(node))
             }
             TokenType::Star => {
                 let op = self.check(&TokenType::Star)?;
                 let rhs = self.parse_unary_expr()?;
-                let node = AstUnaryOpExpr::new(
-                    Span::from_pair(&op.span, rhs.span()),
-                    Box::new(rhs),
-                    AstUnaryOp::Deref,
-                );
+                let node = AstUnaryOpExpr {
+                    span: Span::from_pair(&op.span, rhs.span()),
+                    operand: Box::new(rhs),
+                    op: AstUnaryOp::Deref,
+                };
                 Ok(AstExpr::UnaryOp(node))
             }
             TokenType::AddressOf => {
                 let op = self.check(&TokenType::AddressOf)?;
                 let rhs = self.parse_unary_expr()?;
-                let node = AstUnaryOpExpr::new(
-                    Span::from_pair(&op.span, rhs.span()),
-                    Box::new(rhs),
-                    AstUnaryOp::AddressOf,
-                );
+                let node = AstUnaryOpExpr {
+                    span: Span::from_pair(&op.span, rhs.span()),
+                    operand: Box::new(rhs),
+                    op: AstUnaryOp::AddressOf,
+                };
                 Ok(AstExpr::UnaryOp(node))
             }
             _ => self.parse_call_expr(),
@@ -878,12 +911,12 @@ impl Parser<'_> {
                     p.parse_expr()
                 })?;
             let end = self.check(&TokenType::CloseParen)?;
-            let node = AstCallExpr::new(
-                Span::from_pair(callee.span(), &end.span),
-                Box::new(callee),
+            let node = AstCallExpr {
+                span: Span::from_pair(callee.span(), &end.span),
+                callee: Box::new(callee),
                 arguments,
                 type_arguments,
-            );
+            };
             return Ok(AstExpr::Call(node));
         };
 
@@ -910,8 +943,11 @@ impl Parser<'_> {
                 p.parse_construct_expr_argument()
             })?;
         let end = self.check(&TokenType::CloseBrace)?;
-        let node =
-            AstConstructExpr::new(Span::from_pair(&start.span, &end.span), callee, arguments);
+        let node = AstConstructExpr {
+            span: Span::from_pair(&start.span, &end.span),
+            callee,
+            arguments,
+        };
         Ok(AstExpr::Construct(node))
     }
 
@@ -923,8 +959,11 @@ impl Parser<'_> {
         let id = self.parse_identifier()?;
         self.check(&TokenType::Colon)?;
         let expr = self.parse_expr()?;
-        let node =
-            AstConstructorExprArgument::new(Span::from_pair(id.span(), expr.span()), id, expr);
+        let node = AstConstructorExprArgument {
+            span: Span::from_pair(&id.span, expr.span()),
+            field: id,
+            expr,
+        };
         Ok(node)
     }
 
@@ -940,11 +979,11 @@ impl Parser<'_> {
             self.check(&TokenType::OpenBracket)?;
             let index = self.parse_expr()?;
             let end = self.check(&TokenType::CloseBracket)?;
-            let node = AstBracketIndexExpr::new(
-                Span::from_pair(origin.span(), &end.span),
-                Box::new(origin),
-                Box::new(index),
-            );
+            let node = AstBracketIndexExpr {
+                span: Span::from_pair(origin.span(), &end.span),
+                origin: Box::new(origin),
+                index: Box::new(index),
+            };
             return Ok(AstExpr::BracketIndex(node));
         }
 
@@ -962,11 +1001,11 @@ impl Parser<'_> {
         if self.lookahead_check(&TokenType::Dot)? {
             self.check(&TokenType::Dot)?;
             let index = self.parse_identifier()?;
-            let node = AstDotIndexExpr::new(
-                Span::from_pair(origin.span(), index.span()),
-                Box::new(origin),
+            let node = AstDotIndexExpr {
+                span: Span::from_pair(origin.span(), &index.span),
+                origin: Box::new(origin),
                 index,
-            );
+            };
             return Ok(AstExpr::DotIndex(node));
         }
 
@@ -989,7 +1028,10 @@ impl Parser<'_> {
         );
         if is_reference {
             let id = self.parse_identifier()?;
-            let node = AstReferenceExpr::new(*id.span(), id);
+            let node = AstReferenceExpr {
+                span: id.span,
+                name: id,
+            };
             return Ok(AstExpr::Reference(node));
         }
         self.parse_literal_expr()
@@ -1014,14 +1056,14 @@ impl Parser<'_> {
                 ty: TokenType::IntegerLiteral(v),
                 span,
             } => {
-                let node = AstIntegerLiteralExpr::new(span, v);
+                let node = AstIntegerLiteralExpr { span, value: v };
                 Ok(AstExpr::IntegerLiteral(node))
             }
             Token {
                 ty: TokenType::BooleanLiteral(v),
                 span,
             } => {
-                let node = AstBooleanLiteralExpr::new(span, v);
+                let node = AstBooleanLiteralExpr { span, value: v };
                 Ok(AstExpr::BooleanLiteral(node))
             }
             _ => self.parse_group_expr(),
@@ -1038,7 +1080,10 @@ impl Parser<'_> {
             let start = self.check(&TokenType::OpenParen)?;
             let inner = self.parse_expr()?;
             let end = self.check(&TokenType::CloseParen)?;
-            let node = AstGroupExpr::new(Span::from_pair(&start.span, &end.span), Box::new(inner));
+            let node = AstGroupExpr {
+                span: Span::from_pair(&start.span, &end.span),
+                inner: Box::new(inner),
+            };
             return Ok(AstExpr::Group(node));
         };
         let token = self.eat()?;
@@ -1060,7 +1105,7 @@ impl Parser<'_> {
                 ty: TokenType::Identifier(id),
                 span,
             } => {
-                let node = AstIdentifier::new(id, span);
+                let node = AstIdentifier { name: id, span };
                 Ok(node)
             }
             _ => Err(ParseError::from(UnexpectedTokenError {
@@ -1085,17 +1130,17 @@ impl Parser<'_> {
             TokenType::Identifier(v) => match v.as_str() {
                 "i32" => {
                     let id = self.parse_identifier()?;
-                    let node = AstInteger32Type::new(*id.span());
+                    let node = AstInteger32Type { span: id.span };
                     Ok(AstType::Integer32(node))
                 }
                 "bool" => {
                     let id = self.parse_identifier()?;
-                    let node = AstBooleanType::new(*id.span());
+                    let node = AstBooleanType { span: id.span };
                     Ok(AstType::Boolean(node))
                 }
                 "unit" => {
                     let id = self.parse_identifier()?;
-                    let node = AstUnitType::new(*id.span());
+                    let node = AstUnitType { span: id.span };
                     Ok(AstType::Unit(node))
                 }
                 _ => Ok(AstType::Named(self.parse_named_type()?)),
@@ -1118,7 +1163,10 @@ impl Parser<'_> {
     /// ```
     pub fn parse_named_type(&mut self) -> ParseResult<AstNamedType> {
         let id = self.parse_identifier()?;
-        let node = AstNamedType::new(*id.span(), id);
+        let node = AstNamedType {
+            span: id.span,
+            name: id,
+        };
         Ok(node)
     }
 
@@ -1130,10 +1178,10 @@ impl Parser<'_> {
     pub fn parse_pointer_type(&mut self) -> ParseResult<AstPointerType> {
         let indirection = self.check(&TokenType::Star)?;
         let inner = self.parse_type()?;
-        let node = AstPointerType::new(
-            Span::from_pair(&indirection.span, inner.span()),
-            Box::new(inner),
-        );
+        let node = AstPointerType {
+            span: Span::from_pair(&indirection.span, inner.span()),
+            inner: Box::new(inner),
+        };
         Ok(node)
     }
 }
