@@ -5,9 +5,9 @@ declare_ast_node! {
     /// The top-level AST node representing a single translation unit.
     ///
     /// The term translation unit is used here to refer to a single source file.
-    pub struct TranslationUnit {
+    pub struct AstTranslationUnit {
         span: Span,
-        pub items: Vec<Item>,
+        pub items: Vec<AstItem>,
     }
 }
 
@@ -16,280 +16,280 @@ declare_ast_variant! {
     ///
     /// An `Item` is anything that can be declared at the top-level scope of a translation unit. This
     /// currently means either functions or types.
-    pub enum Item {
-        Function(FunctionItem),
-        IntrinsicFunction(IntrinsicFunctionItem),
-        Type(TypeItem),
+    pub enum AstItem {
+        Function(AstFunctionItem),
+        IntrinsicFunction(AstIntrinsicFunctionItem),
+        Type(AstTypeItem),
     }
 }
 
 declare_ast_node! {
-    pub struct FunctionItem {
+    pub struct AstFunctionItem {
         span: Span,
-        pub name: Identifier,
-        pub parameters: Vec<FunctionParameterItem>,
-        pub type_parameters: Vec<FunctionTypeParameterItem>,
-        pub return_type: Option<Type>,
-        pub body: Vec<Stmt>,
+        pub name: AstIdentifier,
+        pub parameters: Vec<AstFunctionParameterItem>,
+        pub type_parameters: Vec<AstFunctionTypeParameterItem>,
+        pub return_type: Option<AstType>,
+        pub body: Vec<AstStmt>,
     }
 }
 
 declare_ast_node! {
-    pub struct IntrinsicFunctionItem {
+    pub struct AstIntrinsicFunctionItem {
         span: Span,
-        pub name: Identifier,
-        pub parameters: Vec<FunctionParameterItem>,
-        pub type_parameters: Vec<FunctionTypeParameterItem>,
-        pub return_type: Type,
+        pub name: AstIdentifier,
+        pub parameters: Vec<AstFunctionParameterItem>,
+        pub type_parameters: Vec<AstFunctionTypeParameterItem>,
+        pub return_type: AstType,
     }
 }
 
 declare_ast_node! {
-    pub struct FunctionTypeParameterItem {
+    pub struct AstFunctionTypeParameterItem {
         span: Span,
-        pub name: Identifier,
+        pub name: AstIdentifier,
     }
 }
 
 declare_ast_node! {
-    pub struct FunctionParameterItem {
+    pub struct AstFunctionParameterItem {
         span: Span,
-        pub name: Identifier,
-        pub r#type: Type,
+        pub name: AstIdentifier,
+        pub r#type: AstType,
     }
 }
 
 declare_ast_node! {
-    pub struct TypeItem {
+    pub struct AstTypeItem {
         span: Span,
-        pub name: Identifier,
-        pub members: Vec<TypeMemberItem>,
+        pub name: AstIdentifier,
+        pub members: Vec<AstTypeMemberItem>,
     }
 }
 
 declare_ast_node! {
-    pub struct TypeMemberItem {
+    pub struct AstTypeMemberItem {
         span: Span,
-        pub name: Identifier,
-        pub r#type: Type,
+        pub name: AstIdentifier,
+        pub r#type: AstType,
     }
 }
 
 declare_ast_variant! {
-    pub enum Stmt {
-        Let(LetStmt),
-        Return(ReturnStmt),
-        For(ForStmt),
-        Break(BreakStmt),
-        Continue(ContinueStmt),
-        If(IfStmt),
-        Expr(ExprStmt),
+    pub enum AstStmt {
+        Let(AstLetStmt),
+        Return(AstReturnStmt),
+        For(AstForStmt),
+        Break(AstBreakStmt),
+        Continue(AstContinueStmt),
+        If(AstIfStmt),
+        Expr(AstExprStmt),
     }
 }
 
-impl Stmt {
+impl AstStmt {
     /// Get the span of the inner statement.
     pub fn span(&self) -> &Span {
         match self {
-            Stmt::Let(s) => &s.span,
-            Stmt::Return(s) => &s.span,
-            Stmt::For(s) => &s.span,
-            Stmt::Break(s) => &s.span,
-            Stmt::Continue(s) => &s.span,
-            Stmt::If(s) => &s.span,
-            Stmt::Expr(s) => &s.span,
+            AstStmt::Let(s) => &s.span,
+            AstStmt::Return(s) => &s.span,
+            AstStmt::For(s) => &s.span,
+            AstStmt::Break(s) => &s.span,
+            AstStmt::Continue(s) => &s.span,
+            AstStmt::If(s) => &s.span,
+            AstStmt::Expr(s) => &s.span,
         }
     }
 }
 
 declare_ast_node! {
-    pub struct LetStmt {
+    pub struct AstLetStmt {
         span: Span,
-        pub name: Identifier,
-        pub r#type: Option<Type>,
-        pub value: Expr,
+        pub name: AstIdentifier,
+        pub r#type: Option<AstType>,
+        pub value: AstExpr,
     }
 }
 
 declare_ast_node! {
-    pub struct ReturnStmt {
+    pub struct AstReturnStmt {
         span: Span,
-        pub value: Option<Expr>,
+        pub value: Option<AstExpr>,
     }
 }
 
 declare_ast_node! {
-    pub struct ForStmt {
+    pub struct AstForStmt {
         span: Span,
-        pub initializer: Option<ForStmtInitializer>,
-        pub condition: Option<Expr>,
-        pub increment: Option<Expr>,
-        pub body: Vec<Stmt>,
+        pub initializer: Option<AstForStmtInitializer>,
+        pub condition: Option<AstExpr>,
+        pub increment: Option<AstExpr>,
+        pub body: Vec<AstStmt>,
     }
 }
 
 declare_ast_node! {
-    pub struct ForStmtInitializer {
+    pub struct AstForStmtInitializer {
         span: Span,
-        pub name: Identifier,
-        pub initializer: Expr,
+        pub name: AstIdentifier,
+        pub initializer: AstExpr,
     }
 }
 
 declare_ast_node! {
-    pub struct BreakStmt {
-        span: Span,
-    }
-}
-
-declare_ast_node! {
-    pub struct ContinueStmt {
+    pub struct AstBreakStmt {
         span: Span,
     }
 }
 
 declare_ast_node! {
-    pub struct IfStmt {
+    pub struct AstContinueStmt {
         span: Span,
-        pub condition: Expr,
-        pub happy_path: Vec<Stmt>,
-        pub unhappy_path: Option<Vec<Stmt>>,
     }
 }
 
 declare_ast_node! {
-    pub struct ExprStmt {
+    pub struct AstIfStmt {
         span: Span,
-        pub expr: Expr,
+        pub condition: AstExpr,
+        pub happy_path: Vec<AstStmt>,
+        pub unhappy_path: Option<Vec<AstStmt >>,
+    }
+}
+
+declare_ast_node! {
+    pub struct AstExprStmt {
+        span: Span,
+        pub expr: AstExpr,
     }
 }
 
 declare_ast_variant! {
-    pub enum Expr {
-        Assign(AssignExpr),
-        BinaryOp(BinaryOpExpr),
-        UnaryOp(UnaryOpExpr),
-        IntegerLiteral(IntegerLiteralExpr),
-        BooleanLiteral(BooleanLiteralExpr),
-        DotIndex(DotIndexExpr),
-        BracketIndex(BracketIndexExpr),
-        Reference(ReferenceExpr),
-        Call(CallExpr),
-        Construct(ConstructExpr),
-        Group(GroupExpr),
+    pub enum AstExpr {
+        Assign(AstAssignExpr),
+        BinaryOp(AstBinaryOpExpr),
+        UnaryOp(AstUnaryOpExpr),
+        IntegerLiteral(AstIntegerLiteralExpr),
+        BooleanLiteral(AstBooleanLiteralExpr),
+        DotIndex(AstDotIndexExpr),
+        BracketIndex(AstBracketIndexExpr),
+        Reference(AstReferenceExpr),
+        Call(AstCallExpr),
+        Construct(AstConstructExpr),
+        Group(AstGroupExpr),
     }
 }
 
-impl Expr {
+impl AstExpr {
     /// Get the span of the inner expression.
     pub fn span(&self) -> &Span {
         match self {
-            Expr::Assign(e) => &e.span,
-            Expr::BinaryOp(e) => &e.span,
-            Expr::UnaryOp(e) => &e.span,
-            Expr::IntegerLiteral(e) => &e.span,
-            Expr::BooleanLiteral(e) => &e.span,
-            Expr::DotIndex(e) => &e.span,
-            Expr::BracketIndex(e) => &e.span,
-            Expr::Reference(e) => &e.span,
-            Expr::Call(e) => &e.span,
-            Expr::Construct(e) => &e.span,
-            Expr::Group(e) => &e.span,
+            AstExpr::Assign(e) => &e.span,
+            AstExpr::BinaryOp(e) => &e.span,
+            AstExpr::UnaryOp(e) => &e.span,
+            AstExpr::IntegerLiteral(e) => &e.span,
+            AstExpr::BooleanLiteral(e) => &e.span,
+            AstExpr::DotIndex(e) => &e.span,
+            AstExpr::BracketIndex(e) => &e.span,
+            AstExpr::Reference(e) => &e.span,
+            AstExpr::Call(e) => &e.span,
+            AstExpr::Construct(e) => &e.span,
+            AstExpr::Group(e) => &e.span,
         }
     }
 }
 
 declare_ast_node! {
-    pub struct AssignExpr {
+    pub struct AstAssignExpr {
         span: Span,
-        pub lhs: Box<Expr>,
-        pub rhs: Box<Expr>,
+        pub lhs: Box<AstExpr>,
+        pub rhs: Box<AstExpr>,
     }
 }
 
 declare_ast_node! {
-    pub struct BinaryOpExpr {
+    pub struct AstBinaryOpExpr {
         span: Span,
-        pub lhs: Box<Expr>,
-        pub rhs: Box<Expr>,
-        pub op: BinaryOp,
+        pub lhs: Box<AstExpr>,
+        pub rhs: Box<AstExpr>,
+        pub op: AstBinaryOp,
     }
 }
 
 declare_ast_node! {
-    pub struct UnaryOpExpr {
+    pub struct AstUnaryOpExpr {
         span: Span,
-        pub operand: Box<Expr>,
-        pub op: UnaryOp,
+        pub operand: Box<AstExpr>,
+        pub op: AstUnaryOp,
     }
 }
 
 declare_ast_node! {
-    pub struct IntegerLiteralExpr {
+    pub struct AstIntegerLiteralExpr {
         span: Span,
         pub value: i32,
     }
 }
 
 declare_ast_node! {
-    pub struct BooleanLiteralExpr {
+    pub struct AstBooleanLiteralExpr {
         span: Span,
         pub value: bool,
     }
 }
 
 declare_ast_node! {
-    pub struct DotIndexExpr {
+    pub struct AstDotIndexExpr {
         span: Span,
-        pub origin: Box<Expr>,
-        pub index: Identifier,
+        pub origin: Box<AstExpr>,
+        pub index: AstIdentifier,
     }
 }
 
 declare_ast_node! {
-    pub struct BracketIndexExpr {
+    pub struct AstBracketIndexExpr {
         span: Span,
-        pub origin: Box<Expr>,
-        pub index: Box<Expr>,
+        pub origin: Box<AstExpr>,
+        pub index: Box<AstExpr>,
     }
 }
 
 declare_ast_node! {
-    pub struct ReferenceExpr {
+    pub struct AstReferenceExpr {
         span: Span,
-        pub name: Identifier,
+        pub name: AstIdentifier,
     }
 }
 
 declare_ast_node! {
-    pub struct CallExpr {
+    pub struct AstCallExpr {
         span: Span,
-        pub callee: Box<Expr>,
-        pub arguments: Vec<Expr>,
-        pub type_arguments: Vec<Type>,
+        pub callee: Box<AstExpr>,
+        pub arguments: Vec<AstExpr>,
+        pub type_arguments: Vec<AstType>,
     }
 }
 
 declare_ast_node! {
-    pub struct ConstructExpr {
+    pub struct AstConstructExpr {
         span: Span,
-        pub callee: Type,
-        pub arguments: Vec<ConstructorExprArgument>,
+        pub callee: AstType,
+        pub arguments: Vec<AstConstructorExprArgument>,
     }
 }
 
 declare_ast_node! {
-    pub struct ConstructorExprArgument {
+    pub struct AstConstructorExprArgument {
         span: Span,
-        pub field: Identifier,
-        pub expr: Expr,
+        pub field: AstIdentifier,
+        pub expr: AstExpr,
     }
 }
 
 declare_ast_node! {
-    pub struct GroupExpr {
+    pub struct AstGroupExpr {
         span: Span,
-        pub inner: Box<Expr>,
+        pub inner: Box<AstExpr>,
     }
 }
 
@@ -298,70 +298,70 @@ declare_ast_node! {
     ///
     /// This is practically a copy of the `TokenType::Identifier` variant, but we want to be able to
     /// extract them from the AST, as we don't care for storing token types in the AST.
-    pub struct Identifier {
+    pub struct AstIdentifier {
         pub name: String,
         span: Span,
     }
 }
 
 declare_ast_variant! {
-    pub enum Type {
-        Unit(UnitType),
-        Integer32(Integer32Type),
-        Pointer(PointerType),
-        Named(NamedType),
-        Boolean(BooleanType),
+    pub enum AstType {
+        Unit(AstUnitType),
+        Integer32(AstInteger32Type),
+        Pointer(AstPointerType),
+        Named(AstNamedType),
+        Boolean(AstBooleanType),
     }
 }
 
-impl Type {
+impl AstType {
     /// Get the span of the inner type.
     pub fn span(&self) -> &Span {
         match self {
-            Type::Unit(t) => &t.span,
-            Type::Integer32(t) => &t.span,
-            Type::Pointer(t) => &t.span,
-            Type::Named(t) => &t.span,
-            Type::Boolean(t) => &t.span,
+            AstType::Unit(t) => &t.span,
+            AstType::Integer32(t) => &t.span,
+            AstType::Pointer(t) => &t.span,
+            AstType::Named(t) => &t.span,
+            AstType::Boolean(t) => &t.span,
         }
     }
 }
 
 declare_ast_node! {
-    pub struct UnitType {
+    pub struct AstUnitType {
         span: Span,
     }
 }
 
 declare_ast_node! {
-    pub struct Integer32Type {
+    pub struct AstInteger32Type {
         span: Span,
     }
 }
 
 declare_ast_node! {
-    pub struct BooleanType {
+    pub struct AstBooleanType {
         span: Span,
     }
 }
 
 declare_ast_node! {
-    pub struct PointerType {
+    pub struct AstPointerType {
         span: Span,
-        pub inner: Box<Type>,
+        pub inner: Box<AstType>,
     }
 }
 
 declare_ast_node! {
-    pub struct NamedType {
+    pub struct AstNamedType {
         span: Span,
-        pub name: Identifier,
+        pub name: AstIdentifier,
     }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Eq)]
-pub enum BinaryOp {
+pub enum AstBinaryOp {
     Add,
     Sub,
     Mul,
@@ -381,7 +381,7 @@ pub enum BinaryOp {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Eq)]
-pub enum UnaryOp {
+pub enum AstUnaryOp {
     Not,
     Neg,
     Deref,

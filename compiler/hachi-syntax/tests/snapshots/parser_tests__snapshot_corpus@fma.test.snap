@@ -4,18 +4,18 @@ expression: translation_unit
 input_file: compiler/hachi-syntax/tests/data/fma.test
 snapshot_kind: text
 ---
-TranslationUnit(
+AstTranslationUnit(
   span: Span(
     low: 0,
     high: 0,
   ),
   items: [
-    Type(TypeItem(
+    Type(AstTypeItem(
       span: Span(
         low: 0,
         high: 29,
       ),
-      name: Identifier(
+      name: AstIdentifier(
         name: "vec512",
         span: Span(
           low: 5,
@@ -23,24 +23,24 @@ TranslationUnit(
         ),
       ),
       members: [
-        TypeMemberItem(
+        AstTypeMemberItem(
           span: Span(
             low: 18,
             high: 27,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "vs",
             span: Span(
               low: 18,
               high: 20,
             ),
           ),
-          type: Pointer(PointerType(
+          type: Pointer(AstPointerType(
             span: Span(
               low: 22,
               high: 26,
             ),
-            inner: Integer32(Integer32Type(
+            inner: Integer32(AstInteger32Type(
               span: Span(
                 low: 23,
                 high: 26,
@@ -50,12 +50,12 @@ TranslationUnit(
         ),
       ],
     )),
-    Function(FunctionItem(
+    Function(AstFunctionItem(
       span: Span(
         low: 31,
         high: 254,
       ),
-      name: Identifier(
+      name: AstIdentifier(
         name: "vec512_fma",
         span: Span(
           low: 34,
@@ -63,24 +63,24 @@ TranslationUnit(
         ),
       ),
       parameters: [
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 45,
             high: 54,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "x",
             span: Span(
               low: 45,
               high: 46,
             ),
           ),
-          type: Named(NamedType(
+          type: Named(AstNamedType(
             span: Span(
               low: 48,
               high: 54,
             ),
-            name: Identifier(
+            name: AstIdentifier(
               name: "vec512",
               span: Span(
                 low: 48,
@@ -89,24 +89,24 @@ TranslationUnit(
             ),
           )),
         ),
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 56,
             high: 65,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "y",
             span: Span(
               low: 56,
               high: 57,
             ),
           ),
-          type: Named(NamedType(
+          type: Named(AstNamedType(
             span: Span(
               low: 59,
               high: 65,
             ),
-            name: Identifier(
+            name: AstIdentifier(
               name: "vec512",
               span: Span(
                 low: 59,
@@ -115,24 +115,24 @@ TranslationUnit(
             ),
           )),
         ),
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 67,
             high: 78,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "acc",
             span: Span(
               low: 67,
               high: 70,
             ),
           ),
-          type: Named(NamedType(
+          type: Named(AstNamedType(
             span: Span(
               low: 72,
               high: 78,
             ),
-            name: Identifier(
+            name: AstIdentifier(
               name: "vec512",
               span: Span(
                 low: 72,
@@ -143,12 +143,12 @@ TranslationUnit(
         ),
       ],
       type_parameters: [],
-      return_type: Some(Named(NamedType(
+      return_type: Some(Named(AstNamedType(
         span: Span(
           low: 83,
           high: 89,
         ),
-        name: Identifier(
+        name: AstIdentifier(
           name: "vec512",
           span: Span(
             low: 83,
@@ -157,12 +157,12 @@ TranslationUnit(
         ),
       ))),
       body: [
-        Let(LetStmt(
+        Let(AstLetStmt(
           span: Span(
             low: 94,
             high: 145,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "vs",
             span: Span(
               low: 98,
@@ -170,17 +170,17 @@ TranslationUnit(
             ),
           ),
           type: None,
-          value: Construct(ConstructExpr(
+          value: Construct(AstConstructExpr(
             span: Span(
               low: 103,
               high: 144,
             ),
-            callee: Named(NamedType(
+            callee: Named(AstNamedType(
               span: Span(
                 low: 107,
                 high: 113,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "vec512",
                 span: Span(
                   low: 107,
@@ -189,29 +189,29 @@ TranslationUnit(
               ),
             )),
             arguments: [
-              ConstructorExprArgument(
+              AstConstructorExprArgument(
                 span: Span(
                   low: 120,
                   high: 139,
                 ),
-                field: Identifier(
+                field: AstIdentifier(
                   name: "vs",
                   span: Span(
                     low: 120,
                     high: 122,
                   ),
                 ),
-                expr: Call(CallExpr(
+                expr: Call(AstCallExpr(
                   span: Span(
                     low: 124,
                     high: 139,
                   ),
-                  callee: Reference(ReferenceExpr(
+                  callee: Reference(AstReferenceExpr(
                     span: Span(
                       low: 124,
                       high: 130,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "malloc",
                       span: Span(
                         low: 124,
@@ -220,19 +220,19 @@ TranslationUnit(
                     ),
                   )),
                   arguments: [
-                    BinaryOp(BinaryOpExpr(
+                    BinaryOp(AstBinaryOpExpr(
                       span: Span(
                         low: 131,
                         high: 138,
                       ),
-                      lhs: IntegerLiteral(IntegerLiteralExpr(
+                      lhs: IntegerLiteral(AstIntegerLiteralExpr(
                         span: Span(
                           low: 131,
                           high: 134,
                         ),
                         value: 512,
                       )),
-                      rhs: IntegerLiteral(IntegerLiteralExpr(
+                      rhs: IntegerLiteral(AstIntegerLiteralExpr(
                         span: Span(
                           low: 137,
                           high: 138,
@@ -248,24 +248,24 @@ TranslationUnit(
             ],
           )),
         )),
-        For(ForStmt(
+        For(AstForStmt(
           span: Span(
             low: 148,
             high: 239,
           ),
-          initializer: Some(ForStmtInitializer(
+          initializer: Some(AstForStmtInitializer(
             span: Span(
               low: 153,
               high: 162,
             ),
-            name: Identifier(
+            name: AstIdentifier(
               name: "i",
               span: Span(
                 low: 157,
                 high: 158,
               ),
             ),
-            initializer: IntegerLiteral(IntegerLiteralExpr(
+            initializer: IntegerLiteral(AstIntegerLiteralExpr(
               span: Span(
                 low: 161,
                 high: 162,
@@ -273,17 +273,17 @@ TranslationUnit(
               value: 0,
             )),
           )),
-          condition: Some(BinaryOp(BinaryOpExpr(
+          condition: Some(BinaryOp(AstBinaryOpExpr(
             span: Span(
               low: 164,
               high: 175,
             ),
-            lhs: Reference(ReferenceExpr(
+            lhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 164,
                 high: 165,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "i",
                 span: Span(
                   low: 164,
@@ -291,19 +291,19 @@ TranslationUnit(
                 ),
               ),
             )),
-            rhs: BinaryOp(BinaryOpExpr(
+            rhs: BinaryOp(AstBinaryOpExpr(
               span: Span(
                 low: 168,
                 high: 175,
               ),
-              lhs: IntegerLiteral(IntegerLiteralExpr(
+              lhs: IntegerLiteral(AstIntegerLiteralExpr(
                 span: Span(
                   low: 168,
                   high: 171,
                 ),
                 value: 512,
               )),
-              rhs: IntegerLiteral(IntegerLiteralExpr(
+              rhs: IntegerLiteral(AstIntegerLiteralExpr(
                 span: Span(
                   low: 174,
                   high: 175,
@@ -314,17 +314,17 @@ TranslationUnit(
             )),
             op: Lt,
           ))),
-          increment: Some(Assign(AssignExpr(
+          increment: Some(Assign(AstAssignExpr(
             span: Span(
               low: 177,
               high: 186,
             ),
-            lhs: Reference(ReferenceExpr(
+            lhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 177,
                 high: 178,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "i",
                 span: Span(
                   low: 177,
@@ -332,17 +332,17 @@ TranslationUnit(
                 ),
               ),
             )),
-            rhs: BinaryOp(BinaryOpExpr(
+            rhs: BinaryOp(AstBinaryOpExpr(
               span: Span(
                 low: 181,
                 high: 186,
               ),
-              lhs: Reference(ReferenceExpr(
+              lhs: Reference(AstReferenceExpr(
                 span: Span(
                   low: 181,
                   high: 182,
                 ),
-                name: Identifier(
+                name: AstIdentifier(
                   name: "i",
                   span: Span(
                     low: 181,
@@ -350,7 +350,7 @@ TranslationUnit(
                   ),
                 ),
               )),
-              rhs: IntegerLiteral(IntegerLiteralExpr(
+              rhs: IntegerLiteral(AstIntegerLiteralExpr(
                 span: Span(
                   low: 185,
                   high: 186,
@@ -361,32 +361,32 @@ TranslationUnit(
             )),
           ))),
           body: [
-            Expr(ExprStmt(
+            Expr(AstExprStmt(
               span: Span(
                 low: 194,
                 high: 235,
               ),
-              expr: Assign(AssignExpr(
+              expr: Assign(AstAssignExpr(
                 span: Span(
                   low: 194,
                   high: 234,
                 ),
-                lhs: BracketIndex(BracketIndexExpr(
+                lhs: BracketIndex(AstBracketIndexExpr(
                   span: Span(
                     low: 194,
                     high: 202,
                   ),
-                  origin: DotIndex(DotIndexExpr(
+                  origin: DotIndex(AstDotIndexExpr(
                     span: Span(
                       low: 194,
                       high: 199,
                     ),
-                    origin: Reference(ReferenceExpr(
+                    origin: Reference(AstReferenceExpr(
                       span: Span(
                         low: 194,
                         high: 196,
                       ),
-                      name: Identifier(
+                      name: AstIdentifier(
                         name: "vs",
                         span: Span(
                           low: 194,
@@ -394,7 +394,7 @@ TranslationUnit(
                         ),
                       ),
                     )),
-                    index: Identifier(
+                    index: AstIdentifier(
                       name: "vs",
                       span: Span(
                         low: 197,
@@ -402,12 +402,12 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  index: Reference(ReferenceExpr(
+                  index: Reference(AstReferenceExpr(
                     span: Span(
                       low: 200,
                       high: 201,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "i",
                       span: Span(
                         low: 200,
@@ -416,32 +416,32 @@ TranslationUnit(
                     ),
                   )),
                 )),
-                rhs: BinaryOp(BinaryOpExpr(
+                rhs: BinaryOp(AstBinaryOpExpr(
                   span: Span(
                     low: 205,
                     high: 234,
                   ),
-                  lhs: BinaryOp(BinaryOpExpr(
+                  lhs: BinaryOp(AstBinaryOpExpr(
                     span: Span(
                       low: 205,
                       high: 222,
                     ),
-                    lhs: BracketIndex(BracketIndexExpr(
+                    lhs: BracketIndex(AstBracketIndexExpr(
                       span: Span(
                         low: 205,
                         high: 212,
                       ),
-                      origin: DotIndex(DotIndexExpr(
+                      origin: DotIndex(AstDotIndexExpr(
                         span: Span(
                           low: 205,
                           high: 209,
                         ),
-                        origin: Reference(ReferenceExpr(
+                        origin: Reference(AstReferenceExpr(
                           span: Span(
                             low: 205,
                             high: 206,
                           ),
-                          name: Identifier(
+                          name: AstIdentifier(
                             name: "x",
                             span: Span(
                               low: 205,
@@ -449,7 +449,7 @@ TranslationUnit(
                             ),
                           ),
                         )),
-                        index: Identifier(
+                        index: AstIdentifier(
                           name: "vs",
                           span: Span(
                             low: 207,
@@ -457,12 +457,12 @@ TranslationUnit(
                           ),
                         ),
                       )),
-                      index: Reference(ReferenceExpr(
+                      index: Reference(AstReferenceExpr(
                         span: Span(
                           low: 210,
                           high: 211,
                         ),
-                        name: Identifier(
+                        name: AstIdentifier(
                           name: "i",
                           span: Span(
                             low: 210,
@@ -471,22 +471,22 @@ TranslationUnit(
                         ),
                       )),
                     )),
-                    rhs: BracketIndex(BracketIndexExpr(
+                    rhs: BracketIndex(AstBracketIndexExpr(
                       span: Span(
                         low: 215,
                         high: 222,
                       ),
-                      origin: DotIndex(DotIndexExpr(
+                      origin: DotIndex(AstDotIndexExpr(
                         span: Span(
                           low: 215,
                           high: 219,
                         ),
-                        origin: Reference(ReferenceExpr(
+                        origin: Reference(AstReferenceExpr(
                           span: Span(
                             low: 215,
                             high: 216,
                           ),
-                          name: Identifier(
+                          name: AstIdentifier(
                             name: "y",
                             span: Span(
                               low: 215,
@@ -494,7 +494,7 @@ TranslationUnit(
                             ),
                           ),
                         )),
-                        index: Identifier(
+                        index: AstIdentifier(
                           name: "vs",
                           span: Span(
                             low: 217,
@@ -502,12 +502,12 @@ TranslationUnit(
                           ),
                         ),
                       )),
-                      index: Reference(ReferenceExpr(
+                      index: Reference(AstReferenceExpr(
                         span: Span(
                           low: 220,
                           high: 221,
                         ),
-                        name: Identifier(
+                        name: AstIdentifier(
                           name: "i",
                           span: Span(
                             low: 220,
@@ -518,22 +518,22 @@ TranslationUnit(
                     )),
                     op: Mul,
                   )),
-                  rhs: BracketIndex(BracketIndexExpr(
+                  rhs: BracketIndex(AstBracketIndexExpr(
                     span: Span(
                       low: 225,
                       high: 234,
                     ),
-                    origin: DotIndex(DotIndexExpr(
+                    origin: DotIndex(AstDotIndexExpr(
                       span: Span(
                         low: 225,
                         high: 231,
                       ),
-                      origin: Reference(ReferenceExpr(
+                      origin: Reference(AstReferenceExpr(
                         span: Span(
                           low: 225,
                           high: 228,
                         ),
-                        name: Identifier(
+                        name: AstIdentifier(
                           name: "acc",
                           span: Span(
                             low: 225,
@@ -541,7 +541,7 @@ TranslationUnit(
                           ),
                         ),
                       )),
-                      index: Identifier(
+                      index: AstIdentifier(
                         name: "vs",
                         span: Span(
                           low: 229,
@@ -549,12 +549,12 @@ TranslationUnit(
                         ),
                       ),
                     )),
-                    index: Reference(ReferenceExpr(
+                    index: Reference(AstReferenceExpr(
                       span: Span(
                         low: 232,
                         high: 233,
                       ),
-                      name: Identifier(
+                      name: AstIdentifier(
                         name: "i",
                         span: Span(
                           low: 232,
@@ -569,17 +569,17 @@ TranslationUnit(
             )),
           ],
         )),
-        Return(ReturnStmt(
+        Return(AstReturnStmt(
           span: Span(
             low: 242,
             high: 252,
           ),
-          value: Some(Reference(ReferenceExpr(
+          value: Some(Reference(AstReferenceExpr(
             span: Span(
               low: 249,
               high: 251,
             ),
-            name: Identifier(
+            name: AstIdentifier(
               name: "vs",
               span: Span(
                 low: 249,

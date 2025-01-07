@@ -4,18 +4,18 @@ expression: translation_unit
 input_file: compiler/hachi-syntax/tests/data/quicksort.test
 snapshot_kind: text
 ---
-TranslationUnit(
+AstTranslationUnit(
   span: Span(
     low: 0,
     high: 0,
   ),
   items: [
-    Function(FunctionItem(
+    Function(AstFunctionItem(
       span: Span(
         low: 0,
         high: 152,
       ),
-      name: Identifier(
+      name: AstIdentifier(
         name: "quicksort",
         span: Span(
           low: 3,
@@ -23,24 +23,24 @@ TranslationUnit(
         ),
       ),
       parameters: [
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 13,
             high: 21,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "xs",
             span: Span(
               low: 13,
               high: 15,
             ),
           ),
-          type: Pointer(PointerType(
+          type: Pointer(AstPointerType(
             span: Span(
               low: 17,
               high: 21,
             ),
-            inner: Integer32(Integer32Type(
+            inner: Integer32(AstInteger32Type(
               span: Span(
                 low: 18,
                 high: 21,
@@ -48,38 +48,38 @@ TranslationUnit(
             )),
           )),
         ),
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 23,
             high: 29,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "l",
             span: Span(
               low: 23,
               high: 24,
             ),
           ),
-          type: Integer32(Integer32Type(
+          type: Integer32(AstInteger32Type(
             span: Span(
               low: 26,
               high: 29,
             ),
           )),
         ),
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 31,
             high: 37,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "r",
             span: Span(
               low: 31,
               high: 32,
             ),
           ),
-          type: Integer32(Integer32Type(
+          type: Integer32(AstInteger32Type(
             span: Span(
               low: 34,
               high: 37,
@@ -90,22 +90,22 @@ TranslationUnit(
       type_parameters: [],
       return_type: None,
       body: [
-        If(IfStmt(
+        If(AstIfStmt(
           span: Span(
             low: 43,
             high: 150,
           ),
-          condition: BinaryOp(BinaryOpExpr(
+          condition: BinaryOp(AstBinaryOpExpr(
             span: Span(
               low: 47,
               high: 52,
             ),
-            lhs: Reference(ReferenceExpr(
+            lhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 47,
                 high: 48,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "l",
                 span: Span(
                   low: 47,
@@ -113,12 +113,12 @@ TranslationUnit(
                 ),
               ),
             )),
-            rhs: Reference(ReferenceExpr(
+            rhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 51,
                 high: 52,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "r",
                 span: Span(
                   low: 51,
@@ -129,12 +129,12 @@ TranslationUnit(
             op: Lt,
           )),
           happy_path: [
-            Let(LetStmt(
+            Let(AstLetStmt(
               span: Span(
                 low: 60,
                 high: 88,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "p",
                 span: Span(
                   low: 64,
@@ -142,17 +142,17 @@ TranslationUnit(
                 ),
               ),
               type: None,
-              value: Call(CallExpr(
+              value: Call(AstCallExpr(
                 span: Span(
                   low: 68,
                   high: 87,
                 ),
-                callee: Reference(ReferenceExpr(
+                callee: Reference(AstReferenceExpr(
                   span: Span(
                     low: 68,
                     high: 77,
                   ),
-                  name: Identifier(
+                  name: AstIdentifier(
                     name: "partition",
                     span: Span(
                       low: 68,
@@ -161,12 +161,12 @@ TranslationUnit(
                   ),
                 )),
                 arguments: [
-                  Reference(ReferenceExpr(
+                  Reference(AstReferenceExpr(
                     span: Span(
                       low: 78,
                       high: 80,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "xs",
                       span: Span(
                         low: 78,
@@ -174,12 +174,12 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  Reference(ReferenceExpr(
+                  Reference(AstReferenceExpr(
                     span: Span(
                       low: 82,
                       high: 83,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "l",
                       span: Span(
                         low: 82,
@@ -187,12 +187,12 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  Reference(ReferenceExpr(
+                  Reference(AstReferenceExpr(
                     span: Span(
                       low: 85,
                       high: 86,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "r",
                       span: Span(
                         low: 85,
@@ -204,22 +204,22 @@ TranslationUnit(
                 type_arguments: [],
               )),
             )),
-            Expr(ExprStmt(
+            Expr(AstExprStmt(
               span: Span(
                 low: 93,
                 high: 117,
               ),
-              expr: Call(CallExpr(
+              expr: Call(AstCallExpr(
                 span: Span(
                   low: 93,
                   high: 116,
                 ),
-                callee: Reference(ReferenceExpr(
+                callee: Reference(AstReferenceExpr(
                   span: Span(
                     low: 93,
                     high: 102,
                   ),
-                  name: Identifier(
+                  name: AstIdentifier(
                     name: "quicksort",
                     span: Span(
                       low: 93,
@@ -228,12 +228,12 @@ TranslationUnit(
                   ),
                 )),
                 arguments: [
-                  Reference(ReferenceExpr(
+                  Reference(AstReferenceExpr(
                     span: Span(
                       low: 103,
                       high: 105,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "xs",
                       span: Span(
                         low: 103,
@@ -241,12 +241,12 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  Reference(ReferenceExpr(
+                  Reference(AstReferenceExpr(
                     span: Span(
                       low: 107,
                       high: 108,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "l",
                       span: Span(
                         low: 107,
@@ -254,17 +254,17 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  BinaryOp(BinaryOpExpr(
+                  BinaryOp(AstBinaryOpExpr(
                     span: Span(
                       low: 110,
                       high: 115,
                     ),
-                    lhs: Reference(ReferenceExpr(
+                    lhs: Reference(AstReferenceExpr(
                       span: Span(
                         low: 110,
                         high: 111,
                       ),
-                      name: Identifier(
+                      name: AstIdentifier(
                         name: "p",
                         span: Span(
                           low: 110,
@@ -272,7 +272,7 @@ TranslationUnit(
                         ),
                       ),
                     )),
-                    rhs: IntegerLiteral(IntegerLiteralExpr(
+                    rhs: IntegerLiteral(AstIntegerLiteralExpr(
                       span: Span(
                         low: 114,
                         high: 115,
@@ -285,22 +285,22 @@ TranslationUnit(
                 type_arguments: [],
               )),
             )),
-            Expr(ExprStmt(
+            Expr(AstExprStmt(
               span: Span(
                 low: 122,
                 high: 146,
               ),
-              expr: Call(CallExpr(
+              expr: Call(AstCallExpr(
                 span: Span(
                   low: 122,
                   high: 145,
                 ),
-                callee: Reference(ReferenceExpr(
+                callee: Reference(AstReferenceExpr(
                   span: Span(
                     low: 122,
                     high: 131,
                   ),
-                  name: Identifier(
+                  name: AstIdentifier(
                     name: "quicksort",
                     span: Span(
                       low: 122,
@@ -309,12 +309,12 @@ TranslationUnit(
                   ),
                 )),
                 arguments: [
-                  Reference(ReferenceExpr(
+                  Reference(AstReferenceExpr(
                     span: Span(
                       low: 132,
                       high: 134,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "xs",
                       span: Span(
                         low: 132,
@@ -322,17 +322,17 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  BinaryOp(BinaryOpExpr(
+                  BinaryOp(AstBinaryOpExpr(
                     span: Span(
                       low: 136,
                       high: 141,
                     ),
-                    lhs: Reference(ReferenceExpr(
+                    lhs: Reference(AstReferenceExpr(
                       span: Span(
                         low: 136,
                         high: 137,
                       ),
-                      name: Identifier(
+                      name: AstIdentifier(
                         name: "p",
                         span: Span(
                           low: 136,
@@ -340,7 +340,7 @@ TranslationUnit(
                         ),
                       ),
                     )),
-                    rhs: IntegerLiteral(IntegerLiteralExpr(
+                    rhs: IntegerLiteral(AstIntegerLiteralExpr(
                       span: Span(
                         low: 140,
                         high: 141,
@@ -349,12 +349,12 @@ TranslationUnit(
                     )),
                     op: Add,
                   )),
-                  Reference(ReferenceExpr(
+                  Reference(AstReferenceExpr(
                     span: Span(
                       low: 143,
                       high: 144,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "r",
                       span: Span(
                         low: 143,
@@ -371,12 +371,12 @@ TranslationUnit(
         )),
       ],
     )),
-    Function(FunctionItem(
+    Function(AstFunctionItem(
       span: Span(
         low: 154,
         high: 396,
       ),
-      name: Identifier(
+      name: AstIdentifier(
         name: "partition",
         span: Span(
           low: 157,
@@ -384,24 +384,24 @@ TranslationUnit(
         ),
       ),
       parameters: [
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 167,
             high: 175,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "xs",
             span: Span(
               low: 167,
               high: 169,
             ),
           ),
-          type: Pointer(PointerType(
+          type: Pointer(AstPointerType(
             span: Span(
               low: 171,
               high: 175,
             ),
-            inner: Integer32(Integer32Type(
+            inner: Integer32(AstInteger32Type(
               span: Span(
                 low: 172,
                 high: 175,
@@ -409,38 +409,38 @@ TranslationUnit(
             )),
           )),
         ),
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 177,
             high: 183,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "l",
             span: Span(
               low: 177,
               high: 178,
             ),
           ),
-          type: Integer32(Integer32Type(
+          type: Integer32(AstInteger32Type(
             span: Span(
               low: 180,
               high: 183,
             ),
           )),
         ),
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 185,
             high: 191,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "r",
             span: Span(
               low: 185,
               high: 186,
             ),
           ),
-          type: Integer32(Integer32Type(
+          type: Integer32(AstInteger32Type(
             span: Span(
               low: 188,
               high: 191,
@@ -449,19 +449,19 @@ TranslationUnit(
         ),
       ],
       type_parameters: [],
-      return_type: Some(Integer32(Integer32Type(
+      return_type: Some(Integer32(AstInteger32Type(
         span: Span(
           low: 196,
           high: 199,
         ),
       ))),
       body: [
-        Let(LetStmt(
+        Let(AstLetStmt(
           span: Span(
             low: 204,
             high: 218,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "x",
             span: Span(
               low: 208,
@@ -469,17 +469,17 @@ TranslationUnit(
             ),
           ),
           type: None,
-          value: BracketIndex(BracketIndexExpr(
+          value: BracketIndex(AstBracketIndexExpr(
             span: Span(
               low: 212,
               high: 217,
             ),
-            origin: Reference(ReferenceExpr(
+            origin: Reference(AstReferenceExpr(
               span: Span(
                 low: 212,
                 high: 214,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "xs",
                 span: Span(
                   low: 212,
@@ -487,12 +487,12 @@ TranslationUnit(
                 ),
               ),
             )),
-            index: Reference(ReferenceExpr(
+            index: Reference(AstReferenceExpr(
               span: Span(
                 low: 215,
                 high: 216,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "r",
                 span: Span(
                   low: 215,
@@ -502,12 +502,12 @@ TranslationUnit(
             )),
           )),
         )),
-        Let(LetStmt(
+        Let(AstLetStmt(
           span: Span(
             low: 221,
             high: 235,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "i",
             span: Span(
               low: 225,
@@ -515,17 +515,17 @@ TranslationUnit(
             ),
           ),
           type: None,
-          value: BinaryOp(BinaryOpExpr(
+          value: BinaryOp(AstBinaryOpExpr(
             span: Span(
               low: 229,
               high: 234,
             ),
-            lhs: Reference(ReferenceExpr(
+            lhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 229,
                 high: 230,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "l",
                 span: Span(
                   low: 229,
@@ -533,7 +533,7 @@ TranslationUnit(
                 ),
               ),
             )),
-            rhs: IntegerLiteral(IntegerLiteralExpr(
+            rhs: IntegerLiteral(AstIntegerLiteralExpr(
               span: Span(
                 low: 233,
                 high: 234,
@@ -543,29 +543,29 @@ TranslationUnit(
             op: Sub,
           )),
         )),
-        For(ForStmt(
+        For(AstForStmt(
           span: Span(
             low: 238,
             high: 350,
           ),
-          initializer: Some(ForStmtInitializer(
+          initializer: Some(AstForStmtInitializer(
             span: Span(
               low: 243,
               high: 252,
             ),
-            name: Identifier(
+            name: AstIdentifier(
               name: "j",
               span: Span(
                 low: 247,
                 high: 248,
               ),
             ),
-            initializer: Reference(ReferenceExpr(
+            initializer: Reference(AstReferenceExpr(
               span: Span(
                 low: 251,
                 high: 252,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "l",
                 span: Span(
                   low: 251,
@@ -574,17 +574,17 @@ TranslationUnit(
               ),
             )),
           )),
-          condition: Some(BinaryOp(BinaryOpExpr(
+          condition: Some(BinaryOp(AstBinaryOpExpr(
             span: Span(
               low: 254,
               high: 259,
             ),
-            lhs: Reference(ReferenceExpr(
+            lhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 254,
                 high: 255,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "j",
                 span: Span(
                   low: 254,
@@ -592,12 +592,12 @@ TranslationUnit(
                 ),
               ),
             )),
-            rhs: Reference(ReferenceExpr(
+            rhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 258,
                 high: 259,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "r",
                 span: Span(
                   low: 258,
@@ -607,17 +607,17 @@ TranslationUnit(
             )),
             op: Lt,
           ))),
-          increment: Some(Assign(AssignExpr(
+          increment: Some(Assign(AstAssignExpr(
             span: Span(
               low: 261,
               high: 270,
             ),
-            lhs: Reference(ReferenceExpr(
+            lhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 261,
                 high: 262,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "j",
                 span: Span(
                   low: 261,
@@ -625,17 +625,17 @@ TranslationUnit(
                 ),
               ),
             )),
-            rhs: BinaryOp(BinaryOpExpr(
+            rhs: BinaryOp(AstBinaryOpExpr(
               span: Span(
                 low: 265,
                 high: 270,
               ),
-              lhs: Reference(ReferenceExpr(
+              lhs: Reference(AstReferenceExpr(
                 span: Span(
                   low: 265,
                   high: 266,
                 ),
-                name: Identifier(
+                name: AstIdentifier(
                   name: "j",
                   span: Span(
                     low: 265,
@@ -643,7 +643,7 @@ TranslationUnit(
                   ),
                 ),
               )),
-              rhs: IntegerLiteral(IntegerLiteralExpr(
+              rhs: IntegerLiteral(AstIntegerLiteralExpr(
                 span: Span(
                   low: 269,
                   high: 270,
@@ -654,27 +654,27 @@ TranslationUnit(
             )),
           ))),
           body: [
-            If(IfStmt(
+            If(AstIfStmt(
               span: Span(
                 low: 278,
                 high: 346,
               ),
-              condition: BinaryOp(BinaryOpExpr(
+              condition: BinaryOp(AstBinaryOpExpr(
                 span: Span(
                   low: 282,
                   high: 292,
                 ),
-                lhs: BracketIndex(BracketIndexExpr(
+                lhs: BracketIndex(AstBracketIndexExpr(
                   span: Span(
                     low: 282,
                     high: 287,
                   ),
-                  origin: Reference(ReferenceExpr(
+                  origin: Reference(AstReferenceExpr(
                     span: Span(
                       low: 282,
                       high: 284,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "xs",
                       span: Span(
                         low: 282,
@@ -682,12 +682,12 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  index: Reference(ReferenceExpr(
+                  index: Reference(AstReferenceExpr(
                     span: Span(
                       low: 285,
                       high: 286,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "j",
                       span: Span(
                         low: 285,
@@ -696,12 +696,12 @@ TranslationUnit(
                     ),
                   )),
                 )),
-                rhs: Reference(ReferenceExpr(
+                rhs: Reference(AstReferenceExpr(
                   span: Span(
                     low: 291,
                     high: 292,
                   ),
-                  name: Identifier(
+                  name: AstIdentifier(
                     name: "x",
                     span: Span(
                       low: 291,
@@ -712,22 +712,22 @@ TranslationUnit(
                 op: Lte,
               )),
               happy_path: [
-                Expr(ExprStmt(
+                Expr(AstExprStmt(
                   span: Span(
                     low: 302,
                     high: 312,
                   ),
-                  expr: Assign(AssignExpr(
+                  expr: Assign(AstAssignExpr(
                     span: Span(
                       low: 302,
                       high: 311,
                     ),
-                    lhs: Reference(ReferenceExpr(
+                    lhs: Reference(AstReferenceExpr(
                       span: Span(
                         low: 302,
                         high: 303,
                       ),
-                      name: Identifier(
+                      name: AstIdentifier(
                         name: "i",
                         span: Span(
                           low: 302,
@@ -735,17 +735,17 @@ TranslationUnit(
                         ),
                       ),
                     )),
-                    rhs: BinaryOp(BinaryOpExpr(
+                    rhs: BinaryOp(AstBinaryOpExpr(
                       span: Span(
                         low: 306,
                         high: 311,
                       ),
-                      lhs: Reference(ReferenceExpr(
+                      lhs: Reference(AstReferenceExpr(
                         span: Span(
                           low: 306,
                           high: 307,
                         ),
-                        name: Identifier(
+                        name: AstIdentifier(
                           name: "i",
                           span: Span(
                             low: 306,
@@ -753,7 +753,7 @@ TranslationUnit(
                           ),
                         ),
                       )),
-                      rhs: IntegerLiteral(IntegerLiteralExpr(
+                      rhs: IntegerLiteral(AstIntegerLiteralExpr(
                         span: Span(
                           low: 310,
                           high: 311,
@@ -764,22 +764,22 @@ TranslationUnit(
                     )),
                   )),
                 )),
-                Expr(ExprStmt(
+                Expr(AstExprStmt(
                   span: Span(
                     low: 319,
                     high: 340,
                   ),
-                  expr: Call(CallExpr(
+                  expr: Call(AstCallExpr(
                     span: Span(
                       low: 319,
                       high: 339,
                     ),
-                    callee: Reference(ReferenceExpr(
+                    callee: Reference(AstReferenceExpr(
                       span: Span(
                         low: 319,
                         high: 323,
                       ),
-                      name: Identifier(
+                      name: AstIdentifier(
                         name: "swap",
                         span: Span(
                           low: 319,
@@ -788,22 +788,22 @@ TranslationUnit(
                       ),
                     )),
                     arguments: [
-                      UnaryOp(UnaryOpExpr(
+                      UnaryOp(AstUnaryOpExpr(
                         span: Span(
                           low: 324,
                           high: 330,
                         ),
-                        operand: BracketIndex(BracketIndexExpr(
+                        operand: BracketIndex(AstBracketIndexExpr(
                           span: Span(
                             low: 325,
                             high: 330,
                           ),
-                          origin: Reference(ReferenceExpr(
+                          origin: Reference(AstReferenceExpr(
                             span: Span(
                               low: 325,
                               high: 327,
                             ),
-                            name: Identifier(
+                            name: AstIdentifier(
                               name: "xs",
                               span: Span(
                                 low: 325,
@@ -811,12 +811,12 @@ TranslationUnit(
                               ),
                             ),
                           )),
-                          index: Reference(ReferenceExpr(
+                          index: Reference(AstReferenceExpr(
                             span: Span(
                               low: 328,
                               high: 329,
                             ),
-                            name: Identifier(
+                            name: AstIdentifier(
                               name: "i",
                               span: Span(
                                 low: 328,
@@ -827,22 +827,22 @@ TranslationUnit(
                         )),
                         op: AddressOf,
                       )),
-                      UnaryOp(UnaryOpExpr(
+                      UnaryOp(AstUnaryOpExpr(
                         span: Span(
                           low: 332,
                           high: 338,
                         ),
-                        operand: BracketIndex(BracketIndexExpr(
+                        operand: BracketIndex(AstBracketIndexExpr(
                           span: Span(
                             low: 333,
                             high: 338,
                           ),
-                          origin: Reference(ReferenceExpr(
+                          origin: Reference(AstReferenceExpr(
                             span: Span(
                               low: 333,
                               high: 335,
                             ),
-                            name: Identifier(
+                            name: AstIdentifier(
                               name: "xs",
                               span: Span(
                                 low: 333,
@@ -850,12 +850,12 @@ TranslationUnit(
                               ),
                             ),
                           )),
-                          index: Reference(ReferenceExpr(
+                          index: Reference(AstReferenceExpr(
                             span: Span(
                               low: 336,
                               high: 337,
                             ),
-                            name: Identifier(
+                            name: AstIdentifier(
                               name: "j",
                               span: Span(
                                 low: 336,
@@ -875,22 +875,22 @@ TranslationUnit(
             )),
           ],
         )),
-        Expr(ExprStmt(
+        Expr(AstExprStmt(
           span: Span(
             low: 353,
             high: 378,
           ),
-          expr: Call(CallExpr(
+          expr: Call(AstCallExpr(
             span: Span(
               low: 353,
               high: 377,
             ),
-            callee: Reference(ReferenceExpr(
+            callee: Reference(AstReferenceExpr(
               span: Span(
                 low: 353,
                 high: 357,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "swap",
                 span: Span(
                   low: 353,
@@ -899,22 +899,22 @@ TranslationUnit(
               ),
             )),
             arguments: [
-              UnaryOp(UnaryOpExpr(
+              UnaryOp(AstUnaryOpExpr(
                 span: Span(
                   low: 358,
                   high: 368,
                 ),
-                operand: BracketIndex(BracketIndexExpr(
+                operand: BracketIndex(AstBracketIndexExpr(
                   span: Span(
                     low: 359,
                     high: 368,
                   ),
-                  origin: Reference(ReferenceExpr(
+                  origin: Reference(AstReferenceExpr(
                     span: Span(
                       low: 359,
                       high: 361,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "xs",
                       span: Span(
                         low: 359,
@@ -922,17 +922,17 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  index: BinaryOp(BinaryOpExpr(
+                  index: BinaryOp(AstBinaryOpExpr(
                     span: Span(
                       low: 362,
                       high: 367,
                     ),
-                    lhs: Reference(ReferenceExpr(
+                    lhs: Reference(AstReferenceExpr(
                       span: Span(
                         low: 362,
                         high: 363,
                       ),
-                      name: Identifier(
+                      name: AstIdentifier(
                         name: "i",
                         span: Span(
                           low: 362,
@@ -940,7 +940,7 @@ TranslationUnit(
                         ),
                       ),
                     )),
-                    rhs: IntegerLiteral(IntegerLiteralExpr(
+                    rhs: IntegerLiteral(AstIntegerLiteralExpr(
                       span: Span(
                         low: 366,
                         high: 367,
@@ -952,22 +952,22 @@ TranslationUnit(
                 )),
                 op: AddressOf,
               )),
-              UnaryOp(UnaryOpExpr(
+              UnaryOp(AstUnaryOpExpr(
                 span: Span(
                   low: 370,
                   high: 376,
                 ),
-                operand: BracketIndex(BracketIndexExpr(
+                operand: BracketIndex(AstBracketIndexExpr(
                   span: Span(
                     low: 371,
                     high: 376,
                   ),
-                  origin: Reference(ReferenceExpr(
+                  origin: Reference(AstReferenceExpr(
                     span: Span(
                       low: 371,
                       high: 373,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "xs",
                       span: Span(
                         low: 371,
@@ -975,12 +975,12 @@ TranslationUnit(
                       ),
                     ),
                   )),
-                  index: Reference(ReferenceExpr(
+                  index: Reference(AstReferenceExpr(
                     span: Span(
                       low: 374,
                       high: 375,
                     ),
-                    name: Identifier(
+                    name: AstIdentifier(
                       name: "r",
                       span: Span(
                         low: 374,
@@ -995,22 +995,22 @@ TranslationUnit(
             type_arguments: [],
           )),
         )),
-        Return(ReturnStmt(
+        Return(AstReturnStmt(
           span: Span(
             low: 381,
             high: 394,
           ),
-          value: Some(BinaryOp(BinaryOpExpr(
+          value: Some(BinaryOp(AstBinaryOpExpr(
             span: Span(
               low: 388,
               high: 393,
             ),
-            lhs: Reference(ReferenceExpr(
+            lhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 388,
                 high: 389,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "i",
                 span: Span(
                   low: 388,
@@ -1018,7 +1018,7 @@ TranslationUnit(
                 ),
               ),
             )),
-            rhs: IntegerLiteral(IntegerLiteralExpr(
+            rhs: IntegerLiteral(AstIntegerLiteralExpr(
               span: Span(
                 low: 392,
                 high: 393,
@@ -1030,12 +1030,12 @@ TranslationUnit(
         )),
       ],
     )),
-    Function(FunctionItem(
+    Function(AstFunctionItem(
       span: Span(
         low: 398,
         high: 466,
       ),
-      name: Identifier(
+      name: AstIdentifier(
         name: "swap",
         span: Span(
           low: 401,
@@ -1043,24 +1043,24 @@ TranslationUnit(
         ),
       ),
       parameters: [
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 406,
             high: 413,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "a",
             span: Span(
               low: 406,
               high: 407,
             ),
           ),
-          type: Pointer(PointerType(
+          type: Pointer(AstPointerType(
             span: Span(
               low: 409,
               high: 413,
             ),
-            inner: Integer32(Integer32Type(
+            inner: Integer32(AstInteger32Type(
               span: Span(
                 low: 410,
                 high: 413,
@@ -1068,24 +1068,24 @@ TranslationUnit(
             )),
           )),
         ),
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 415,
             high: 422,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "b",
             span: Span(
               low: 415,
               high: 416,
             ),
           ),
-          type: Pointer(PointerType(
+          type: Pointer(AstPointerType(
             span: Span(
               low: 418,
               high: 422,
             ),
-            inner: Integer32(Integer32Type(
+            inner: Integer32(AstInteger32Type(
               span: Span(
                 low: 419,
                 high: 422,
@@ -1097,12 +1097,12 @@ TranslationUnit(
       type_parameters: [],
       return_type: None,
       body: [
-        Let(LetStmt(
+        Let(AstLetStmt(
           span: Span(
             low: 428,
             high: 441,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "tmp",
             span: Span(
               low: 432,
@@ -1110,17 +1110,17 @@ TranslationUnit(
             ),
           ),
           type: None,
-          value: UnaryOp(UnaryOpExpr(
+          value: UnaryOp(AstUnaryOpExpr(
             span: Span(
               low: 438,
               high: 440,
             ),
-            operand: Reference(ReferenceExpr(
+            operand: Reference(AstReferenceExpr(
               span: Span(
                 low: 439,
                 high: 440,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "a",
                 span: Span(
                   low: 439,
@@ -1131,27 +1131,27 @@ TranslationUnit(
             op: Deref,
           )),
         )),
-        Expr(ExprStmt(
+        Expr(AstExprStmt(
           span: Span(
             low: 444,
             high: 452,
           ),
-          expr: Assign(AssignExpr(
+          expr: Assign(AstAssignExpr(
             span: Span(
               low: 444,
               high: 451,
             ),
-            lhs: UnaryOp(UnaryOpExpr(
+            lhs: UnaryOp(AstUnaryOpExpr(
               span: Span(
                 low: 444,
                 high: 446,
               ),
-              operand: Reference(ReferenceExpr(
+              operand: Reference(AstReferenceExpr(
                 span: Span(
                   low: 445,
                   high: 446,
                 ),
-                name: Identifier(
+                name: AstIdentifier(
                   name: "a",
                   span: Span(
                     low: 445,
@@ -1161,17 +1161,17 @@ TranslationUnit(
               )),
               op: Deref,
             )),
-            rhs: UnaryOp(UnaryOpExpr(
+            rhs: UnaryOp(AstUnaryOpExpr(
               span: Span(
                 low: 449,
                 high: 451,
               ),
-              operand: Reference(ReferenceExpr(
+              operand: Reference(AstReferenceExpr(
                 span: Span(
                   low: 450,
                   high: 451,
                 ),
-                name: Identifier(
+                name: AstIdentifier(
                   name: "b",
                   span: Span(
                     low: 450,
@@ -1183,27 +1183,27 @@ TranslationUnit(
             )),
           )),
         )),
-        Expr(ExprStmt(
+        Expr(AstExprStmt(
           span: Span(
             low: 455,
             high: 464,
           ),
-          expr: Assign(AssignExpr(
+          expr: Assign(AstAssignExpr(
             span: Span(
               low: 455,
               high: 463,
             ),
-            lhs: UnaryOp(UnaryOpExpr(
+            lhs: UnaryOp(AstUnaryOpExpr(
               span: Span(
                 low: 455,
                 high: 457,
               ),
-              operand: Reference(ReferenceExpr(
+              operand: Reference(AstReferenceExpr(
                 span: Span(
                   low: 456,
                   high: 457,
                 ),
-                name: Identifier(
+                name: AstIdentifier(
                   name: "b",
                   span: Span(
                     low: 456,
@@ -1213,12 +1213,12 @@ TranslationUnit(
               )),
               op: Deref,
             )),
-            rhs: Reference(ReferenceExpr(
+            rhs: Reference(AstReferenceExpr(
               span: Span(
                 low: 460,
                 high: 463,
               ),
-              name: Identifier(
+              name: AstIdentifier(
                 name: "tmp",
                 span: Span(
                   low: 460,

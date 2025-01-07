@@ -4,18 +4,18 @@ expression: translation_unit
 input_file: compiler/hachi-syntax/tests/data/intrinsic_declaration.test
 snapshot_kind: text
 ---
-TranslationUnit(
+AstTranslationUnit(
   span: Span(
     low: 0,
     high: 0,
   ),
   items: [
-    IntrinsicFunction(IntrinsicFunctionItem(
+    IntrinsicFunction(AstIntrinsicFunctionItem(
       span: Span(
         low: 0,
         high: 40,
       ),
-      name: Identifier(
+      name: AstIdentifier(
         name: "malloc",
         span: Span(
           low: 13,
@@ -23,19 +23,19 @@ TranslationUnit(
         ),
       ),
       parameters: [
-        FunctionParameterItem(
+        AstFunctionParameterItem(
           span: Span(
             low: 23,
             high: 32,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "size",
             span: Span(
               low: 23,
               high: 27,
             ),
           ),
-          type: Integer32(Integer32Type(
+          type: Integer32(AstInteger32Type(
             span: Span(
               low: 29,
               high: 32,
@@ -44,12 +44,12 @@ TranslationUnit(
         ),
       ],
       type_parameters: [
-        FunctionTypeParameterItem(
+        AstFunctionTypeParameterItem(
           span: Span(
             low: 20,
             high: 21,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "T",
             span: Span(
               low: 20,
@@ -58,17 +58,17 @@ TranslationUnit(
           ),
         ),
       ],
-      return_type: Pointer(PointerType(
+      return_type: Pointer(AstPointerType(
         span: Span(
           low: 37,
           high: 39,
         ),
-        inner: Named(NamedType(
+        inner: Named(AstNamedType(
           span: Span(
             low: 38,
             high: 39,
           ),
-          name: Identifier(
+          name: AstIdentifier(
             name: "T",
             span: Span(
               low: 38,
