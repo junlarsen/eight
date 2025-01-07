@@ -14,7 +14,7 @@ use crate::expr::{
     HirUnaryOpExpr,
 };
 use crate::item::{
-    HirFunction, HirFunctionParameter, HirIntrinsicFunction, HirRecord, HirTrait,
+    HirFunction, HirFunctionParameter, HirInstance, HirIntrinsicFunction, HirRecord, HirTrait,
     HirTraitFunctionItem, HirTypeParameter,
 };
 use crate::stmt::{
@@ -83,6 +83,21 @@ impl HirModuleDebugPass {
                             .traits
                             .values()
                             .map(|r#trait| Self::format_hir_trait_item(r#trait)),
+                        RcDoc::hardline(),
+                    ))
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::text("// module instances"))
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::intersperse(
+                        module.instances.values().map(|instance_set| {
+                            RcDoc::intersperse(
+                                instance_set
+                                    .iter()
+                                    .map(|instance| Self::format_hir_instance(instance)),
+                                RcDoc::hardline(),
+                            )
+                        }),
                         RcDoc::hardline(),
                     ))
                     .append(RcDoc::hardline())
@@ -265,6 +280,30 @@ impl HirModuleDebugPass {
             .append(RcDoc::space())
             .append(Self::format_hir_ty(function.return_type))
             .append(RcDoc::text(";"))
+    }
+
+    pub fn format_hir_instance<'ta>(instance: &'ta HirInstance<'ta>) -> RcDoc<'ta, ()> {
+        RcDoc::text("instance")
+            .append(RcDoc::space())
+            .append(&instance.name.name)
+            .append(RcDoc::space())
+            .append(
+                RcDoc::text("{")
+                    .append(
+                        RcDoc::hardline()
+                            .append(RcDoc::intersperse(
+                                instance
+                                    .members
+                                    .iter()
+                                    .map(|member| Self::format_hir_function(member)),
+                                RcDoc::line(),
+                            ))
+                            .nest(2)
+                            .group(),
+                    )
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::text("}")),
+            )
     }
 
     pub fn format_hir_stmt<'ta>(stmt: &'ta HirStmt) -> RcDoc<'ta, ()> {

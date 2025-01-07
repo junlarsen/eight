@@ -7,8 +7,8 @@ use crate::expr::{
     HirUnaryOpExpr,
 };
 use crate::item::{
-    HirFunction, HirFunctionParameter, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord,
-    HirRecordField, HirTrait, HirTraitFunctionItem, HirTypeParameter,
+    HirFunction, HirFunctionParameter, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar,
+    HirRecord, HirRecordField, HirTrait, HirTraitFunctionItem, HirTypeParameter,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -22,10 +22,10 @@ use eight_syntax::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBracketIndexExpr,
     AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument, AstContinueStmt,
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,
-    AstGroupExpr, AstIdentifier, AstIfStmt, AstIntegerLiteralExpr, AstIntrinsicFunctionItem,
-    AstIntrinsicScalarItem, AstItem, AstLetStmt, AstReferenceExpr, AstReturnStmt, AstStmt,
-    AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType, AstTypeItem,
-    AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
+    AstGroupExpr, AstIdentifier, AstIfStmt, AstInstanceItem, AstIntegerLiteralExpr,
+    AstIntrinsicFunctionItem, AstIntrinsicScalarItem, AstItem, AstLetStmt, AstReferenceExpr,
+    AstReturnStmt, AstStmt, AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType,
+    AstTypeItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
 use std::collections::{BTreeMap, VecDeque};
 
@@ -277,20 +277,52 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         node: &'ast AstItem,
     ) -> HirResult<()> {
         match node {
-            AstItem::Function(f) => self.visit_function_item(module, f),
-            AstItem::IntrinsicFunction(f) => self.visit_intrinsic_function_item(module, f),
-            AstItem::Type(t) => self.visit_type_item(module, t),
-            AstItem::IntrinsicScalar(s) => self.visit_intrinsic_scalar_item(module, s),
-            AstItem::Trait(t) => self.visit_trait_item(module, t),
-            AstItem::Instance(_) => todo!(),
+            AstItem::Function(f) => {
+                module
+                    .functions
+                    .insert(f.name.name.to_owned(), self.visit_function_item(f)?);
+                Ok(())
+            }
+            AstItem::IntrinsicFunction(f) => {
+                module.intrinsic_functions.insert(
+                    f.name.name.to_owned(),
+                    self.visit_intrinsic_function_item(f)?,
+                );
+                Ok(())
+            }
+            AstItem::Type(t) => {
+                module
+                    .records
+                    .insert(t.name.name.to_owned(), self.visit_type_item(t)?);
+                Ok(())
+            }
+            AstItem::IntrinsicScalar(s) => {
+                module
+                    .intrinsic_scalars
+                    .insert(s.name.name.to_owned(), self.visit_intrinsic_scalar_item(s)?);
+                Ok(())
+            }
+            AstItem::Trait(t) => {
+                module
+                    .traits
+                    .insert(t.name.name.to_owned(), self.visit_trait_item(t)?);
+                Ok(())
+            }
+            AstItem::Instance(i) => {
+                let instances = module
+                    .instances
+                    .entry(i.name.name.to_owned())
+                    .or_default();
+                instances.push(self.visit_instance_item(i)?);
+                Ok(())
+            }
         }
     }
 
     pub fn visit_function_item(
         &mut self,
-        module: &mut HirModule<'ta>,
         node: &'ast AstFunctionItem,
-    ) -> HirResult<()> {
+    ) -> HirResult<HirFunction<'ta>> {
         let type_parameters = node
             .type_parameters
             .iter()
@@ -320,15 +352,13 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             return_type_annotation,
             body,
         };
-        module.functions.insert(node.name.name.to_owned(), fun);
-        Ok(())
+        Ok(fun)
     }
 
     pub fn visit_intrinsic_function_item(
         &mut self,
-        module: &mut HirModule<'ta>,
         node: &'ast AstIntrinsicFunctionItem,
-    ) -> HirResult<()> {
+    ) -> HirResult<HirIntrinsicFunction<'ta>> {
         let type_parameters = node
             .type_parameters
             .iter()
@@ -350,10 +380,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             return_type,
             return_type_annotation,
         };
-        module
-            .intrinsic_functions
-            .insert(node.name.name.to_owned(), fun);
-        Ok(())
+        Ok(fun)
     }
 
     pub fn visit_function_parameter(
@@ -386,25 +413,17 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
 
     pub fn visit_intrinsic_scalar_item(
         &mut self,
-        module: &mut HirModule<'ta>,
         node: &'ast AstIntrinsicScalarItem,
-    ) -> HirResult<()> {
+    ) -> HirResult<HirIntrinsicScalar<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let scalar = HirIntrinsicScalar {
             name: name.name.to_owned(),
             ty: self.arena.get_integer32_ty(),
         };
-        module
-            .intrinsic_scalars
-            .insert(name.name.to_owned(), scalar);
-        Ok(())
+        Ok(scalar)
     }
 
-    pub fn visit_trait_item(
-        &mut self,
-        module: &mut HirModule<'ta>,
-        node: &'ast AstTraitItem,
-    ) -> HirResult<()> {
+    pub fn visit_trait_item(&mut self, node: &'ast AstTraitItem) -> HirResult<HirTrait<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let type_parameters = node
             .type_parameters
@@ -422,8 +441,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             type_parameters,
             members,
         };
-        module.traits.insert(node.name.name.to_owned(), r#trait);
-        Ok(())
+        Ok(r#trait)
     }
 
     pub fn visit_trait_function_item(
@@ -446,14 +464,39 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             None => self.arena.get_unit_ty(),
         };
         let return_type_annotation = node.return_type.as_ref().map(|t| *t.span());
-        Ok(HirTraitFunctionItem {
+        let fun = HirTraitFunctionItem {
             span: node.span,
             name,
             type_parameters,
             parameters,
             return_type,
             return_type_annotation,
-        })
+        };
+        Ok(fun)
+    }
+
+    pub fn visit_instance_item(
+        &mut self,
+        node: &'ast AstInstanceItem,
+    ) -> HirResult<HirInstance<'ta>> {
+        let name = self.visit_identifier(&node.name)?;
+        let instantiation_type_parameters = node
+            .instantiation_type_parameters
+            .iter()
+            .map(|t| self.visit_type(t))
+            .collect::<HirResult<Vec<_>>>()?;
+        let members = node
+            .members
+            .iter()
+            .map(|m| self.visit_function_item(m))
+            .collect::<HirResult<Vec<_>>>()?;
+        let instance = HirInstance {
+            span: node.span,
+            name,
+            instantiation_type_parameters,
+            members,
+        };
+        Ok(instance)
     }
 
     /// Declare a type item.
@@ -469,11 +512,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// ```text
     /// type Node = { value: i32, left: *Node, right: *Node, }
     /// ```
-    pub fn visit_type_item(
-        &mut self,
-        module: &mut HirModule<'ta>,
-        node: &'ast AstTypeItem,
-    ) -> HirResult<()> {
+    pub fn visit_type_item(&mut self, node: &'ast AstTypeItem) -> HirResult<HirRecord<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let fields = node
             .members
@@ -494,8 +533,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             fields,
             span: node.span,
         };
-        module.records.insert(node.name.name.to_owned(), rec);
-        Ok(())
+        Ok(rec)
     }
 
     pub fn visit_stmt(&mut self, node: &'ast AstStmt) -> HirResult<HirStmt<'ta>> {

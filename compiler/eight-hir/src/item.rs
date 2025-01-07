@@ -158,16 +158,6 @@ pub struct HirTraitFunctionItem<'ta> {
 pub struct HirInstance<'ta> {
     pub span: Span,
     pub name: HirName,
-    pub type_parameters: Vec<HirTypeParameter<'ta>>,
-    pub members: Vec<HirInstanceFunction<'ta>>,
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-pub struct HirInstanceFunction<'ta> {
-    pub span: Span,
-    pub name: HirName,
-    pub type_parameters: Vec<HirTypeParameter<'ta>>,
-    pub parameters: Vec<HirFunctionParameter<'ta>>,
-    pub return_type: Option<&'ta HirTy<'ta>>,
+    pub instantiation_type_parameters: Vec<&'ta HirTy<'ta>>,
+    pub members: Vec<HirFunction<'ta>>,
 }
