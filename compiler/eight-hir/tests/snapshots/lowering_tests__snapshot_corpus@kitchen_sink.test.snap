@@ -19,6 +19,12 @@ module {
     r: i32,
   }
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
     if ((((a as _).r as _) != ((b as _).c as _) as _)){

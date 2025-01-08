@@ -13,6 +13,12 @@ module {
   // module types
   
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn address_of(a: i32) -> unit {
     let k: *i32 = (&(1 as i32) as *i32);

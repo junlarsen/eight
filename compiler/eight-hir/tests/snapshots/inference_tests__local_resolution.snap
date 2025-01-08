@@ -13,6 +13,12 @@ module {
   // module types
   
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn test() -> unit {
     let loc: i32 = (123 as i32);

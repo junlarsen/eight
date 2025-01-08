@@ -13,6 +13,12 @@ module {
   // module types
   
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn foo(x: i32) -> i32 {
     let k: i32 = (((123 as i32)) as i32);

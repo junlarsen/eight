@@ -14,6 +14,12 @@ module {
   // module types
   
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V {
     return (d as _);

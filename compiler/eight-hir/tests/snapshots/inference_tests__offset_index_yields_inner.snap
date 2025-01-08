@@ -13,6 +13,12 @@ module {
   // module types
   
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn test(v: *i32) -> unit {
     let k: i32 = ((v as *i32)[(0 as i32)] as i32);

@@ -13,6 +13,12 @@ module {
   // module types
   
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn test() -> unit {
     let z: bool = ((id as fn((bool))->bool)::<>((true as bool)) as bool);

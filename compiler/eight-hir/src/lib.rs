@@ -11,7 +11,9 @@
 use crate::item::{
     HirFunction, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord, HirTrait,
 };
+use crate::signature::HirModuleSignature;
 use eight_span::Span;
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 
 pub mod arena;
@@ -20,6 +22,7 @@ pub mod error;
 pub mod expr;
 pub mod item;
 pub mod passes;
+pub mod signature;
 pub mod stmt;
 pub mod ty;
 
@@ -30,6 +33,7 @@ pub mod ty;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirModule<'ta> {
+    pub signature: RefCell<HirModuleSignature<'ta>>,
     pub intrinsic_scalars: BTreeMap<String, HirIntrinsicScalar<'ta>>,
     pub records: BTreeMap<String, HirRecord<'ta>>,
     pub functions: BTreeMap<String, HirFunction<'ta>>,
@@ -48,6 +52,7 @@ impl<'ta> HirModule<'ta> {
     /// Create an empty Hir module.
     pub fn new() -> Self {
         Self {
+            signature: RefCell::new(HirModuleSignature::default()),
             records: BTreeMap::new(),
             functions: BTreeMap::new(),
             intrinsic_functions: BTreeMap::new(),

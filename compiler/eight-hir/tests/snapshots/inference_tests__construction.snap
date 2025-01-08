@@ -16,6 +16,12 @@ module {
     y: i32,
   }
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn origin() -> Vec2 {
     let v: Vec2 = (new Vec2 {

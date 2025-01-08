@@ -14,6 +14,12 @@ module {
   // module types
   
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn loop_transform() -> unit {
     {

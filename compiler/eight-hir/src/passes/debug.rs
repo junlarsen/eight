@@ -29,7 +29,7 @@ use pretty::RcDoc;
 pub struct HirModuleDebugPass();
 
 impl HirModuleDebugPass {
-    pub fn format_hir_module_to_string(module: &HirModule) -> String {
+    pub fn format_hir_module_to_string<'ta>(module: &'ta HirModule<'ta>) -> String {
         let doc = Self::format_hir_module(module);
         let mut w = Vec::new();
         doc.render(80, &mut w)

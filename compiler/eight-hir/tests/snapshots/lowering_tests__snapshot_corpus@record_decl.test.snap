@@ -17,6 +17,12 @@ module {
     value: i32,
   }
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn append(node: Node, value: i32) -> unit {
     {

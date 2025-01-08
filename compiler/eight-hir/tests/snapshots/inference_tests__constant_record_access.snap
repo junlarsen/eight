@@ -15,6 +15,12 @@ module {
     name: i32,
   }
   
+  // module traits
+  
+  
+  // module instances
+  
+  
   // module functions
   fn test(agent: Agent) -> unit {
     let z: i32 = ((agent as Agent).name as i32);
