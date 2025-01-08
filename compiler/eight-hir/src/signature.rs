@@ -19,8 +19,7 @@ use std::collections::BTreeMap;
 ///
 /// TODO: Intern these types in the HirArena
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct HirModuleSignature<'ta> {
     pub functions: BTreeMap<String, HirFunctionApiSignature<'ta>>,
     pub records: BTreeMap<String, HirRecordApiSignature<'ta>>,
@@ -28,7 +27,6 @@ pub struct HirModuleSignature<'ta> {
     pub traits: BTreeMap<String, HirTraitApiSignature<'ta>>,
     pub instances: BTreeMap<String, Vec<HirInstanceApiSignature<'ta>>>,
 }
-
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]

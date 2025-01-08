@@ -12,7 +12,7 @@ use std::process::Command;
 #[test]
 fn test_compiler_ui_tests() {
     insta::glob!("ui/**/*.test", |path| {
-        let mut cmd = Command::new(get_cargo_bin("hcc"));
+        let mut cmd = Command::new(get_cargo_bin("eightc"));
         let relative = path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap();
         insta_cmd::assert_cmd_snapshot!(cmd.arg(relative));
     });

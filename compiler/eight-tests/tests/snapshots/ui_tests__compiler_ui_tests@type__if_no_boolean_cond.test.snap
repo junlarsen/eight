@@ -1,7 +1,7 @@
 ---
 source: compiler/eight-tests/tests/ui_tests.rs
 info:
-  program: hcc
+  program: eightc
   args:
     - tests/ui/type/if_no_boolean_cond.test
 input_file: compiler/eight-tests/tests/ui/type/if_no_boolean_cond.test
