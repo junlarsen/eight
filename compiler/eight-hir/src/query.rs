@@ -1,6 +1,5 @@
 use crate::signature::{
-    HirInstanceApiSignature, HirModuleSignature, HirRecordApiSignature, HirScalarApiSignature,
-    HirTraitApiSignature,
+    HirInstanceApiSignature, HirModuleSignature,
 };
 use crate::ty::HirTy;
 use eight_diagnostics::ice;

@@ -9,7 +9,6 @@
 use crate::ty::HirTy;
 use crate::HirName;
 use eight_span::Span;
-use std::collections;
 use std::collections::BTreeMap;
 
 /// A signature representing the public API of a module.

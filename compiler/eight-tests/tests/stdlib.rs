@@ -1,4 +1,3 @@
-use eight_driver::pipeline::{Pipeline, PipelineOptions};
 use insta_cmd::get_cargo_bin;
 use std::path::Path;
 use std::process::Command;

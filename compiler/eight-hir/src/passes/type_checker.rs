@@ -14,7 +14,7 @@ use crate::expr::{
 };
 use crate::item::{HirFunction, HirIntrinsicFunction, HirRecord};
 use crate::query::HirQueryDatabase;
-use crate::signature::{HirInstanceApiSignature, HirModuleSignature};
+use crate::signature::HirModuleSignature;
 use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };
@@ -24,7 +24,6 @@ use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
-use std::path::Display;
 
 #[derive(Debug)]
 pub enum Constraint<'ta> {
