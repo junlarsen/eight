@@ -45,7 +45,7 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("{"))
             .append(
                 RcDoc::hardline()
-                    .append(RcDoc::text("provides"))
+                    .append(RcDoc::text("declares"))
                     .append(RcDoc::space())
                     .append(RcDoc::text("{"))
                     .append(
@@ -114,6 +114,26 @@ impl HirModuleDebugPass {
                             .group(),
                     )
                     .append(RcDoc::hardline())
+                    .append(RcDoc::text("}"))
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::hardline())
+                    .append(RcDoc::text("defining"))
+                    .append(RcDoc::space())
+                    .append(RcDoc::text("{"))
+                    .append(
+                        RcDoc::hardline()
+                            .append(RcDoc::intersperse(
+                                module
+                                    .body
+                                    .functions
+                                    .values()
+                                    .map(|f| Self::format_hir_function(f)),
+                                RcDoc::hardline(),
+                            ))
+                            .nest(2)
+                            .group(),
+                    )
+                    .append(RcDoc::hardline())
                     .append(RcDoc::text("}")),
             )
             .nest(2)
@@ -123,31 +143,61 @@ impl HirModuleDebugPass {
     }
 
     pub fn format_hir_function<'ta>(function: &'ta HirFunction) -> RcDoc<'ta, ()> {
-        // RcDoc::text("fn")
-        //     .append(RcDoc::space())
-        //     .append(RcDoc::text(function.name.name.as_str()))
-        //     .append(Self::format_hir_type_parameter_signature(&function.type_parameters))
-        //     .append(Self::format_function_parameters(&function.parameters))
-        //     .append(RcDoc::space())
-        //     .append(RcDoc::text("->"))
-        //     .append(RcDoc::space())
-        //     .append(Self::format_hir_ty(function.return_type))
-        //     .append(RcDoc::space())
-        //     .append(RcDoc::text("{"))
-        //     .append(
-        //         RcDoc::hardline()
-        //             .append(
-        //                 RcDoc::intersperse(
-        //                     function.body.iter().map(|s| Self::format_hir_stmt(s)),
-        //                     RcDoc::line(),
-        //                 )
-        //                 .append(RcDoc::hardline()),
-        //             )
-        //             .nest(2)
-        //             .group(),
-        //     )
-        //     .append(RcDoc::text("}"))
-        RcDoc::nil()
+        RcDoc::text("fn")
+            .append(RcDoc::space())
+            .append(RcDoc::text(function.name.name.as_str()))
+            .append(RcDoc::text("<"))
+            .append(RcDoc::intersperse(
+                function.signature.type_parameters.iter().map(|p| {
+                    match function
+                        .type_parameter_substitutions
+                        .get(p.declaration_name.name.as_str())
+                    {
+                        Some(t) => Self::format_hir_ty(t),
+                        None => RcDoc::text(p.declaration_name.name.as_str()),
+                    }
+                }),
+                RcDoc::text(", "),
+            ))
+            .append(RcDoc::text(">"))
+            .append(RcDoc::text("("))
+            .append(RcDoc::intersperse(
+                function.signature.parameters.iter().map(|p| {
+                    match function
+                        .instantiated_parameters
+                        .get(p.declaration_name.name.as_str())
+                    {
+                        Some(t) => Self::format_hir_ty(t),
+                        None => RcDoc::text(p.declaration_name.name.as_str()),
+                    }
+                }),
+                RcDoc::text(", "),
+            ))
+            .append(RcDoc::text(")"))
+            .append(RcDoc::space())
+            .append(RcDoc::text("->"))
+            .append(RcDoc::space())
+            .append(Self::format_hir_ty(
+                match &function.instantiated_return_type {
+                    Some(t) => t,
+                    None => function.signature.return_type,
+                },
+            ))
+            .append(RcDoc::space())
+            .append(RcDoc::text("{"))
+            .append(
+                RcDoc::hardline()
+                    .append(
+                        RcDoc::intersperse(
+                            function.body.iter().map(|s| Self::format_hir_stmt(s)),
+                            RcDoc::line(),
+                        )
+                        .append(RcDoc::hardline()),
+                    )
+                    .nest(2)
+                    .group(),
+            )
+            .append(RcDoc::text("}"))
     }
 
     pub fn format_hir_function_signature<'ta>(

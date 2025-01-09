@@ -751,8 +751,7 @@ impl HirModuleTypeCheckerPass {
         let HirTy::Function(self_ty) = cx.arena.get_function_ty(
             node.instantiated_return_type
                 .unwrap_or_else(|| ice!("freshly built return type was missing")),
-            node.instantiated_parameters.values().copied()
-                .collect(),
+            node.instantiated_parameters.values().copied().collect(),
         ) else {
             ice!("freshly built function type should be a function");
         };
