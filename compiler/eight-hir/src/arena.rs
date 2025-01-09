@@ -20,6 +20,12 @@ pub struct HirArena<'a> {
     interned_types: RefCell<HashMap<HirTyId, &'a HirTy<'a>>>,
 }
 
+impl<'a> HirArena<'a> {
+    pub fn intern<T>(&self, v: T) -> &'a mut T {
+        self.allocator.alloc(v)
+    }
+}
+
 impl<'arena> HirArena<'arena> {
     pub fn new(bump: &'arena Bump) -> Self {
         Self {

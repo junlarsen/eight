@@ -1,5 +1,8 @@
 use crate::arena::HirArena;
-use crate::error::{BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult};
+use crate::error::{
+    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult,
+    UnknownIntrinsicScalarTypeError,
+};
 use crate::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
@@ -7,15 +10,19 @@ use crate::expr::{
     HirUnaryOpExpr,
 };
 use crate::item::{
-    HirFunction, HirFunctionParameter, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar,
-    HirRecord, HirRecordField, HirTrait, HirTraitFunctionItem, HirTypeParameter,
+    HirFunction, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord, HirTrait,
+};
+use crate::signature::{
+    HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
+    HirModuleSignature, HirRecordApiSignature, HirRecordFieldApiSignature, HirScalarApiSignature,
+    HirTraitApiSignature, HirTypeParameterApiSignature,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
 use crate::ty::HirTy;
-use crate::{HirModule, HirName};
+use crate::{HirModule, HirModuleBody, HirName};
 use eight_diagnostics::ice;
 use eight_span::Span;
 use eight_syntax::{
@@ -264,56 +271,74 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         &mut self,
         node: &'ast AstTranslationUnit,
     ) -> HirResult<HirModule<'ta>> {
-        let mut module = HirModule::new();
+        let mut module_body = HirModuleBody::default();
+        let mut module_signature = HirModuleSignature::default();
+
         for item in &node.items {
-            self.visit_item(&mut module, item)?;
+            self.visit_item(&mut module_body, &mut module_signature, item)?;
         }
-        Ok(module)
+
+        // We can now intern the module signature since it is immutable
+        Ok(HirModule::new(
+            self.arena.intern(module_signature),
+            module_body,
+        ))
     }
 
     pub fn visit_item(
         &mut self,
-        module: &mut HirModule<'ta>,
+        module_body: &mut HirModuleBody<'ta>,
+        module_signature: &mut HirModuleSignature<'ta>,
         node: &'ast AstItem,
     ) -> HirResult<()> {
         match node {
             AstItem::Function(f) => {
-                module
+                let fun = self.visit_function_item(f)?;
+                module_signature
                     .functions
-                    .insert(f.name.name.to_owned(), self.visit_function_item(f)?);
-                Ok(())
+                    .insert(f.name.name.to_owned(), fun.signature);
+                module_body.functions.insert(f.name.name.to_owned(), fun);
             }
             AstItem::IntrinsicFunction(f) => {
-                module.intrinsic_functions.insert(
-                    f.name.name.to_owned(),
-                    self.visit_intrinsic_function_item(f)?,
-                );
-                Ok(())
+                let fun = self.visit_intrinsic_function_item(f)?;
+                module_signature
+                    .functions
+                    .insert(f.name.name.to_owned(), fun.signature);
+                module_body
+                    .intrinsic_functions
+                    .insert(f.name.name.to_owned(), fun);
             }
             AstItem::Type(t) => {
-                module
+                let record = self.visit_type_item(t)?;
+                module_signature
                     .records
-                    .insert(t.name.name.to_owned(), self.visit_type_item(t)?);
-                Ok(())
+                    .insert(t.name.name.to_owned(), record.signature);
+                module_body.records.insert(t.name.name.to_owned(), record);
             }
             AstItem::IntrinsicScalar(s) => {
-                module
-                    .intrinsic_scalars
-                    .insert(s.name.name.to_owned(), self.visit_intrinsic_scalar_item(s)?);
-                Ok(())
+                let scalar = self.visit_intrinsic_scalar_item(s)?;
+                module_signature
+                    .scalars
+                    .insert(s.name.name.to_owned(), scalar.signature);
             }
             AstItem::Trait(t) => {
-                module
+                let r#trait = self.visit_trait_item(t)?;
+                module_signature
                     .traits
-                    .insert(t.name.name.to_owned(), self.visit_trait_item(t)?);
-                Ok(())
+                    .insert(t.name.name.to_owned(), r#trait.signature);
+                // TODO: Instantiate trait into module_body
             }
             AstItem::Instance(i) => {
-                let instances = module.instances.entry(i.name.name.to_owned()).or_default();
-                instances.push(self.visit_instance_item(i)?);
-                Ok(())
+                let instance = self.visit_instance_item(i)?;
+                let entry = module_signature
+                    .instances
+                    .entry(i.name.name.to_owned())
+                    .or_default();
+                entry.push(instance.signature);
+                // TODO: Instantiate instance into module_body
             }
-        }
+        };
+        Ok(())
     }
 
     pub fn visit_function_item(
@@ -323,7 +348,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let type_parameters = node
             .type_parameters
             .iter()
-            .map(|p| self.visit_type_parmeter_item(p))
+            .map(|p| self.visit_type_parameter_item(p))
             .collect::<HirResult<Vec<_>>>()?;
         let return_type_annotation = node.return_type.as_ref().map(|t| *t.span());
         let return_type = match &node.return_type {
@@ -340,14 +365,21 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .iter()
             .map(|stmt| self.visit_stmt(stmt))
             .collect::<HirResult<Vec<_>>>()?;
+        let signature = self.arena.intern(HirFunctionApiSignature {
+            span: node.span,
+            parameters,
+            type_parameters,
+            return_type,
+            return_type_annotation,
+        });
         let fun = HirFunction {
             span: node.span,
             name: self.visit_identifier(&node.name)?,
-            type_parameters,
-            parameters,
-            return_type,
-            return_type_annotation,
+            signature,
             body,
+            type_parameter_substitutions: BTreeMap::new(),
+            instantiated_parameters: BTreeMap::new(),
+            instantiated_return_type: None,
         };
         Ok(fun)
     }
@@ -359,7 +391,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let type_parameters = node
             .type_parameters
             .iter()
-            .map(|p| self.visit_type_parmeter_item(p))
+            .map(|p| self.visit_type_parameter_item(p))
             .collect::<HirResult<Vec<_>>>()?;
         let return_type_annotation = *node.return_type.span();
         let return_type = self.visit_type(&node.return_type)?;
@@ -368,14 +400,17 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .iter()
             .map(|p| self.visit_function_parameter(p))
             .collect::<HirResult<Vec<_>>>()?;
-
+        let signature = self.arena.intern(HirFunctionApiSignature {
+            span: node.span,
+            parameters,
+            type_parameters,
+            return_type,
+            return_type_annotation: Some(return_type_annotation),
+        });
         let fun = HirIntrinsicFunction {
             span: node.span,
             name: self.visit_identifier(&node.name)?,
-            type_parameters,
-            parameters,
-            return_type,
-            return_type_annotation,
+            signature,
         };
         Ok(fun)
     }
@@ -383,28 +418,27 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_function_parameter(
         &mut self,
         node: &'ast AstFunctionParameterItem,
-    ) -> HirResult<HirFunctionParameter<'ta>> {
+    ) -> HirResult<&'ta HirFunctionParameterApiSignature<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let ty = self.visit_type(&node.ty)?;
-        let hir = HirFunctionParameter {
+        let hir = self.arena.intern(HirFunctionParameterApiSignature {
             span: node.span,
-            name,
+            declaration_name: name,
             ty,
-            type_annotation: *node.ty.span(),
-        };
+            ty_annotation: *node.ty.span(),
+        });
         Ok(hir)
     }
 
-    pub fn visit_type_parmeter_item(
+    pub fn visit_type_parameter_item(
         &mut self,
         node: &'ast AstTypeParameterItem,
-    ) -> HirResult<HirTypeParameter<'ta>> {
+    ) -> HirResult<&'ta HirTypeParameterApiSignature> {
         let name = self.visit_identifier(&node.name)?;
-        let hir = HirTypeParameter {
+        let hir = self.arena.intern(HirTypeParameterApiSignature {
             span: node.span,
-            syntax_name: name,
-            substitution_name: None,
-        };
+            declaration_name: name,
+        });
         Ok(hir)
     }
 
@@ -413,9 +447,27 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         node: &'ast AstIntrinsicScalarItem,
     ) -> HirResult<HirIntrinsicScalar<'ta>> {
         let name = self.visit_identifier(&node.name)?;
+        let signature = self.arena.intern(HirScalarApiSignature {
+            span: node.span,
+            declaration_name: name.clone(),
+            ty: match node.name.name.as_str() {
+                "i32" => self.arena.get_integer32_ty(),
+                "bool" => self.arena.get_boolean_ty(),
+                "unit" => self.arena.get_unit_ty(),
+                _ => {
+                    return Err(HirError::UnknownIntrinsicScalarType(
+                        UnknownIntrinsicScalarTypeError {
+                            name: node.name.name.to_owned(),
+                            span: node.name.span,
+                        },
+                    ))
+                }
+            },
+        });
         let scalar = HirIntrinsicScalar {
-            name: name.name.to_owned(),
-            ty: self.arena.get_integer32_ty(),
+            span: node.span,
+            name,
+            signature,
         };
         Ok(scalar)
     }
@@ -425,18 +477,23 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let type_parameters = node
             .type_parameters
             .iter()
-            .map(|p| self.visit_type_parmeter_item(p))
+            .map(|p| self.visit_type_parameter_item(p))
             .collect::<HirResult<Vec<_>>>()?;
-        let members = node
-            .members
-            .iter()
-            .map(|m| self.visit_trait_function_item(m))
-            .collect::<HirResult<Vec<_>>>()?;
+        let mut members = BTreeMap::new();
+        for member in node.members.iter() {
+            let signature = self.visit_trait_function_item(member)?;
+            members.insert(member.name.name.to_owned(), signature);
+        }
+        let signature = self.arena.intern(HirTraitApiSignature {
+            span: node.span,
+            type_parameters,
+            declaration_name: name.clone(),
+            methods: members,
+        });
         let r#trait = HirTrait {
             span: node.span,
             name,
-            type_parameters,
-            members,
+            signature,
         };
         Ok(r#trait)
     }
@@ -444,12 +501,12 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_trait_function_item(
         &mut self,
         node: &'ast AstTraitFunctionItem,
-    ) -> HirResult<HirTraitFunctionItem<'ta>> {
+    ) -> HirResult<&'ta HirFunctionApiSignature<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let type_parameters = node
             .type_parameters
             .iter()
-            .map(|p| self.visit_type_parmeter_item(p))
+            .map(|p| self.visit_type_parameter_item(p))
             .collect::<HirResult<Vec<_>>>()?;
         let parameters = node
             .parameters
@@ -461,15 +518,14 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             None => self.arena.get_unit_ty(),
         };
         let return_type_annotation = node.return_type.as_ref().map(|t| *t.span());
-        let fun = HirTraitFunctionItem {
+        let signature = self.arena.intern(HirFunctionApiSignature {
             span: node.span,
-            name,
-            type_parameters,
             parameters,
+            type_parameters,
             return_type,
             return_type_annotation,
-        };
-        Ok(fun)
+        });
+        Ok(signature)
     }
 
     pub fn visit_instance_item(
@@ -487,11 +543,21 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .iter()
             .map(|m| self.visit_function_item(m))
             .collect::<HirResult<Vec<_>>>()?;
+        let signature = self.arena.intern(HirInstanceApiSignature {
+            span: node.span,
+            declaration_name: name.clone(),
+            type_arguments: instantiation_type_parameters.clone(),
+            methods: members
+                .iter()
+                .map(|m| (m.name.name.to_owned(), m.signature))
+                .collect(),
+        });
         let instance = HirInstance {
             span: node.span,
             name,
             instantiation_type_parameters,
             members,
+            signature,
         };
         Ok(instance)
     }
@@ -511,24 +577,27 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// ```
     pub fn visit_type_item(&mut self, node: &'ast AstTypeItem) -> HirResult<HirRecord<'ta>> {
         let name = self.visit_identifier(&node.name)?;
-        let fields = node
-            .members
-            .iter()
-            .map(|member| {
-                let ty = self.visit_type(&member.ty)?;
-                let field = HirRecordField {
-                    name: self.visit_identifier(&member.name)?,
-                    ty,
-                    type_annotation: *member.ty.span(),
-                    span: member.span,
-                };
-                Ok((member.name.name.to_owned(), field))
-            })
-            .collect::<HirResult<BTreeMap<_, _>>>()?;
+        let mut fields = BTreeMap::new();
+        for member in node.members.iter() {
+            let ty = self.visit_type(&member.ty)?;
+            let field = self.arena.intern(HirRecordFieldApiSignature {
+                span: member.span,
+                declaration_name: self.visit_identifier(&member.name)?,
+                ty,
+                ty_annotation: *member.ty.span(),
+            });
+            fields.insert(member.name.name.to_owned(), &*field);
+        }
+        let signature = self.arena.intern(HirRecordApiSignature {
+            span: node.span,
+            declaration_name: name.clone(),
+            fields,
+        });
         let rec = HirRecord {
             name,
-            fields,
             span: node.span,
+            signature,
+            instantiated_fields: BTreeMap::new(),
         };
         Ok(rec)
     }

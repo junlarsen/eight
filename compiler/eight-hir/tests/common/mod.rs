@@ -52,7 +52,7 @@ macro_rules! assert_hir_module_infers {
             .visit_translation_unit(&translation_unit)
             .expect("failed to lower translation unit");
 
-        let mut cx = TypingContext::new(&arena);
+        let mut cx = TypingContext::new(&arena, module.signature);
         HirModuleTypeCheckerPass::visit(&mut module, &mut cx)
             .expect("failed to type check corpus file");
 

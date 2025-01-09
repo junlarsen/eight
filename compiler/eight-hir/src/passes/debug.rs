@@ -13,9 +13,11 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::{
-    HirFunction, HirFunctionParameter, HirInstance, HirIntrinsicFunction, HirRecord, HirTrait,
-    HirTraitFunctionItem, HirTypeParameter,
+use crate::item::HirFunction;
+use crate::signature::{
+    HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
+    HirRecordApiSignature, HirScalarApiSignature, HirTraitApiSignature,
+    HirTypeParameterApiSignature,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -38,139 +40,153 @@ impl HirModuleDebugPass {
     }
 
     pub fn format_hir_module<'ta>(module: &'ta HirModule<'ta>) -> RcDoc<'ta, ()> {
-        RcDoc::text("module")
+        RcDoc::text("hir_module")
             .append(RcDoc::space())
             .append(RcDoc::text("{"))
             .append(
                 RcDoc::hardline()
-                    .append("// module intrinsic scalar types")
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::intersperse(
-                        module
-                            .intrinsic_scalars
-                            .keys()
-                            .map(|name| Self::format_hir_intrinsic_scalar(name)),
-                        RcDoc::hardline(),
-                    ))
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::hardline())
-                    .append("// module intrinsic functions")
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::intersperse(
-                        module
-                            .intrinsic_functions
-                            .values()
-                            .map(|fun| Self::format_hir_intrinsic_function(fun)),
-                        RcDoc::hardline(),
-                    ))
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::hardline())
-                    .append("// module types")
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::intersperse(
-                        module
-                            .records
-                            .values()
-                            .map(|rec| Self::format_hir_record(rec)),
-                        RcDoc::hardline(),
-                    ))
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::hardline())
-                    .append("// module traits")
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::intersperse(
-                        module
-                            .traits
-                            .values()
-                            .map(|r#trait| Self::format_hir_trait_item(r#trait)),
-                        RcDoc::hardline(),
-                    ))
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::text("// module instances"))
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::intersperse(
-                        module.instances.values().map(|instance_set| {
-                            RcDoc::intersperse(
-                                instance_set
-                                    .iter()
-                                    .map(|instance| Self::format_hir_instance(instance)),
-                                RcDoc::hardline(),
+                    .append(RcDoc::text("provides"))
+                    .append(RcDoc::space())
+                    .append(RcDoc::text("{"))
+                    .append(
+                        RcDoc::hardline()
+                            .append(RcDoc::text("// module scalar types"))
+                            .append(RcDoc::hardline())
+                            .append(
+                                RcDoc::intersperse(
+                                    module.signature.scalars.iter().map(|(name, sig)| {
+                                        Self::format_hir_scalar_signature(name, sig)
+                                    }),
+                                    RcDoc::hardline(),
+                                )
+                                .append(RcDoc::hardline())
+                                .append(RcDoc::hardline())
+                                .append(RcDoc::text("// module record types"))
+                                .append(RcDoc::hardline())
+                                .append(
+                                    RcDoc::intersperse(
+                                        module.signature.records.iter().map(|(name, sig)| {
+                                            Self::format_hir_record_signature(name, sig)
+                                        }),
+                                        RcDoc::hardline(),
+                                    )
+                                    .append(RcDoc::hardline())
+                                    .append(RcDoc::hardline())
+                                    .append(RcDoc::text("// module functions"))
+                                    .append(RcDoc::hardline())
+                                    .append(RcDoc::intersperse(
+                                        module.signature.functions.iter().map(|(name, sig)| {
+                                            Self::format_hir_function_signature(name, sig)
+                                        }),
+                                        RcDoc::hardline(),
+                                    ))
+                                    .append(RcDoc::hardline())
+                                    .append(RcDoc::hardline())
+                                    .append("// module traits")
+                                    .append(RcDoc::hardline())
+                                    .append(RcDoc::intersperse(
+                                        module.signature.traits.iter().map(|(name, sig)| {
+                                            Self::format_hir_trait_signature(name, sig)
+                                        }),
+                                        RcDoc::hardline(),
+                                    ))
+                                    .append(RcDoc::hardline())
+                                    .append(RcDoc::hardline())
+                                    .append(RcDoc::text("// module instances"))
+                                    .append(RcDoc::hardline())
+                                    .append(
+                                        RcDoc::intersperse(
+                                            module.signature.instances.iter().flat_map(
+                                                |(name, sig)| {
+                                                    sig.iter().map(|sig| {
+                                                        Self::format_hir_instance_signature(
+                                                            name, sig,
+                                                        )
+                                                    })
+                                                },
+                                            ),
+                                            RcDoc::hardline(),
+                                        ),
+                                    ),
+                                ),
                             )
-                        }),
-                        RcDoc::hardline(),
-                    ))
+                            .nest(2)
+                            .group(),
+                    )
                     .append(RcDoc::hardline())
-                    .append(RcDoc::hardline())
-                    .append("// module functions")
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::intersperse(
-                        module
-                            .functions
-                            .values()
-                            .map(|fun| Self::format_hir_function(fun)),
-                        RcDoc::hardline(),
-                    ))
-                    .append(RcDoc::hardline()),
+                    .append(RcDoc::text("}")),
             )
             .nest(2)
             .group()
+            .append(RcDoc::hardline())
             .append(RcDoc::text("}"))
     }
 
     pub fn format_hir_function<'ta>(function: &'ta HirFunction) -> RcDoc<'ta, ()> {
+        // RcDoc::text("fn")
+        //     .append(RcDoc::space())
+        //     .append(RcDoc::text(function.name.name.as_str()))
+        //     .append(Self::format_hir_type_parameter_signature(&function.type_parameters))
+        //     .append(Self::format_function_parameters(&function.parameters))
+        //     .append(RcDoc::space())
+        //     .append(RcDoc::text("->"))
+        //     .append(RcDoc::space())
+        //     .append(Self::format_hir_ty(function.return_type))
+        //     .append(RcDoc::space())
+        //     .append(RcDoc::text("{"))
+        //     .append(
+        //         RcDoc::hardline()
+        //             .append(
+        //                 RcDoc::intersperse(
+        //                     function.body.iter().map(|s| Self::format_hir_stmt(s)),
+        //                     RcDoc::line(),
+        //                 )
+        //                 .append(RcDoc::hardline()),
+        //             )
+        //             .nest(2)
+        //             .group(),
+        //     )
+        //     .append(RcDoc::text("}"))
+        RcDoc::nil()
+    }
+
+    pub fn format_hir_function_signature<'ta>(
+        name: &'ta str,
+        signature: &'ta HirFunctionApiSignature<'ta>,
+    ) -> RcDoc<'ta, ()> {
         RcDoc::text("fn")
             .append(RcDoc::space())
-            .append(RcDoc::text(function.name.name.as_str()))
-            .append(Self::format_hir_type_parameters(&function.type_parameters))
-            .append(Self::format_function_parameters(&function.parameters))
-            .append(RcDoc::space())
-            .append(RcDoc::text("->"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(function.return_type))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
-            .append(
-                RcDoc::hardline()
-                    .append(
-                        RcDoc::intersperse(
-                            function.body.iter().map(|s| Self::format_hir_stmt(s)),
-                            RcDoc::line(),
-                        )
-                        .append(RcDoc::hardline()),
-                    )
-                    .nest(2)
-                    .group(),
-            )
-            .append(RcDoc::text("}"))
-    }
-
-    pub fn format_hir_intrinsic_function<'ta>(
-        function: &'ta HirIntrinsicFunction,
-    ) -> RcDoc<'ta, ()> {
-        RcDoc::text("intrinsic_fn")
-            .append(RcDoc::space())
-            .append(RcDoc::text(function.name.name.as_str()))
-            .append(Self::format_hir_type_parameters(&function.type_parameters))
-            .append(Self::format_function_parameters(&function.parameters))
-            .append(RcDoc::space())
-            .append(RcDoc::text("->"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(function.return_type))
-            .append(RcDoc::text(";"))
-    }
-
-    pub fn format_hir_intrinsic_scalar(name: &str) -> RcDoc<()> {
-        RcDoc::text("intrinsic_scalar")
-            .append(RcDoc::space())
             .append(RcDoc::text(name))
+            .append(Self::format_hir_type_parameter_signature(
+                signature.type_parameters.as_slice(),
+            ))
+            .append(Self::format_function_parameters(
+                signature.parameters.as_slice(),
+            ))
+            .append(RcDoc::space())
+            .append(RcDoc::text("->"))
+            .append(RcDoc::space())
+            .append(Self::format_hir_ty(signature.return_type))
             .append(RcDoc::text(";"))
     }
 
-    pub fn format_hir_record<'ta>(ty: &'ta HirRecord) -> RcDoc<'ta, ()> {
+    pub fn format_hir_scalar_signature<'ta>(
+        name: &'ta str,
+        sig: &'ta HirScalarApiSignature,
+    ) -> RcDoc<'ta, ()> {
+        RcDoc::text("scalar")
+            .append(RcDoc::space())
+            .append(RcDoc::text(sig.declaration_name.name.as_str()))
+            .append(RcDoc::text(";"))
+    }
+
+    pub fn format_hir_record_signature<'ta>(
+        name: &'ta str,
+        ty: &'ta HirRecordApiSignature,
+    ) -> RcDoc<'ta, ()> {
         RcDoc::text("type")
             .append(RcDoc::space())
-            .append(RcDoc::text(ty.name.name.as_str()))
+            .append(RcDoc::text(name))
             .append(RcDoc::space())
             .append(RcDoc::text("="))
             .append(RcDoc::space())
@@ -197,12 +213,12 @@ impl HirModuleDebugPass {
     }
 
     pub fn format_function_parameters<'ta>(
-        parameters: &'ta [HirFunctionParameter],
+        parameters: &'ta [&'ta HirFunctionParameterApiSignature],
     ) -> RcDoc<'ta, ()> {
         RcDoc::text("(")
             .append(RcDoc::intersperse(
                 parameters.iter().map(|p| {
-                    RcDoc::text(p.name.name.as_str()).append(
+                    RcDoc::text(p.declaration_name.name.as_str()).append(
                         RcDoc::text(":")
                             .append(RcDoc::space())
                             .append(Self::format_hir_ty(p.ty)),
@@ -213,37 +229,27 @@ impl HirModuleDebugPass {
             .append(RcDoc::text(")"))
     }
 
-    pub fn format_hir_type_parameters<'ta>(parameters: &'ta [HirTypeParameter]) -> RcDoc<'ta, ()> {
-        if parameters.is_empty() {
-            return RcDoc::nil();
-        }
-        RcDoc::text("<")
+    pub fn format_hir_instance_signature<'ta>(
+        name: &'ta str,
+        sig: &'ta HirInstanceApiSignature,
+    ) -> RcDoc<'ta, ()> {
+        RcDoc::text("instance")
+            .append(RcDoc::space())
+            .append(RcDoc::text(name))
+            .append(RcDoc::text("<"))
             .append(RcDoc::intersperse(
-                parameters.iter().map(|p| match p.substitution_name {
-                    Some(sub) => Self::format_hir_ty(sub),
-                    None => RcDoc::text(p.syntax_name.name.as_str()),
-                }),
+                sig.type_arguments.iter().map(|p| Self::format_hir_ty(p)),
                 RcDoc::text(", "),
             ))
             .append(RcDoc::text(">"))
-    }
-
-    pub fn format_hir_trait_item<'ta>(r#trait: &'ta HirTrait) -> RcDoc<'ta, ()> {
-        RcDoc::text("trait")
-            .append(RcDoc::space())
-            .append(RcDoc::text(r#trait.name.name.as_str()))
-            .append(Self::format_hir_type_parameters(
-                r#trait.type_parameters.as_slice(),
-            ))
             .append(RcDoc::space())
             .append(RcDoc::text("{"))
             .append(
                 RcDoc::hardline()
                     .append(RcDoc::intersperse(
-                        r#trait
-                            .members
+                        sig.methods
                             .iter()
-                            .map(|f| Self::format_hir_trait_function_item(f)),
+                            .map(|(name, sig)| Self::format_hir_function_signature(name, sig)),
                         RcDoc::hardline(),
                     ))
                     .nest(2)
@@ -253,67 +259,135 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("}"))
     }
 
-    pub fn format_hir_trait_function_item<'ta>(
-        function: &'ta HirTraitFunctionItem,
+    pub fn format_hir_trait_signature<'ta>(
+        name: &'ta str,
+        sig: &'ta HirTraitApiSignature,
     ) -> RcDoc<'ta, ()> {
-        RcDoc::text("fn")
+        RcDoc::text("trait")
             .append(RcDoc::space())
-            .append(RcDoc::text(function.name.name.as_str()))
-            .append(Self::format_hir_type_parameters(
-                function.type_parameters.as_slice(),
+            .append(RcDoc::text(name))
+            .append(Self::format_hir_type_parameter_signature(
+                sig.type_parameters.as_slice(),
             ))
             .append(RcDoc::space())
-            .append(RcDoc::text("("))
-            .append(RcDoc::intersperse(
-                function.parameters.iter().map(|p| {
-                    RcDoc::text(p.name.name.as_str()).append(
-                        RcDoc::text(":")
-                            .append(RcDoc::space())
-                            .append(Self::format_hir_ty(p.ty)),
-                    )
-                }),
-                RcDoc::text(", "),
-            ))
-            .append(RcDoc::text(")"))
-            .append(RcDoc::space())
-            .append(RcDoc::text("->"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(function.return_type))
-            .append(RcDoc::text(";"))
+            .append(RcDoc::text("{"))
+            .append(
+                RcDoc::hardline()
+                    .append(RcDoc::intersperse(
+                        sig.methods
+                            .iter()
+                            .map(|(name, sig)| Self::format_hir_function_signature(name, sig)),
+                        RcDoc::hardline(),
+                    ))
+                    .nest(2)
+                    .group(),
+            )
+            .append(RcDoc::hardline())
+            .append(RcDoc::text("}"))
     }
 
-    pub fn format_hir_instance<'ta>(instance: &'ta HirInstance<'ta>) -> RcDoc<'ta, ()> {
-        RcDoc::text("instance")
-            .append(RcDoc::space())
-            .append(&instance.name.name)
-            .append(RcDoc::text("<"))
+    pub fn format_hir_type_parameter_signature<'ta>(
+        parameters: &[&'ta HirTypeParameterApiSignature],
+    ) -> RcDoc<'ta, ()> {
+        if parameters.is_empty() {
+            return RcDoc::nil();
+        }
+        RcDoc::text("<")
             .append(RcDoc::intersperse(
-                instance
-                    .instantiation_type_parameters
+                parameters
                     .iter()
-                    .map(|p| Self::format_hir_ty(p)),
+                    .map(|p| RcDoc::text(p.declaration_name.name.as_str())),
                 RcDoc::text(", "),
             ))
             .append(RcDoc::text(">"))
-            .append(RcDoc::space())
-            .append(
-                RcDoc::text("{")
-                    .append(
-                        RcDoc::hardline()
-                            .append(RcDoc::intersperse(
-                                instance
-                                    .members
-                                    .iter()
-                                    .map(|member| Self::format_hir_function(member)),
-                                RcDoc::line(),
-                            ))
-                            .nest(2)
-                            .group(),
-                    )
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::text("}")),
-            )
     }
+
+    // pub fn format_hir_trait_item<'ta>(r#trait: &'ta HirTrait) -> RcDoc<'ta, ()> {
+    //     RcDoc::text("trait")
+    //         .append(RcDoc::space())
+    //         .append(RcDoc::text(r#trait.name.name.as_str()))
+    //         .append(Self::format_hir_type_parameter_signature(
+    //             r#trait.signature.type_parameters.as_slice(),
+    //         ))
+    //         .append(RcDoc::space())
+    //         .append(RcDoc::text("{"))
+    //         .append(
+    //             RcDoc::hardline()
+    //                 .append(RcDoc::intersperse(
+    //                     r#trait
+    //                         .members
+    //                         .iter()
+    //                         .map(|f| Self::format_hir_trait_function_item(f)),
+    //                     RcDoc::hardline(),
+    //                 ))
+    //                 .nest(2)
+    //                 .group(),
+    //         )
+    //         .append(RcDoc::hardline())
+    //         .append(RcDoc::text("}"))
+    // }
+    //
+    // pub fn format_hir_trait_function_item<'ta>(
+    //     function: &'ta HirTraitFunctionItem,
+    // ) -> RcDoc<'ta, ()> {
+    //     RcDoc::text("fn")
+    //         .append(RcDoc::space())
+    //         .append(RcDoc::text(function.name.name.as_str()))
+    //         .append(Self::format_hir_type_parameter_signature(
+    //             function.type_parameters.as_slice(),
+    //         ))
+    //         .append(RcDoc::space())
+    //         .append(RcDoc::text("("))
+    //         .append(RcDoc::intersperse(
+    //             function.parameters.iter().map(|p| {
+    //                 RcDoc::text(p.name.name.as_str()).append(
+    //                     RcDoc::text(":")
+    //                         .append(RcDoc::space())
+    //                         .append(Self::format_hir_ty(p.ty)),
+    //                 )
+    //             }),
+    //             RcDoc::text(", "),
+    //         ))
+    //         .append(RcDoc::text(")"))
+    //         .append(RcDoc::space())
+    //         .append(RcDoc::text("->"))
+    //         .append(RcDoc::space())
+    //         .append(Self::format_hir_ty(function.return_type))
+    //         .append(RcDoc::text(";"))
+    // }
+    //
+    // pub fn format_hir_instance<'ta>(instance: &'ta HirInstance<'ta>) -> RcDoc<'ta, ()> {
+    //     RcDoc::text("instance")
+    //         .append(RcDoc::space())
+    //         .append(&instance.name.name)
+    //         .append(RcDoc::text("<"))
+    //         .append(RcDoc::intersperse(
+    //             instance
+    //                 .instantiation_type_parameters
+    //                 .iter()
+    //                 .map(|p| Self::format_hir_ty(p)),
+    //             RcDoc::text(", "),
+    //         ))
+    //         .append(RcDoc::text(">"))
+    //         .append(RcDoc::space())
+    //         .append(
+    //             RcDoc::text("{")
+    //                 .append(
+    //                     RcDoc::hardline()
+    //                         .append(RcDoc::intersperse(
+    //                             instance
+    //                                 .members
+    //                                 .iter()
+    //                                 .map(|member| Self::format_hir_function(member)),
+    //                             RcDoc::line(),
+    //                         ))
+    //                         .nest(2)
+    //                         .group(),
+    //                 )
+    //                 .append(RcDoc::hardline())
+    //                 .append(RcDoc::text("}")),
+    //         )
+    // }
 
     pub fn format_hir_stmt<'ta>(stmt: &'ta HirStmt) -> RcDoc<'ta, ()> {
         match stmt {

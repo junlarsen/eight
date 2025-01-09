@@ -11,9 +11,8 @@ use crate::expr::{
     HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr, HirIntegerLiteralExpr,
     HirOffsetIndexExpr, HirReferenceExpr,
 };
-use crate::item::{
-    HirFunction, HirFunctionSignature, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord,
-};
+use crate::item::{HirFunction, HirIntrinsicFunction, HirRecord};
+use crate::signature::HirModuleSignature;
 use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };
@@ -67,14 +66,11 @@ pub struct TypingContext<'ta> {
     /// be a VecDeque, but it's here for future use.
     local_type_parameter_substitutions: LocalContext<&'ta HirTy<'ta>>,
     current_function: VecDeque<&'ta HirFunctionTy<'ta>>,
-    /// Types derived from the module that we are type checking.
-    record_types: BTreeMap<String, HirRecord<'ta>>,
-    scalar_types: BTreeMap<String, HirIntrinsicScalar<'ta>>,
-    functions: BTreeMap<String, HirFunctionSignature<'ta>>,
+    module_signature: &'ta HirModuleSignature<'ta>,
 }
 
 impl<'ta> TypingContext<'ta> {
-    pub fn new(arena: &'ta HirArena<'ta>) -> Self {
+    pub fn new(arena: &'ta HirArena<'ta>, module_signature: &'ta HirModuleSignature<'ta>) -> Self {
         Self {
             arena,
             constraints: Vec::new(),
@@ -82,9 +78,7 @@ impl<'ta> TypingContext<'ta> {
             locals: LocalContext::new(),
             local_type_parameter_substitutions: LocalContext::new(),
             current_function: VecDeque::new(),
-            scalar_types: BTreeMap::new(),
-            functions: BTreeMap::new(),
-            record_types: BTreeMap::new(),
+            module_signature,
         }
     }
 
@@ -156,7 +150,8 @@ impl<'ta> TypingContext<'ta> {
             }
             HirTy::Nominal(n) => {
                 let ty = self
-                    .record_types
+                    .module_signature
+                    .records
                     .get(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"));
                 let Some(record_field) = ty.fields.get(&field.name) else {
@@ -361,7 +356,7 @@ impl<'ta> TypingContext<'ta> {
 
         // If the function refers to a function signature, we attempt to instantiate it if
         // it is generic.
-        let Some(signature) = self.functions.get(&expr.name.name) else {
+        let Some(signature) = self.module_signature.functions.get(&expr.name.name) else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
         // Non-generic functions are already "instantiated" and can be constrained directly.
@@ -387,7 +382,7 @@ impl<'ta> TypingContext<'ta> {
         for type_parameter in signature.type_parameters.iter() {
             let ty = self.fresh_type_variable();
             self.local_type_parameter_substitutions
-                .add(&type_parameter.syntax_name.name, ty);
+                .add(&type_parameter.declaration_name.name, ty);
         }
         // The types of the signature can refer to the type parameters at arbitrary depths,
         // e.g. `**T`, so we just recurse down to substitute.
@@ -474,7 +469,8 @@ impl<'ta> TypingContext<'ta> {
             ice!("construct expression callee is not a nominal type");
         };
         let ty = self
-            .record_types
+            .module_signature
+            .records
             .get(&n.name.name)
             .unwrap_or_else(|| ice!("record type not found"))
             .clone();
@@ -497,10 +493,10 @@ impl<'ta> TypingContext<'ta> {
         }
         // If some of the fields from the struct are missing
         for field in ty.fields.values() {
-            if !visited_fields.contains(&field.name.name) {
+            if !visited_fields.contains(&field.declaration_name.name) {
                 return Err(HirError::MissingField(MissingFieldError {
                     type_name: n.name.name.to_owned(),
-                    field_name: field.name.name.to_owned(),
+                    field_name: field.declaration_name.name.to_owned(),
                     span: expr.span,
                     defined_at: field.span,
                 }));
@@ -668,60 +664,16 @@ impl<'ta> TypingContext<'ta> {
     }
 }
 
-impl<'ta> TypingContext<'ta> {
-    /// Copy the records frs from the given module into the context.
-    pub fn install_module_records(&mut self, records: &BTreeMap<String, HirRecord<'ta>>) {
-        for rec in records.values() {
-            self.record_types
-                .insert(rec.name.name.to_owned(), rec.clone());
-        }
-    }
-
-    /// Copy the functions from the given module into the context.
-    pub fn install_module_functions(&mut self, functions: &BTreeMap<String, HirFunction<'ta>>) {
-        let signatures = functions
-            .iter()
-            .map(|(name, fun)| (name.to_owned(), fun.signature()));
-        for (name, signature) in signatures {
-            self.functions.insert(name, signature);
-        }
-    }
-
-    /// Copy the intrinsic functions from the given module into the context.
-    pub fn install_module_intrinsic_functions(
-        &mut self,
-        functions: &BTreeMap<String, HirIntrinsicFunction<'ta>>,
-    ) {
-        for (name, fun) in functions.iter() {
-            self.functions.insert(name.to_owned(), fun.signature());
-        }
-    }
-
-    /// Copy the intrinsic scalars from the given module into the context.
-    pub fn install_module_intrinsic_scalars(
-        &mut self,
-        scalars: &BTreeMap<String, HirIntrinsicScalar<'ta>>,
-    ) {
-        for (name, scalar) in scalars.iter() {
-            self.scalar_types.insert(name.to_owned(), scalar.clone());
-        }
-    }
-}
-
 pub struct HirModuleTypeCheckerPass();
 
 impl HirModuleTypeCheckerPass {
     /// Type-check and perform type inference on the given module.
     pub fn visit<'ta>(module: &mut HirModule<'ta>, cx: &mut TypingContext<'ta>) -> HirResult<()> {
         cx.locals.enter_scope();
-        cx.install_module_records(&module.records);
-        cx.install_module_functions(&module.functions);
-        cx.install_module_intrinsic_functions(&module.intrinsic_functions);
-        cx.install_module_intrinsic_scalars(&module.intrinsic_scalars);
 
-        Self::visit_module_functions(cx, &mut module.functions)?;
-        Self::visit_module_intrinsic_functions(cx, &mut module.intrinsic_functions)?;
-        Self::visit_module_records(cx, &mut module.records)?;
+        Self::visit_module_functions(cx, &mut module.body.functions)?;
+        Self::visit_module_intrinsic_functions(cx, &mut module.body.intrinsic_functions)?;
+        Self::visit_module_records(cx, &mut module.body.records)?;
         cx.locals.leave_scope();
         Ok(())
     }
@@ -779,29 +731,36 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         // Create substitutions for all the type parameters.
         cx.local_type_parameter_substitutions.enter_scope();
-        for type_parameter in node.type_parameters.iter_mut() {
+        for type_parameter in node.signature.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
-            // This is only cosmetic so that the debug pass can print the type parameter names with
-            // their substitutions. It is not used in the type checker.
-            type_parameter.substitution_name = Some(substitution);
+            node.type_parameter_substitutions
+                .insert(type_parameter.declaration_name.name.clone(), substitution);
             cx.local_type_parameter_substitutions
-                .add(&type_parameter.syntax_name.name, substitution);
+                .add(&type_parameter.declaration_name.name, substitution);
         }
-        node.return_type = Self::visit_type(cx, node.return_type)?;
+        // Instantiate the types of the function parameters and return type.
+        node.instantiated_return_type = Some(Self::visit_type(cx, node.signature.return_type)?);
+        for p in node.signature.parameters.iter() {
+            let ty = Self::visit_type(cx, p.ty)?;
+            node.instantiated_parameters
+                .insert(p.declaration_name.name.clone(), ty);
+        }
+
         // Push the function's type onto the current stack, so that return statements can be checked
         // against the expected return type.
         let HirTy::Function(self_ty) = cx.arena.get_function_ty(
-            node.return_type,
-            node.parameters.iter().map(|p| p.ty).collect(),
+            node.instantiated_return_type
+                .unwrap_or_else(|| ice!("freshly built return type was missing")),
+            node.instantiated_parameters.values().copied()
+                .collect(),
         ) else {
             ice!("freshly built function type should be a function");
         };
         cx.current_function.push_back(self_ty);
         cx.locals.enter_scope();
         // Push all the function parameters into the local context.
-        for p in node.parameters.iter_mut() {
-            p.ty = Self::visit_type(cx, p.ty)?;
-            cx.locals.add(&p.name.name, p.ty);
+        for (parameter_name, parameter_ty) in node.instantiated_parameters.iter() {
+            cx.locals.add(parameter_name, parameter_ty);
         }
         // Type inference is done in two passes. First, we collect all the constraints for all the
         // child nodes of the function body, then we solve the type constraints, and finally we
@@ -831,17 +790,28 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'ta>,
         node: &mut HirRecord<'ta>,
     ) -> HirResult<()> {
-        for field in node.fields.values_mut() {
-            field.ty = Self::visit_type(cx, field.ty)?;
-            // Check if the field directly references itself
+        // Instantiate the types of the record fields.
+        for field in node.signature.fields.values() {
+            let ty = Self::visit_type(cx, field.ty)?;
+            node.instantiated_fields
+                .insert(field.declaration_name.name.clone(), ty);
+        }
+
+        for (field_name, field_declaration) in node.signature.fields.iter() {
+            let field_ty = node.instantiated_fields.get(field_name).unwrap_or_else(|| {
+                ice!(format!(
+                    "field {} not found in record type {}",
+                    field_name, node.name.name
+                ))
+            });
             let is_directly_self_referential =
-                matches!(field.ty, HirTy::Nominal(n) if n.name.name == node.name.name);
+                matches!(field_ty, HirTy::Nominal(n) if n.name.name == node.name.name);
             if is_directly_self_referential {
                 return Err(HirError::TypeFieldInfiniteRecursion(
                     TypeFieldInfiniteRecursionError {
                         type_name: node.name.name.to_owned(),
-                        offending_field: field.name.name.to_owned(),
-                        span: field.span,
+                        offending_field: field_name.to_owned(),
+                        span: field_declaration.span,
                     },
                 ));
             }
@@ -893,10 +863,10 @@ impl HirModuleTypeCheckerPass {
             return Ok(sub);
         }
         // Check if the name is a builtin or record type.
-        if cx.scalar_types.contains_key(&n.name.name) {
+        if cx.module_signature.scalars.contains_key(&n.name.name) {
             return Ok(node);
         }
-        if cx.record_types.contains_key(&n.name.name) {
+        if cx.module_signature.records.contains_key(&n.name.name) {
             return Ok(node);
         }
         Err(HirError::UnknownType(UnknownTypeError {
@@ -1043,7 +1013,8 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         // See if the name resolves to a local let-binding or a function name.
-        if cx.locals.find(&node.name.name).is_none() && !cx.functions.contains_key(&node.name.name)
+        if cx.locals.find(&node.name.name).is_none()
+            && !cx.module_signature.functions.contains_key(&node.name.name)
         {
             return Err(HirError::InvalidReference(InvalidReferenceError {
                 name: node.name.name.to_owned(),

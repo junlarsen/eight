@@ -21,11 +21,11 @@ use std::collections::BTreeMap;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
 pub struct HirModuleSignature<'ta> {
-    pub functions: BTreeMap<String, HirFunctionApiSignature<'ta>>,
-    pub records: BTreeMap<String, HirRecordApiSignature<'ta>>,
-    pub scalars: BTreeMap<String, HirScalarApiSignature<'ta>>,
-    pub traits: BTreeMap<String, HirTraitApiSignature<'ta>>,
-    pub instances: BTreeMap<String, Vec<HirInstanceApiSignature<'ta>>>,
+    pub functions: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
+    pub records: BTreeMap<String, &'ta HirRecordApiSignature<'ta>>,
+    pub scalars: BTreeMap<String, &'ta HirScalarApiSignature<'ta>>,
+    pub traits: BTreeMap<String, &'ta HirTraitApiSignature<'ta>>,
+    pub instances: BTreeMap<String, Vec<&'ta HirInstanceApiSignature<'ta>>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -33,7 +33,7 @@ pub struct HirModuleSignature<'ta> {
 pub struct HirRecordApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
-    pub fields: BTreeMap<String, HirRecordFieldApiSignature<'ta>>,
+    pub fields: BTreeMap<String, &'ta HirRecordFieldApiSignature<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -42,6 +42,7 @@ pub struct HirRecordFieldApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
     pub ty: &'ta HirTy<'ta>,
+    pub ty_annotation: Span,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -57,9 +58,10 @@ pub struct HirScalarApiSignature<'ta> {
 #[derive(Debug)]
 pub struct HirFunctionApiSignature<'ta> {
     pub span: Span,
-    pub parameters: Vec<HirFunctionParameterApiSignature<'ta>>,
-    pub type_parameters: Vec<HirTypeParameterApiSignature<'ta>>,
+    pub parameters: Vec<&'ta HirFunctionParameterApiSignature<'ta>>,
+    pub type_parameters: Vec<&'ta HirTypeParameterApiSignature>,
     pub return_type: &'ta HirTy<'ta>,
+    pub return_type_annotation: Option<Span>,
 }
 
 /// A signature for a single parameter of a function.
@@ -69,15 +71,15 @@ pub struct HirFunctionParameterApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
     pub ty: &'ta HirTy<'ta>,
+    pub ty_annotation: Span,
 }
 
 /// A signature for a type parameter of a trait or a function.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirTypeParameterApiSignature<'ta> {
+pub struct HirTypeParameterApiSignature {
     pub span: Span,
     pub declaration_name: HirName,
-    pub substitution_name: Option<&'ta HirTy<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -85,8 +87,8 @@ pub struct HirTypeParameterApiSignature<'ta> {
 pub struct HirTraitApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
-    pub type_parameters: Vec<HirTypeParameterApiSignature<'ta>>,
-    pub methods: BTreeMap<String, HirFunctionApiSignature<'ta>>,
+    pub type_parameters: Vec<&'ta HirTypeParameterApiSignature>,
+    pub methods: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -95,5 +97,5 @@ pub struct HirInstanceApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
     pub type_arguments: Vec<&'ta HirTy<'ta>>,
-    pub methods: BTreeMap<String, HirFunctionApiSignature<'ta>>,
+    pub methods: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
 }

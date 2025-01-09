@@ -25,10 +25,11 @@ impl Pipeline {
         let bump = Bump::new();
         let arena = HirArena::new(&bump);
 
-        let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let tu = parser.parse()?;
+
+        let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let mut module = lowering_pass.visit_translation_unit(&tu)?;
-        let mut cx = TypingContext::new(&arena);
+        let mut cx = TypingContext::new(&arena, module.signature);
         HirModuleTypeCheckerPass::visit(&mut module, &mut cx)?;
         if self.options.emit_ast {
             let syntax = ron::ser::to_string_pretty(&tu, Default::default())

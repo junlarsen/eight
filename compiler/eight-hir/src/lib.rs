@@ -8,12 +8,9 @@
 //! and abstractions that the syntax of the language provides, providing more information about the
 //! program than the AST.
 
-use crate::item::{
-    HirFunction, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord, HirTrait,
-};
+use crate::item::{HirFunction, HirIntrinsicFunction, HirRecord};
 use crate::signature::HirModuleSignature;
 use eight_span::Span;
-use std::cell::RefCell;
 use std::collections::BTreeMap;
 
 pub mod arena;
@@ -33,38 +30,21 @@ pub mod ty;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirModule<'ta> {
-    pub signature: RefCell<HirModuleSignature<'ta>>,
-    pub intrinsic_scalars: BTreeMap<String, HirIntrinsicScalar<'ta>>,
-    pub records: BTreeMap<String, HirRecord<'ta>>,
-    pub functions: BTreeMap<String, HirFunction<'ta>>,
-    pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction<'ta>>,
-    pub traits: BTreeMap<String, HirTrait<'ta>>,
-    pub instances: BTreeMap<String, Vec<HirInstance<'ta>>>,
+    pub signature: &'ta HirModuleSignature<'ta>,
+    pub body: HirModuleBody<'ta>,
 }
 
-impl<'ta> Default for HirModule<'ta> {
-    fn default() -> Self {
-        Self::new()
-    }
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Default)]
+pub struct HirModuleBody<'ta> {
+    pub functions: BTreeMap<String, HirFunction<'ta>>,
+    pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction<'ta>>,
+    pub records: BTreeMap<String, HirRecord<'ta>>,
 }
 
 impl<'ta> HirModule<'ta> {
-    /// Create an empty Hir module.
-    pub fn new() -> Self {
-        Self {
-            signature: RefCell::new(HirModuleSignature::default()),
-            records: BTreeMap::new(),
-            functions: BTreeMap::new(),
-            intrinsic_functions: BTreeMap::new(),
-            intrinsic_scalars: BTreeMap::new(),
-            traits: BTreeMap::new(),
-            instances: BTreeMap::new(),
-        }
-    }
-
-    /// Get a record type from the module with the given name.
-    pub fn get_record_type(&self, name: &str) -> Option<&HirRecord> {
-        self.records.get(name)
+    pub fn new(signature: &'ta HirModuleSignature<'ta>, body: HirModuleBody<'ta>) -> Self {
+        Self { signature, body }
     }
 }
 
