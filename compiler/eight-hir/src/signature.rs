@@ -77,6 +77,31 @@ impl<'ta> HirModuleSignature<'ta> {
         self.scalars.get(name).copied()
     }
 
+    pub fn get_trait(&self, name: &str) -> Option<&'ta HirTraitApiSignature<'ta>> {
+        self.traits.get(name).copied()
+    }
+
+    // TODO: Move this into type_checker.rs
+    pub fn get_instance(
+        &self,
+        name: &str,
+        arguments: &[&'ta HirTy<'ta>],
+    ) -> Option<&'ta HirInstanceApiSignature<'ta>> {
+        for instance in self.instances.get(name)? {
+            if instance.type_arguments.len() == arguments.len() {
+                let is_all_equal = instance
+                    .type_arguments
+                    .iter()
+                    .zip(arguments)
+                    .all(|(a, b)| a.is_trivially_equal(b) || b.is_variable());
+                if is_all_equal {
+                    return Some(instance);
+                }
+            }
+        }
+        None
+    }
+
     /// Iterate over all the functions in the module signature.
     pub fn functions(&self) -> impl Iterator<Item = (&String, &&'ta HirFunctionApiSignature<'ta>)> {
         self.functions.iter()

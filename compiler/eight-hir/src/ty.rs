@@ -246,6 +246,10 @@ impl HirTy<'_> {
     pub fn is_uninitialized(&self) -> bool {
         matches!(self, HirTy::Uninitialized(_))
     }
+
+    pub fn is_variable(&self) -> bool {
+        matches!(self, HirTy::Variable(_))
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

@@ -174,13 +174,10 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("("))
             .append(RcDoc::intersperse(
                 function.signature.parameters.iter().map(|p| {
-                    match function
-                        .instantiated_parameters
-                        .get(p.declaration_name.name.as_str())
-                    {
-                        Some(t) => Self::format_hir_ty(t),
-                        None => RcDoc::text(p.declaration_name.name.as_str()),
-                    }
+                    RcDoc::text(p.declaration_name.name.as_str())
+                        .append(RcDoc::text(":"))
+                        .append(RcDoc::space())
+                        .append(Self::format_hir_ty(p.ty))
                 }),
                 RcDoc::text(", "),
             ))

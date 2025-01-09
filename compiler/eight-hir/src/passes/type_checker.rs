@@ -9,10 +9,10 @@ use crate::error::{
 use crate::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
     HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr, HirIntegerLiteralExpr,
-    HirOffsetIndexExpr, HirReferenceExpr,
+    HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
 use crate::item::{HirFunction, HirIntrinsicFunction, HirRecord};
-use crate::signature::HirModuleSignature;
+use crate::signature::{HirInstanceApiSignature, HirModuleSignature};
 use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };
@@ -27,6 +27,7 @@ use std::fmt::Debug;
 pub enum Constraint<'ta> {
     Equality(EqualityConstraint<'ta>),
     FieldProjection(FieldProjectionConstraint<'ta>),
+    Instance(InstanceConstraint<'ta>),
 }
 
 /// Represent a constraint that two types have to be equal.
@@ -49,6 +50,25 @@ pub struct EqualityConstraint<'ta> {
 pub struct FieldProjectionConstraint<'ta> {
     pub origin: &'ta HirTy<'ta>,
     pub field: HirName,
+    /// The expectation for the field's type.
+    pub resolved_type: &'ta HirTy<'ta>,
+}
+
+/// Represent a type class instance constraint.
+///
+/// This constraint requires that there exists an instance of trait `name` that for the given types
+/// `type_arguments`.
+///
+/// TODO: `name` and `method` should be HirName, but right now the compiler magically inserts these
+///   trait constraints without accompanying syntax.
+///
+/// TODO: Split this into two constraints, one for the trait, and one for the method
+#[derive(Debug)]
+pub struct InstanceConstraint<'ta> {
+    pub name: String,
+    pub method: String,
+    pub type_arguments: Vec<&'ta HirTy<'ta>>,
+    /// The expectation for the instance method's return type.
     pub resolved_type: &'ta HirTy<'ta>,
 }
 
@@ -143,6 +163,23 @@ impl<'ta> TypingContext<'ta> {
             }))
     }
 
+    /// Imply a new instance constraint
+    pub fn constrain_instance(
+        &mut self,
+        name: String,
+        method: String,
+        type_arguments: Vec<&'ta HirTy<'ta>>,
+        resolved_type: &'ta HirTy<'ta>,
+    ) {
+        self.constraints
+            .push(Constraint::Instance(InstanceConstraint {
+                name,
+                method,
+                type_arguments,
+                resolved_type,
+            }))
+    }
+
     /// Solve the constraints that have been implied on the context so far.
     pub fn solve_constraints(&mut self) -> HirResult<()> {
         let constraints = self.constraints.drain(..).collect::<Vec<_>>();
@@ -151,6 +188,7 @@ impl<'ta> TypingContext<'ta> {
             match constraint {
                 Constraint::Equality(c) => self.unify_eq(c)?,
                 Constraint::FieldProjection(c) => self.unify_field_projection(c)?,
+                Constraint::Instance(c) => self.unify_instance(c)?,
             }
         }
         Ok(())
@@ -210,6 +248,45 @@ impl<'ta> TypingContext<'ta> {
                 },
             )),
         }
+    }
+
+    /// Perform unification of an instance constraint.
+    ///
+    /// An instance constraint requires that there exists an instance of trait `name` that for the
+    /// given types `type_arguments`.
+    pub fn unify_instance(
+        &mut self,
+        InstanceConstraint {
+            name,
+            method,
+            type_arguments,
+            resolved_type,
+        }: InstanceConstraint<'ta>,
+    ) -> HirResult<()> {
+        let _ = self
+            .module_signature
+            .get_trait(&name)
+            .unwrap_or_else(|| ice!(format!("trait {} not found", name)));
+        let substitutions = type_arguments
+            .iter()
+            .map(|t| self.substitute(t))
+            .collect::<HirResult<Vec<_>>>()?;
+        let instance = self
+            .module_signature
+            .get_instance(&name, substitutions.as_slice())
+            .unwrap_or_else(|| ice!(format!("instance {} not found", name)));
+        let method = instance
+            .methods
+            .get(&method)
+            .unwrap_or_else(|| ice!(format!("method {} not found", method)));
+        let constraint = EqualityConstraint {
+            expected: resolved_type,
+            actual: method.return_type,
+            expected_loc: Span::empty(),
+            actual_loc: Span::empty(),
+        };
+        self.unify_eq(constraint)?;
+        Ok(())
     }
 
     /// Perform unification of two types.
@@ -597,6 +674,45 @@ impl<'ta> TypingContext<'ta> {
         Ok(())
     }
 
+    /// Infer the type of an unary operation expression.
+    ///
+    /// Unary operations traits are always fixed to two types: the operand type and the result type.
+    ///
+    /// This infers the following constraints:
+    /// ```text
+    /// Neg::neg<expr.ty, expectation>
+    /// ```
+    ///
+    /// This happens to use the same trait for both i32 and bool, but that's mostly because they are
+    /// the same operation just using different syntax.
+    ///
+    /// ```text
+    /// !true -> Neg::neg::<bool, bool>(true)
+    /// -123 -> Neg::neg<i32, i32>(123)
+    /// ```
+    pub fn infer_unary_op_expr(
+        &mut self,
+        expr: &mut HirUnaryOpExpr<'ta>,
+        expectation: &'ta HirTy<'ta>,
+    ) -> HirResult<()> {
+        self.constrain_eq(expr.ty, expectation, expr.span, *expr.operand.span());
+        match &expr.op {
+            HirUnaryOp::Not => self.constrain_instance(
+                "Neg".to_owned(),
+                "neg".to_owned(),
+                vec![expr.operand.ty(), expectation],
+                expectation,
+            ),
+            HirUnaryOp::Neg => self.constrain_instance(
+                "Neg".to_owned(),
+                "neg".to_owned(),
+                vec![expr.operand.ty(), expectation],
+                expectation,
+            ),
+        }
+        Ok(())
+    }
+
     /// Infer the expression's type based on its expected type.
     ///
     /// This collects the necessary constraints on the expression's type based on its structure. The
@@ -619,7 +735,7 @@ impl<'ta> TypingContext<'ta> {
             HirExpr::AddressOf(e) => self.infer_address_of_expr(e, expectation),
             HirExpr::Deref(e) => self.infer_deref_expr(e, expectation),
             HirExpr::Group(e) => self.infer_group_expr(e, expectation),
-            HirExpr::UnaryOp(e) => todo!(),
+            HirExpr::UnaryOp(e) => self.infer_unary_op_expr(e, expectation),
             HirExpr::BinaryOp(e) => todo!(),
         }
     }
@@ -957,7 +1073,7 @@ impl HirModuleTypeCheckerPass {
             HirExpr::Construct(e) => Self::enter_construct_expr(cx, e),
             HirExpr::AddressOf(e) => Self::enter_address_of_expr(cx, e),
             HirExpr::Deref(e) => Self::enter_deref_expr(cx, e),
-            HirExpr::UnaryOp(e) => todo!(),
+            HirExpr::UnaryOp(e) => Self::enter_unary_op_expr(cx, e),
             HirExpr::BinaryOp(e) => todo!(),
         }
     }
@@ -976,7 +1092,7 @@ impl HirModuleTypeCheckerPass {
             HirExpr::Construct(e) => Self::leave_construct_expr(cx, e),
             HirExpr::AddressOf(e) => Self::leave_address_of_expr(cx, e),
             HirExpr::Deref(e) => Self::leave_deref_expr(cx, e),
-            HirExpr::UnaryOp(e) => todo!(),
+            HirExpr::UnaryOp(e) => Self::leave_unary_op_expr(cx, e),
             HirExpr::BinaryOp(e) => todo!(),
         }
     }
@@ -1241,6 +1357,26 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirDerefExpr<'ta>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.inner)?;
+        node.ty = cx.substitute(node.ty)?;
+        Ok(())
+    }
+
+    /// Collect type constraints for an unary operation expression.
+    pub fn enter_unary_op_expr<'ta>(
+        cx: &mut TypingContext<'ta>,
+        node: &mut HirUnaryOpExpr<'ta>,
+    ) -> HirResult<()> {
+        node.ty = Self::visit_type(cx, node.ty)?;
+        Self::enter_expr(cx, &mut node.operand)?;
+        Ok(())
+    }
+
+    /// Perform substitution for an unary operation expression.
+    pub fn leave_unary_op_expr<'ta>(
+        cx: &mut TypingContext<'ta>,
+        node: &mut HirUnaryOpExpr<'ta>,
+    ) -> HirResult<()> {
+        Self::leave_expr(cx, &mut node.operand)?;
         node.ty = cx.substitute(node.ty)?;
         Ok(())
     }
