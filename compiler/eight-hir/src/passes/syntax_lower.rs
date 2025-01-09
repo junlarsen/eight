@@ -81,7 +81,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             span: node.span,
             lhs: Box::new(self.visit_expr(node.lhs.as_ref())?),
             rhs: Box::new(self.visit_expr(node.rhs.as_ref())?),
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -100,7 +100,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 .iter()
                 .map(|t| self.visit_type(t))
                 .collect::<HirResult<Vec<_>>>()?,
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -117,7 +117,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 .iter()
                 .map(|a| self.visit_constructor_expr_argument(a))
                 .collect::<HirResult<Vec<_>>>()?,
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -138,7 +138,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let hir = HirExpr::Group(HirGroupExpr {
             span: node.span,
             inner: Box::new(self.visit_expr(node.inner.as_ref())?),
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -150,7 +150,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let hir = HirExpr::IntegerLiteral(HirIntegerLiteralExpr {
             span: node.span,
             value: node.value,
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -162,7 +162,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let hir = HirExpr::BooleanLiteral(HirBooleanLiteralExpr {
             span: node.span,
             value: node.value,
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -177,17 +177,17 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 span: node.span,
                 operand: Box::new(self.visit_expr(node.operand.as_ref())?),
                 op: self.visit_unary_op(&node.op)?,
-                ty: self.arena.get_uninitialized_ty(),
+                ty: self.arena.types().get_uninitialized_ty(),
             }),
             AstUnaryOp::Deref => HirExpr::Deref(HirDerefExpr {
                 span: node.span,
                 inner: Box::new(self.visit_expr(node.operand.as_ref())?),
-                ty: self.arena.get_uninitialized_ty(),
+                ty: self.arena.types().get_uninitialized_ty(),
             }),
             AstUnaryOp::AddressOf => HirExpr::AddressOf(HirAddressOfExpr {
                 span: node.span,
                 inner: Box::new(self.visit_expr(node.operand.as_ref())?),
-                ty: self.arena.get_uninitialized_ty(),
+                ty: self.arena.types().get_uninitialized_ty(),
             }),
         };
         Ok(hir)
@@ -199,7 +199,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             lhs: Box::new(self.visit_expr(node.lhs.as_ref())?),
             rhs: Box::new(self.visit_expr(node.rhs.as_ref())?),
             op: self.visit_binary_op(&node.op)?,
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -209,7 +209,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             span: node.span,
             origin: Box::new(self.visit_expr(node.origin.as_ref())?),
             index: self.visit_identifier(&node.index)?,
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -222,7 +222,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             span: node.span,
             origin: Box::new(self.visit_expr(node.origin.as_ref())?),
             index: Box::new(self.visit_expr(node.index.as_ref())?),
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -234,7 +234,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let hir = HirExpr::Reference(HirReferenceExpr {
             span: node.span,
             name: self.visit_identifier(&node.name)?,
-            ty: self.arena.get_uninitialized_ty(),
+            ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
     }
@@ -358,7 +358,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let return_type_annotation = node.return_type.as_ref().map(|t| *t.span());
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
-            None => self.arena.get_unit_ty(),
+            None => self.arena.types().get_unit_ty(),
         };
         let parameters = node
             .parameters
@@ -456,9 +456,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             span: node.span,
             declaration_name: name.clone(),
             ty: match node.name.name.as_str() {
-                "i32" => self.arena.get_integer32_ty(),
-                "bool" => self.arena.get_boolean_ty(),
-                "unit" => self.arena.get_unit_ty(),
+                "i32" => self.arena.types().get_integer32_ty(),
+                "bool" => self.arena.types().get_boolean_ty(),
+                "unit" => self.arena.types().get_unit_ty(),
                 _ => {
                     return Err(HirError::UnknownIntrinsicScalarType(
                         UnknownIntrinsicScalarTypeError {
@@ -519,7 +519,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             .collect::<HirResult<Vec<_>>>()?;
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
-            None => self.arena.get_unit_ty(),
+            None => self.arena.types().get_unit_ty(),
         };
         let return_type_annotation = node.return_type.as_ref().map(|t| *t.span());
         let signature = self.arena.intern(HirFunctionApiSignature {
@@ -622,7 +622,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let name = self.visit_identifier(&node.name)?;
         let ty = match &node.ty {
             Some(t) => self.visit_type(t)?,
-            None => self.arena.get_uninitialized_ty(),
+            None => self.arena.types().get_uninitialized_ty(),
         };
         let value = self.visit_expr(&node.value)?;
         let hir = HirStmt::Let(HirLetStmt {
@@ -679,7 +679,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 Ok(HirLetStmt {
                     span: i.span,
                     name: self.visit_identifier(&i.name)?,
-                    ty: self.arena.get_uninitialized_ty(),
+                    ty: self.arena.types().get_uninitialized_ty(),
                     type_annotation: None,
                     value: self.visit_expr(&i.initializer)?,
                 })
@@ -695,7 +695,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 HirExpr::BooleanLiteral(HirBooleanLiteralExpr {
                     span: Span::empty(),
                     value: true,
-                    ty: self.arena.get_uninitialized_ty(),
+                    ty: self.arena.types().get_uninitialized_ty(),
                 })
             });
         let increment = node
@@ -814,12 +814,13 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     #[allow(clippy::only_used_in_recursion)]
     pub fn visit_type(&mut self, node: &AstType) -> HirResult<&'ta HirTy<'ta>> {
         let ty = match node {
-            AstType::Unit(_) => self.arena.get_unit_ty(),
-            AstType::Integer32(_) => self.arena.get_integer32_ty(),
-            AstType::Boolean(_) => self.arena.get_boolean_ty(),
-            AstType::Named(t) => self.arena.get_nominal_ty(&self.visit_identifier(&t.name)?),
+            AstType::Unit(_) => self.arena.types().get_unit_ty(),
+            AstType::Integer32(_) => self.arena.types().get_integer32_ty(),
+            AstType::Boolean(_) => self.arena.types().get_boolean_ty(),
+            AstType::Named(t) => self.arena.types().get_nominal_ty(&self.visit_identifier(&t.name)?),
             AstType::Pointer(t) => self
                 .arena
+                .types()
                 .get_pointer_ty(self.visit_type(t.inner.as_ref())?),
         };
         Ok(ty)

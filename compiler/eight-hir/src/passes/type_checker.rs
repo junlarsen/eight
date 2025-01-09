@@ -21,6 +21,7 @@ use crate::{HirModule, HirName};
 use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{BTreeMap, HashSet, VecDeque};
+use std::fmt::Debug;
 
 #[derive(Debug)]
 pub enum Constraint<'ta> {
@@ -51,7 +52,6 @@ pub struct FieldProjectionConstraint<'ta> {
     pub resolved_type: &'ta HirTy<'ta>,
 }
 
-#[derive(Debug)]
 pub struct TypingContext<'ta> {
     arena: &'ta HirArena<'ta>,
     constraints: Vec<Constraint<'ta>>,
@@ -69,6 +69,20 @@ pub struct TypingContext<'ta> {
     module_signature: &'ta HirModuleSignature<'ta>,
 }
 
+impl<'ta> Debug for TypingContext<'ta> {
+    /// Debug implementation for TypingContext skipping the arena.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TypingContext")
+            .field("constraints", &self.constraints)
+            .field("substitutions", &self.substitutions)
+            .field("locals", &self.locals)
+            .field("local_type_parameter_substitutions", &self.local_type_parameter_substitutions)
+            .field("current_function", &self.current_function)
+            .field("module_signature", &self.module_signature)
+            .finish()
+    }
+}
+    
 impl<'ta> TypingContext<'ta> {
     pub fn new(arena: &'ta HirArena<'ta>, module_signature: &'ta HirModuleSignature<'ta>) -> Self {
         Self {
@@ -291,7 +305,7 @@ impl<'ta> TypingContext<'ta> {
 
     /// Create a fresh type variable.
     pub fn fresh_type_variable(&mut self) -> &'ta HirTy<'ta> {
-        let ty = self.arena.get_variable_ty(self.substitutions.len());
+        let ty = self.arena.types().get_variable_ty(self.substitutions.len());
         self.substitutions.push(ty);
         ty
     }
@@ -304,7 +318,7 @@ impl<'ta> TypingContext<'ta> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.arena.get_integer32_ty(),
+            self.arena.types().get_integer32_ty(),
             expr.span,
             expr.span,
         );
@@ -319,7 +333,7 @@ impl<'ta> TypingContext<'ta> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.arena.get_boolean_ty(),
+            self.arena.types().get_boolean_ty(),
             expr.span,
             expr.span,
         );
@@ -334,7 +348,7 @@ impl<'ta> TypingContext<'ta> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.arena.get_unit_ty(),
+            self.arena.types().get_unit_ty(),
             expr.span,
             *expr.lhs.span(),
         );
@@ -368,6 +382,7 @@ impl<'ta> TypingContext<'ta> {
                 .collect::<Vec<_>>();
             let ty = self
                 .arena
+                .types()
                 .get_function_ty(signature.return_type, parameters);
             self.constrain_eq(expectation, ty, expr.span, expr.name.span);
             return Ok(());
@@ -390,7 +405,7 @@ impl<'ta> TypingContext<'ta> {
             .map(|p| HirModuleTypeCheckerPass::visit_type(self, p.ty))
             .collect::<HirResult<Vec<_>>>()?;
         let return_type = HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
-        let ty = self.arena.get_function_ty(return_type, parameters);
+        let ty = self.arena.types().get_function_ty(return_type, parameters);
         self.constrain_eq(expectation, ty, expr.span, expr.name.span);
         Ok(())
     }
@@ -403,13 +418,13 @@ impl<'ta> TypingContext<'ta> {
     ) -> HirResult<()> {
         // The index must be an integer type
         self.constrain_eq(
-            self.arena.get_integer32_ty(),
+            self.arena.types().get_integer32_ty(),
             expr.index.ty(),
             expr.span,
             *expr.index.span(),
         );
         // The origin must be a pointer of the element type
-        let elem_ptr_ty = self.arena.get_pointer_ty(expectation);
+        let elem_ptr_ty = self.arena.types().get_pointer_ty(expectation);
         self.constrain_eq(
             elem_ptr_ty,
             expr.origin.ty(),
@@ -439,7 +454,7 @@ impl<'ta> TypingContext<'ta> {
         expectation: &'ta HirTy<'ta>,
     ) -> HirResult<()> {
         let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
-        let expected_signature = self.arena.get_function_ty(expectation, expected_args);
+        let expected_signature = self.arena.types().get_function_ty(expectation, expected_args);
         self.unify_eq(EqualityConstraint {
             expected: expected_signature,
             actual: expr.callee.ty(),
@@ -523,7 +538,7 @@ impl<'ta> TypingContext<'ta> {
         expectation: &'ta HirTy<'ta>,
     ) -> HirResult<()> {
         // &a means that e is *inner, and expectation is *inner
-        let result_ty = self.arena.get_pointer_ty(expr.inner.ty());
+        let result_ty = self.arena.types().get_pointer_ty(expr.inner.ty());
         self.constrain_eq(expectation, result_ty, expr.span, *expr.inner.span());
         self.constrain_eq(expr.ty, result_ty, expr.span, *expr.inner.span());
         Ok(())
@@ -536,7 +551,7 @@ impl<'ta> TypingContext<'ta> {
         expectation: &'ta HirTy<'ta>,
     ) -> HirResult<()> {
         // *a means inner is a pointer type, and expected and e are unbox inner
-        let inner_ptr = self.arena.get_pointer_ty(expectation);
+        let inner_ptr = self.arena.types().get_pointer_ty(expectation);
         self.constrain_eq(expr.inner.ty(), inner_ptr, expr.span, *expr.inner.span());
         self.constrain_eq(expr.ty, expectation, expr.span, *expr.inner.span());
         Ok(())
@@ -606,12 +621,12 @@ impl<'ta> TypingContext<'ta> {
                     .map(|p| self.substitute(p))
                     .collect::<HirResult<Vec<_>>>()?;
                 let return_type = self.substitute(f.return_type)?;
-                Ok(self.arena.get_function_ty(return_type, parameters))
+                Ok(self.arena.types().get_function_ty(return_type, parameters))
             }
             // We substitute pointer types by substituting the inner type
             HirTy::Pointer(p) => {
                 let inner = self.substitute(p.inner)?;
-                Ok(self.arena.get_pointer_ty(inner))
+                Ok(self.arena.types().get_pointer_ty(inner))
             }
             // Anything else is not a type variable or a constructor type, so there is nothing to
             // be done here.
@@ -745,7 +760,7 @@ impl HirModuleTypeCheckerPass {
 
         // Push the function's type onto the current stack, so that return statements can be checked
         // against the expected return type.
-        let HirTy::Function(self_ty) = cx.arena.get_function_ty(
+        let HirTy::Function(self_ty) = cx.arena.types().get_function_ty(
             node.instantiated_return_type
                 .unwrap_or_else(|| ice!("freshly built return type was missing")),
             node.instantiated_parameters.values().copied().collect(),
@@ -882,7 +897,7 @@ impl HirModuleTypeCheckerPass {
             .map(|p| Self::visit_type(cx, p))
             .collect::<HirResult<Vec<_>>>()?;
         let return_type = Self::visit_type(cx, node.return_type)?;
-        Ok(cx.arena.get_function_ty(return_type, parameters))
+        Ok(cx.arena.types().get_function_ty(return_type, parameters))
     }
 
     /// Visit a pointer type.
@@ -891,7 +906,7 @@ impl HirModuleTypeCheckerPass {
         node: &'ta HirPointerTy<'ta>,
     ) -> HirResult<&'ta HirTy<'ta>> {
         let inner = Self::visit_type(cx, node.inner)?;
-        Ok(cx.arena.get_pointer_ty(inner))
+        Ok(cx.arena.types().get_pointer_ty(inner))
     }
 
     /// Collect type constraints for an expression.
@@ -1284,7 +1299,7 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         Self::enter_expr(cx, &mut node.condition)?;
         // We also impose a new constraint that the condition must be a boolean
-        cx.infer(&mut node.condition, cx.arena.get_boolean_ty())?;
+        cx.infer(&mut node.condition, cx.arena.types().get_boolean_ty())?;
         cx.locals.enter_scope();
         for stmt in node.body.iter_mut() {
             Self::enter_stmt(cx, stmt)?;
@@ -1365,7 +1380,7 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         Self::enter_expr(cx, &mut node.condition)?;
         // We also impose a new constraint that the condition must be a boolean
-        cx.infer(&mut node.condition, cx.arena.get_boolean_ty())?;
+        cx.infer(&mut node.condition, cx.arena.types().get_boolean_ty())?;
 
         // Traverse down the happy path
         cx.locals.enter_scope();

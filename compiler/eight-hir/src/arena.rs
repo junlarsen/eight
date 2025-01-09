@@ -7,63 +7,80 @@ use bumpalo::Bump;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-/// A type arena for Hir types.
+/// An arena allocator for Hir nodes.
 ///
-/// In order to avoid duplication of types, we use an arena allocator to allocate the types. This
-/// arena acts as a cache for the types, meaning we can look up types from the arena by their ID
-/// or characteristics.
+/// For memory efficiency, we intern a number of nodes in the Hir.
 ///
 /// It also simplifies comparison of types to pointer equality.
-#[derive(Debug)]
-pub struct HirArena<'a> {
-    allocator: &'a Bump,
-    interned_types: RefCell<HashMap<HirTyId, &'a HirTy<'a>>>,
-}
-
-impl<'a> HirArena<'a> {
-    pub fn intern<T>(&self, v: T) -> &'a mut T {
-        self.allocator.alloc(v)
-    }
+pub struct HirArena<'arena> {
+    allocator: &'arena Bump,
+    type_arena: TypeArena<'arena>,
 }
 
 impl<'arena> HirArena<'arena> {
     pub fn new(bump: &'arena Bump) -> Self {
         Self {
             allocator: bump,
-            interned_types: RefCell::new(HashMap::new()),
+            type_arena: TypeArena::new(bump),
+        }
+    }
+
+    pub fn intern<T>(&self, v: T) -> &'arena mut T {
+        self.allocator.alloc(v)
+    }
+
+    pub fn types(&self) -> &TypeArena<'arena> {
+        &self.type_arena
+    }
+}
+
+/// An arena and interner for the HIR types.
+///
+/// Because types are duplicated in a lot of nodes (for example, all Expr nodes have a type), we
+/// want to save memory by interning the types instead.
+///
+/// This uses a RefCell because we don't want to impose a mutable borrow on the arena when getting
+/// types from the interner.
+///
+/// This is safe because each type is only ever produced once by the interner, so two mutable
+/// borrows of the RefCell is never possible.
+pub struct TypeArena<'arena> {
+    allocator: &'arena Bump,
+    intern: RefCell<HashMap<HirTyId, &'arena HirTy<'arena>>>,
+}
+
+impl<'arena> TypeArena<'arena> {
+    pub fn new(bump: &'arena Bump) -> Self {
+        Self {
+            allocator: bump,
+            intern: RefCell::new(HashMap::new()),
         }
     }
 
     /// Get a type from the arena.
     pub fn get_type(&self, id: HirTyId) -> Option<&HirTy> {
-        self.interned_types.borrow().get(&id).copied()
+        self.intern.borrow().get(&id).copied()
     }
 
     pub fn get_pointer_ty(&self, ty: &'arena HirTy) -> &HirTy {
         let id = HirTyId::compute_pointer_ty_id(&HirTyId::from(ty));
-        self.interned_types
-            .borrow_mut()
-            .entry(id)
-            .or_insert_with(|| {
-                self.allocator
-                    .alloc(HirTy::Pointer(HirPointerTy { inner: ty }))
-            })
+        self.intern.borrow_mut().entry(id).or_insert_with(|| {
+            self.allocator
+                .alloc(HirTy::Pointer(HirPointerTy { inner: ty }))
+        })
     }
 
     pub fn get_nominal_ty(&self, name: &HirName) -> &HirTy {
         let id = HirTyId::compute_nominal_ty_id(name.name.as_str());
-        self.interned_types
-            .borrow_mut()
-            .entry(id)
-            .or_insert_with(|| {
-                self.allocator
-                    .alloc(HirTy::Nominal(HirNominalTy { name: name.clone() }))
-            })
+        self.intern.borrow_mut().entry(id).or_insert_with(|| {
+            self.allocator
+                .alloc(HirTy::Nominal(HirNominalTy { name: name.clone() }))
+        })
     }
 
     pub fn get_integer32_ty(&self) -> &HirTy {
         let id = HirTyId::compute_integer32_ty_id();
-        self.interned_types
+        self.intern
             .borrow_mut()
             .entry(id)
             .or_insert_with(|| self.allocator.alloc(HirTy::Integer32(HirInteger32Ty {})))
@@ -71,7 +88,7 @@ impl<'arena> HirArena<'arena> {
 
     pub fn get_boolean_ty(&self) -> &HirTy {
         let id = HirTyId::compute_boolean_ty_id();
-        self.interned_types
+        self.intern
             .borrow_mut()
             .entry(id)
             .or_insert_with(|| self.allocator.alloc(HirTy::Boolean(HirBooleanTy {})))
@@ -79,7 +96,7 @@ impl<'arena> HirArena<'arena> {
 
     pub fn get_unit_ty(&self) -> &HirTy {
         let id = HirTyId::compute_unit_ty_id();
-        self.interned_types
+        self.intern
             .borrow_mut()
             .entry(id)
             .or_insert_with(|| self.allocator.alloc(HirTy::Unit(HirUnitTy {})))
@@ -87,18 +104,15 @@ impl<'arena> HirArena<'arena> {
 
     pub fn get_uninitialized_ty(&self) -> &HirTy {
         let id = HirTyId::compute_uninitialized_ty_id();
-        self.interned_types
-            .borrow_mut()
-            .entry(id)
-            .or_insert_with(|| {
-                self.allocator
-                    .alloc(HirTy::Uninitialized(HirUninitializedTy {}))
-            })
+        self.intern.borrow_mut().entry(id).or_insert_with(|| {
+            self.allocator
+                .alloc(HirTy::Uninitialized(HirUninitializedTy {}))
+        })
     }
 
     pub fn get_variable_ty(&self, var: usize) -> &HirTy {
         let id = HirTyId::compute_variable_ty_id(var);
-        self.interned_types
+        self.intern
             .borrow_mut()
             .entry(id)
             .or_insert_with(|| self.allocator.alloc(HirTy::Variable(HirVariableTy { var })))
@@ -115,14 +129,11 @@ impl<'arena> HirArena<'arena> {
             .collect::<Vec<_>>();
         let return_type_id = HirTyId::from(return_type);
         let id = HirTyId::compute_function_ty_id(&return_type_id, parameter_ids.as_slice());
-        self.interned_types
-            .borrow_mut()
-            .entry(id)
-            .or_insert_with(|| {
-                self.allocator.alloc(HirTy::Function(HirFunctionTy {
-                    return_type,
-                    parameters,
-                }))
-            })
+        self.intern.borrow_mut().entry(id).or_insert_with(|| {
+            self.allocator.alloc(HirTy::Function(HirFunctionTy {
+                return_type,
+                parameters,
+            }))
+        })
     }
 }
