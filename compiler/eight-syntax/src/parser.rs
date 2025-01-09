@@ -813,13 +813,14 @@ impl Parser<'_> {
         let lhs = self.parse_logical_and_expr()?;
 
         if self.lookahead_check(&TokenType::LogicalOr)? {
-            self.check(&TokenType::LogicalOr)?;
+            let op_token = self.check(&TokenType::LogicalOr)?;
             let rhs = self.parse_logical_or_expr()?;
             let node = AstBinaryOpExpr {
                 span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
                 op: AstBinaryOp::Or,
+                op_span: op_token.span,
             };
             return Ok(AstExpr::BinaryOp(node));
         };
@@ -836,13 +837,14 @@ impl Parser<'_> {
         let lhs = self.parse_comparison_expr()?;
 
         if self.lookahead_check(&TokenType::LogicalAnd)? {
-            self.check(&TokenType::LogicalAnd)?;
+            let op_token = self.check(&TokenType::LogicalAnd)?;
             let rhs = self.parse_logical_and_expr()?;
             let node = AstBinaryOpExpr {
                 span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
                 op: AstBinaryOp::And,
+                op_span: op_token.span,
             };
             return Ok(AstExpr::BinaryOp(node));
         };
@@ -881,6 +883,7 @@ impl Parser<'_> {
                 span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
+                op_span: tok.span,
                 op,
             };
             return Ok(AstExpr::BinaryOp(node));
@@ -912,6 +915,7 @@ impl Parser<'_> {
                 span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
+                op_span: tok.span,
                 op,
             };
             return Ok(AstExpr::BinaryOp(node));
@@ -945,6 +949,7 @@ impl Parser<'_> {
                 span: Span::from_pair(lhs.span(), rhs.span()),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
+                op_span: tok.span,
                 op,
             };
             return Ok(AstExpr::BinaryOp(node));
@@ -970,6 +975,7 @@ impl Parser<'_> {
                     span: Span::from_pair(&op.span, rhs.span()),
                     operand: Box::new(rhs),
                     op: AstUnaryOp::Neg,
+                    op_span: op.span,
                 };
                 Ok(AstExpr::UnaryOp(node))
             }
@@ -980,6 +986,7 @@ impl Parser<'_> {
                     span: Span::from_pair(&op.span, rhs.span()),
                     operand: Box::new(rhs),
                     op: AstUnaryOp::Not,
+                    op_span: op.span,
                 };
                 Ok(AstExpr::UnaryOp(node))
             }
@@ -990,6 +997,7 @@ impl Parser<'_> {
                     span: Span::from_pair(&op.span, rhs.span()),
                     operand: Box::new(rhs),
                     op: AstUnaryOp::Deref,
+                    op_span: op.span,
                 };
                 Ok(AstExpr::UnaryOp(node))
             }
@@ -1000,6 +1008,7 @@ impl Parser<'_> {
                     span: Span::from_pair(&op.span, rhs.span()),
                     operand: Box::new(rhs),
                     op: AstUnaryOp::AddressOf,
+                    op_span: op.span,
                 };
                 Ok(AstExpr::UnaryOp(node))
             }

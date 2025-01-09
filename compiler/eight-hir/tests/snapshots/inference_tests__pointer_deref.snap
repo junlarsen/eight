@@ -24,10 +24,10 @@ hir_module {
   
   defining {
     // module functions
-    fn address_of<>(i32) -> unit {
+    fn address_of<>(a: i32) -> unit {
       let k: *i32 = (&(1 as i32) as *i32);
     }
-    fn deref<>(i32, **i32) -> unit {
+    fn deref<>(a: i32, b: **i32) -> unit {
       let m: i32 = (*(*(b as **i32) as *i32) as i32);
     }
     // module intrinsic functions

@@ -20,6 +20,9 @@ declare_error_type! {
         DuplicateField(DuplicateFieldError),
         MissingField(MissingFieldError),
         UnknownIntrinsicScalarType(UnknownIntrinsicScalarTypeError),
+        TraitInstanceMissingFn(TraitInstanceMissingFnError),
+        TraitDoesNotExist(TraitDoesNotExistError),
+        TraitMissingInstance(TraitMissingInstanceError),
     }
 }
 
@@ -159,5 +162,34 @@ pub struct MissingFieldError {
 pub struct UnknownIntrinsicScalarTypeError {
     pub name: String,
     #[label = "unknown intrinsic scalar type {name}"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::trait_instance_missing_fn))]
+#[error("trait instance {name} does not derive method {method}")]
+pub struct TraitInstanceMissingFnError {
+    pub name: String,
+    pub method: String,
+    #[label = "trait instance {name} does not derive method {method}"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::trait_does_not_exist))]
+#[error("trait {name} does not exist")]
+pub struct TraitDoesNotExistError {
+    pub name: String,
+    #[label = "required trait {name} to exist"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::trait_missing_instance))]
+#[error("trait {name} does not have instance {instance_name}")]
+pub struct TraitMissingInstanceError {
+    pub instance_name: String,
+    pub name: String,
+    #[label = "required instance {instance_name} for trait {name}"]
     pub span: Span,
 }

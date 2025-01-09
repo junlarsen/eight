@@ -23,7 +23,7 @@ hir_module {
   
   defining {
     // module functions
-    fn test<>(*i32) -> unit {
+    fn test<>(v: *i32) -> unit {
       let k: i32 = ((v as *i32)[(0 as i32)] as i32);
       let q: i32 = ((v as *i32)[(k as i32)] as i32);
     }

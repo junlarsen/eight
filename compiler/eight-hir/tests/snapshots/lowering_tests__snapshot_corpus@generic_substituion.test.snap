@@ -24,7 +24,7 @@ hir_module {
   
   defining {
     // module functions
-    fn substitute<T, U, V>(a, b, c, d) -> V {
+    fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V {
       return (d as _);
     }
     // module intrinsic functions

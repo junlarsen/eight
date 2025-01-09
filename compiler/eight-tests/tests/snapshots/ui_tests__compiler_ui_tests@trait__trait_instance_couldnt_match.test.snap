@@ -1,0 +1,24 @@
+---
+source: compiler/eight-tests/tests/ui_tests.rs
+info:
+  program: eightc
+  args:
+    - tests/ui/trait/trait_instance_couldnt_match.test
+input_file: compiler/eight-tests/tests/ui/trait/trait_instance_couldnt_match.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::trait_missing_instance
+
+  × trait Neg does not have instance Neg<bool, bool>
+    ╭─[tests/ui/trait/trait_instance_couldnt_match.test:12:10]
+ 11 │ fn test(a: bool) -> bool {
+ 12 │   return -a;
+    ·          ┬
+    ·          ╰── required instance Neg<bool, bool> for trait Neg
+ 13 │ }
+    ╰────

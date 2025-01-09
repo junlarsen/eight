@@ -264,6 +264,7 @@ pub struct AstBinaryOpExpr {
     pub lhs: Box<AstExpr>,
     pub rhs: Box<AstExpr>,
     pub op: AstBinaryOp,
+    pub op_span: Span,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -272,6 +273,7 @@ pub struct AstUnaryOpExpr {
     pub span: Span,
     pub operand: Box<AstExpr>,
     pub op: AstUnaryOp,
+    pub op_span: Span,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

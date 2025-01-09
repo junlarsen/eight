@@ -177,6 +177,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 span: node.span,
                 operand: Box::new(self.visit_expr(node.operand.as_ref())?),
                 op: self.visit_unary_op(&node.op)?,
+                op_span: node.op_span,
                 ty: self.arena.types().get_uninitialized_ty(),
             }),
             AstUnaryOp::Deref => HirExpr::Deref(HirDerefExpr {
@@ -199,6 +200,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             lhs: Box::new(self.visit_expr(node.lhs.as_ref())?),
             rhs: Box::new(self.visit_expr(node.rhs.as_ref())?),
             op: self.visit_binary_op(&node.op)?,
+            op_span: node.op_span,
             ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)

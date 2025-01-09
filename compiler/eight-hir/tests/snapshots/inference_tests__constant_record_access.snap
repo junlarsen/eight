@@ -25,7 +25,7 @@ hir_module {
   
   defining {
     // module functions
-    fn test<>(Agent) -> unit {
+    fn test<>(agent: Agent) -> unit {
       let z: i32 = ((agent as Agent).name as i32);
     }
     // module intrinsic functions

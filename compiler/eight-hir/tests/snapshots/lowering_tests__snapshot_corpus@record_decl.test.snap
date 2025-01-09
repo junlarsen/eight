@@ -28,7 +28,7 @@ hir_module {
   
   defining {
     // module functions
-    fn append<>(node, value) -> unit {
+    fn append<>(node: Node, value: i32) -> unit {
       {
         let curr: _ = (node as _);
         while ((((curr as _).next as _) != (0 as _) as _)) {
@@ -40,7 +40,7 @@ hir_module {
       (((node as _).next as _) = (0 as _) as _);
       (((curr as _).next as _) = (node as _) as _);
     }
-    fn prepend<>(node, value) -> Node {
+    fn prepend<>(node: Node, value: i32) -> Node {
       return (new Node {
         value: (value as _),
         next: (node as _),

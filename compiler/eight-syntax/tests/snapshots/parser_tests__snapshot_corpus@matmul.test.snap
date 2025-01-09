@@ -376,8 +376,16 @@ AstTranslationUnit(
                           value: 4,
                         )),
                         op: Mul,
+                        op_span: Span(
+                          low: 185,
+                          high: 186,
+                        ),
                       )),
                       op: Mul,
+                      op_span: Span(
+                        low: 179,
+                        high: 180,
+                      ),
                     )),
                   ],
                   type_arguments: [],
@@ -456,6 +464,10 @@ AstTranslationUnit(
               ),
             )),
             op: Lt,
+            op_span: Span(
+              low: 217,
+              high: 218,
+            ),
           ))),
           increment: Some(Assign(AstAssignExpr(
             span: Span(
@@ -501,6 +513,10 @@ AstTranslationUnit(
                 value: 1,
               )),
               op: Add,
+              op_span: Span(
+                low: 230,
+                high: 231,
+              ),
             )),
           ))),
           body: [
@@ -574,6 +590,10 @@ AstTranslationUnit(
                   ),
                 )),
                 op: Lt,
+                op_span: Span(
+                  low: 259,
+                  high: 260,
+                ),
               ))),
               increment: Some(Assign(AstAssignExpr(
                 span: Span(
@@ -619,6 +639,10 @@ AstTranslationUnit(
                     value: 1,
                   )),
                   op: Add,
+                  op_span: Span(
+                    low: 272,
+                    high: 273,
+                  ),
                 )),
               ))),
               body: [
@@ -713,6 +737,10 @@ AstTranslationUnit(
                       ),
                     )),
                     op: Lt,
+                    op_span: Span(
+                      low: 322,
+                      high: 323,
+                    ),
                   ))),
                   increment: Some(Assign(AstAssignExpr(
                     span: Span(
@@ -758,6 +786,10 @@ AstTranslationUnit(
                         value: 1,
                       )),
                       op: Add,
+                      op_span: Span(
+                        low: 335,
+                        high: 336,
+                      ),
                     )),
                   ))),
                   body: [
@@ -888,6 +920,10 @@ AstTranslationUnit(
                                     ),
                                   )),
                                   op: Mul,
+                                  op_span: Span(
+                                    low: 370,
+                                    high: 371,
+                                  ),
                                 )),
                                 rhs: Reference(AstReferenceExpr(
                                   span: Span(
@@ -903,6 +939,10 @@ AstTranslationUnit(
                                   ),
                                 )),
                                 op: Add,
+                                op_span: Span(
+                                  low: 376,
+                                  high: 377,
+                                ),
                               )),
                             )),
                             rhs: BracketIndex(AstBracketIndexExpr(
@@ -986,6 +1026,10 @@ AstTranslationUnit(
                                     ),
                                   )),
                                   op: Mul,
+                                  op_span: Span(
+                                    low: 391,
+                                    high: 392,
+                                  ),
                                 )),
                                 rhs: Reference(AstReferenceExpr(
                                   span: Span(
@@ -1001,11 +1045,23 @@ AstTranslationUnit(
                                   ),
                                 )),
                                 op: Add,
+                                op_span: Span(
+                                  low: 397,
+                                  high: 398,
+                                ),
                               )),
                             )),
                             op: Mul,
+                            op_span: Span(
+                              low: 381,
+                              high: 382,
+                            ),
                           )),
                           op: Add,
+                          op_span: Span(
+                            low: 360,
+                            high: 361,
+                          ),
                         )),
                       )),
                     )),
@@ -1102,6 +1158,10 @@ AstTranslationUnit(
                             ),
                           )),
                           op: Mul,
+                          op_span: Span(
+                            low: 425,
+                            high: 426,
+                          ),
                         )),
                         rhs: Reference(AstReferenceExpr(
                           span: Span(
@@ -1117,6 +1177,10 @@ AstTranslationUnit(
                           ),
                         )),
                         op: Add,
+                        op_span: Span(
+                          low: 431,
+                          high: 432,
+                        ),
                       )),
                     )),
                     rhs: Reference(AstReferenceExpr(

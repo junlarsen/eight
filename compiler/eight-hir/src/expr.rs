@@ -89,6 +89,7 @@ pub struct HirUnaryOpExpr<'ta> {
     pub span: Span,
     pub operand: Box<HirExpr<'ta>>,
     pub op: HirUnaryOp,
+    pub op_span: Span,
     pub ty: &'ta HirTy<'ta>,
 }
 
@@ -99,6 +100,7 @@ pub struct HirBinaryOpExpr<'ta> {
     pub lhs: Box<HirExpr<'ta>>,
     pub rhs: Box<HirExpr<'ta>>,
     pub op: HirBinaryOp,
+    pub op_span: Span,
     pub ty: &'ta HirTy<'ta>,
 }
 

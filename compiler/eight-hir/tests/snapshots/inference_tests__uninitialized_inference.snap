@@ -23,7 +23,7 @@ hir_module {
   
   defining {
     // module functions
-    fn foo<>(i32) -> i32 {
+    fn foo<>(x: i32) -> i32 {
       let k: i32 = (((123 as i32)) as i32);
     }
     // module intrinsic functions

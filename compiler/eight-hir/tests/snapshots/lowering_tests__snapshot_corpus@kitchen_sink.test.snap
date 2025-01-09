@@ -30,7 +30,7 @@ hir_module {
   
   defining {
     // module functions
-    fn matrix_matrix_multiply<>(a, b) -> Matrix {
+    fn matrix_matrix_multiply<>(a: Matrix, b: Matrix) -> Matrix {
       if ((((a as _).r as _) != ((b as _).c as _) as _)){
         ((panic as _)::<>() as _);
       } else {

@@ -123,6 +123,10 @@ AstTranslationUnit(
               ),
             )),
             op: Lt,
+            op_span: Span(
+              low: 49,
+              high: 50,
+            ),
           )),
           happy_path: [
             Let(AstLetStmt(
@@ -276,6 +280,10 @@ AstTranslationUnit(
                       value: 1,
                     )),
                     op: Sub,
+                    op_span: Span(
+                      low: 112,
+                      high: 113,
+                    ),
                   )),
                 ],
                 type_arguments: [],
@@ -344,6 +352,10 @@ AstTranslationUnit(
                       value: 1,
                     )),
                     op: Add,
+                    op_span: Span(
+                      low: 138,
+                      high: 139,
+                    ),
                   )),
                   Reference(AstReferenceExpr(
                     span: Span(
@@ -537,6 +549,10 @@ AstTranslationUnit(
               value: 1,
             )),
             op: Sub,
+            op_span: Span(
+              low: 231,
+              high: 232,
+            ),
           )),
         )),
         For(AstForStmt(
@@ -602,6 +618,10 @@ AstTranslationUnit(
               ),
             )),
             op: Lt,
+            op_span: Span(
+              low: 256,
+              high: 257,
+            ),
           ))),
           increment: Some(Assign(AstAssignExpr(
             span: Span(
@@ -647,6 +667,10 @@ AstTranslationUnit(
                 value: 1,
               )),
               op: Add,
+              op_span: Span(
+                low: 267,
+                high: 268,
+              ),
             )),
           ))),
           body: [
@@ -706,6 +730,10 @@ AstTranslationUnit(
                   ),
                 )),
                 op: Lte,
+                op_span: Span(
+                  low: 288,
+                  high: 290,
+                ),
               )),
               happy_path: [
                 Expr(AstExprStmt(
@@ -757,6 +785,10 @@ AstTranslationUnit(
                         value: 1,
                       )),
                       op: Add,
+                      op_span: Span(
+                        low: 308,
+                        high: 309,
+                      ),
                     )),
                   )),
                 )),
@@ -822,6 +854,10 @@ AstTranslationUnit(
                           )),
                         )),
                         op: AddressOf,
+                        op_span: Span(
+                          low: 324,
+                          high: 325,
+                        ),
                       )),
                       UnaryOp(AstUnaryOpExpr(
                         span: Span(
@@ -861,6 +897,10 @@ AstTranslationUnit(
                           )),
                         )),
                         op: AddressOf,
+                        op_span: Span(
+                          low: 332,
+                          high: 333,
+                        ),
                       )),
                     ],
                     type_arguments: [],
@@ -944,9 +984,17 @@ AstTranslationUnit(
                       value: 1,
                     )),
                     op: Add,
+                    op_span: Span(
+                      low: 364,
+                      high: 365,
+                    ),
                   )),
                 )),
                 op: AddressOf,
+                op_span: Span(
+                  low: 358,
+                  high: 359,
+                ),
               )),
               UnaryOp(AstUnaryOpExpr(
                 span: Span(
@@ -986,6 +1034,10 @@ AstTranslationUnit(
                   )),
                 )),
                 op: AddressOf,
+                op_span: Span(
+                  low: 370,
+                  high: 371,
+                ),
               )),
             ],
             type_arguments: [],
@@ -1022,6 +1074,10 @@ AstTranslationUnit(
               value: 1,
             )),
             op: Add,
+            op_span: Span(
+              low: 390,
+              high: 391,
+            ),
           ))),
         )),
       ],
@@ -1125,6 +1181,10 @@ AstTranslationUnit(
               ),
             )),
             op: Deref,
+            op_span: Span(
+              low: 438,
+              high: 439,
+            ),
           )),
         )),
         Expr(AstExprStmt(
@@ -1156,6 +1216,10 @@ AstTranslationUnit(
                 ),
               )),
               op: Deref,
+              op_span: Span(
+                low: 444,
+                high: 445,
+              ),
             )),
             rhs: UnaryOp(AstUnaryOpExpr(
               span: Span(
@@ -1176,6 +1240,10 @@ AstTranslationUnit(
                 ),
               )),
               op: Deref,
+              op_span: Span(
+                low: 449,
+                high: 450,
+              ),
             )),
           )),
         )),
@@ -1208,6 +1276,10 @@ AstTranslationUnit(
                 ),
               )),
               op: Deref,
+              op_span: Span(
+                low: 455,
+                high: 456,
+              ),
             )),
             rhs: Reference(AstReferenceExpr(
               span: Span(

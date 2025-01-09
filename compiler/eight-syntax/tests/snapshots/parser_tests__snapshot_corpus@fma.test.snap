@@ -236,6 +236,10 @@ AstTranslationUnit(
                         value: 4,
                       )),
                       op: Div,
+                      op_span: Span(
+                        low: 135,
+                        high: 136,
+                      ),
                     )),
                   ],
                   type_arguments: [],
@@ -307,8 +311,16 @@ AstTranslationUnit(
                 value: 4,
               )),
               op: Div,
+              op_span: Span(
+                low: 172,
+                high: 173,
+              ),
             )),
             op: Lt,
+            op_span: Span(
+              low: 166,
+              high: 167,
+            ),
           ))),
           increment: Some(Assign(AstAssignExpr(
             span: Span(
@@ -354,6 +366,10 @@ AstTranslationUnit(
                 value: 1,
               )),
               op: Add,
+              op_span: Span(
+                low: 183,
+                high: 184,
+              ),
             )),
           ))),
           body: [
@@ -513,6 +529,10 @@ AstTranslationUnit(
                       )),
                     )),
                     op: Mul,
+                    op_span: Span(
+                      low: 213,
+                      high: 214,
+                    ),
                   )),
                   rhs: BracketIndex(AstBracketIndexExpr(
                     span: Span(
@@ -560,6 +580,10 @@ AstTranslationUnit(
                     )),
                   )),
                   op: Add,
+                  op_span: Span(
+                    low: 223,
+                    high: 224,
+                  ),
                 )),
               )),
             )),

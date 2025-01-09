@@ -3,7 +3,8 @@ use crate::context::LocalContext;
 use crate::error::{
     FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
     InvalidReferenceError, InvalidStructFieldReferenceError, MissingFieldError,
-    SelfReferentialTypeError, TypeFieldInfiniteRecursionError, TypeMismatchError,
+    SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
+    TraitMissingInstanceError, TypeFieldInfiniteRecursionError, TypeMismatchError,
     UnknownFieldError, UnknownTypeError,
 };
 use crate::expr::{
@@ -23,6 +24,7 @@ use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
+use std::path::Display;
 
 #[derive(Debug)]
 pub enum Constraint<'ta> {
@@ -59,15 +61,10 @@ pub struct FieldProjectionConstraint<'ta> {
 ///
 /// This constraint requires that there exists an instance of trait `name` that for the given types
 /// `type_arguments`.
-///
-/// TODO: `name` and `method` should be HirName, but right now the compiler magically inserts these
-///   trait constraints without accompanying syntax.
-///
-/// TODO: Split this into two constraints, one for the trait, and one for the method
 #[derive(Debug)]
 pub struct InstanceConstraint<'ta> {
-    pub name: String,
-    pub method: String,
+    pub name: HirName,
+    pub method: HirName,
     pub type_arguments: Vec<&'ta HirTy<'ta>>,
     /// The expectation for the instance method's return type.
     pub resolved_type: &'ta HirTy<'ta>,
@@ -174,8 +171,8 @@ impl<'ta> TypingContext<'ta> {
     /// Imply a new instance constraint
     pub fn constrain_instance(
         &mut self,
-        name: String,
-        method: String,
+        name: HirName,
+        method: HirName,
         type_arguments: Vec<&'ta HirTy<'ta>>,
         resolved_type: &'ta HirTy<'ta>,
     ) {
@@ -273,21 +270,50 @@ impl<'ta> TypingContext<'ta> {
     ) -> HirResult<()> {
         let _ = self
             .module_signature
-            .get_trait(&name)
-            .unwrap_or_else(|| ice!(format!("trait {} not found", name)));
+            .get_trait(&name.name)
+            .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
+                name: name.name.to_owned(),
+                span: name.span,
+            }))?;
         let substitutions = type_arguments
             .iter()
             .map(|t| self.substitute(t))
             .collect::<HirResult<Vec<_>>>()?;
         let instance = self
             .module_query_db
-            .query_trait_instance_by_name_and_type_arguments(&name, substitutions.as_slice())
-            .unwrap_or_else(|| ice!(format!("instance {} not found", name)));
+            .query_trait_instance_by_name_and_type_arguments(&name.name, substitutions.as_slice())
+            .ok_or(HirError::TraitMissingInstance(TraitMissingInstanceError {
+                instance_name: format!(
+                    "{}<{}>",
+                    name.name,
+                    substitutions
+                        .iter()
+                        .map(|s| format!("{}", s))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ),
+                name: name.name.to_owned(),
+                span: name.span,
+            }))?;
 
         let method = instance
             .methods
-            .get(&method)
-            .unwrap_or_else(|| ice!(format!("method {} not found", method)));
+            .get(&method.name)
+            .ok_or(HirError::TraitInstanceMissingFn(
+                TraitInstanceMissingFnError {
+                    name: format!(
+                        "{}<{}>",
+                        name.name,
+                        substitutions
+                            .iter()
+                            .map(|s| format!("{}", s))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ),
+                    method: method.name.to_owned(),
+                    span: method.span,
+                },
+            ))?;
         let constraint = EqualityConstraint {
             expected: resolved_type,
             actual: method.return_type,
@@ -691,14 +717,6 @@ impl<'ta> TypingContext<'ta> {
     /// ```text
     /// Neg::neg<expr.ty, expectation>
     /// ```
-    ///
-    /// This happens to use the same trait for both i32 and bool, but that's mostly because they are
-    /// the same operation just using different syntax.
-    ///
-    /// ```text
-    /// !true -> Neg::neg::<bool, bool>(true)
-    /// -123 -> Neg::neg<i32, i32>(123)
-    /// ```
     pub fn infer_unary_op_expr(
         &mut self,
         expr: &mut HirUnaryOpExpr<'ta>,
@@ -707,14 +725,26 @@ impl<'ta> TypingContext<'ta> {
         self.constrain_eq(expr.ty, expectation, expr.span, *expr.operand.span());
         match &expr.op {
             HirUnaryOp::Not => self.constrain_instance(
-                "Neg".to_owned(),
-                "neg".to_owned(),
+                HirName {
+                    name: "Not".to_owned(),
+                    span: expr.op_span,
+                },
+                HirName {
+                    name: "not".to_owned(),
+                    span: expr.op_span,
+                },
                 vec![expr.operand.ty(), expectation],
                 expectation,
             ),
             HirUnaryOp::Neg => self.constrain_instance(
-                "Neg".to_owned(),
-                "neg".to_owned(),
+                HirName {
+                    name: "Neg".to_owned(),
+                    span: expr.op_span,
+                },
+                HirName {
+                    name: "neg".to_owned(),
+                    span: expr.op_span,
+                },
                 vec![expr.operand.ty(), expectation],
                 expectation,
             ),
