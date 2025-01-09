@@ -110,12 +110,12 @@ impl<'arena> TypeArena<'arena> {
         })
     }
 
-    pub fn get_variable_ty(&self, var: usize) -> &HirTy {
-        let id = HirTyId::compute_variable_ty_id(var);
-        self.intern
-            .borrow_mut()
-            .entry(id)
-            .or_insert_with(|| self.allocator.alloc(HirTy::Variable(HirVariableTy { var })))
+    pub fn get_variable_ty(&self, depth: u32, index: u32) -> &HirTy {
+        let id = HirTyId::compute_variable_ty_id(depth, index);
+        self.intern.borrow_mut().entry(id).or_insert_with(|| {
+            self.allocator
+                .alloc(HirTy::Variable(HirVariableTy { depth, index }))
+        })
     }
 
     pub fn get_function_ty(

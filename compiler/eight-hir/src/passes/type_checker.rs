@@ -16,11 +16,11 @@ use crate::signature::HirModuleSignature;
 use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirFunctionTy, HirPointerTy, HirTy};
+use crate::ty::{HirFunctionTy, HirPointerTy, HirTy, HirVariableTy};
 use crate::{HirModule, HirName};
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::collections::{BTreeMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 
 #[derive(Debug)]
@@ -55,7 +55,17 @@ pub struct FieldProjectionConstraint<'ta> {
 pub struct TypingContext<'ta> {
     arena: &'ta HirArena<'ta>,
     constraints: Vec<Constraint<'ta>>,
-    substitutions: Vec<&'ta HirTy<'ta>>,
+    /// The substitutions during unification.
+    ///
+    /// Indexed by (depth, index)
+    substitutions: HashMap<(u32, u32), &'ta HirTy<'ta>>,
+    /// The depth of the current type binding context.
+    ///
+    /// Used to generate the depth term of a fresh type variable. Whenever the type checker enters
+    /// a new typing scope, it *must* increment this value, and reduce it when leaving the scope.
+    type_binding_depth: u32,
+    /// The index of the current type binding context.
+    type_binding_index: u32,
     locals: LocalContext<&'ta HirTy<'ta>>,
     /// Type parameters that are currently being substituted in the current function.
     ///
@@ -91,7 +101,9 @@ impl<'ta> TypingContext<'ta> {
         Self {
             arena,
             constraints: Vec::new(),
-            substitutions: Vec::new(),
+            substitutions: HashMap::new(),
+            type_binding_depth: 0,
+            type_binding_index: 0,
             locals: LocalContext::new(),
             local_type_parameter_substitutions: LocalContext::new(),
             current_function: VecDeque::new(),
@@ -157,9 +169,11 @@ impl<'ta> TypingContext<'ta> {
         }: FieldProjectionConstraint<'ta>,
     ) -> HirResult<()> {
         match origin {
-            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v.var) => {
+            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = FieldProjectionConstraint {
-                    origin: self.substitutions[v.var],
+                    origin: self
+                        .substitution(v)
+                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
                     field,
                     resolved_type,
                 };
@@ -212,44 +226,52 @@ impl<'ta> TypingContext<'ta> {
         }: EqualityConstraint<'ta>,
     ) -> HirResult<()> {
         match (&expected, &actual) {
-            (HirTy::Variable(lhs), HirTy::Variable(rhs)) if lhs.var == rhs.var => Ok(()),
+            (HirTy::Variable(lhs), HirTy::Variable(rhs))
+                if lhs.depth == rhs.depth && lhs.index == rhs.index =>
+            {
+                Ok(())
+            }
             (HirTy::Nominal(a), HirTy::Nominal(b)) if a.name.name == b.name.name => Ok(()),
-            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v.var) => {
+            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
-                    expected: self.substitutions[v.var],
+                    expected: self
+                        .substitution(v)
+                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
                     actual,
                     expected_loc,
                     actual_loc,
                 };
                 self.unify_eq(constraint)
             }
-            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v.var) => {
+            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
                     expected,
-                    actual: self.substitutions[v.var],
+                    actual: self
+                        .substitution(v)
+                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
                     expected_loc,
                     actual_loc,
                 };
                 self.unify_eq(constraint)
             }
             (HirTy::Variable(v), _) => {
-                if self.occurs_in(v.var, actual) {
+                if self.occurs_in(v, actual) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: actual_loc,
                         right: expected_loc,
                     }));
                 }
-                self.substitutions[v.var] = actual;
+                self.substitutions.insert((v.depth, v.index), actual);
                 Ok(())
             }
             (_, HirTy::Variable(v)) => {
-                if self.occurs_in(v.var, expected) {
+                if self.occurs_in(v, expected) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: expected_loc,
                         right: actual_loc,
                     }));
                 }
-                self.substitutions[v.var] = expected;
+                self.substitutions.insert((v.depth, v.index), expected);
                 Ok(())
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {
@@ -307,8 +329,11 @@ impl<'ta> TypingContext<'ta> {
 
     /// Create a fresh type variable.
     pub fn fresh_type_variable(&mut self) -> &'ta HirTy<'ta> {
-        let ty = self.arena.types().get_variable_ty(self.substitutions.len());
-        self.substitutions.push(ty);
+        let depth = self.type_binding_depth;
+        let index = self.type_binding_index;
+        let ty = self.arena.types().get_variable_ty(depth, index);
+        self.type_binding_index += 1;
+        self.substitutions.insert((depth, index), ty);
         ty
     }
 
@@ -608,13 +633,15 @@ impl<'ta> TypingContext<'ta> {
             // We substitute type variables as long as they don't point to $T
             HirTy::Variable(v)
                 if !self
-                    .substitution(v.var)
-                    .map(|t| t.is_equal_to_variable(v.var))
+                    .substitution(v)
+                    .map(|t| t.is_equal_to_variable(v))
                     .unwrap_or(false) =>
             {
                 // We have to recurse down here, because $T could point to another type variable
                 // that we may have a substitution for. e.g, $0 => $1 => i32
-                let sub = self.substitutions[v.var];
+                let sub = self
+                    .substitution(v)
+                    .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists"));
                 Ok(self.substitute(sub)?)
             }
             // We substitute function types by substituting the return type and parameters
@@ -644,15 +671,14 @@ impl<'ta> TypingContext<'ta> {
     }
 
     /// Get the substitution for the given type variable.
-    pub fn substitution(&self, var: usize) -> Option<&'ta HirTy<'ta>> {
-        self.substitutions.get(var).copied()
+    pub fn substitution(&self, v: &HirVariableTy) -> Option<&'ta HirTy<'ta>> {
+        self.substitutions.get(&(v.depth, v.index)).copied()
     }
 
     /// Determine if the substitution at the given index is equal to its own type variable.
-    pub fn is_substitution_equal_to_self(&self, var: usize) -> bool {
-        self.substitutions
-            .get(var)
-            .map(|t| t.is_equal_to_variable(var))
+    pub fn is_substitution_equal_to_self(&self, v: &HirVariableTy) -> bool {
+        self.substitution(v)
+            .map(|t| t.is_equal_to_variable(v))
             .unwrap_or(false)
     }
 
@@ -660,14 +686,14 @@ impl<'ta> TypingContext<'ta> {
     ///
     /// This is required for HM type inference, as we need to determine if a type variable points to
     /// itself. An example is a constraint like `$0 = fn() -> $0`, which cannot be satisfied ever.
-    pub fn occurs_in(&self, var: usize, ty: &'ta HirTy<'ta>) -> bool {
+    pub fn occurs_in(&self, v: &HirVariableTy, ty: &'ta HirTy<'ta>) -> bool {
         match ty {
             // If the variable points to a substitution of itself, it occurs in itself
-            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v.var) => true,
-            HirTy::Variable(v) => v.var == var,
+            HirTy::Variable(o) if !self.is_substitution_equal_to_self(o) => true,
+            HirTy::Variable(o) => o.depth == v.depth && o.index == v.index,
             HirTy::Function(t) => {
-                self.occurs_in(var, t.return_type)
-                    || t.parameters.iter().any(|p| self.occurs_in(var, p))
+                self.occurs_in(v, t.return_type)
+                    || t.parameters.iter().any(|p| self.occurs_in(v, p))
             }
             // Non-constructor types cannot possibly occur in other types.
             HirTy::Uninitialized(_) => ice!("uninitialized type should not be substituted"),
@@ -747,6 +773,8 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         // Create substitutions for all the type parameters.
         cx.local_type_parameter_substitutions.enter_scope();
+        cx.type_binding_depth += 1;
+        cx.type_binding_index = 0;
         for type_parameter in node.signature.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
             node.type_parameter_substitutions
@@ -789,6 +817,8 @@ impl HirModuleTypeCheckerPass {
         }
         cx.locals.leave_scope();
         cx.current_function.pop_back();
+        cx.type_binding_depth -= 1;
+        cx.type_binding_index = 0;
         cx.local_type_parameter_substitutions.leave_scope();
         cx.substitutions.clear();
         Ok(())

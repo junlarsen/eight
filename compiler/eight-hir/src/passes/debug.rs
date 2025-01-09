@@ -680,7 +680,10 @@ impl HirModuleDebugPass {
     }
 
     pub fn format_hir_variable_ty(ty: &HirVariableTy) -> RcDoc<()> {
-        RcDoc::text("$").append(RcDoc::text(ty.var.to_string()))
+        RcDoc::text("$")
+            .append(RcDoc::text(ty.depth.to_string()))
+            .append(RcDoc::text("@"))
+            .append(RcDoc::text(ty.index.to_string()))
     }
 
     pub fn format_hir_function_ty<'ta>(ty: &'ta HirFunctionTy) -> RcDoc<'ta, ()> {

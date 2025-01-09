@@ -28,9 +28,9 @@ impl HirTyId {
         Self(hasher.finish())
     }
 
-    pub fn compute_variable_ty_id(var: usize) -> Self {
+    pub fn compute_variable_ty_id(depth: u32, index: u32) -> Self {
         let mut hasher = DefaultHasher::new();
-        (0x10, var).hash(&mut hasher);
+        (0x10, depth, index).hash(&mut hasher);
         Self(hasher.finish())
     }
 
@@ -76,7 +76,7 @@ impl<'ta> From<&'ta HirTy<'ta>> for HirTyId {
             HirTy::Integer32(_) => HirTyId::compute_integer32_ty_id(),
             HirTy::Boolean(_) => HirTyId::compute_boolean_ty_id(),
             HirTy::Unit(_) => HirTyId::compute_unit_ty_id(),
-            HirTy::Variable(v) => HirTyId::compute_variable_ty_id(v.var),
+            HirTy::Variable(v) => HirTyId::compute_variable_ty_id(v.depth, v.index),
             HirTy::Uninitialized(_) => HirTyId::compute_uninitialized_ty_id(),
         }
     }
@@ -103,7 +103,10 @@ pub enum HirTy<'ta> {
     /// A type variable that is not yet resolved.
     ///
     /// These types are used for unification during type inference, and in the module IR look like
-    /// $1, $2, etc.
+    /// $1@0, $2@4, etc.
+    ///
+    /// The first number represents the depth of the type variable, and the second number represents
+    /// the index of the variable in the scope.
     Variable(HirVariableTy),
     /// A function constructor type.
     ///
@@ -171,7 +174,7 @@ impl<'ta> HirTy<'ta> {
             (HirTy::Boolean(_), HirTy::Boolean(_)) => true,
             (HirTy::Integer32(_), HirTy::Integer32(_)) => true,
             (HirTy::Unit(_), HirTy::Unit(_)) => true,
-            (HirTy::Variable(v), HirTy::Variable(o)) => v.var == o.var,
+            (HirTy::Variable(v), HirTy::Variable(o)) => v.depth == o.depth && v.index == o.index,
             (HirTy::Pointer(v), HirTy::Pointer(o)) => v.inner.is_trivially_equal(o.inner),
             (HirTy::Function(v), HirTy::Function(o)) => {
                 v.return_type.is_trivially_equal(o.return_type)
@@ -189,9 +192,9 @@ impl<'ta> HirTy<'ta> {
         }
     }
 
-    pub fn is_equal_to_variable(&self, var: usize) -> bool {
+    pub fn is_equal_to_variable(&self, m: &HirVariableTy) -> bool {
         match self {
-            HirTy::Variable(v) => v.var == var,
+            HirTy::Variable(v) => v.depth == m.depth && v.index == m.index,
             _ => false,
         }
     }
@@ -278,12 +281,13 @@ impl Display for HirUnitTy {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirVariableTy {
-    pub var: usize,
+    pub depth: u32,
+    pub index: u32,
 }
 
 impl Display for HirVariableTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "${}", self.var)
+        write!(f, "${}@{}", self.depth, self.index)
     }
 }
 

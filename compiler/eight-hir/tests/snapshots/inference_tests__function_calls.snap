@@ -33,8 +33,8 @@ hir_module {
       let z: i32 = ((generic as fn((i32))->i32)::<>((k as i32)) as i32);
       let z: bool = ((generic as fn((bool))->bool)::<>((true as bool)) as bool);
     }
-    fn generic<$0>($0) -> $0 {
-      return (x as $0);
+    fn generic<$1@0>($1@0) -> $1@0 {
+      return (x as $1@0);
     }
     // module intrinsic functions
     

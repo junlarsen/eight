@@ -14,7 +14,7 @@ exit_code: 1
 ----- stderr -----
 Error: sema::invalid_field_reference_of_non_struct
 
-  × type $1 is not a record type and does not have fields
+  × type $1@1 is not a record type and does not have fields
    ╭─[tests/ui/type/constant_index_of_non_struct.test:2:13]
  1 │ fn test(q: i32) {
  2 │   let k = q.z;
