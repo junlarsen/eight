@@ -2,7 +2,7 @@
 /// module can be lowered into HIR.
 #[macro_export]
 macro_rules! assert_hir_module_compiles {
-    ($input:expr) => {{
+    ($input:expr, $path:expr) => {{
         use bumpalo::Bump;
         use eight_hir::arena::HirArena;
         use eight_hir::passes::ASTSyntaxLoweringPass;
@@ -13,7 +13,7 @@ macro_rules! assert_hir_module_compiles {
         let mut parser = Parser::new(&mut lexer);
         let translation_unit = parser
             .parse()
-            .expect("failed to parse corpus file into syntax tree");
+            .expect(format!("failed to parse {} into syntax tree", $path.display()).as_str());
 
         let bump = Bump::new();
         let arena = HirArena::new(&bump);

@@ -766,18 +766,16 @@ impl Parser<'_> {
     /// 1. Group Expression
     /// 2. Literal Expression
     /// 3. Reference Expression
-    /// 4. DotIndex Expression
-    /// 4. BracketIndex Expression
-    /// 5. Call Expression
-    /// 6. Construct Expression
-    /// 7. Unary Expression
-    /// 8. Multiplicative Expression
-    /// 9. Additive Expression
-    /// 10. Binary Expression
-    /// 11. Comparison Expression
-    /// 12. Logical And Expression
-    /// 13. Logical Or Expression
-    /// 14. Assign Expression
+    /// 4. PostFix Expression (BracketIndex, DotIndex, Call)
+    /// 5. Construct Expression
+    /// 6. Unary Expression
+    /// 7. Multiplicative Expression
+    /// 8. Additive Expression
+    /// 9. Binary Expression
+    /// 10. Comparison Expression
+    /// 11. Logical And Expression
+    /// 12. Logical Or Expression
+    /// 13. Assign Expression
     ///
     /// [precedence_climber]: https://en.wikipedia.org/wiki/Operator-precedence_parser#Precedence_climbing_method
     pub fn parse_expr(&mut self) -> ParseResult<AstExpr> {
@@ -1005,52 +1003,83 @@ impl Parser<'_> {
                 };
                 Ok(AstExpr::UnaryOp(node))
             }
-            _ => self.parse_call_expr(),
+            _ => self.parse_postfix_expr(),
         }
     }
 
-    /// Parse a call expression.
+    /// Parse a postfix expression.
+    ///
+    /// This ensures that dot index, bracket index, and call expressions all have the same
+    /// precedence in the climber.
     ///
     /// ```text
-    /// call_expr ::= construct_expr
-    ///               (COLON_COLON OPEN_ANGLE (type (COMMA type)*)? CLOSE_ANGLE)?
-    ///               (OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)?
+    /// postfix_expr ::= reference_expr
+    ///                (
+    ///                  | (OPEN_BRACKET expr CLOSE_BRACKET)
+    ///                  | (DOT IDENTIFIER)
+    ///                  | (COLON_COLON OPEN_ANGLE (type (COMMA type)*)? CLOSE_ANGLE OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)
+    ///                )?
     /// ```
-    pub fn parse_call_expr(&mut self) -> ParseResult<AstExpr> {
-        let callee = self.parse_construct_expr()?;
-        let is_turbo_fish = self.lookahead_check(&TokenType::ColonColon)?;
-        if self.lookahead_check(&TokenType::OpenParen)? || is_turbo_fish {
-            let type_arguments = self
-                .parser_combinator_take_if(
-                    |t| t.ty == TokenType::ColonColon,
-                    |p| {
-                        p.check(&TokenType::ColonColon)?;
-                        p.check(&TokenType::OpenAngle)?;
-                        let arguments = p.parser_combinator_delimited(
-                            &TokenType::Comma,
-                            &TokenType::CloseAngle,
-                            |p| p.parse_type(),
-                        )?;
-                        p.check(&TokenType::CloseAngle)?;
-                        Ok(arguments)
-                    },
-                )?
-                .unwrap_or(vec![]);
-            self.check(&TokenType::OpenParen)?;
-            let arguments =
-                self.parser_combinator_delimited(&TokenType::Comma, &TokenType::CloseParen, |p| {
-                    p.parse_expr()
-                })?;
-            let end = self.check(&TokenType::CloseParen)?;
-            let node = AstCallExpr {
-                span: Span::from_pair(callee.span(), &end.span),
-                callee: Box::new(callee),
-                arguments,
-                type_arguments,
-            };
-            return Ok(AstExpr::Call(node));
-        };
-
+    pub fn parse_postfix_expr(&mut self) -> ParseResult<AstExpr> {
+        let mut callee = self.parse_construct_expr()?;
+        while let Some(token) = self.lookahead()? {
+            match token.ty {
+                TokenType::OpenBracket => {
+                    self.check(&TokenType::OpenBracket)?;
+                    let index = self.parse_expr()?;
+                    let end = self.check(&TokenType::CloseBracket)?;
+                    let node = AstBracketIndexExpr {
+                        span: Span::from_pair(callee.span(), &end.span),
+                        origin: Box::new(callee),
+                        index: Box::new(index),
+                    };
+                    callee = AstExpr::BracketIndex(node);
+                }
+                TokenType::Dot => {
+                    self.check(&TokenType::Dot)?;
+                    let index = self.parse_identifier()?;
+                    let node = AstDotIndexExpr {
+                        span: Span::from_pair(callee.span(), &index.span),
+                        origin: Box::new(callee),
+                        index,
+                    };
+                    callee = AstExpr::DotIndex(node);
+                }
+                TokenType::ColonColon | TokenType::OpenParen => {
+                    let type_arguments = self
+                        .parser_combinator_take_if(
+                            |t| t.ty == TokenType::ColonColon,
+                            |p| {
+                                p.check(&TokenType::ColonColon)?;
+                                p.check(&TokenType::OpenAngle)?;
+                                let arguments = p.parser_combinator_delimited(
+                                    &TokenType::Comma,
+                                    &TokenType::CloseAngle,
+                                    |p| p.parse_type(),
+                                )?;
+                                p.check(&TokenType::CloseAngle)?;
+                                Ok(arguments)
+                            },
+                        )?
+                        .unwrap_or(vec![]);
+                    self.check(&TokenType::OpenParen)?;
+                    let arguments = self.parser_combinator_delimited(
+                        &TokenType::Comma,
+                        &TokenType::CloseParen,
+                        |p| p.parse_expr(),
+                    )?;
+                    let end = self.check(&TokenType::CloseParen)?;
+                    let node = AstCallExpr {
+                        span: Span::from_pair(callee.span(), &end.span),
+                        callee: Box::new(callee),
+                        arguments,
+                        type_arguments,
+                    };
+                    callee = AstExpr::Call(node);
+                }
+                _ => break,
+            }
+        }
         Ok(callee)
     }
 
@@ -1063,7 +1092,7 @@ impl Parser<'_> {
     /// ```
     pub fn parse_construct_expr(&mut self) -> ParseResult<AstExpr> {
         if !self.lookahead_check(&TokenType::KeywordNew)? {
-            return self.parse_bracket_index_expr();
+            return self.parse_reference_expr();
         }
 
         let start = self.check(&TokenType::KeywordNew)?;
@@ -1096,51 +1125,6 @@ impl Parser<'_> {
             expr,
         };
         Ok(node)
-    }
-
-    /// Parse a bracket index expression.
-    ///
-    /// ```text
-    /// bracket_index_expr ::= reference_expr OPEN_BRACKET expr CLOSE_BRACKET
-    /// ```
-    pub fn parse_bracket_index_expr(&mut self) -> ParseResult<AstExpr> {
-        let origin = self.parse_dot_index_expr()?;
-
-        if self.lookahead_check(&TokenType::OpenBracket)? {
-            self.check(&TokenType::OpenBracket)?;
-            let index = self.parse_expr()?;
-            let end = self.check(&TokenType::CloseBracket)?;
-            let node = AstBracketIndexExpr {
-                span: Span::from_pair(origin.span(), &end.span),
-                origin: Box::new(origin),
-                index: Box::new(index),
-            };
-            return Ok(AstExpr::BracketIndex(node));
-        }
-
-        Ok(origin)
-    }
-
-    /// Parse a dot index expression.
-    ///
-    /// ```text
-    /// dot_index_expr ::= reference_expr DOT identifier
-    /// ```
-    pub fn parse_dot_index_expr(&mut self) -> ParseResult<AstExpr> {
-        let origin = self.parse_reference_expr()?;
-
-        if self.lookahead_check(&TokenType::Dot)? {
-            self.check(&TokenType::Dot)?;
-            let index = self.parse_identifier()?;
-            let node = AstDotIndexExpr {
-                span: Span::from_pair(origin.span(), &index.span),
-                origin: Box::new(origin),
-                index,
-            };
-            return Ok(AstExpr::DotIndex(node));
-        }
-
-        Ok(origin)
     }
 
     /// Parse a reference expression.
@@ -1788,6 +1772,12 @@ mod tests {
             let count = inner.arguments.len();
             assert_eq!(count, 2);
         }
+    }
+
+    #[test]
+    fn test_parse_chained_postfix_expr() {
+        let prod = assert_parse("x[y.k]().www[z]", |p| p.parse_expr());
+        assert_ok!(prod);
     }
 
     #[test]

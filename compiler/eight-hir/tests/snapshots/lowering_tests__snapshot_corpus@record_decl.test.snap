@@ -4,42 +4,50 @@ expression: doc
 input_file: compiler/eight-hir/tests/data/lowering/record_decl.test
 snapshot_kind: text
 ---
-module {
-  // module intrinsic scalar types
-  
-  
-  // module intrinsic functions
-  
-  
-  // module types
-  type Node = {
-    next: *Node,
-    value: i32,
-  }
-  
-  // module traits
-  
-  
-  // module instances
-  
-  
-  // module functions
-  fn append(node: Node, value: i32) -> unit {
-    {
-      let curr: _ = (node as _);
-      while ((((curr as _).next as _) != (0 as _) as _)) {
-        ((curr as _) = ((curr as _).next as _) as _);
-      }
+hir_module {
+  declares {
+    // module scalar types
+    
+    
+    // module record types
+    type Node = {
+      next: *Node,
+      value: i32,
     }
-    let node: _ = ((malloc as _)::<Node>(((8 as _) + (4 as _) as _)) as _);
-    (((node as _).value as _) = (value as _) as _);
-    (((node as _).next as _) = (0 as _) as _);
-    (((curr as _).next as _) = (node as _) as _);
+    
+    // module functions
+    fn append(node: Node, value: i32) -> unit;
+    fn prepend(node: Node, value: i32) -> Node;
+    
+    // module traits
+    
+    
+    // module instances
+  
   }
-  fn prepend(node: Node, value: i32) -> Node {
-    return (new Node {
-      value: (value as _),
-      next: (node as _),
-    } as _);
+  
+  defining {
+    // module functions
+    fn append<>(node, value) -> unit {
+      {
+        let curr: _ = (node as _);
+        while ((((curr as _).next as _) != (0 as _) as _)) {
+          ((curr as _) = ((curr as _).next as _) as _);
+        }
+      }
+      let node: _ = ((malloc as _)::<Node>(((8 as _) + (4 as _) as _)) as _);
+      (((node as _).value as _) = (value as _) as _);
+      (((node as _).next as _) = (0 as _) as _);
+      (((curr as _).next as _) = (node as _) as _);
+    }
+    fn prepend<>(node, value) -> Node {
+      return (new Node {
+        value: (value as _),
+        next: (node as _),
+      } as _);
+    }
+    // module intrinsic functions
+    
+  
   }
 }

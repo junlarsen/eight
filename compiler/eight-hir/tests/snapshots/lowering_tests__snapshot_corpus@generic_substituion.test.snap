@@ -4,24 +4,31 @@ expression: doc
 input_file: compiler/eight-hir/tests/data/lowering/generic_substituion.test
 snapshot_kind: text
 ---
-module {
-  // module intrinsic scalar types
+hir_module {
+  declares {
+    // module scalar types
+    
+    
+    // module record types
+    
+    
+    // module functions
+    fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V;
+    
+    // module traits
+    
+    
+    // module instances
   
+  }
   
-  // module intrinsic functions
+  defining {
+    // module functions
+    fn substitute<T, U, V>(a, b, c, d) -> V {
+      return (d as _);
+    }
+    // module intrinsic functions
+    
   
-  
-  // module types
-  
-  
-  // module traits
-  
-  
-  // module instances
-  
-  
-  // module functions
-  fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V {
-    return (d as _);
   }
 }

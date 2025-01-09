@@ -817,7 +817,10 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
             AstType::Integer32(_) => self.arena.types().get_integer32_ty(),
             AstType::Boolean(_) => self.arena.types().get_boolean_ty(),
-            AstType::Named(t) => self.arena.types().get_nominal_ty(&self.visit_identifier(&t.name)?),
+            AstType::Named(t) => self
+                .arena
+                .types()
+                .get_nominal_ty(&self.visit_identifier(&t.name)?),
             AstType::Pointer(t) => self
                 .arena
                 .types()

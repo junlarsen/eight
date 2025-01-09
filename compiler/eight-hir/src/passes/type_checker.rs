@@ -76,13 +76,16 @@ impl<'ta> Debug for TypingContext<'ta> {
             .field("constraints", &self.constraints)
             .field("substitutions", &self.substitutions)
             .field("locals", &self.locals)
-            .field("local_type_parameter_substitutions", &self.local_type_parameter_substitutions)
+            .field(
+                "local_type_parameter_substitutions",
+                &self.local_type_parameter_substitutions,
+            )
             .field("current_function", &self.current_function)
             .field("module_signature", &self.module_signature)
             .finish()
     }
 }
-    
+
 impl<'ta> TypingContext<'ta> {
     pub fn new(arena: &'ta HirArena<'ta>, module_signature: &'ta HirModuleSignature<'ta>) -> Self {
         Self {
@@ -454,7 +457,10 @@ impl<'ta> TypingContext<'ta> {
         expectation: &'ta HirTy<'ta>,
     ) -> HirResult<()> {
         let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
-        let expected_signature = self.arena.types().get_function_ty(expectation, expected_args);
+        let expected_signature = self
+            .arena
+            .types()
+            .get_function_ty(expectation, expected_args);
         self.unify_eq(EqualityConstraint {
             expected: expected_signature,
             actual: expr.callee.ty(),

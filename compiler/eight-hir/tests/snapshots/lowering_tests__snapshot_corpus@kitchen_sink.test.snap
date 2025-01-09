@@ -4,60 +4,68 @@ expression: doc
 input_file: compiler/eight-hir/tests/data/lowering/kitchen_sink.test
 snapshot_kind: text
 ---
-module {
-  // module intrinsic scalar types
+hir_module {
+  declares {
+    // module scalar types
+    
+    
+    // module record types
+    type Matrix = {
+      buf: *i32,
+      c: i32,
+      r: i32,
+    }
+    
+    // module functions
+    fn free<T>(ptr: *T) -> unit;
+    fn malloc<T>(size: i32) -> *T;
+    fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix;
+    
+    // module traits
+    
+    
+    // module instances
   
-  
-  // module intrinsic functions
-  intrinsic_fn free<T>(ptr: *T) -> unit;
-  intrinsic_fn malloc<T>(size: i32) -> *T;
-  
-  // module types
-  type Matrix = {
-    buf: *i32,
-    c: i32,
-    r: i32,
   }
   
-  // module traits
-  
-  
-  // module instances
-  
-  
-  // module functions
-  fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
-    if ((((a as _).r as _) != ((b as _).c as _) as _)){
-      ((panic as _)::<>() as _);
-    } else {
-    
-    }
-    let c: _ = (new Matrix {
-      r: ((a as _).r as _),
-      c: ((b as _).c as _),
-      buf: ((malloc as _)::<>((((a as _).r as _) * (((b as _).c as _) * (4 as _) as _) as _)) as _),
-    } as _);
-    {
-      let i: _ = (0 as _);
-      while (((i as _) < ((a as _).r as _) as _)) {
-        {
-          let j: _ = (0 as _);
-          while (((j as _) < ((b as _).c as _) as _)) {
-            let sum: _ = (0 as _);
-            {
-              let k: _ = (0 as _);
-              while (((k as _) < ((a as _).c as _) as _)) {
-                ((sum as _) = ((sum as _) + ((((a as _).buf as _)[(((i as _) * ((a as _).c as _) as _) + (k as _) as _)] as _) * (((b as _).buf as _)[(((k as _) * ((b as _).c as _) as _) + (j as _) as _)] as _) as _) as _) as _);
-                ((k as _) = ((k as _) + (1 as _) as _) as _);
-              }
-            }
-            ((((c as _).buf as _)[(((i as _) * ((b as _).c as _) as _) + (j as _) as _)] as _) = (sum as _) as _);
-            ((j as _) = ((j as _) + (1 as _) as _) as _);
-          }
-        }
-        ((i as _) = ((i as _) + (1 as _) as _) as _);
+  defining {
+    // module functions
+    fn matrix_matrix_multiply<>(a, b) -> Matrix {
+      if ((((a as _).r as _) != ((b as _).c as _) as _)){
+        ((panic as _)::<>() as _);
+      } else {
+      
       }
+      let c: _ = (new Matrix {
+        r: ((a as _).r as _),
+        c: ((b as _).c as _),
+        buf: ((malloc as _)::<>((((a as _).r as _) * (((b as _).c as _) * (4 as _) as _) as _)) as _),
+      } as _);
+      {
+        let i: _ = (0 as _);
+        while (((i as _) < ((a as _).r as _) as _)) {
+          {
+            let j: _ = (0 as _);
+            while (((j as _) < ((b as _).c as _) as _)) {
+              let sum: _ = (0 as _);
+              {
+                let k: _ = (0 as _);
+                while (((k as _) < ((a as _).c as _) as _)) {
+                  ((sum as _) = ((sum as _) + ((((a as _).buf as _)[(((i as _) * ((a as _).c as _) as _) + (k as _) as _)] as _) * (((b as _).buf as _)[(((k as _) * ((b as _).c as _) as _) + (j as _) as _)] as _) as _) as _) as _);
+                  ((k as _) = ((k as _) + (1 as _) as _) as _);
+                }
+              }
+              ((((c as _).buf as _)[(((i as _) * ((b as _).c as _) as _) + (j as _) as _)] as _) = (sum as _) as _);
+              ((j as _) = ((j as _) + (1 as _) as _) as _);
+            }
+          }
+          ((i as _) = ((i as _) + (1 as _) as _) as _);
+        }
+      }
+      return (c as _);
     }
-    return (c as _);
+    // module intrinsic functions
+    
+  
   }
 }
