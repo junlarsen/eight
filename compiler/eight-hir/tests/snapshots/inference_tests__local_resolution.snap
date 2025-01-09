@@ -3,28 +3,36 @@ source: compiler/eight-hir/tests/inference_tests.rs
 expression: doc
 snapshot_kind: text
 ---
-module {
-  // module intrinsic scalar types
+hir_module {
+  declares {
+    // module scalar types
+    
+    
+    // module record types
+    
+    
+    // module functions
+    fn test() -> unit;
+    fn test_refer_function() -> unit;
+    
+    // module traits
+    
+    
+    // module instances
   
-  
-  // module intrinsic functions
-  
-  
-  // module types
-  
-  
-  // module traits
-  
-  
-  // module instances
-  
-  
-  // module functions
-  fn test() -> unit {
-    let loc: i32 = (123 as i32);
-    let x: i32 = (loc as i32);
   }
-  fn test_refer_function() -> unit {
-    let loc: fn(())->unit = (test as fn(())->unit);
+  
+  defining {
+    // module functions
+    fn test<>() -> unit {
+      let loc: i32 = (123 as i32);
+      let x: i32 = (loc as i32);
+    }
+    fn test_refer_function<>() -> unit {
+      let loc: fn(())->unit = (test as fn(())->unit);
+    }
+    // module intrinsic functions
+    
+  
   }
 }

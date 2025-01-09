@@ -3,24 +3,31 @@ source: compiler/eight-hir/tests/inference_tests.rs
 expression: doc
 snapshot_kind: text
 ---
-module {
-  // module intrinsic scalar types
+hir_module {
+  declares {
+    // module scalar types
+    
+    
+    // module record types
+    
+    
+    // module functions
+    fn foo(x: i32) -> i32;
+    
+    // module traits
+    
+    
+    // module instances
   
+  }
   
-  // module intrinsic functions
+  defining {
+    // module functions
+    fn foo<>(i32) -> i32 {
+      let k: i32 = (((123 as i32)) as i32);
+    }
+    // module intrinsic functions
+    
   
-  
-  // module types
-  
-  
-  // module traits
-  
-  
-  // module instances
-  
-  
-  // module functions
-  fn foo(x: i32) -> i32 {
-    let k: i32 = (((123 as i32)) as i32);
   }
 }

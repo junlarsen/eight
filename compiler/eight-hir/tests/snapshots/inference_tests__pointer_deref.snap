@@ -3,27 +3,35 @@ source: compiler/eight-hir/tests/inference_tests.rs
 expression: doc
 snapshot_kind: text
 ---
-module {
-  // module intrinsic scalar types
+hir_module {
+  declares {
+    // module scalar types
+    
+    
+    // module record types
+    
+    
+    // module functions
+    fn address_of(a: i32) -> unit;
+    fn deref(a: i32, b: **i32) -> unit;
+    
+    // module traits
+    
+    
+    // module instances
   
-  
-  // module intrinsic functions
-  
-  
-  // module types
-  
-  
-  // module traits
-  
-  
-  // module instances
-  
-  
-  // module functions
-  fn address_of(a: i32) -> unit {
-    let k: *i32 = (&(1 as i32) as *i32);
   }
-  fn deref(a: i32, b: **i32) -> unit {
-    let m: i32 = (*(*(b as **i32) as *i32) as i32);
+  
+  defining {
+    // module functions
+    fn address_of<>(i32) -> unit {
+      let k: *i32 = (&(1 as i32) as *i32);
+    }
+    fn deref<>(i32, **i32) -> unit {
+      let m: i32 = (*(*(b as **i32) as *i32) as i32);
+    }
+    // module intrinsic functions
+    
+  
   }
 }

@@ -3,27 +3,35 @@ source: compiler/eight-hir/tests/inference_tests.rs
 expression: doc
 snapshot_kind: text
 ---
-module {
-  // module intrinsic scalar types
+hir_module {
+  declares {
+    // module scalar types
+    
+    
+    // module record types
+    
+    
+    // module functions
+    fn id<T>(x: T) -> T;
+    fn many_id<T>(x: T) -> T;
+    
+    // module traits
+    
+    
+    // module instances
   
-  
-  // module intrinsic functions
-  
-  
-  // module types
-  
-  
-  // module traits
-  
-  
-  // module instances
-  
-  
-  // module functions
-  fn id<$0>(x: $0) -> $0 {
-    return (x as $0);
   }
-  fn many_id<$0>(x: $0) -> $0 {
-    return ((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>((x as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30);
+  
+  defining {
+    // module functions
+    fn id<$0>($0) -> $0 {
+      return (x as $0);
+    }
+    fn many_id<$0>($0) -> $0 {
+      return ((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>(((id as fn(($30))->$30)::<>((x as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30)) as $30);
+    }
+    // module intrinsic functions
+    
+  
   }
 }
