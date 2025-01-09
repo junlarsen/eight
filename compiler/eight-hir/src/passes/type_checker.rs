@@ -376,8 +376,6 @@ impl<'ta> TypingContext<'ta> {
         // Otherwise, we need to instantiate the generic parameters of the function, and
         // substitute the parameters and return types if they refer to one of the generic
         // type parameters.
-        // TODO: Prevent this clone
-        let signature = signature.clone();
         self.local_type_parameter_substitutions.enter_scope();
         for type_parameter in signature.type_parameters.iter() {
             let ty = self.fresh_type_variable();
@@ -472,8 +470,7 @@ impl<'ta> TypingContext<'ta> {
             .module_signature
             .records
             .get(&n.name.name)
-            .unwrap_or_else(|| ice!("record type not found"))
-            .clone();
+            .unwrap_or_else(|| ice!("record type not found"));
         let mut visited_fields = HashSet::new();
         for provided_field in expr.arguments.iter() {
             let Some(field_definition) = ty.fields.get(&provided_field.field.name) else {

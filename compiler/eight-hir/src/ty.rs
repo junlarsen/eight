@@ -246,7 +246,7 @@ impl HirTy<'_> {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct HirInteger32Ty {}
 
 impl Display for HirInteger32Ty {
@@ -256,7 +256,7 @@ impl Display for HirInteger32Ty {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct HirBooleanTy {}
 
 impl Display for HirBooleanTy {
@@ -266,7 +266,7 @@ impl Display for HirBooleanTy {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct HirUnitTy {}
 
 impl Display for HirUnitTy {
@@ -276,7 +276,7 @@ impl Display for HirUnitTy {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HirVariableTy {
     pub var: usize,
 }
@@ -288,7 +288,7 @@ impl Display for HirVariableTy {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HirFunctionTy<'ta> {
     pub return_type: &'ta HirTy<'ta>,
     pub parameters: Vec<&'ta HirTy<'ta>>,
@@ -307,7 +307,7 @@ impl Display for HirFunctionTy<'_> {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HirPointerTy<'ta> {
     pub inner: &'ta HirTy<'ta>,
 }
@@ -319,7 +319,7 @@ impl Display for HirPointerTy<'_> {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HirNominalTy {
     pub name: HirName,
 }
@@ -331,7 +331,7 @@ impl Display for HirNominalTy {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HirUninitializedTy {}
 
 impl Display for HirUninitializedTy {
