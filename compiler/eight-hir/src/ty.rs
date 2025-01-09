@@ -253,7 +253,7 @@ impl HirTy<'_> {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct HirInteger32Ty {}
 
 impl Display for HirInteger32Ty {
@@ -263,7 +263,7 @@ impl Display for HirInteger32Ty {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct HirBooleanTy {}
 
 impl Display for HirBooleanTy {
@@ -273,7 +273,7 @@ impl Display for HirBooleanTy {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct HirUnitTy {}
 
 impl Display for HirUnitTy {

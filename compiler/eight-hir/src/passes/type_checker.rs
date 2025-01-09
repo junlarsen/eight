@@ -12,6 +12,7 @@ use crate::expr::{
     HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
 use crate::item::{HirFunction, HirIntrinsicFunction, HirRecord};
+use crate::query::HirQueryDatabase;
 use crate::signature::{HirInstanceApiSignature, HirModuleSignature};
 use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
@@ -73,7 +74,9 @@ pub struct InstanceConstraint<'ta> {
 }
 
 pub struct TypingContext<'ta> {
+    /// A reference to the Hir arena for allocating types.
     arena: &'ta HirArena<'ta>,
+
     constraints: Vec<Constraint<'ta>>,
     /// The substitutions during unification.
     ///
@@ -86,6 +89,7 @@ pub struct TypingContext<'ta> {
     type_binding_depth: u32,
     /// The index of the current type binding context.
     type_binding_index: u32,
+
     locals: LocalContext<&'ta HirTy<'ta>>,
     /// Type parameters that are currently being substituted in the current function.
     ///
@@ -96,7 +100,10 @@ pub struct TypingContext<'ta> {
     /// be a VecDeque, but it's here for future use.
     local_type_parameter_substitutions: LocalContext<&'ta HirTy<'ta>>,
     current_function: VecDeque<&'ta HirFunctionTy<'ta>>,
+
+    /// The signature of the module being type checked.
     module_signature: &'ta HirModuleSignature<'ta>,
+    module_query_db: HirQueryDatabase<'ta>,
 }
 
 impl<'ta> Debug for TypingContext<'ta> {
@@ -128,6 +135,7 @@ impl<'ta> TypingContext<'ta> {
             local_type_parameter_substitutions: LocalContext::new(),
             current_function: VecDeque::new(),
             module_signature,
+            module_query_db: HirQueryDatabase::new(module_signature),
         }
     }
 
@@ -272,9 +280,10 @@ impl<'ta> TypingContext<'ta> {
             .map(|t| self.substitute(t))
             .collect::<HirResult<Vec<_>>>()?;
         let instance = self
-            .module_signature
-            .get_instance(&name, substitutions.as_slice())
+            .module_query_db
+            .query_trait_instance_by_name_and_type_arguments(&name, substitutions.as_slice())
             .unwrap_or_else(|| ice!(format!("instance {} not found", name)));
+
         let method = instance
             .methods
             .get(&method)

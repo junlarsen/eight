@@ -321,12 +321,8 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             }
             AstItem::Instance(i) => {
                 let instance = self.visit_instance_item(i)?;
-                module_signature.add_instance(i.name.name.as_str(), instance.signature);
-                let entry = module_body
-                    .instances
-                    .entry(i.name.name.to_owned())
-                    .or_default();
-                entry.push(instance);
+                module_signature.add_instance(instance.signature);
+                module_body.instances.push(instance);
             }
         };
         Ok(())
@@ -537,6 +533,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             span: node.span,
             declaration_name: name.clone(),
             type_arguments: instantiation_type_parameters.clone(),
+            r#trait: name.clone(),
             methods: members
                 .iter()
                 .map(|m| (m.name.name.to_owned(), m.signature))

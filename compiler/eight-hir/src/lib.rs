@@ -21,6 +21,7 @@ pub mod error;
 pub mod expr;
 pub mod item;
 pub mod passes;
+mod query;
 pub mod signature;
 pub mod stmt;
 pub mod ty;
@@ -44,7 +45,7 @@ pub struct HirModuleBody<'ta> {
     pub records: BTreeMap<String, HirRecord<'ta>>,
     pub traits: BTreeMap<String, HirTrait<'ta>>,
     pub scalars: BTreeMap<String, HirIntrinsicScalar<'ta>>,
-    pub instances: BTreeMap<String, Vec<HirInstance<'ta>>>,
+    pub instances: Vec<HirInstance<'ta>>,
 }
 
 impl<'ta> HirModule<'ta> {

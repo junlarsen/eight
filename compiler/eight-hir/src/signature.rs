@@ -9,6 +9,7 @@
 use crate::ty::HirTy;
 use crate::HirName;
 use eight_span::Span;
+use std::collections;
 use std::collections::BTreeMap;
 
 /// A signature representing the public API of a module.
@@ -19,114 +20,51 @@ use std::collections::BTreeMap;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
 pub struct HirModuleSignature<'ta> {
-    functions: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
-    records: BTreeMap<String, &'ta HirRecordApiSignature<'ta>>,
-    scalars: BTreeMap<String, &'ta HirScalarApiSignature<'ta>>,
-    traits: BTreeMap<String, &'ta HirTraitApiSignature<'ta>>,
-    instances: BTreeMap<String, Vec<&'ta HirInstanceApiSignature<'ta>>>,
+    pub functions: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
+    pub records: BTreeMap<String, &'ta HirRecordApiSignature<'ta>>,
+    pub scalars: BTreeMap<String, &'ta HirScalarApiSignature<'ta>>,
+    pub traits: BTreeMap<String, &'ta HirTraitApiSignature<'ta>>,
+    /// Instances are stored in a flat list.
+    ///
+    /// Use the [`HirQueryDatabase`] to query instances by trait/types more efficiently.
+    pub instances: Vec<&'ta HirInstanceApiSignature<'ta>>,
 }
 
 impl<'ta> HirModuleSignature<'ta> {
-    /// Add the given function to the module signature.
     pub fn add_function(&mut self, name: &str, signature: &'ta HirFunctionApiSignature<'ta>) {
         self.functions.insert(name.to_owned(), signature);
     }
 
-    /// Add the given record type to the module signature.
     pub fn add_record(&mut self, name: &str, signature: &'ta HirRecordApiSignature<'ta>) {
         self.records.insert(name.to_owned(), signature);
     }
 
-    /// Add the given scalar type to the module signature.
     pub fn add_scalar(&mut self, name: &str, signature: &'ta HirScalarApiSignature<'ta>) {
         self.scalars.insert(name.to_owned(), signature);
     }
 
-    /// Add the given trait to the
     pub fn add_trait(&mut self, name: &str, signature: &'ta HirTraitApiSignature<'ta>) {
         self.traits.insert(name.to_owned(), signature);
     }
 
-    /// Add the given instance to the module signature.
-    pub fn add_instance(&mut self, name: &str, signature: &'ta HirInstanceApiSignature<'ta>) {
-        self.instances
-            .entry(name.to_owned())
-            .or_default()
-            .push(signature);
+    pub fn add_instance(&mut self, signature: &'ta HirInstanceApiSignature<'ta>) {
+        self.instances.push(signature);
     }
 
-    /// Determine if a given type exists in the module signature.
-    pub fn get_type_item(&self, name: &str) -> Option<HirModuleItemSignature<'ta>> {
-        self.get_record(name)
-            .map(HirModuleItemSignature::Record)
-            .or_else(|| self.get_scalar(name).map(HirModuleItemSignature::Scalar))
-    }
-
-    /// Search for a function by name
     pub fn get_function(&self, name: &str) -> Option<&'ta HirFunctionApiSignature<'ta>> {
         self.functions.get(name).copied()
     }
 
-    /// Search for a record type by name
     pub fn get_record(&self, name: &str) -> Option<&'ta HirRecordApiSignature<'ta>> {
         self.records.get(name).copied()
     }
 
-    /// Search for a scalar type by name
     pub fn get_scalar(&self, name: &str) -> Option<&'ta HirScalarApiSignature<'ta>> {
         self.scalars.get(name).copied()
     }
 
     pub fn get_trait(&self, name: &str) -> Option<&'ta HirTraitApiSignature<'ta>> {
         self.traits.get(name).copied()
-    }
-
-    // TODO: Move this into type_checker.rs
-    pub fn get_instance(
-        &self,
-        name: &str,
-        arguments: &[&'ta HirTy<'ta>],
-    ) -> Option<&'ta HirInstanceApiSignature<'ta>> {
-        for instance in self.instances.get(name)? {
-            if instance.type_arguments.len() == arguments.len() {
-                let is_all_equal = instance
-                    .type_arguments
-                    .iter()
-                    .zip(arguments)
-                    .all(|(a, b)| a.is_trivially_equal(b) || b.is_variable());
-                if is_all_equal {
-                    return Some(instance);
-                }
-            }
-        }
-        None
-    }
-
-    /// Iterate over all the functions in the module signature.
-    pub fn functions(&self) -> impl Iterator<Item = (&String, &&'ta HirFunctionApiSignature<'ta>)> {
-        self.functions.iter()
-    }
-
-    /// Iterate over all the records in the module signature.
-    pub fn records(&self) -> impl Iterator<Item = (&String, &&'ta HirRecordApiSignature<'ta>)> {
-        self.records.iter()
-    }
-
-    /// Iterate over all the scalars in the module signature.
-    pub fn scalars(&self) -> impl Iterator<Item = (&String, &&'ta HirScalarApiSignature<'ta>)> {
-        self.scalars.iter()
-    }
-
-    /// Iterate over all the traits in the module signature.
-    pub fn traits(&self) -> impl Iterator<Item = (&String, &&'ta HirTraitApiSignature<'ta>)> {
-        self.traits.iter()
-    }
-
-    /// Iterate over all the instances in the module signature.
-    pub fn instances(
-        &self,
-    ) -> impl Iterator<Item = (&String, &Vec<&'ta HirInstanceApiSignature<'ta>>)> {
-        self.instances.iter()
     }
 }
 
@@ -208,6 +146,7 @@ pub struct HirTraitApiSignature<'ta> {
 pub struct HirInstanceApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
+    pub r#trait: HirName,
     pub type_arguments: Vec<&'ta HirTy<'ta>>,
     pub methods: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
 }
