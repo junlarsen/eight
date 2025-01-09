@@ -54,7 +54,7 @@ impl HirModuleDebugPass {
                             .append(RcDoc::hardline())
                             .append(
                                 RcDoc::intersperse(
-                                    module.signature.scalars.iter().map(|(name, sig)| {
+                                    module.signature.scalars().map(|(name, sig)| {
                                         Self::format_hir_scalar_signature(name, sig)
                                     }),
                                     RcDoc::hardline(),
@@ -65,7 +65,7 @@ impl HirModuleDebugPass {
                                 .append(RcDoc::hardline())
                                 .append(
                                     RcDoc::intersperse(
-                                        module.signature.records.iter().map(|(name, sig)| {
+                                        module.signature.records().map(|(name, sig)| {
                                             Self::format_hir_record_signature(name, sig)
                                         }),
                                         RcDoc::hardline(),
@@ -75,7 +75,7 @@ impl HirModuleDebugPass {
                                     .append(RcDoc::text("// module functions"))
                                     .append(RcDoc::hardline())
                                     .append(RcDoc::intersperse(
-                                        module.signature.functions.iter().map(|(name, sig)| {
+                                        module.signature.functions().map(|(name, sig)| {
                                             Self::format_hir_function_signature(name, sig)
                                         }),
                                         RcDoc::hardline(),
@@ -85,7 +85,7 @@ impl HirModuleDebugPass {
                                     .append("// module traits")
                                     .append(RcDoc::hardline())
                                     .append(RcDoc::intersperse(
-                                        module.signature.traits.iter().map(|(name, sig)| {
+                                        module.signature.traits().map(|(name, sig)| {
                                             Self::format_hir_trait_signature(name, sig)
                                         }),
                                         RcDoc::hardline(),
@@ -96,15 +96,11 @@ impl HirModuleDebugPass {
                                     .append(RcDoc::hardline())
                                     .append(
                                         RcDoc::intersperse(
-                                            module.signature.instances.iter().flat_map(
-                                                |(name, sig)| {
-                                                    sig.iter().map(|sig| {
-                                                        Self::format_hir_instance_signature(
-                                                            name, sig,
-                                                        )
-                                                    })
-                                                },
-                                            ),
+                                            module.signature.instances().flat_map(|(name, sig)| {
+                                                sig.iter().map(|sig| {
+                                                    Self::format_hir_instance_signature(name, sig)
+                                                })
+                                            }),
                                             RcDoc::hardline(),
                                         ),
                                     ),

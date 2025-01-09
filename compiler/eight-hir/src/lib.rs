@@ -8,7 +8,9 @@
 //! and abstractions that the syntax of the language provides, providing more information about the
 //! program than the AST.
 
-use crate::item::{HirFunction, HirInstance, HirIntrinsicFunction, HirRecord, HirTrait};
+use crate::item::{
+    HirFunction, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord, HirTrait,
+};
 use crate::signature::HirModuleSignature;
 use eight_span::Span;
 use std::collections::BTreeMap;
@@ -41,6 +43,7 @@ pub struct HirModuleBody<'ta> {
     pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction<'ta>>,
     pub records: BTreeMap<String, HirRecord<'ta>>,
     pub traits: BTreeMap<String, HirTrait<'ta>>,
+    pub scalars: BTreeMap<String, HirIntrinsicScalar<'ta>>,
     pub instances: BTreeMap<String, Vec<HirInstance<'ta>>>,
 }
 

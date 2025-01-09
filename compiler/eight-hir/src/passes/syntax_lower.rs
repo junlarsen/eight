@@ -294,48 +294,34 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         match node {
             AstItem::Function(f) => {
                 let fun = self.visit_function_item(f)?;
-                module_signature
-                    .functions
-                    .insert(f.name.name.to_owned(), fun.signature);
+                module_signature.add_function(f.name.name.as_str(), fun.signature);
                 module_body.functions.insert(f.name.name.to_owned(), fun);
             }
             AstItem::IntrinsicFunction(f) => {
                 let fun = self.visit_intrinsic_function_item(f)?;
-                module_signature
-                    .functions
-                    .insert(f.name.name.to_owned(), fun.signature);
+                module_signature.add_function(f.name.name.as_str(), fun.signature);
                 module_body
                     .intrinsic_functions
                     .insert(f.name.name.to_owned(), fun);
             }
             AstItem::Type(t) => {
                 let record = self.visit_type_item(t)?;
-                module_signature
-                    .records
-                    .insert(t.name.name.to_owned(), record.signature);
+                module_signature.add_record(t.name.name.as_str(), record.signature);
                 module_body.records.insert(t.name.name.to_owned(), record);
             }
             AstItem::IntrinsicScalar(s) => {
                 let scalar = self.visit_intrinsic_scalar_item(s)?;
-                module_signature
-                    .scalars
-                    .insert(s.name.name.to_owned(), scalar.signature);
+                module_signature.add_scalar(s.name.name.as_str(), scalar.signature);
+                module_body.scalars.insert(s.name.name.to_owned(), scalar);
             }
             AstItem::Trait(t) => {
                 let r#trait = self.visit_trait_item(t)?;
-                module_signature
-                    .traits
-                    .insert(t.name.name.to_owned(), r#trait.signature);
+                module_signature.add_trait(t.name.name.as_str(), r#trait.signature);
                 module_body.traits.insert(t.name.name.to_owned(), r#trait);
             }
             AstItem::Instance(i) => {
                 let instance = self.visit_instance_item(i)?;
-                let entry = module_signature
-                    .instances
-                    .entry(i.name.name.to_owned())
-                    .or_default();
-                entry.push(instance.signature);
-
+                module_signature.add_instance(i.name.name.as_str(), instance.signature);
                 let entry = module_body
                     .instances
                     .entry(i.name.name.to_owned())

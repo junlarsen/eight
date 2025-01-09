@@ -168,8 +168,7 @@ impl<'ta> TypingContext<'ta> {
             HirTy::Nominal(n) => {
                 let ty = self
                     .module_signature
-                    .records
-                    .get(&n.name.name)
+                    .get_record(&n.name.name)
                     .unwrap_or_else(|| ice!("record type not found"));
                 let Some(record_field) = ty.fields.get(&field.name) else {
                     return Err(HirError::InvalidStructFieldReference(
@@ -373,7 +372,7 @@ impl<'ta> TypingContext<'ta> {
 
         // If the function refers to a function signature, we attempt to instantiate it if
         // it is generic.
-        let Some(signature) = self.module_signature.functions.get(&expr.name.name) else {
+        let Some(signature) = self.module_signature.get_function(&expr.name.name) else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
         // Non-generic functions are already "instantiated" and can be constrained directly.
@@ -489,8 +488,7 @@ impl<'ta> TypingContext<'ta> {
         };
         let ty = self
             .module_signature
-            .records
-            .get(&n.name.name)
+            .get_record(&n.name.name)
             .unwrap_or_else(|| ice!("record type not found"));
         let mut visited_fields = HashSet::new();
         for provided_field in expr.arguments.iter() {
@@ -880,10 +878,10 @@ impl HirModuleTypeCheckerPass {
             return Ok(sub);
         }
         // Check if the name is a builtin or record type.
-        if cx.module_signature.scalars.contains_key(&n.name.name) {
+        if cx.module_signature.get_scalar(&n.name.name).is_some() {
             return Ok(node);
         }
-        if cx.module_signature.records.contains_key(&n.name.name) {
+        if cx.module_signature.get_record(&n.name.name).is_some() {
             return Ok(node);
         }
         Err(HirError::UnknownType(UnknownTypeError {
@@ -1031,7 +1029,7 @@ impl HirModuleTypeCheckerPass {
         node.ty = Self::visit_type(cx, node.ty)?;
         // See if the name resolves to a local let-binding or a function name.
         if cx.locals.find(&node.name.name).is_none()
-            && !cx.module_signature.functions.contains_key(&node.name.name)
+            && cx.module_signature.get_function(&node.name.name).is_none()
         {
             return Err(HirError::InvalidReference(InvalidReferenceError {
                 name: node.name.name.to_owned(),
