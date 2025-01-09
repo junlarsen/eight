@@ -326,7 +326,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 module_signature
                     .traits
                     .insert(t.name.name.to_owned(), r#trait.signature);
-                // TODO: Instantiate trait into module_body
+                module_body.traits.insert(t.name.name.to_owned(), r#trait);
             }
             AstItem::Instance(i) => {
                 let instance = self.visit_instance_item(i)?;
@@ -335,7 +335,12 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                     .entry(i.name.name.to_owned())
                     .or_default();
                 entry.push(instance.signature);
-                // TODO: Instantiate instance into module_body
+
+                let entry = module_body
+                    .instances
+                    .entry(i.name.name.to_owned())
+                    .or_default();
+                entry.push(instance);
             }
         };
         Ok(())
@@ -502,7 +507,6 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         &mut self,
         node: &'ast AstTraitFunctionItem,
     ) -> HirResult<&'ta HirFunctionApiSignature<'ta>> {
-        let name = self.visit_identifier(&node.name)?;
         let type_parameters = node
             .type_parameters
             .iter()

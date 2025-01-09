@@ -13,7 +13,7 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::HirFunction;
+use crate::item::{HirFunction, HirInstance};
 use crate::signature::{
     HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
     HirRecordApiSignature, HirScalarApiSignature, HirTraitApiSignature,
@@ -122,6 +122,8 @@ impl HirModuleDebugPass {
                     .append(RcDoc::text("{"))
                     .append(
                         RcDoc::hardline()
+                            .append("// module functions")
+                            .append(RcDoc::hardline())
                             .append(RcDoc::intersperse(
                                 module
                                     .body
@@ -130,6 +132,19 @@ impl HirModuleDebugPass {
                                     .map(|f| Self::format_hir_function(f)),
                                 RcDoc::hardline(),
                             ))
+                            .append(RcDoc::hardline())
+                            .append("// module intrinsic functions")
+                            .append(RcDoc::hardline())
+                            .append(RcDoc::intersperse(
+                                module
+                                    .body
+                                    .instances
+                                    .values()
+                                    .flat_map(|i| i.iter())
+                                    .map(|i| Self::format_hir_instance(i)),
+                                RcDoc::hardline(),
+                            ))
+                            .append(RcDoc::hardline())
                             .nest(2)
                             .group(),
                     )
@@ -200,6 +215,38 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("}"))
     }
 
+    pub fn format_hir_instance<'ta>(instance: &'ta HirInstance<'ta>) -> RcDoc<'ta, ()> {
+        RcDoc::text("instance")
+            .append(RcDoc::space())
+            .append(RcDoc::text(instance.name.name.as_str()))
+            .append(RcDoc::text("<"))
+            .append(RcDoc::intersperse(
+                instance
+                    .signature
+                    .type_arguments
+                    .iter()
+                    .map(|p| Self::format_hir_ty(p)),
+                RcDoc::text(", "),
+            ))
+            .append(RcDoc::text(">"))
+            .append(RcDoc::space())
+            .append(RcDoc::text("{"))
+            .append(
+                RcDoc::hardline()
+                    .append(RcDoc::intersperse(
+                        instance
+                            .members
+                            .iter()
+                            .map(|f| Self::format_hir_function(f)),
+                        RcDoc::hardline(),
+                    ))
+                    .nest(2)
+                    .group(),
+            )
+            .append(RcDoc::hardline())
+            .append(RcDoc::text("}"))
+    }
+
     pub fn format_hir_function_signature<'ta>(
         name: &'ta str,
         signature: &'ta HirFunctionApiSignature<'ta>,
@@ -222,11 +269,11 @@ impl HirModuleDebugPass {
 
     pub fn format_hir_scalar_signature<'ta>(
         name: &'ta str,
-        sig: &'ta HirScalarApiSignature,
+        _: &'ta HirScalarApiSignature,
     ) -> RcDoc<'ta, ()> {
         RcDoc::text("scalar")
             .append(RcDoc::space())
-            .append(RcDoc::text(sig.declaration_name.name.as_str()))
+            .append(RcDoc::text(name))
             .append(RcDoc::text(";"))
     }
 
@@ -352,93 +399,6 @@ impl HirModuleDebugPass {
             .append(RcDoc::text(">"))
     }
 
-    // pub fn format_hir_trait_item<'ta>(r#trait: &'ta HirTrait) -> RcDoc<'ta, ()> {
-    //     RcDoc::text("trait")
-    //         .append(RcDoc::space())
-    //         .append(RcDoc::text(r#trait.name.name.as_str()))
-    //         .append(Self::format_hir_type_parameter_signature(
-    //             r#trait.signature.type_parameters.as_slice(),
-    //         ))
-    //         .append(RcDoc::space())
-    //         .append(RcDoc::text("{"))
-    //         .append(
-    //             RcDoc::hardline()
-    //                 .append(RcDoc::intersperse(
-    //                     r#trait
-    //                         .members
-    //                         .iter()
-    //                         .map(|f| Self::format_hir_trait_function_item(f)),
-    //                     RcDoc::hardline(),
-    //                 ))
-    //                 .nest(2)
-    //                 .group(),
-    //         )
-    //         .append(RcDoc::hardline())
-    //         .append(RcDoc::text("}"))
-    // }
-    //
-    // pub fn format_hir_trait_function_item<'ta>(
-    //     function: &'ta HirTraitFunctionItem,
-    // ) -> RcDoc<'ta, ()> {
-    //     RcDoc::text("fn")
-    //         .append(RcDoc::space())
-    //         .append(RcDoc::text(function.name.name.as_str()))
-    //         .append(Self::format_hir_type_parameter_signature(
-    //             function.type_parameters.as_slice(),
-    //         ))
-    //         .append(RcDoc::space())
-    //         .append(RcDoc::text("("))
-    //         .append(RcDoc::intersperse(
-    //             function.parameters.iter().map(|p| {
-    //                 RcDoc::text(p.name.name.as_str()).append(
-    //                     RcDoc::text(":")
-    //                         .append(RcDoc::space())
-    //                         .append(Self::format_hir_ty(p.ty)),
-    //                 )
-    //             }),
-    //             RcDoc::text(", "),
-    //         ))
-    //         .append(RcDoc::text(")"))
-    //         .append(RcDoc::space())
-    //         .append(RcDoc::text("->"))
-    //         .append(RcDoc::space())
-    //         .append(Self::format_hir_ty(function.return_type))
-    //         .append(RcDoc::text(";"))
-    // }
-    //
-    // pub fn format_hir_instance<'ta>(instance: &'ta HirInstance<'ta>) -> RcDoc<'ta, ()> {
-    //     RcDoc::text("instance")
-    //         .append(RcDoc::space())
-    //         .append(&instance.name.name)
-    //         .append(RcDoc::text("<"))
-    //         .append(RcDoc::intersperse(
-    //             instance
-    //                 .instantiation_type_parameters
-    //                 .iter()
-    //                 .map(|p| Self::format_hir_ty(p)),
-    //             RcDoc::text(", "),
-    //         ))
-    //         .append(RcDoc::text(">"))
-    //         .append(RcDoc::space())
-    //         .append(
-    //             RcDoc::text("{")
-    //                 .append(
-    //                     RcDoc::hardline()
-    //                         .append(RcDoc::intersperse(
-    //                             instance
-    //                                 .members
-    //                                 .iter()
-    //                                 .map(|member| Self::format_hir_function(member)),
-    //                             RcDoc::line(),
-    //                         ))
-    //                         .nest(2)
-    //                         .group(),
-    //                 )
-    //                 .append(RcDoc::hardline())
-    //                 .append(RcDoc::text("}")),
-    //         )
-    // }
-
     pub fn format_hir_stmt<'ta>(stmt: &'ta HirStmt) -> RcDoc<'ta, ()> {
         match stmt {
             HirStmt::Let(s) => Self::format_hir_let_stmt(s),
@@ -488,10 +448,7 @@ impl HirModuleDebugPass {
             .append(
                 RcDoc::hardline()
                     .append(RcDoc::intersperse(
-                        stmt.body
-                            .iter()
-                            .map(|s| Self::format_hir_stmt(s))
-                            .collect::<Vec<_>>(),
+                        stmt.body.iter().map(|s| Self::format_hir_stmt(s)),
                         RcDoc::hardline(),
                     ))
                     .nest(2)
@@ -511,10 +468,7 @@ impl HirModuleDebugPass {
             .append(
                 RcDoc::hardline()
                     .append(RcDoc::intersperse(
-                        stmt.happy_path
-                            .iter()
-                            .map(|s| Self::format_hir_stmt(s))
-                            .collect::<Vec<_>>(),
+                        stmt.happy_path.iter().map(|s| Self::format_hir_stmt(s)),
                         RcDoc::hardline(),
                     ))
                     .nest(2)
@@ -529,10 +483,7 @@ impl HirModuleDebugPass {
             .append(
                 RcDoc::hardline()
                     .append(RcDoc::intersperse(
-                        stmt.unhappy_path
-                            .iter()
-                            .map(|s| Self::format_hir_stmt(s))
-                            .collect::<Vec<_>>(),
+                        stmt.unhappy_path.iter().map(|s| Self::format_hir_stmt(s)),
                         RcDoc::hardline(),
                     ))
                     .nest(2)
@@ -559,10 +510,7 @@ impl HirModuleDebugPass {
             .append(
                 RcDoc::hardline()
                     .append(RcDoc::intersperse(
-                        stmt.body
-                            .iter()
-                            .map(|s| Self::format_hir_stmt(s))
-                            .collect::<Vec<_>>(),
+                        stmt.body.iter().map(|s| Self::format_hir_stmt(s)),
                         RcDoc::hardline(),
                     ))
                     .nest(2)
@@ -665,19 +613,13 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("::"))
             .append(RcDoc::text("<"))
             .append(RcDoc::intersperse(
-                expr.type_arguments
-                    .iter()
-                    .map(|a| Self::format_hir_ty(a))
-                    .collect::<Vec<_>>(),
+                expr.type_arguments.iter().map(|a| Self::format_hir_ty(a)),
                 RcDoc::text(","),
             ))
             .append(RcDoc::text(">"))
             .append(RcDoc::text("("))
             .append(RcDoc::intersperse(
-                expr.arguments
-                    .iter()
-                    .map(|a| Self::format_hir_expr(a))
-                    .collect::<Vec<_>>(),
+                expr.arguments.iter().map(|a| Self::format_hir_expr(a)),
                 RcDoc::text(","),
             ))
             .append(RcDoc::text(")"))
