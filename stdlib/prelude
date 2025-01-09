@@ -1,3 +1,0 @@
-intrinsic_fn malloc<T>(size: i32) -> *T;
-intrinsic_fn free<T>(ptr: *T);
-intrinsic_fn panic() -> unit;

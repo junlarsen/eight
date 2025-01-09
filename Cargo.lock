@@ -298,6 +298,7 @@ name = "eight-tests"
 version = "0.1.0"
 dependencies = [
  "eight-diagnostics",
+ "eight-driver",
  "eight-hir",
  "eight-macros",
  "eight-mir",

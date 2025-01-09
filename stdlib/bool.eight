@@ -1,0 +1,35 @@
+intrinsic_scalar bool;
+
+intrinsic_fn __builtin_bool_and(a: bool, b: bool) -> bool;
+intrinsic_fn __builtin_bool_or(a: bool, b: bool) -> bool;
+
+instance And<bool, bool, bool> {
+  fn and(a: bool, b: bool) -> bool {
+    return __builtin_bool_and(a, b);
+  }
+}
+instance Or<bool, bool, bool> {
+  fn or(a: bool, b: bool) -> bool {
+    return __builtin_bool_or(a, b);
+  }
+}
+
+intrinsic_fn __builtin_bool_eq(a: bool, b: bool) -> bool;
+intrinsic_fn __builtin_bool_neq(a: bool, b: bool) -> bool;
+
+instance Eq<bool, bool> {
+  fn eq(a: bool, b: bool) -> bool {
+    return __builtin_bool_eq(a, b);
+  }
+  fn neq(a: bool, b: bool) -> bool {
+    return __builtin_bool_neq(a, b);
+  }
+}
+
+intrinsic_fn __builtin_bool_not(a: bool) -> bool;
+
+instance Not<bool, bool> {
+  fn not(a: bool) -> bool {
+    return __builtin_bool_not(a);
+  }
+}
