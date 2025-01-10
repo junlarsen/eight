@@ -12,13 +12,13 @@ exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: sema::trait_missing_instance
+Error: sema::trait_does_not_exist
 
-  × trait Neg does not have instance Neg<bool, bool>
+  × trait Not does not exist
     ╭─[tests/ui/trait/trait_instance_couldnt_match.test:12:10]
  11 │ fn test(a: bool) -> bool {
  12 │   return -a;
     ·          ┬
-    ·          ╰── required instance Neg<bool, bool> for trait Neg
+    ·          ╰── required trait Not to exist
  13 │ }
     ╰────

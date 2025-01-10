@@ -6,7 +6,7 @@ snapshot_kind: text
 ---
 AstTranslationUnit(
   items: [
-    Type(AstTypeItem(
+    Struct(AstStructItem(
       span: Span(
         low: 0,
         high: 50,
@@ -19,7 +19,7 @@ AstTranslationUnit(
         ),
       ),
       members: [
-        AstTypeMemberItem(
+        AstStructMemberItem(
           span: Span(
             low: 18,
             high: 25,
@@ -38,7 +38,7 @@ AstTranslationUnit(
             ),
           )),
         ),
-        AstTypeMemberItem(
+        AstStructMemberItem(
           span: Span(
             low: 28,
             high: 35,
@@ -57,7 +57,7 @@ AstTranslationUnit(
             ),
           )),
         ),
-        AstTypeMemberItem(
+        AstStructMemberItem(
           span: Span(
             low: 38,
             high: 48,

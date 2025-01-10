@@ -8,9 +8,12 @@ macro_rules! assert_hir_module_compiles {
         use eight_hir::passes::ASTSyntaxLoweringPass;
         use eight_syntax::lexer::Lexer;
         use eight_syntax::parser::Parser;
+        use eight_syntax::arena::AstArena;
 
         let mut lexer = Lexer::new($input);
-        let mut parser = Parser::new(&mut lexer);
+        let bump = Bump::new();
+        let arena = AstArena::new(&bump);
+        let mut parser = Parser::new(&mut lexer, &arena);
         let translation_unit = parser
             .parse()
             .expect(format!("failed to parse {} into syntax tree", $path.display()).as_str());
@@ -37,9 +40,12 @@ macro_rules! assert_hir_module_infers {
         use eight_hir::passes::TypingContext;
         use eight_syntax::lexer::Lexer;
         use eight_syntax::parser::Parser;
+        use eight_syntax::arena::AstArena;
 
+        let bump = Bump::new();
+        let arena = AstArena::new(&bump);
         let mut lexer = Lexer::new($input);
-        let mut parser = Parser::new(&mut lexer);
+        let mut parser = Parser::new(&mut lexer, &arena);
         let translation_unit = parser
             .parse()
             .expect("failed to parse corpus file into syntax tree");

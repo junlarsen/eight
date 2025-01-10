@@ -283,6 +283,7 @@ dependencies = [
 name = "eight-syntax"
 version = "0.1.0"
 dependencies = [
+ "bumpalo",
  "eight-diagnostics",
  "eight-macros",
  "eight-span",

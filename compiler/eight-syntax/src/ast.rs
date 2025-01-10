@@ -5,8 +5,8 @@ use eight_span::Span;
 /// The term translation unit is used here to refer to a single source file.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstTranslationUnit {
-    pub items: Vec<AstItem>,
+pub struct AstTranslationUnit<'ast> {
+    pub items: &'ast [&'ast AstItem<'ast>],
 }
 
 /// An item in the translation unit.
@@ -15,22 +15,22 @@ pub struct AstTranslationUnit {
 /// currently means either functions or types.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub enum AstItem {
-    Function(AstFunctionItem),
-    IntrinsicFunction(AstIntrinsicFunctionItem),
-    IntrinsicType(AstIntrinsicTypeItem),
-    Type(AstTypeItem),
-    Trait(AstTraitItem),
-    Instance(AstInstanceItem),
+pub enum AstItem<'ast> {
+    Function(AstFunctionItem<'ast>),
+    IntrinsicFunction(AstIntrinsicFunctionItem<'ast>),
+    IntrinsicType(AstIntrinsicTypeItem<'ast>),
+    Struct(AstStructItem<'ast>),
+    Trait(AstTraitItem<'ast>),
+    Instance(AstInstanceItem<'ast>),
 }
 
-impl AstItem {
+impl<'ast> AstItem<'ast> {
     pub fn span(&self) -> &Span {
         match self {
             AstItem::Function(f) => &f.span,
             AstItem::IntrinsicFunction(f) => &f.span,
             AstItem::IntrinsicType(f) => &f.span,
-            AstItem::Type(f) => &f.span,
+            AstItem::Struct(f) => &f.span,
             AstItem::Trait(f) => &f.span,
             AstItem::Instance(f) => &f.span,
         }
@@ -39,105 +39,105 @@ impl AstItem {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstFunctionItem {
+pub struct AstFunctionItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub parameters: Vec<AstFunctionParameterItem>,
-    pub type_parameters: Vec<AstTypeParameterItem>,
-    pub return_type: Option<AstType>,
-    pub body: Vec<AstStmt>,
+    pub name: &'ast AstIdentifier,
+    pub parameters: &'ast [&'ast AstFunctionParameterItem<'ast>],
+    pub type_parameters: &'ast [&'ast AstTypeParameterItem<'ast>],
+    pub return_type: Option<&'ast AstType<'ast>>,
+    pub body: &'ast [&'ast AstStmt<'ast>],
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstIntrinsicFunctionItem {
+pub struct AstIntrinsicFunctionItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub parameters: Vec<AstFunctionParameterItem>,
-    pub type_parameters: Vec<AstTypeParameterItem>,
-    pub return_type: AstType,
+    pub name: &'ast AstIdentifier,
+    pub parameters: &'ast [&'ast AstFunctionParameterItem<'ast>],
+    pub type_parameters: &'ast [&'ast AstTypeParameterItem<'ast>],
+    pub return_type: &'ast AstType<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstTypeParameterItem {
+pub struct AstTypeParameterItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
+    pub name: &'ast AstIdentifier,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstFunctionParameterItem {
+pub struct AstFunctionParameterItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub ty: AstType,
+    pub name: &'ast AstIdentifier,
+    pub ty: &'ast AstType<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstIntrinsicTypeItem {
+pub struct AstIntrinsicTypeItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
+    pub name: &'ast AstIdentifier,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstTypeItem {
+pub struct AstStructItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub members: Vec<AstTypeMemberItem>,
+    pub name: &'ast AstIdentifier,
+    pub members: &'ast [&'ast AstStructMemberItem<'ast>],
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstTypeMemberItem {
+pub struct AstStructMemberItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub ty: AstType,
+    pub name: &'ast AstIdentifier,
+    pub ty: &'ast AstType<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstTraitItem {
+pub struct AstTraitItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub type_parameters: Vec<AstTypeParameterItem>,
-    pub members: Vec<AstTraitFunctionItem>,
+    pub name: &'ast AstIdentifier,
+    pub type_parameters: &'ast [&'ast AstTypeParameterItem<'ast>],
+    pub members: &'ast [&'ast AstTraitFunctionItem<'ast>],
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstTraitFunctionItem {
+pub struct AstTraitFunctionItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub type_parameters: Vec<AstTypeParameterItem>,
-    pub parameters: Vec<AstFunctionParameterItem>,
-    pub return_type: Option<AstType>,
+    pub name: &'ast AstIdentifier,
+    pub type_parameters: &'ast [&'ast AstTypeParameterItem<'ast>],
+    pub parameters: &'ast [&'ast AstFunctionParameterItem<'ast>],
+    pub return_type: Option<&'ast AstType<'ast>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstInstanceItem {
+pub struct AstInstanceItem<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
+    pub name: &'ast AstIdentifier,
     /// The type parameters the trait instance is for
-    pub instantiation_type_parameters: Vec<AstType>,
-    pub members: Vec<AstFunctionItem>,
+    pub instantiation_type_parameters: &'ast [&'ast AstType<'ast>],
+    pub members: &'ast [&'ast AstFunctionItem<'ast>],
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub enum AstStmt {
-    Let(AstLetStmt),
-    Return(AstReturnStmt),
-    For(AstForStmt),
+pub enum AstStmt<'ast> {
+    Let(AstLetStmt<'ast>),
+    Return(AstReturnStmt<'ast>),
+    For(AstForStmt<'ast>),
     Break(AstBreakStmt),
     Continue(AstContinueStmt),
-    If(AstIfStmt),
-    Expr(AstExprStmt),
+    If(AstIfStmt<'ast>),
+    Expr(AstExprStmt<'ast>),
 }
 
-impl AstStmt {
+impl<'ast> AstStmt<'ast> {
     /// Get the span of the inner statement.
     pub fn span(&self) -> &Span {
         match self {
@@ -154,36 +154,36 @@ impl AstStmt {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstLetStmt {
+pub struct AstLetStmt<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub ty: Option<AstType>,
-    pub value: AstExpr,
+    pub name: &'ast AstIdentifier,
+    pub ty: Option<&'ast AstType<'ast>>,
+    pub value: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstReturnStmt {
+pub struct AstReturnStmt<'ast> {
     pub span: Span,
-    pub value: Option<AstExpr>,
+    pub value: Option<&'ast AstExpr<'ast>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstForStmt {
+pub struct AstForStmt<'ast> {
     pub span: Span,
-    pub initializer: Option<AstForStmtInitializer>,
-    pub condition: Option<AstExpr>,
-    pub increment: Option<AstExpr>,
-    pub body: Vec<AstStmt>,
+    pub initializer: Option<&'ast AstForStmtInitializer<'ast>>,
+    pub condition: Option<&'ast AstExpr<'ast>>,
+    pub increment: Option<&'ast AstExpr<'ast>>,
+    pub body: &'ast [&'ast AstStmt<'ast>],
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstForStmtInitializer {
+pub struct AstForStmtInitializer<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
-    pub initializer: AstExpr,
+    pub name: &'ast AstIdentifier,
+    pub initializer: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -200,37 +200,37 @@ pub struct AstContinueStmt {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstIfStmt {
+pub struct AstIfStmt<'ast> {
     pub span: Span,
-    pub condition: AstExpr,
-    pub happy_path: Vec<AstStmt>,
-    pub unhappy_path: Option<Vec<AstStmt>>,
+    pub condition: &'ast AstExpr<'ast>,
+    pub happy_path: &'ast [&'ast AstStmt<'ast>],
+    pub unhappy_path: Option<&'ast [&'ast AstStmt<'ast>]>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstExprStmt {
+pub struct AstExprStmt<'ast> {
     pub span: Span,
-    pub expr: AstExpr,
+    pub expr: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub enum AstExpr {
-    Assign(AstAssignExpr),
-    BinaryOp(AstBinaryOpExpr),
-    UnaryOp(AstUnaryOpExpr),
+pub enum AstExpr<'ast> {
+    Assign(AstAssignExpr<'ast>),
+    BinaryOp(AstBinaryOpExpr<'ast>),
+    UnaryOp(AstUnaryOpExpr<'ast>),
     IntegerLiteral(AstIntegerLiteralExpr),
     BooleanLiteral(AstBooleanLiteralExpr),
-    DotIndex(AstDotIndexExpr),
-    BracketIndex(AstBracketIndexExpr),
-    Reference(AstReferenceExpr),
-    Call(AstCallExpr),
-    Construct(AstConstructExpr),
-    Group(AstGroupExpr),
+    DotIndex(AstDotIndexExpr<'ast>),
+    BracketIndex(AstBracketIndexExpr<'ast>),
+    Reference(AstReferenceExpr<'ast>),
+    Call(AstCallExpr<'ast>),
+    Construct(AstConstructExpr<'ast>),
+    Group(AstGroupExpr<'ast>),
 }
 
-impl AstExpr {
+impl<'ast> AstExpr<'ast> {
     /// Get the span of the inner expression.
     pub fn span(&self) -> &Span {
         match self {
@@ -251,27 +251,27 @@ impl AstExpr {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstAssignExpr {
+pub struct AstAssignExpr<'ast> {
     pub span: Span,
-    pub lhs: Box<AstExpr>,
-    pub rhs: Box<AstExpr>,
+    pub lhs: &'ast AstExpr<'ast>,
+    pub rhs: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstBinaryOpExpr {
+pub struct AstBinaryOpExpr<'ast> {
     pub span: Span,
-    pub lhs: Box<AstExpr>,
-    pub rhs: Box<AstExpr>,
+    pub lhs: &'ast AstExpr<'ast>,
+    pub rhs: &'ast AstExpr<'ast>,
     pub op: AstBinaryOp,
     pub op_span: Span,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstUnaryOpExpr {
+pub struct AstUnaryOpExpr<'ast> {
     pub span: Span,
-    pub operand: Box<AstExpr>,
+    pub operand: &'ast AstExpr<'ast>,
     pub op: AstUnaryOp,
     pub op_span: Span,
 }
@@ -292,57 +292,57 @@ pub struct AstBooleanLiteralExpr {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstDotIndexExpr {
+pub struct AstDotIndexExpr<'ast> {
     pub span: Span,
-    pub origin: Box<AstExpr>,
-    pub index: AstIdentifier,
+    pub origin: &'ast AstExpr<'ast>,
+    pub index: &'ast AstIdentifier,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstBracketIndexExpr {
+pub struct AstBracketIndexExpr<'ast> {
     pub span: Span,
-    pub origin: Box<AstExpr>,
-    pub index: Box<AstExpr>,
+    pub origin: &'ast AstExpr<'ast>,
+    pub index: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstReferenceExpr {
+pub struct AstReferenceExpr<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
+    pub name: &'ast AstIdentifier,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstCallExpr {
+pub struct AstCallExpr<'ast> {
     pub span: Span,
-    pub callee: Box<AstExpr>,
-    pub arguments: Vec<AstExpr>,
-    pub type_arguments: Vec<AstType>,
+    pub callee: &'ast AstExpr<'ast>,
+    pub arguments: &'ast [&'ast AstExpr<'ast>],
+    pub type_arguments: &'ast [&'ast AstType<'ast>],
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstConstructExpr {
+pub struct AstConstructExpr<'ast> {
     pub span: Span,
-    pub callee: AstType,
-    pub arguments: Vec<AstConstructorExprArgument>,
+    pub callee: &'ast AstType<'ast>,
+    pub arguments: &'ast [&'ast AstConstructorExprArgument<'ast>],
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstConstructorExprArgument {
+pub struct AstConstructorExprArgument<'ast> {
     pub span: Span,
-    pub field: AstIdentifier,
-    pub expr: AstExpr,
+    pub field: &'ast AstIdentifier,
+    pub expr: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstGroupExpr {
+pub struct AstGroupExpr<'ast> {
     pub span: Span,
-    pub inner: Box<AstExpr>,
+    pub inner: &'ast AstExpr<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -358,15 +358,15 @@ pub struct AstIdentifier {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub enum AstType {
+pub enum AstType<'ast> {
     Unit(AstUnitType),
     Integer32(AstInteger32Type),
-    Pointer(AstPointerType),
-    Named(AstNamedType),
+    Pointer(AstPointerType<'ast>),
+    Named(AstNamedType<'ast>),
     Boolean(AstBooleanType),
 }
 
-impl AstType {
+impl<'ast> AstType<'ast> {
     /// Get the span of the inner type.
     pub fn span(&self) -> &Span {
         match self {
@@ -399,16 +399,16 @@ pub struct AstBooleanType {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstPointerType {
+pub struct AstPointerType<'ast> {
     pub span: Span,
-    pub inner: Box<AstType>,
+    pub inner: &'ast AstType<'ast>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstNamedType {
+pub struct AstNamedType<'ast> {
     pub span: Span,
-    pub name: AstIdentifier,
+    pub name: &'ast AstIdentifier,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

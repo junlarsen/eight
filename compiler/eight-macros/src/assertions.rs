@@ -59,6 +59,24 @@ macro_rules! assert_none {
     }};
 }
 
+#[macro_export]
+macro_rules! assert_matches {
+    ($expr:expr, $ty:pat_param => $output:expr) => {{
+        match $expr {
+            $ty => $output,
+            _ => {
+                assert!(
+                    false,
+                    "assertion failed: expected {:?} to match {:?}",
+                    $expr,
+                    stringify!($ty)
+                );
+                unreachable!();
+            }
+        }
+    }};
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

@@ -11,6 +11,8 @@ serde = ["dep:serde"]
 eight-macros = { path = "../eight-macros" }
 eight-diagnostics = { path = "../eight-diagnostics" }
 eight-span = { path = "../eight-span" }
+
+bumpalo = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }

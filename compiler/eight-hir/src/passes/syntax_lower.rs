@@ -28,7 +28,7 @@ use eight_syntax::ast::{
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,
     AstGroupExpr, AstIfStmt, AstInstanceItem, AstIntegerLiteralExpr, AstIntrinsicFunctionItem,
     AstIntrinsicTypeItem, AstItem, AstLetStmt, AstReferenceExpr, AstReturnStmt, AstStmt,
-    AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType, AstTypeItem,
+    AstStructItem, AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType,
     AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
 use std::cell::RefCell;
@@ -45,7 +45,7 @@ use std::collections::{BTreeMap, VecDeque};
 /// each type parameter for the local context.
 pub struct ASTSyntaxLoweringPass<'ast, 'ta> {
     arena: &'ta HirArena<'ta>,
-    loop_depth: RefCell<VecDeque<&'ast AstForStmt>>,
+    loop_depth: RefCell<VecDeque<&'ast AstForStmt<'ast>>>,
 }
 
 impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
@@ -77,8 +77,8 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_assign_expr(&'ta self, node: &'ast AstAssignExpr) -> HirResult<HirExpr<'ta>> {
         let hir = HirExpr::Assign(HirAssignExpr {
             span: node.span,
-            lhs: Box::new(self.visit_expr(node.lhs.as_ref())?),
-            rhs: Box::new(self.visit_expr(node.rhs.as_ref())?),
+            lhs: Box::new(self.visit_expr(node.lhs)?),
+            rhs: Box::new(self.visit_expr(node.rhs)?),
             ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
@@ -87,7 +87,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_call_expr(&'ta self, node: &'ast AstCallExpr) -> HirResult<HirExpr<'ta>> {
         let hir = HirExpr::Call(HirCallExpr {
             span: node.span,
-            callee: Box::new(self.visit_expr(node.callee.as_ref())?),
+            callee: Box::new(self.visit_expr(node.callee)?),
             arguments: node
                 .arguments
                 .iter()
@@ -136,7 +136,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_group_expr(&'ta self, node: &'ast AstGroupExpr) -> HirResult<HirExpr<'ta>> {
         let hir = HirExpr::Group(HirGroupExpr {
             span: node.span,
-            inner: Box::new(self.visit_expr(node.inner.as_ref())?),
+            inner: Box::new(self.visit_expr(node.inner)?),
             ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
@@ -174,19 +174,19 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let hir = match &node.op {
             AstUnaryOp::Not | AstUnaryOp::Neg => HirExpr::UnaryOp(HirUnaryOpExpr {
                 span: node.span,
-                operand: Box::new(self.visit_expr(node.operand.as_ref())?),
+                operand: Box::new(self.visit_expr(node.operand)?),
                 op: self.visit_unary_op(&node.op)?,
                 op_span: node.op_span,
                 ty: self.arena.types().get_uninitialized_ty(),
             }),
             AstUnaryOp::Deref => HirExpr::Deref(HirDerefExpr {
                 span: node.span,
-                inner: Box::new(self.visit_expr(node.operand.as_ref())?),
+                inner: Box::new(self.visit_expr(node.operand)?),
                 ty: self.arena.types().get_uninitialized_ty(),
             }),
             AstUnaryOp::AddressOf => HirExpr::AddressOf(HirAddressOfExpr {
                 span: node.span,
-                inner: Box::new(self.visit_expr(node.operand.as_ref())?),
+                inner: Box::new(self.visit_expr(node.operand)?),
                 ty: self.arena.types().get_uninitialized_ty(),
             }),
         };
@@ -196,8 +196,8 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_binary_op_expr(&'ta self, node: &'ast AstBinaryOpExpr) -> HirResult<HirExpr<'ta>> {
         let hir = HirExpr::BinaryOp(HirBinaryOpExpr {
             span: node.span,
-            lhs: Box::new(self.visit_expr(node.lhs.as_ref())?),
-            rhs: Box::new(self.visit_expr(node.rhs.as_ref())?),
+            lhs: Box::new(self.visit_expr(node.lhs)?),
+            rhs: Box::new(self.visit_expr(node.rhs)?),
             op: self.visit_binary_op(&node.op)?,
             op_span: node.op_span,
             ty: self.arena.types().get_uninitialized_ty(),
@@ -208,7 +208,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_dot_index_expr(&'ta self, node: &'ast AstDotIndexExpr) -> HirResult<HirExpr<'ta>> {
         let hir = HirExpr::ConstantIndex(HirConstantIndexExpr {
             span: node.span,
-            origin: Box::new(self.visit_expr(node.origin.as_ref())?),
+            origin: Box::new(self.visit_expr(node.origin)?),
             index: self.arena.names().get(&node.index.name),
             index_span: node.index.span,
             ty: self.arena.types().get_uninitialized_ty(),
@@ -222,8 +222,8 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     ) -> HirResult<HirExpr<'ta>> {
         let hir = HirExpr::OffsetIndex(HirOffsetIndexExpr {
             span: node.span,
-            origin: Box::new(self.visit_expr(node.origin.as_ref())?),
-            index: Box::new(self.visit_expr(node.index.as_ref())?),
+            origin: Box::new(self.visit_expr(node.origin)?),
+            index: Box::new(self.visit_expr(node.index)?),
             ty: self.arena.types().get_uninitialized_ty(),
         });
         Ok(hir)
@@ -277,7 +277,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         let mut module_body = HirModuleBody::default();
         let mut module_signature = HirModuleSignature::default();
 
-        for item in &node.items {
+        for item in node.items {
             self.visit_item(&mut module_body, &mut module_signature, item)?;
         }
 
@@ -311,7 +311,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 module_signature.add_function(name, fun.signature);
                 module_body.functions.insert(name, fun);
             }
-            AstItem::Type(t) => {
+            AstItem::Struct(t) => {
                 let r#struct = self.visit_type_item(t)?;
                 let name = self.arena.names().get(&t.name.name);
                 module_signature.add_struct(name, r#struct.signature);
@@ -585,7 +585,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// ```text
     /// type Node = { value: i32, left: *Node, right: *Node, }
     /// ```
-    pub fn visit_type_item(&'ta self, node: &'ast AstTypeItem) -> HirResult<HirStruct<'ta>> {
+    pub fn visit_type_item(&'ta self, node: &'ast AstStructItem) -> HirResult<HirStruct<'ta>> {
         let name = self.arena.names().get(&node.name.name);
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {
@@ -827,10 +827,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 .arena
                 .types()
                 .get_nominal_ty(self.arena.names().get(&t.name.name), t.name.span),
-            AstType::Pointer(t) => self
-                .arena
-                .types()
-                .get_pointer_ty(self.visit_type(t.inner.as_ref())?),
+            AstType::Pointer(t) => self.arena.types().get_pointer_ty(self.visit_type(t.inner)?),
         };
         Ok(ty)
     }
