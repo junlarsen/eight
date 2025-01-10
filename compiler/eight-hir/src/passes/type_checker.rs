@@ -142,16 +142,16 @@ impl<'hir> TypingContext<'hir> {
     /// Imply a new field projection constraint
     pub fn constrain_field_projection(
         &mut self,
-        ty: &'hir HirTy<'hir>,
+        origin: &'hir HirTy<'hir>,
         field: &'hir str,
         field_span: Span,
-        inner: &'hir HirTy<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) {
         let constraint = Constraint::FieldProjection(FieldProjectionConstraint {
-            origin: ty,
+            origin,
             field,
             field_span,
-            expectation: inner,
+            expectation,
         });
         self.constraints.push(constraint)
     }
@@ -159,16 +159,16 @@ impl<'hir> TypingContext<'hir> {
     /// Imply a new equality constraint
     pub fn constrain_eq(
         &mut self,
-        expected: &'hir HirTy<'hir>,
+        expectation: &'hir HirTy<'hir>,
         actual: &'hir HirTy<'hir>,
-        expected_loc: Span,
+        expectation_loc: Span,
         actual_loc: Span,
     ) {
         self.constraints
             .push(Constraint::Equality(EqualityConstraint {
-                expectation: expected,
+                expectation,
                 actual,
-                expectation_loc: expected_loc,
+                expectation_loc,
                 actual_loc,
             }))
     }
@@ -181,7 +181,7 @@ impl<'hir> TypingContext<'hir> {
         method: &'hir str,
         method_span: Span,
         type_arguments: Vec<&'hir HirTy<'hir>>,
-        resolved_type: &'hir HirTy<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) {
         let constraint = Constraint::Instance(InstanceConstraint {
             name,
@@ -189,7 +189,7 @@ impl<'hir> TypingContext<'hir> {
             method,
             method_span,
             type_arguments,
-            expectation: resolved_type,
+            expectation,
         });
         self.constraints.push(constraint)
     }
@@ -219,9 +219,7 @@ impl<'hir> TypingContext<'hir> {
         match constraint.origin {
             HirTy::Variable(v) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = FieldProjectionConstraint {
-                    origin: self
-                        .substitution(v)
-                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
+                    origin: self.substitute(constraint.origin)?,
                     field: constraint.field,
                     field_span: constraint.field_span,
                     expectation: constraint.expectation,
@@ -253,7 +251,7 @@ impl<'hir> TypingContext<'hir> {
             }
             _ => Err(HirError::InvalidFieldReferenceOfNonStruct(
                 InvalidFieldReferenceOfNonStructError {
-                    ty: constraint.expectation.format(),
+                    ty: constraint.origin.format(),
                     name: constraint.field.to_owned(),
                     span: constraint.field_span,
                 },
