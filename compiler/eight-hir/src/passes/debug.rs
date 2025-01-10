@@ -16,7 +16,7 @@ use crate::expr::{
 use crate::item::{HirFunction, HirInstance};
 use crate::signature::{
     HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
-    HirRecordApiSignature, HirTraitApiSignature, HirTypeApiSignature, HirTypeParameterApiSignature,
+    HirStructApiSignature, HirTraitApiSignature, HirTypeApiSignature, HirTypeParameterApiSignature,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -60,12 +60,12 @@ impl HirModuleDebugPass {
                                 )
                                 .append(RcDoc::hardline())
                                 .append(RcDoc::hardline())
-                                .append(RcDoc::text("// module record types"))
+                                .append(RcDoc::text("// module struct types"))
                                 .append(RcDoc::hardline())
                                 .append(
                                     RcDoc::intersperse(
-                                        module.signature.records.iter().map(|(name, sig)| {
-                                            Self::format_hir_record_signature(name, sig)
+                                        module.signature.structs.iter().map(|(name, sig)| {
+                                            Self::format_hir_struct_signature(name, sig)
                                         }),
                                         RcDoc::hardline(),
                                     )
@@ -270,9 +270,9 @@ impl HirModuleDebugPass {
             .append(RcDoc::text(";"))
     }
 
-    pub fn format_hir_record_signature<'ta>(
+    pub fn format_hir_struct_signature<'ta>(
         name: &'ta str,
-        ty: &'ta HirRecordApiSignature,
+        ty: &'ta HirStructApiSignature,
     ) -> RcDoc<'ta, ()> {
         RcDoc::text("type")
             .append(RcDoc::space())

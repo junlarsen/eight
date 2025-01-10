@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 #[derive(Debug, Default)]
 pub struct HirModuleSignature<'ta> {
     pub functions: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
-    pub records: BTreeMap<String, &'ta HirRecordApiSignature<'ta>>,
+    pub structs: BTreeMap<String, &'ta HirStructApiSignature<'ta>>,
     pub types: BTreeMap<String, &'ta HirTypeApiSignature<'ta>>,
     pub traits: BTreeMap<String, &'ta HirTraitApiSignature<'ta>>,
     /// Instances are stored in a flat list.
@@ -34,8 +34,8 @@ impl<'ta> HirModuleSignature<'ta> {
         self.functions.insert(name.to_owned(), signature);
     }
 
-    pub fn add_record(&mut self, name: &str, signature: &'ta HirRecordApiSignature<'ta>) {
-        self.records.insert(name.to_owned(), signature);
+    pub fn add_struct(&mut self, name: &str, signature: &'ta HirStructApiSignature<'ta>) {
+        self.structs.insert(name.to_owned(), signature);
     }
 
     pub fn add_type(&mut self, name: &str, signature: &'ta HirTypeApiSignature<'ta>) {
@@ -54,8 +54,8 @@ impl<'ta> HirModuleSignature<'ta> {
         self.functions.get(name).copied()
     }
 
-    pub fn get_record(&self, name: &str) -> Option<&'ta HirRecordApiSignature<'ta>> {
-        self.records.get(name).copied()
+    pub fn get_struct(&self, name: &str) -> Option<&'ta HirStructApiSignature<'ta>> {
+        self.structs.get(name).copied()
     }
 
     pub fn get_type(&self, name: &str) -> Option<&'ta HirTypeApiSignature<'ta>> {
@@ -71,7 +71,7 @@ impl<'ta> HirModuleSignature<'ta> {
 #[derive(Debug)]
 pub enum HirModuleItemSignature<'ta> {
     Function(&'ta HirFunctionApiSignature<'ta>),
-    Record(&'ta HirRecordApiSignature<'ta>),
+    Struct(&'ta HirStructApiSignature<'ta>),
     Type(&'ta HirTypeApiSignature<'ta>),
     Trait(&'ta HirTraitApiSignature<'ta>),
     Instance(&'ta HirInstanceApiSignature<'ta>),
@@ -79,15 +79,15 @@ pub enum HirModuleItemSignature<'ta> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirRecordApiSignature<'ta> {
+pub struct HirStructApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
-    pub fields: BTreeMap<String, &'ta HirRecordFieldApiSignature<'ta>>,
+    pub fields: BTreeMap<String, &'ta HirStructFieldApiSignature<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirRecordFieldApiSignature<'ta> {
+pub struct HirStructFieldApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
     pub ty: &'ta HirTy<'ta>,

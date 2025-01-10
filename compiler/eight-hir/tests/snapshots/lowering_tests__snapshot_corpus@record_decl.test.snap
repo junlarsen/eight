@@ -9,7 +9,7 @@ hir_module {
     // module types
     
     
-    // module record types
+    // module struct types
     type Node = {
       next: *Node,
       value: i32,

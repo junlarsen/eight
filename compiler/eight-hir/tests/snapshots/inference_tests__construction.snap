@@ -8,7 +8,7 @@ hir_module {
     // module types
     
     
-    // module record types
+    // module struct types
     type Vec2 = {
       x: i32,
       y: i32,

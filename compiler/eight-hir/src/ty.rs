@@ -83,12 +83,6 @@ impl<'ta> From<&'ta HirTy<'ta>> for HirTyId {
 }
 
 /// A single type in the HIR representation.
-///
-/// This is designed to be easily inferrable using a Hindley-Milner algorithm W implementation. We
-/// extend the HM type system with a few additional features:
-///
-/// 1. Pointer and reference types, which effectively are Abs types.
-/// 2. Record types, which are indexable abstract types.
 #[must_use]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum HirTy<'ta> {
@@ -239,7 +233,7 @@ impl HirTy<'_> {
         matches!(self, HirTy::Pointer(_))
     }
 
-    pub fn is_record(&self) -> bool {
+    pub fn is_nominal(&self) -> bool {
         matches!(self, HirTy::Nominal(_))
     }
 

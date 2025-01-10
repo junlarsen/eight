@@ -12,7 +12,7 @@ use crate::expr::{
     HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr, HirIntegerLiteralExpr,
     HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirRecord};
+use crate::item::{HirFunction, HirStruct};
 use crate::query::HirQueryDatabase;
 use crate::signature::HirModuleSignature;
 use crate::stmt::{
@@ -45,8 +45,8 @@ pub struct EqualityConstraint<'ta> {
 
 /// Represent a field projection constraint.
 ///
-/// This constraint requires the `origin` type to resolve to a record type that has a field with the
-/// given name N. The Nth field of the record is then constrained to be equal to the
+/// This constraint requires the `origin` type to resolve to a struct type that has a field with the
+/// given name N. The Nth field of the struct is then constrained to be equal to the
 /// `resolved_type`.
 #[derive(Debug)]
 pub struct FieldProjectionConstraint<'ta> {
@@ -200,7 +200,7 @@ impl<'ta> TypingContext<'ta> {
 
     /// Perform unification of a field projection.
     ///
-    /// A field projection constraint requires that the type `ty` is a record type, and that the
+    /// A field projection constraint requires that the type `ty` is a struct type, and that the
     /// field `field` has type `inner`. This function unifies the two types.
     pub fn unify_field_projection(
         &mut self,
@@ -224,9 +224,9 @@ impl<'ta> TypingContext<'ta> {
             HirTy::Nominal(n) => {
                 let ty = self
                     .module_signature
-                    .get_record(&n.name.name)
-                    .unwrap_or_else(|| ice!("record type not found"));
-                let Some(record_field) = ty.fields.get(&field.name) else {
+                    .get_struct(&n.name.name)
+                    .unwrap_or_else(|| ice!("struct type not found"));
+                let Some(struct_field) = ty.fields.get(&field.name) else {
                     return Err(HirError::InvalidStructFieldReference(
                         InvalidStructFieldReferenceError {
                             type_name: n.name.name.to_owned(),
@@ -236,8 +236,8 @@ impl<'ta> TypingContext<'ta> {
                     ));
                 };
                 let constraint = EqualityConstraint {
-                    expected: record_field.ty,
-                    expected_loc: record_field.span,
+                    expected: struct_field.ty,
+                    expected_loc: struct_field.span,
                     actual_loc: n.name.span,
                     actual: resolved_type,
                 };
@@ -622,10 +622,11 @@ impl<'ta> TypingContext<'ta> {
         let HirTy::Nominal(n) = expr.callee else {
             ice!("construct expression callee is not a nominal type");
         };
+        // TODO: Produce a proper diagnostic here
         let ty = self
             .module_signature
-            .get_record(&n.name.name)
-            .unwrap_or_else(|| ice!("record type not found"));
+            .get_struct(&n.name.name)
+            .unwrap_or_else(|| ice!("struct type not found"));
         let mut visited_fields = HashSet::new();
         for provided_field in expr.arguments.iter() {
             let Some(field_definition) = ty.fields.get(&provided_field.field.name) else {
@@ -868,7 +869,7 @@ impl HirModuleTypeCheckerPass {
         cx.locals.enter_scope();
 
         Self::visit_module_functions(cx, &mut module.body.functions)?;
-        Self::visit_module_records(cx, &mut module.body.records)?;
+        Self::visit_module_structs(cx, &mut module.body.structs)?;
         cx.locals.leave_scope();
         Ok(())
     }
@@ -884,13 +885,13 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
-    /// Traverse the records in the given module.
-    pub fn visit_module_records<'ta>(
+    /// Traverse the structs in the given module.
+    pub fn visit_module_structs<'ta>(
         cx: &mut TypingContext<'ta>,
-        records: &mut BTreeMap<String, HirRecord<'ta>>,
+        structs: &mut BTreeMap<String, HirStruct<'ta>>,
     ) -> HirResult<()> {
-        for rec in records.values_mut() {
-            Self::visit_hir_record(cx, rec)?;
+        for rec in structs.values_mut() {
+            Self::visit_struct(cx, rec)?;
         }
         Ok(())
     }
@@ -956,18 +957,18 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
-    /// Visit a record.
+    /// Visit a struct.
     ///
-    /// This ensures that all the record fields are valid, and that the record is not recursive.
+    /// This ensures that all the struct fields are valid, and that the struct is not recursive.
     ///
-    /// A record type is infinitely recursive if any of its fields are unable to break the cycle.
+    /// A struct type is infinitely recursive if any of its fields are unable to break the cycle.
     /// Types that can be break the cycle are pointer types. This means that if a type directly
     /// references itself by name
-    pub fn visit_hir_record<'ta>(
+    pub fn visit_struct<'ta>(
         cx: &mut TypingContext<'ta>,
-        node: &mut HirRecord<'ta>,
+        node: &mut HirStruct<'ta>,
     ) -> HirResult<()> {
-        // Instantiate the types of the record fields.
+        // Instantiate the types of the struct fields.
         for field in node.signature.fields.values() {
             let ty = Self::visit_type(cx, field.ty)?;
             node.instantiated_fields
@@ -977,7 +978,7 @@ impl HirModuleTypeCheckerPass {
         for (field_name, field_declaration) in node.signature.fields.iter() {
             let field_ty = node.instantiated_fields.get(field_name).unwrap_or_else(|| {
                 ice!(format!(
-                    "field {} not found in record type {}",
+                    "field {} not found in struct type {}",
                     field_name, node.name.name
                 ))
             });
@@ -1022,7 +1023,7 @@ impl HirModuleTypeCheckerPass {
         }
     }
 
-    /// A named type is either a user-defined record, a builtin type, or a generic type parameter.
+    /// A named type is either a user-defined struct, a builtin type, or a generic type parameter.
     ///
     /// If it is a generic type parameter, we substitute it with the matching substitution from the
     /// local type parameter substitution context.
@@ -1039,11 +1040,11 @@ impl HirModuleTypeCheckerPass {
         if let Some(sub) = cx.local_type_parameter_substitutions.find(&n.name.name) {
             return Ok(sub);
         }
-        // Check if the name is a builtin or record type.
+        // Check if the name is a builtin or struct type.
         if cx.module_signature.get_type(&n.name.name).is_some() {
             return Ok(node);
         }
-        if cx.module_signature.get_record(&n.name.name).is_some() {
+        if cx.module_signature.get_struct(&n.name.name).is_some() {
             return Ok(node);
         }
         Err(HirError::UnknownType(UnknownTypeError {

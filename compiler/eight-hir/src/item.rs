@@ -1,5 +1,5 @@
 use crate::signature::{
-    HirFunctionApiSignature, HirInstanceApiSignature, HirRecordApiSignature, HirTraitApiSignature,
+    HirFunctionApiSignature, HirInstanceApiSignature, HirStructApiSignature, HirTraitApiSignature,
     HirTypeApiSignature,
 };
 use crate::stmt::HirStmt;
@@ -18,11 +18,11 @@ pub struct HirIntrinsicType<'ta> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirRecord<'ta> {
-    /// Span encapsulating the entire record definition.
+pub struct HirStruct<'ta> {
+    /// Span encapsulating the entire struct definition.
     pub span: Span,
     pub name: HirName,
-    pub signature: &'ta HirRecordApiSignature<'ta>,
+    pub signature: &'ta HirStructApiSignature<'ta>,
     pub instantiated_fields: BTreeMap<String, &'ta HirTy<'ta>>,
 }
 

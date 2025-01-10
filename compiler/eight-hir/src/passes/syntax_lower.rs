@@ -8,10 +8,10 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirRecord, HirTrait};
+use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirStruct, HirTrait};
 use crate::signature::{
     HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
-    HirModuleSignature, HirRecordApiSignature, HirRecordFieldApiSignature, HirTraitApiSignature,
+    HirModuleSignature, HirStructApiSignature, HirStructFieldApiSignature, HirTraitApiSignature,
     HirTypeApiSignature, HirTypeParameterApiSignature,
 };
 use crate::stmt::{
@@ -306,9 +306,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 module_body.functions.insert(f.name.name.to_owned(), fun);
             }
             AstItem::Type(t) => {
-                let record = self.visit_type_item(t)?;
-                module_signature.add_record(t.name.name.as_str(), record.signature);
-                module_body.records.insert(t.name.name.to_owned(), record);
+                let r#struct = self.visit_type_item(t)?;
+                module_signature.add_struct(t.name.name.as_str(), r#struct.signature);
+                module_body.structs.insert(t.name.name.to_owned(), r#struct);
             }
             AstItem::IntrinsicType(s) => {
                 let r#type = self.visit_intrinsic_type_item(s)?;
@@ -567,12 +567,12 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// ```text
     /// type Node = { value: i32, left: *Node, right: *Node, }
     /// ```
-    pub fn visit_type_item(&mut self, node: &'ast AstTypeItem) -> HirResult<HirRecord<'ta>> {
+    pub fn visit_type_item(&mut self, node: &'ast AstTypeItem) -> HirResult<HirStruct<'ta>> {
         let name = self.visit_identifier(&node.name)?;
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {
             let ty = self.visit_type(&member.ty)?;
-            let field = self.arena.intern(HirRecordFieldApiSignature {
+            let field = self.arena.intern(HirStructFieldApiSignature {
                 span: member.span,
                 declaration_name: self.visit_identifier(&member.name)?,
                 ty,
@@ -580,12 +580,12 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             });
             fields.insert(member.name.name.to_owned(), &*field);
         }
-        let signature = self.arena.intern(HirRecordApiSignature {
+        let signature = self.arena.intern(HirStructApiSignature {
             span: node.span,
             declaration_name: name.clone(),
             fields,
         });
-        let rec = HirRecord {
+        let rec = HirStruct {
             name,
             span: node.span,
             signature,

@@ -9,7 +9,7 @@ hir_module {
     // module types
     
     
-    // module record types
+    // module struct types
     type Matrix = {
       buf: *i32,
       c: i32,

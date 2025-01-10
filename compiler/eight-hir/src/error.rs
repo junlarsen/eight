@@ -116,7 +116,7 @@ pub struct InvalidStructFieldReferenceError {
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(code(sema::invalid_field_reference_of_non_struct))]
-#[error("type {ty} is not a record type and does not have fields")]
+#[error("type {ty} is not a struct type and does not have fields")]
 pub struct InvalidFieldReferenceOfNonStructError {
     pub ty: String,
     pub name: String,
