@@ -29,7 +29,11 @@ pub struct HirModuleSignature<'hir> {
 }
 
 impl<'hir> HirModuleSignature<'hir> {
-    pub fn add_function(&mut self, name: &'hir str, signature: &'hir HirFunctionApiSignature<'hir>) {
+    pub fn add_function(
+        &mut self,
+        name: &'hir str,
+        signature: &'hir HirFunctionApiSignature<'hir>,
+    ) {
         self.functions.insert(name, signature);
     }
 

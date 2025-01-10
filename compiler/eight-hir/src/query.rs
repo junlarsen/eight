@@ -32,8 +32,10 @@ impl<'a, T: ?Sized> Eq for StableRef<'a, T> {}
 ///
 /// Because HirTy is interned and two equal types are guaranteed to point to th same address in
 /// memory, we use a pointer identity map as the inner hashmap.
-pub type TraitInstanceQueryCache<'hir> =
-    HashMap<&'hir str, HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceApiSignature<'hir>>>>;
+pub type TraitInstanceQueryCache<'hir> = HashMap<
+    &'hir str,
+    HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceApiSignature<'hir>>>,
+>;
 
 /// A query database over a Hir module.
 pub struct HirQueryDatabase<'hir> {

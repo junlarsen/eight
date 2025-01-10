@@ -23,7 +23,7 @@ impl<'arena> AstArena<'arena> {
 
     /// Intern a slice of already-interned values
     pub fn alloc_ref_vec<T>(&self, v: Vec<&'arena T>) -> &'arena [&'arena T] {
-        self.allocator.alloc_slice_fill_iter(v.into_iter())
+        self.allocator.alloc_slice_fill_iter(v)
     }
 
     /// Intern a slice of values and intern them

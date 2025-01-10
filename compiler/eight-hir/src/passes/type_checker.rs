@@ -8,9 +8,9 @@ use crate::error::{
     UnknownFieldError, UnknownTypeError,
 };
 use crate::expr::{
-    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
-    HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr, HirIntegerLiteralExpr,
-    HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
+    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
+    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
 use crate::item::{HirFunction, HirStruct};
 use crate::query::HirQueryDatabase;
@@ -739,24 +739,58 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.constrain_eq(expr.ty, expectation, expr.span, *expr.operand.span());
-        match &expr.op {
-            HirUnaryOp::Not => self.constrain_instance(
-                self.arena.names().get("Not"),
-                expr.op_span,
-                self.arena.names().get("not"),
-                expr.op_span,
-                vec![expr.operand.ty(), expectation],
-                expectation,
-            ),
-            HirUnaryOp::Neg => self.constrain_instance(
-                self.arena.names().get("Not"),
-                expr.op_span,
-                self.arena.names().get("not"),
-                expr.op_span,
-                vec![expr.operand.ty(), expectation],
-                expectation,
-            ),
-        }
+        let (trait_name, method_name) = match &expr.op {
+            HirUnaryOp::Not => (self.arena.names().get("Not"), self.arena.names().get("not")),
+            HirUnaryOp::Neg => (self.arena.names().get("Neg"), self.arena.names().get("neg")),
+        };
+        self.constrain_instance(
+            trait_name,
+            expr.span,
+            method_name,
+            expr.span,
+            vec![expr.operand.ty(), expectation],
+            expectation,
+        );
+        Ok(())
+    }
+
+    pub fn infer_binary_op_expr(
+        &mut self,
+        expr: &mut HirBinaryOpExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
+    ) -> HirResult<()> {
+        self.constrain_eq(
+            expr.ty,
+            expectation,
+            expr.span,
+            // TODO: is this correct?
+            expr.span,
+        );
+        let (trait_name, method_name) = match &expr.op {
+            HirBinaryOp::Add => (self.arena.names().get("Add"), self.arena.names().get("add")),
+            HirBinaryOp::Sub => (self.arena.names().get("Sub"), self.arena.names().get("sub")),
+            HirBinaryOp::Mul => (self.arena.names().get("Mul"), self.arena.names().get("mul")),
+            HirBinaryOp::Div => (self.arena.names().get("Div"), self.arena.names().get("div")),
+            HirBinaryOp::Rem => (self.arena.names().get("Rem"), self.arena.names().get("rem")),
+            HirBinaryOp::Eq => (self.arena.names().get("Eq"), self.arena.names().get("eq")),
+            HirBinaryOp::Neq => (self.arena.names().get("Eq"), self.arena.names().get("neq")),
+            HirBinaryOp::Lt => (self.arena.names().get("Ord"), self.arena.names().get("lt")),
+            HirBinaryOp::Gt => (self.arena.names().get("Ord"), self.arena.names().get("gt")),
+            HirBinaryOp::Le => (self.arena.names().get("Ord"), self.arena.names().get("le")),
+            HirBinaryOp::Ge => (self.arena.names().get("Ord"), self.arena.names().get("ge")),
+            HirBinaryOp::Lte => (self.arena.names().get("Ord"), self.arena.names().get("lte")),
+            HirBinaryOp::Gte => (self.arena.names().get("Ord"), self.arena.names().get("gte")),
+            HirBinaryOp::And => (self.arena.names().get("And"), self.arena.names().get("and")),
+            HirBinaryOp::Or => (self.arena.names().get("Or"), self.arena.names().get("or")),
+        };
+        self.constrain_instance(
+            trait_name,
+            expr.span,
+            method_name,
+            expr.span,
+            vec![expr.lhs.ty(), expr.rhs.ty(), expectation],
+            expectation,
+        );
         Ok(())
     }
 
@@ -783,7 +817,7 @@ impl<'hir> TypingContext<'hir> {
             HirExpr::Deref(e) => self.infer_deref_expr(e, expectation),
             HirExpr::Group(e) => self.infer_group_expr(e, expectation),
             HirExpr::UnaryOp(e) => self.infer_unary_op_expr(e, expectation),
-            HirExpr::BinaryOp(e) => todo!(),
+            HirExpr::BinaryOp(e) => self.infer_binary_op_expr(e, expectation),
         }
     }
 
@@ -1103,7 +1137,7 @@ impl HirModuleTypeCheckerPass {
             HirExpr::AddressOf(e) => Self::enter_address_of_expr(cx, e),
             HirExpr::Deref(e) => Self::enter_deref_expr(cx, e),
             HirExpr::UnaryOp(e) => Self::enter_unary_op_expr(cx, e),
-            HirExpr::BinaryOp(e) => todo!(),
+            HirExpr::BinaryOp(e) => Self::enter_binary_op_expr(cx, e),
         }
     }
 
@@ -1125,7 +1159,7 @@ impl HirModuleTypeCheckerPass {
             HirExpr::AddressOf(e) => Self::leave_address_of_expr(cx, e),
             HirExpr::Deref(e) => Self::leave_deref_expr(cx, e),
             HirExpr::UnaryOp(e) => Self::leave_unary_op_expr(cx, e),
-            HirExpr::BinaryOp(e) => todo!(),
+            HirExpr::BinaryOp(e) => Self::leave_binary_op_expr(cx, e),
         }
     }
 
@@ -1409,6 +1443,29 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirUnaryOpExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.operand)?;
+        node.ty = cx.substitute(node.ty)?;
+        Ok(())
+    }
+
+    /// Collect type constraints for a binary operation expression.
+    pub fn enter_binary_op_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirBinaryOpExpr<'hir>,
+    ) -> HirResult<()> {
+        node.ty = Self::visit_type(cx, node.ty)?;
+        Self::enter_expr(cx, &mut node.lhs)?;
+        Self::enter_expr(cx, &mut node.rhs)?;
+        cx.infer_binary_op_expr(node, node.ty)?;
+        Ok(())
+    }
+
+    /// Perform substitution for a binary operation expression.
+    pub fn leave_binary_op_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirBinaryOpExpr<'hir>,
+    ) -> HirResult<()> {
+        Self::leave_expr(cx, &mut node.lhs)?;
+        Self::leave_expr(cx, &mut node.rhs)?;
         node.ty = cx.substitute(node.ty)?;
         Ok(())
     }

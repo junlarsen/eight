@@ -109,7 +109,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
     ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::Construct(HirConstructExpr {
             span: node.span,
-            callee: self.visit_type(&node.callee)?,
+            callee: self.visit_type(node.callee)?,
             arguments: node
                 .arguments
                 .iter()
@@ -128,7 +128,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
             span: node.span,
             field: self.arena.names().get(&node.field.name),
             field_span: node.field.span,
-            expr: Box::new(self.visit_expr(&node.expr)?),
+            expr: Box::new(self.visit_expr(node.expr)?),
         };
         Ok(hir)
     }
@@ -399,7 +399,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
             .map(|p| self.visit_type_parameter_item(p))
             .collect::<HirResult<Vec<_>>>()?;
         let return_type_annotation = *node.return_type.span();
-        let return_type = self.visit_type(&node.return_type)?;
+        let return_type = self.visit_type(node.return_type)?;
         let parameters = node
             .parameters
             .iter()
@@ -431,7 +431,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
         node: &'ast AstFunctionParameterItem,
     ) -> HirResult<&'hir HirFunctionParameterApiSignature<'hir>> {
         let name = self.arena.names().get(&node.name.name);
-        let ty = self.visit_type(&node.ty)?;
+        let ty = self.visit_type(node.ty)?;
         let hir = self.arena.intern(HirFunctionParameterApiSignature {
             span: node.span,
             name,
@@ -595,7 +595,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
         let name = self.arena.names().get(&node.name.name);
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {
-            let ty = self.visit_type(&member.ty)?;
+            let ty = self.visit_type(member.ty)?;
             let field = self.arena.intern(HirStructFieldApiSignature {
                 span: member.span,
                 name: self.arena.names().get(&member.name.name),
@@ -640,7 +640,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
             Some(t) => self.visit_type(t)?,
             None => self.arena.types().get_uninitialized_ty(),
         };
-        let value = self.visit_expr(&node.value)?;
+        let value = self.visit_expr(node.value)?;
         let hir = HirStmt::Let(HirLetStmt {
             span: node.span,
             name,
@@ -699,7 +699,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
                     name_span: i.name.span,
                     ty: self.arena.types().get_uninitialized_ty(),
                     type_annotation: None,
-                    value: self.visit_expr(&i.initializer)?,
+                    value: self.visit_expr(i.initializer)?,
                 })
             })
             .transpose()?;
@@ -761,7 +761,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
     /// The synthesis of the if statement simply replaces a missing unhappy path with an empty
     /// block.
     pub fn visit_if_stmt(&'hir self, node: &'ast AstIfStmt) -> HirResult<HirStmt<'hir>> {
-        let condition = self.visit_expr(&node.condition)?;
+        let condition = self.visit_expr(node.condition)?;
         let happy_path = node
             .happy_path
             .iter()
@@ -795,7 +795,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
     }
 
     pub fn visit_expr_stmt(&'hir self, node: &'ast AstExprStmt) -> HirResult<HirStmt<'hir>> {
-        let expr = self.visit_expr(&node.expr)?;
+        let expr = self.visit_expr(node.expr)?;
         let hir = HirStmt::Expr(HirExprStmt {
             span: node.span,
             expr,
