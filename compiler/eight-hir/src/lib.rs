@@ -10,7 +10,6 @@
 
 use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirStruct, HirTrait};
 use crate::signature::HirModuleSignature;
-use eight_span::Span;
 use std::collections::BTreeMap;
 
 pub mod arena;
@@ -19,7 +18,7 @@ pub mod error;
 pub mod expr;
 pub mod item;
 pub mod passes;
-mod query;
+pub mod query;
 pub mod signature;
 pub mod stmt;
 pub mod ty;
@@ -48,10 +47,10 @@ pub struct HirModule<'ta> {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
 pub struct HirModuleBody<'ta> {
-    pub functions: BTreeMap<String, HirFunction<'ta>>,
-    pub structs: BTreeMap<String, HirStruct<'ta>>,
-    pub traits: BTreeMap<String, HirTrait<'ta>>,
-    pub types: BTreeMap<String, HirIntrinsicType<'ta>>,
+    pub functions: BTreeMap<&'ta str, HirFunction<'ta>>,
+    pub structs: BTreeMap<&'ta str, HirStruct<'ta>>,
+    pub traits: BTreeMap<&'ta str, HirTrait<'ta>>,
+    pub types: BTreeMap<&'ta str, HirIntrinsicType<'ta>>,
     pub instances: Vec<HirInstance<'ta>>,
 }
 
@@ -59,11 +58,4 @@ impl<'ta> HirModule<'ta> {
     pub fn new(signature: &'ta HirModuleSignature<'ta>, body: HirModuleBody<'ta>) -> Self {
         Self { signature, body }
     }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Clone)]
-pub struct HirName {
-    pub name: String,
-    pub span: Span,
 }

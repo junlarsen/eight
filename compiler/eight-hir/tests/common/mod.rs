@@ -18,7 +18,7 @@ macro_rules! assert_hir_module_compiles {
         let bump = Bump::new();
         let arena = HirArena::new(&bump);
 
-        let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
+        let lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let module = lowering_pass
             .visit_translation_unit(&translation_unit)
             .expect("failed to lower translation unit");
@@ -47,7 +47,7 @@ macro_rules! assert_hir_module_infers {
         let bump = Bump::new();
         let arena = HirArena::new(&bump);
 
-        let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
+        let lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let mut module = lowering_pass
             .visit_translation_unit(&translation_unit)
             .expect("failed to lower translation unit");

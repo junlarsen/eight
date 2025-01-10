@@ -2,16 +2,16 @@ use crate::ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBracketIndexExpr, AstBreakStmt, AstCallExpr,
     AstConstructExpr, AstConstructorExprArgument, AstContinueStmt, AstDotIndexExpr, AstExpr,
     AstExprStmt, AstForStmt, AstForStmtInitializer, AstFunctionItem, AstFunctionParameterItem,
-    AstGroupExpr, AstIdentifier, AstIfStmt, AstInteger32Type, AstIntegerLiteralExpr, AstItem,
-    AstLetStmt, AstNamedType, AstPointerType, AstReferenceExpr, AstReturnStmt, AstStmt,
-    AstTranslationUnit, AstType, AstTypeItem, AstTypeMemberItem, AstUnaryOp, AstUnaryOpExpr,
-    AstUnitType,
+    AstGroupExpr, AstIfStmt, AstInteger32Type, AstIntegerLiteralExpr, AstItem, AstLetStmt,
+    AstNamedType, AstPointerType, AstReferenceExpr, AstReturnStmt, AstStmt, AstTranslationUnit,
+    AstType, AstTypeItem, AstTypeMemberItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
 };
 use crate::lexer::Lexer;
 use crate::{
-    AstBooleanLiteralExpr, AstBooleanType, AstInstanceItem, AstIntrinsicFunctionItem,
-    AstIntrinsicTypeItem, AstTraitFunctionItem, AstTraitItem, AstTypeParameterItem, ParseError,
-    ParseResult, Token, TokenType, UnexpectedEndOfFileError, UnexpectedTokenError,
+    AstBooleanLiteralExpr, AstBooleanType, AstIdentifier, AstInstanceItem,
+    AstIntrinsicFunctionItem, AstIntrinsicTypeItem, AstTraitFunctionItem, AstTraitItem,
+    AstTypeParameterItem, ParseError, ParseResult, Token, TokenType, UnexpectedEndOfFileError,
+    UnexpectedTokenError,
 };
 use eight_span::Span;
 

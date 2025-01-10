@@ -1,6 +1,5 @@
 use crate::expr::HirExpr;
 use crate::ty::HirTy;
-use crate::HirName;
 use eight_span::Span;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -35,7 +34,8 @@ impl HirStmt<'_> {
 #[derive(Debug)]
 pub struct HirLetStmt<'ta> {
     pub span: Span,
-    pub name: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
     pub ty: &'ta HirTy<'ta>,
     pub type_annotation: Option<Span>,
     pub value: HirExpr<'ta>,

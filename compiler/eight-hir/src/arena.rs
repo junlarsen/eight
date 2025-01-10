@@ -2,10 +2,10 @@ use crate::ty::{
     HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirNominalTy, HirPointerTy, HirTy, HirTyId,
     HirUninitializedTy, HirUnitTy, HirVariableTy,
 };
-use crate::HirName;
 use bumpalo::Bump;
+use eight_span::Span;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// An arena allocator for Hir nodes.
 ///
@@ -15,6 +15,7 @@ use std::collections::HashMap;
 pub struct HirArena<'arena> {
     allocator: &'arena Bump,
     type_arena: TypeArena<'arena>,
+    name_arena: HirNameArena<'arena>,
 }
 
 impl<'arena> HirArena<'arena> {
@@ -22,15 +23,49 @@ impl<'arena> HirArena<'arena> {
         Self {
             allocator: bump,
             type_arena: TypeArena::new(bump),
+            name_arena: HirNameArena::new(bump),
         }
     }
 
+    /// Intern an arbitrary value.
     pub fn intern<T>(&self, v: T) -> &'arena mut T {
         self.allocator.alloc(v)
     }
 
+    /// Get a reference to the type interning arena.
     pub fn types(&self) -> &TypeArena<'arena> {
         &self.type_arena
+    }
+
+    /// Get a reference to the name interning arena.
+    pub fn names(&self) -> &HirNameArena<'arena> {
+        &self.name_arena
+    }
+}
+
+/// An arena for interning HIR names.
+///
+/// This is a general purpose string interning arena.
+pub struct HirNameArena<'arena> {
+    allocator: &'arena Bump,
+    intern: RefCell<HashSet<&'arena str>>,
+}
+
+impl<'arena> HirNameArena<'arena> {
+    pub fn new(bump: &'arena Bump) -> Self {
+        Self {
+            allocator: bump,
+            intern: RefCell::new(HashSet::new()),
+        }
+    }
+
+    pub fn get(&self, name: &str) -> &'arena str {
+        if let Some(interned) = self.intern.borrow().get(name) {
+            return interned;
+        }
+        let id = self.allocator.alloc_str(name);
+        self.intern.borrow_mut().insert(id);
+        id
     }
 }
 
@@ -70,11 +105,11 @@ impl<'arena> TypeArena<'arena> {
         })
     }
 
-    pub fn get_nominal_ty(&self, name: &HirName) -> &HirTy {
-        let id = HirTyId::compute_nominal_ty_id(name.name.as_str());
+    pub fn get_nominal_ty(&self, name: &'arena str, name_span: Span) -> &HirTy {
+        let id = HirTyId::compute_nominal_ty_id(name);
         self.intern.borrow_mut().entry(id).or_insert_with(|| {
             self.allocator
-                .alloc(HirTy::Nominal(HirNominalTy { name: name.clone() }))
+                .alloc(HirTy::Nominal(HirNominalTy { name, name_span }))
         })
     }
 

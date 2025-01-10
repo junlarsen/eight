@@ -97,7 +97,7 @@ impl HirModuleDebugPass {
                                         RcDoc::intersperse(
                                             module.signature.instances.iter().map(|sig| {
                                                 Self::format_hir_instance_signature(
-                                                    sig.r#trait.name.as_str(),
+                                                    sig.trait_name,
                                                     sig,
                                                 )
                                             }),
@@ -156,16 +156,13 @@ impl HirModuleDebugPass {
     pub fn format_hir_function<'ta>(function: &'ta HirFunction) -> RcDoc<'ta, ()> {
         RcDoc::text("fn")
             .append(RcDoc::space())
-            .append(RcDoc::text(function.name.name.as_str()))
+            .append(RcDoc::text(function.name))
             .append(RcDoc::text("<"))
             .append(RcDoc::intersperse(
                 function.signature.type_parameters.iter().map(|p| {
-                    match function
-                        .type_parameter_substitutions
-                        .get(p.declaration_name.name.as_str())
-                    {
+                    match function.type_parameter_substitutions.get(p.name) {
                         Some(t) => Self::format_hir_ty(t),
-                        None => RcDoc::text(p.declaration_name.name.as_str()),
+                        None => RcDoc::text(p.name),
                     }
                 }),
                 RcDoc::text(", "),
@@ -174,7 +171,7 @@ impl HirModuleDebugPass {
             .append(RcDoc::text("("))
             .append(RcDoc::intersperse(
                 function.signature.parameters.iter().map(|p| {
-                    RcDoc::text(p.declaration_name.name.as_str())
+                    RcDoc::text(p.name)
                         .append(RcDoc::text(":"))
                         .append(RcDoc::space())
                         .append(Self::format_hir_ty(p.ty))
@@ -211,7 +208,7 @@ impl HirModuleDebugPass {
     pub fn format_hir_instance<'ta>(instance: &'ta HirInstance<'ta>) -> RcDoc<'ta, ()> {
         RcDoc::text("instance")
             .append(RcDoc::space())
-            .append(RcDoc::text(instance.name.name.as_str()))
+            .append(RcDoc::text(instance.name))
             .append(RcDoc::text("<"))
             .append(RcDoc::intersperse(
                 instance
@@ -286,7 +283,7 @@ impl HirModuleDebugPass {
                         RcDoc::hardline()
                             .append(RcDoc::intersperse(
                                 ty.fields.iter().map(|(name, ty)| {
-                                    RcDoc::text(name.as_str())
+                                    RcDoc::text(*name)
                                         .append(RcDoc::text(":"))
                                         .append(RcDoc::space())
                                         .append(Self::format_hir_ty(ty.ty))
@@ -308,7 +305,7 @@ impl HirModuleDebugPass {
         RcDoc::text("(")
             .append(RcDoc::intersperse(
                 parameters.iter().map(|p| {
-                    RcDoc::text(p.declaration_name.name.as_str()).append(
+                    RcDoc::text(p.name).append(
                         RcDoc::text(":")
                             .append(RcDoc::space())
                             .append(Self::format_hir_ty(p.ty)),
@@ -384,9 +381,7 @@ impl HirModuleDebugPass {
         }
         RcDoc::text("<")
             .append(RcDoc::intersperse(
-                parameters
-                    .iter()
-                    .map(|p| RcDoc::text(p.declaration_name.name.as_str())),
+                parameters.iter().map(|p| RcDoc::text(p.name)),
                 RcDoc::text(", "),
             ))
             .append(RcDoc::text(">"))
@@ -408,7 +403,7 @@ impl HirModuleDebugPass {
     pub fn format_hir_let_stmt<'ta>(stmt: &'ta HirLetStmt) -> RcDoc<'ta, ()> {
         RcDoc::text("let")
             .append(RcDoc::space())
-            .append(RcDoc::text(stmt.name.name.as_str()))
+            .append(RcDoc::text(stmt.name))
             .append(RcDoc::text(":"))
             .append(RcDoc::space())
             .append(Self::format_hir_ty(stmt.ty))
@@ -585,13 +580,13 @@ impl HirModuleDebugPass {
     }
 
     pub fn format_hir_reference_expr<'ta>(expr: &'ta HirReferenceExpr) -> RcDoc<'ta, ()> {
-        RcDoc::text(expr.name.name.as_str())
+        RcDoc::text(expr.name)
     }
 
     pub fn format_hir_constant_index_expr<'ta>(expr: &'ta HirConstantIndexExpr) -> RcDoc<'ta, ()> {
         Self::format_hir_expr(&expr.origin)
             .append(RcDoc::text("."))
-            .append(expr.index.name.as_str())
+            .append(expr.index)
     }
 
     pub fn format_hir_offset_index_expr<'ta>(expr: &'ta HirOffsetIndexExpr) -> RcDoc<'ta, ()> {
@@ -642,7 +637,7 @@ impl HirModuleDebugPass {
     pub fn format_hir_construct_expr_argument<'ta>(
         expr: &'ta HirConstructExprArgument,
     ) -> RcDoc<'ta, ()> {
-        RcDoc::text(expr.field.name.as_str())
+        RcDoc::text(expr.field)
             .append(RcDoc::text(":"))
             .append(RcDoc::space())
             .append(Self::format_hir_expr(&expr.expr))
@@ -699,8 +694,8 @@ impl HirModuleDebugPass {
             .append(Self::format_hir_ty(ty.return_type))
     }
 
-    pub fn format_hir_nominal_ty(ty: &HirNominalTy) -> RcDoc<()> {
-        RcDoc::text(ty.name.name.as_str())
+    pub fn format_hir_nominal_ty<'ta>(ty: &'ta HirNominalTy) -> RcDoc<'ta, ()> {
+        RcDoc::text(ty.name)
     }
 
     pub fn format_hir_pointer_ty<'ta>(ty: &'ta HirPointerTy) -> RcDoc<'ta, ()> {

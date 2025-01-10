@@ -1,5 +1,4 @@
 use crate::ty::HirTy;
-use crate::HirName;
 use eight_span::Span;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -124,7 +123,8 @@ pub struct HirDerefExpr<'ta> {
 #[derive(Debug)]
 pub struct HirReferenceExpr<'ta> {
     pub span: Span,
-    pub name: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
     /// The type of `name` in the current scope.
     pub ty: &'ta HirTy<'ta>,
 }
@@ -144,7 +144,8 @@ pub struct HirOffsetIndexExpr<'ta> {
 pub struct HirConstantIndexExpr<'ta> {
     pub span: Span,
     pub origin: Box<HirExpr<'ta>>,
-    pub index: HirName,
+    pub index: &'ta str,
+    pub index_span: Span,
     /// The type of the result of expression.
     pub ty: &'ta HirTy<'ta>,
 }
@@ -174,7 +175,8 @@ pub struct HirConstructExpr<'ta> {
 #[derive(Debug)]
 pub struct HirConstructExprArgument<'ta> {
     pub span: Span,
-    pub field: HirName,
+    pub field: &'ta str,
+    pub field_span: Span,
     pub expr: Box<HirExpr<'ta>>,
 }
 

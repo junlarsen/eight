@@ -19,7 +19,7 @@ use crate::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };
 use crate::ty::{HirFunctionTy, HirPointerTy, HirTy, HirVariableTy};
-use crate::{HirModule, HirName};
+use crate::HirModule;
 use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
@@ -51,7 +51,8 @@ pub struct EqualityConstraint<'ta> {
 #[derive(Debug)]
 pub struct FieldProjectionConstraint<'ta> {
     pub origin: &'ta HirTy<'ta>,
-    pub field: HirName,
+    pub field: &'ta str,
+    pub field_span: Span,
     /// The expectation for the field's type.
     pub resolved_type: &'ta HirTy<'ta>,
 }
@@ -62,8 +63,10 @@ pub struct FieldProjectionConstraint<'ta> {
 /// `type_arguments`.
 #[derive(Debug)]
 pub struct InstanceConstraint<'ta> {
-    pub name: HirName,
-    pub method: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
+    pub method: &'ta str,
+    pub method_span: Span,
     pub type_arguments: Vec<&'ta HirTy<'ta>>,
     /// The expectation for the instance method's return type.
     pub resolved_type: &'ta HirTy<'ta>,
@@ -139,15 +142,17 @@ impl<'ta> TypingContext<'ta> {
     pub fn constrain_field_projection(
         &mut self,
         ty: &'ta HirTy<'ta>,
-        field: HirName,
+        field: &'ta str,
+        field_span: Span,
         inner: &'ta HirTy<'ta>,
     ) {
-        self.constraints
-            .push(Constraint::FieldProjection(FieldProjectionConstraint {
-                origin: ty,
-                field,
-                resolved_type: inner,
-            }))
+        let constraint = Constraint::FieldProjection(FieldProjectionConstraint {
+            origin: ty,
+            field,
+            field_span,
+            resolved_type: inner,
+        });
+        self.constraints.push(constraint)
     }
 
     /// Imply a new equality constraint
@@ -170,18 +175,22 @@ impl<'ta> TypingContext<'ta> {
     /// Imply a new instance constraint
     pub fn constrain_instance(
         &mut self,
-        name: HirName,
-        method: HirName,
+        name: &'ta str,
+        name_span: Span,
+        method: &'ta str,
+        method_span: Span,
         type_arguments: Vec<&'ta HirTy<'ta>>,
         resolved_type: &'ta HirTy<'ta>,
     ) {
-        self.constraints
-            .push(Constraint::Instance(InstanceConstraint {
-                name,
-                method,
-                type_arguments,
-                resolved_type,
-            }))
+        let constraint = Constraint::Instance(InstanceConstraint {
+            name,
+            name_span,
+            method,
+            method_span,
+            type_arguments,
+            resolved_type,
+        });
+        self.constraints.push(constraint)
     }
 
     /// Solve the constraints that have been implied on the context so far.
@@ -207,6 +216,7 @@ impl<'ta> TypingContext<'ta> {
         FieldProjectionConstraint {
             origin,
             field,
+            field_span,
             resolved_type,
         }: FieldProjectionConstraint<'ta>,
     ) -> HirResult<()> {
@@ -217,6 +227,7 @@ impl<'ta> TypingContext<'ta> {
                         .substitution(v)
                         .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
                     field,
+                    field_span,
                     resolved_type,
                 };
                 self.unify_field_projection(constraint)
@@ -224,21 +235,21 @@ impl<'ta> TypingContext<'ta> {
             HirTy::Nominal(n) => {
                 let ty = self
                     .module_signature
-                    .get_struct(&n.name.name)
+                    .get_struct(n.name)
                     .unwrap_or_else(|| ice!("struct type not found"));
-                let Some(struct_field) = ty.fields.get(&field.name) else {
+                let Some(struct_field) = ty.fields.get(field) else {
                     return Err(HirError::InvalidStructFieldReference(
                         InvalidStructFieldReferenceError {
-                            type_name: n.name.name.to_owned(),
-                            name: field.name.to_owned(),
-                            span: field.span,
+                            type_name: n.name.to_owned(),
+                            name: field.to_owned(),
+                            span: field_span,
                         },
                     ));
                 };
                 let constraint = EqualityConstraint {
                     expected: struct_field.ty,
                     expected_loc: struct_field.span,
-                    actual_loc: n.name.span,
+                    actual_loc: n.name_span,
                     actual: resolved_type,
                 };
                 self.unify_eq(constraint)?;
@@ -247,8 +258,8 @@ impl<'ta> TypingContext<'ta> {
             _ => Err(HirError::InvalidFieldReferenceOfNonStruct(
                 InvalidFieldReferenceOfNonStructError {
                     ty: format!("{}", resolved_type),
-                    name: field.name.to_owned(),
-                    span: field.span,
+                    name: field.to_owned(),
+                    span: field_span,
                 },
             )),
         }
@@ -262,17 +273,19 @@ impl<'ta> TypingContext<'ta> {
         &mut self,
         InstanceConstraint {
             name,
+            name_span,
             method,
+            method_span,
             type_arguments,
             resolved_type,
         }: InstanceConstraint<'ta>,
     ) -> HirResult<()> {
         let _ = self
             .module_signature
-            .get_trait(&name.name)
+            .get_trait(name)
             .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
-                name: name.name.to_owned(),
-                span: name.span,
+                name: name.to_owned(),
+                span: name_span,
             }))?;
         let substitutions = type_arguments
             .iter()
@@ -280,37 +293,37 @@ impl<'ta> TypingContext<'ta> {
             .collect::<HirResult<Vec<_>>>()?;
         let instance = self
             .module_query_db
-            .query_trait_instance_by_name_and_type_arguments(&name.name, substitutions.as_slice())
+            .query_trait_instance_by_name_and_type_arguments(name, substitutions.as_slice())
             .ok_or(HirError::TraitMissingInstance(TraitMissingInstanceError {
                 instance_name: format!(
                     "{}<{}>",
-                    name.name,
+                    name,
                     substitutions
                         .iter()
                         .map(|s| format!("{}", s))
                         .collect::<Vec<_>>()
                         .join(", ")
                 ),
-                name: name.name.to_owned(),
-                span: name.span,
+                name: name.to_owned(),
+                span: name_span,
             }))?;
 
         let method = instance
             .methods
-            .get(&method.name)
+            .get(method)
             .ok_or(HirError::TraitInstanceMissingFn(
                 TraitInstanceMissingFnError {
                     name: format!(
                         "{}<{}>",
-                        name.name,
+                        method,
                         substitutions
                             .iter()
                             .map(|s| format!("{}", s))
                             .collect::<Vec<_>>()
                             .join(", ")
                     ),
-                    method: method.name.to_owned(),
-                    span: method.span,
+                    method: method.to_owned(),
+                    span: method_span,
                 },
             ))?;
         let constraint = EqualityConstraint {
@@ -342,7 +355,7 @@ impl<'ta> TypingContext<'ta> {
             {
                 Ok(())
             }
-            (HirTy::Nominal(a), HirTy::Nominal(b)) if a.name.name == b.name.name => Ok(()),
+            (HirTy::Nominal(a), HirTy::Nominal(b)) if std::ptr::eq(a.name, b.name) => Ok(()),
             (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
                     expected: self
@@ -501,14 +514,14 @@ impl<'ta> TypingContext<'ta> {
     ) -> HirResult<()> {
         // We attempt to look up a local variable first. This is cheaper than attempting to
         // instantiate a generic function.
-        if let Some(local_ty) = self.locals.find(&expr.name.name) {
-            self.constrain_eq(expectation, local_ty, expr.span, expr.name.span);
+        if let Some(local_ty) = self.locals.find(expr.name) {
+            self.constrain_eq(expectation, local_ty, expr.span, expr.name_span);
             return Ok(());
         }
 
         // If the function refers to a function signature, we attempt to instantiate it if
         // it is generic.
-        let Some(signature) = self.module_signature.get_function(&expr.name.name) else {
+        let Some(signature) = self.module_signature.get_function(expr.name) else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
         // Non-generic functions are already "instantiated" and can be constrained directly.
@@ -522,7 +535,7 @@ impl<'ta> TypingContext<'ta> {
                 .arena
                 .types()
                 .get_function_ty(signature.return_type, parameters);
-            self.constrain_eq(expectation, ty, expr.span, expr.name.span);
+            self.constrain_eq(expectation, ty, expr.span, expr.name_span);
             return Ok(());
         }
 
@@ -533,7 +546,7 @@ impl<'ta> TypingContext<'ta> {
         for type_parameter in signature.type_parameters.iter() {
             let ty = self.fresh_type_variable();
             self.local_type_parameter_substitutions
-                .add(&type_parameter.declaration_name.name, ty);
+                .add(type_parameter.name, ty);
         }
         // The types of the signature can refer to the type parameters at arbitrary depths,
         // e.g. `**T`, so we just recurse down to substitute.
@@ -544,7 +557,7 @@ impl<'ta> TypingContext<'ta> {
             .collect::<HirResult<Vec<_>>>()?;
         let return_type = HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
         let ty = self.arena.types().get_function_ty(return_type, parameters);
-        self.constrain_eq(expectation, ty, expr.span, expr.name.span);
+        self.constrain_eq(expectation, ty, expr.span, expr.name_span);
         Ok(())
     }
 
@@ -581,7 +594,7 @@ impl<'ta> TypingContext<'ta> {
         expectation: &'ta HirTy<'ta>,
     ) -> HirResult<()> {
         self.constrain_eq(expectation, expr.ty, expr.span, *expr.origin.span());
-        self.constrain_field_projection(expr.origin.ty(), expr.index.clone(), expectation);
+        self.constrain_field_projection(expr.origin.ty(), expr.index, expr.index_span, expectation);
         Ok(())
     }
 
@@ -625,18 +638,18 @@ impl<'ta> TypingContext<'ta> {
         // TODO: Produce a proper diagnostic here
         let ty = self
             .module_signature
-            .get_struct(&n.name.name)
+            .get_struct(n.name)
             .unwrap_or_else(|| ice!("struct type not found"));
         let mut visited_fields = HashSet::new();
         for provided_field in expr.arguments.iter() {
-            let Some(field_definition) = ty.fields.get(&provided_field.field.name) else {
+            let Some(field_definition) = ty.fields.get(&provided_field.field) else {
                 return Err(HirError::UnknownField(UnknownFieldError {
-                    field_name: provided_field.field.name.to_owned(),
-                    type_name: n.name.name.to_owned(),
-                    span: provided_field.field.span,
+                    field_name: provided_field.field.to_owned(),
+                    type_name: n.name.to_owned(),
+                    span: provided_field.field_span,
                 }));
             };
-            visited_fields.insert(provided_field.field.name.clone());
+            visited_fields.insert(provided_field.field);
             self.unify_eq(EqualityConstraint {
                 actual: provided_field.expr.ty(),
                 actual_loc: *provided_field.expr.span(),
@@ -646,10 +659,10 @@ impl<'ta> TypingContext<'ta> {
         }
         // If some of the fields from the struct are missing
         for field in ty.fields.values() {
-            if !visited_fields.contains(&field.declaration_name.name) {
+            if !visited_fields.contains(field.name) {
                 return Err(HirError::MissingField(MissingFieldError {
-                    type_name: n.name.name.to_owned(),
-                    field_name: field.declaration_name.name.to_owned(),
+                    type_name: n.name.to_owned(),
+                    field_name: field.name.to_owned(),
                     span: expr.span,
                     defined_at: field.span,
                 }));
@@ -725,26 +738,18 @@ impl<'ta> TypingContext<'ta> {
         self.constrain_eq(expr.ty, expectation, expr.span, *expr.operand.span());
         match &expr.op {
             HirUnaryOp::Not => self.constrain_instance(
-                HirName {
-                    name: "Not".to_owned(),
-                    span: expr.op_span,
-                },
-                HirName {
-                    name: "not".to_owned(),
-                    span: expr.op_span,
-                },
+                self.arena.names().get("Not"),
+                expr.op_span,
+                self.arena.names().get("not"),
+                expr.op_span,
                 vec![expr.operand.ty(), expectation],
                 expectation,
             ),
             HirUnaryOp::Neg => self.constrain_instance(
-                HirName {
-                    name: "Neg".to_owned(),
-                    span: expr.op_span,
-                },
-                HirName {
-                    name: "neg".to_owned(),
-                    span: expr.op_span,
-                },
+                self.arena.names().get("Not"),
+                expr.op_span,
+                self.arena.names().get("not"),
+                expr.op_span,
                 vec![expr.operand.ty(), expectation],
                 expectation,
             ),
@@ -877,7 +882,7 @@ impl HirModuleTypeCheckerPass {
     /// Traverse the functions in the given module.
     pub fn visit_module_functions<'ta>(
         cx: &mut TypingContext<'ta>,
-        functions: &mut BTreeMap<String, HirFunction<'ta>>,
+        functions: &mut BTreeMap<&'ta str, HirFunction<'ta>>,
     ) -> HirResult<()> {
         for fun in functions.values_mut() {
             Self::visit_function(cx, fun)?;
@@ -888,7 +893,7 @@ impl HirModuleTypeCheckerPass {
     /// Traverse the structs in the given module.
     pub fn visit_module_structs<'ta>(
         cx: &mut TypingContext<'ta>,
-        structs: &mut BTreeMap<String, HirStruct<'ta>>,
+        structs: &mut BTreeMap<&'ta str, HirStruct<'ta>>,
     ) -> HirResult<()> {
         for rec in structs.values_mut() {
             Self::visit_struct(cx, rec)?;
@@ -911,16 +916,15 @@ impl HirModuleTypeCheckerPass {
         for type_parameter in node.signature.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
             node.type_parameter_substitutions
-                .insert(type_parameter.declaration_name.name.clone(), substitution);
+                .insert(type_parameter.name, substitution);
             cx.local_type_parameter_substitutions
-                .add(&type_parameter.declaration_name.name, substitution);
+                .add(type_parameter.name, substitution);
         }
         // Instantiate the types of the function parameters and return type.
         node.instantiated_return_type = Some(Self::visit_type(cx, node.signature.return_type)?);
         for p in node.signature.parameters.iter() {
             let ty = Self::visit_type(cx, p.ty)?;
-            node.instantiated_parameters
-                .insert(p.declaration_name.name.clone(), ty);
+            node.instantiated_parameters.insert(p.name, ty);
         }
 
         // Push the function's type onto the current stack, so that return statements can be checked
@@ -971,24 +975,23 @@ impl HirModuleTypeCheckerPass {
         // Instantiate the types of the struct fields.
         for field in node.signature.fields.values() {
             let ty = Self::visit_type(cx, field.ty)?;
-            node.instantiated_fields
-                .insert(field.declaration_name.name.clone(), ty);
+            node.instantiated_fields.insert(field.name, ty);
         }
 
         for (field_name, field_declaration) in node.signature.fields.iter() {
             let field_ty = node.instantiated_fields.get(field_name).unwrap_or_else(|| {
                 ice!(format!(
                     "field {} not found in struct type {}",
-                    field_name, node.name.name
+                    field_name, node.name
                 ))
             });
             let is_directly_self_referential =
-                matches!(field_ty, HirTy::Nominal(n) if n.name.name == node.name.name);
+                matches!(field_ty, HirTy::Nominal(n) if std::ptr::eq(n.name, node.name));
             if is_directly_self_referential {
                 return Err(HirError::TypeFieldInfiniteRecursion(
                     TypeFieldInfiniteRecursionError {
-                        type_name: node.name.name.to_owned(),
-                        offending_field: field_name.to_owned(),
+                        type_name: node.name.to_owned(),
+                        offending_field: (*field_name).to_owned(),
                         span: field_declaration.span,
                     },
                 ));
@@ -1037,19 +1040,19 @@ impl HirModuleTypeCheckerPass {
         let HirTy::Nominal(n) = node else {
             ice!("visit_nominal_ty called with non-nominal type");
         };
-        if let Some(sub) = cx.local_type_parameter_substitutions.find(&n.name.name) {
+        if let Some(sub) = cx.local_type_parameter_substitutions.find(n.name) {
             return Ok(sub);
         }
         // Check if the name is a builtin or struct type.
-        if cx.module_signature.get_type(&n.name.name).is_some() {
+        if cx.module_signature.get_type(n.name).is_some() {
             return Ok(node);
         }
-        if cx.module_signature.get_struct(&n.name.name).is_some() {
+        if cx.module_signature.get_struct(n.name).is_some() {
             return Ok(node);
         }
         Err(HirError::UnknownType(UnknownTypeError {
-            name: n.name.name.to_owned(),
-            span: n.name.span,
+            name: n.name.to_owned(),
+            span: n.name_span,
         }))
     }
 
@@ -1191,12 +1194,12 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         // See if the name resolves to a local let-binding or a function name.
-        if cx.locals.find(&node.name.name).is_none()
-            && cx.module_signature.get_function(&node.name.name).is_none()
+        if cx.locals.find(node.name).is_none()
+            && cx.module_signature.get_function(node.name).is_none()
         {
             return Err(HirError::InvalidReference(InvalidReferenceError {
-                name: node.name.name.to_owned(),
-                span: node.span,
+                name: node.name.to_owned(),
+                span: node.name_span,
             }));
         }
         cx.infer_reference_expr(node, node.ty)?;
@@ -1446,7 +1449,7 @@ impl HirModuleTypeCheckerPass {
         cx.infer(&mut node.value, node.ty)?;
         // Propagate the type of the expression to the type of the let-binding
         node.ty = node.value.ty();
-        cx.locals.add(&node.name.name, node.ty);
+        cx.locals.add(node.name, node.ty);
         Ok(())
     }
 

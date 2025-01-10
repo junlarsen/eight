@@ -27,7 +27,7 @@ impl Pipeline {
 
         let tu = parser.parse()?;
 
-        let mut lowering_pass = ASTSyntaxLoweringPass::new(&arena);
+        let lowering_pass = ASTSyntaxLoweringPass::new(&arena);
         let mut module = lowering_pass.visit_translation_unit(&tu)?;
         let mut cx = TypingContext::new(&arena, module.signature);
         HirModuleTypeCheckerPass::visit(&mut module, &mut cx)?;

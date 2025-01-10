@@ -7,7 +7,6 @@
 //! there is no syntax for visibility in the language as of today.
 
 use crate::ty::HirTy;
-use crate::HirName;
 use eight_span::Span;
 use std::collections::BTreeMap;
 
@@ -19,10 +18,10 @@ use std::collections::BTreeMap;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
 pub struct HirModuleSignature<'ta> {
-    pub functions: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
-    pub structs: BTreeMap<String, &'ta HirStructApiSignature<'ta>>,
-    pub types: BTreeMap<String, &'ta HirTypeApiSignature<'ta>>,
-    pub traits: BTreeMap<String, &'ta HirTraitApiSignature<'ta>>,
+    pub functions: BTreeMap<&'ta str, &'ta HirFunctionApiSignature<'ta>>,
+    pub structs: BTreeMap<&'ta str, &'ta HirStructApiSignature<'ta>>,
+    pub types: BTreeMap<&'ta str, &'ta HirTypeApiSignature<'ta>>,
+    pub traits: BTreeMap<&'ta str, &'ta HirTraitApiSignature<'ta>>,
     /// Instances are stored in a flat list.
     ///
     /// Use the [`HirQueryDatabase`] to query instances by trait/types more efficiently.
@@ -30,20 +29,20 @@ pub struct HirModuleSignature<'ta> {
 }
 
 impl<'ta> HirModuleSignature<'ta> {
-    pub fn add_function(&mut self, name: &str, signature: &'ta HirFunctionApiSignature<'ta>) {
-        self.functions.insert(name.to_owned(), signature);
+    pub fn add_function(&mut self, name: &'ta str, signature: &'ta HirFunctionApiSignature<'ta>) {
+        self.functions.insert(name, signature);
     }
 
-    pub fn add_struct(&mut self, name: &str, signature: &'ta HirStructApiSignature<'ta>) {
-        self.structs.insert(name.to_owned(), signature);
+    pub fn add_struct(&mut self, name: &'ta str, signature: &'ta HirStructApiSignature<'ta>) {
+        self.structs.insert(name, signature);
     }
 
-    pub fn add_type(&mut self, name: &str, signature: &'ta HirTypeApiSignature<'ta>) {
-        self.types.insert(name.to_owned(), signature);
+    pub fn add_type(&mut self, name: &'ta str, signature: &'ta HirTypeApiSignature<'ta>) {
+        self.types.insert(name, signature);
     }
 
-    pub fn add_trait(&mut self, name: &str, signature: &'ta HirTraitApiSignature<'ta>) {
-        self.traits.insert(name.to_owned(), signature);
+    pub fn add_trait(&mut self, name: &'ta str, signature: &'ta HirTraitApiSignature<'ta>) {
+        self.traits.insert(name, signature);
     }
 
     pub fn add_instance(&mut self, signature: &'ta HirInstanceApiSignature<'ta>) {
@@ -81,15 +80,17 @@ pub enum HirModuleItemSignature<'ta> {
 #[derive(Debug)]
 pub struct HirStructApiSignature<'ta> {
     pub span: Span,
-    pub declaration_name: HirName,
-    pub fields: BTreeMap<String, &'ta HirStructFieldApiSignature<'ta>>,
+    pub name: &'ta str,
+    pub name_span: Span,
+    pub fields: BTreeMap<&'ta str, &'ta HirStructFieldApiSignature<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirStructFieldApiSignature<'ta> {
     pub span: Span,
-    pub declaration_name: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
     pub ty: &'ta HirTy<'ta>,
     pub ty_annotation: Span,
 }
@@ -98,7 +99,8 @@ pub struct HirStructFieldApiSignature<'ta> {
 #[derive(Debug)]
 pub struct HirTypeApiSignature<'ta> {
     pub span: Span,
-    pub declaration_name: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
     pub ty: &'ta HirTy<'ta>,
 }
 
@@ -108,7 +110,7 @@ pub struct HirTypeApiSignature<'ta> {
 pub struct HirFunctionApiSignature<'ta> {
     pub span: Span,
     pub parameters: Vec<&'ta HirFunctionParameterApiSignature<'ta>>,
-    pub type_parameters: Vec<&'ta HirTypeParameterApiSignature>,
+    pub type_parameters: Vec<&'ta HirTypeParameterApiSignature<'ta>>,
     pub return_type: &'ta HirTy<'ta>,
     pub return_type_annotation: Option<Span>,
 }
@@ -118,7 +120,8 @@ pub struct HirFunctionApiSignature<'ta> {
 #[derive(Debug)]
 pub struct HirFunctionParameterApiSignature<'ta> {
     pub span: Span,
-    pub declaration_name: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
     pub ty: &'ta HirTy<'ta>,
     pub ty_annotation: Span,
 }
@@ -126,26 +129,30 @@ pub struct HirFunctionParameterApiSignature<'ta> {
 /// A signature for a type parameter of a trait or a function.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirTypeParameterApiSignature {
+pub struct HirTypeParameterApiSignature<'ta> {
     pub span: Span,
-    pub declaration_name: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirTraitApiSignature<'ta> {
     pub span: Span,
-    pub declaration_name: HirName,
-    pub type_parameters: Vec<&'ta HirTypeParameterApiSignature>,
-    pub methods: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
+    pub name: &'ta str,
+    pub name_span: Span,
+    pub type_parameters: Vec<&'ta HirTypeParameterApiSignature<'ta>>,
+    pub methods: BTreeMap<&'ta str, &'ta HirFunctionApiSignature<'ta>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirInstanceApiSignature<'ta> {
     pub span: Span,
-    pub declaration_name: HirName,
-    pub r#trait: HirName,
+    pub name: &'ta str,
+    pub name_span: Span,
+    pub trait_name: &'ta str,
+    pub trait_name_span: Span,
     pub type_arguments: Vec<&'ta HirTy<'ta>>,
-    pub methods: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
+    pub methods: BTreeMap<&'ta str, &'ta HirFunctionApiSignature<'ta>>,
 }

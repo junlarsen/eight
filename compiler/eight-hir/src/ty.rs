@@ -1,5 +1,5 @@
-use crate::HirName;
 use eight_diagnostics::ice;
+use eight_span::Span;
 use std::fmt::{Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -62,7 +62,7 @@ impl HirTyId {
 impl<'ta> From<&'ta HirTy<'ta>> for HirTyId {
     fn from(ty: &'ta HirTy<'ta>) -> Self {
         match ty {
-            HirTy::Nominal(n) => HirTyId::compute_nominal_ty_id(n.name.name.as_str()),
+            HirTy::Nominal(n) => HirTyId::compute_nominal_ty_id(n.name),
             HirTy::Pointer(p) => HirTyId::compute_pointer_ty_id(&HirTyId::from(p.inner)),
             HirTy::Function(f) => {
                 let parameters = f
@@ -140,7 +140,7 @@ pub enum HirTy<'ta> {
     /// A nominal type.
     ///
     /// This is used for structs at the moment, but could also be used for enums in the future.
-    Nominal(HirNominalTy),
+    Nominal(HirNominalTy<'ta>),
     /// A type that has not yet been resolved.
     ///
     /// All uninitialized types are eliminated during type inference. This enum variant exists in
@@ -178,7 +178,7 @@ impl<'ta> HirTy<'ta> {
                         .zip(o.parameters.iter())
                         .all(|(a, b)| a.is_trivially_equal(b))
             }
-            (HirTy::Nominal(v), HirTy::Nominal(o)) => v.name.name == o.name.name,
+            (HirTy::Nominal(v), HirTy::Nominal(o)) => std::ptr::eq(v.name, o.name),
             (HirTy::Uninitialized(_), HirTy::Uninitialized(_)) => {
                 ice!("attempted to compare uninitialized types")
             }
@@ -322,13 +322,14 @@ impl Display for HirPointerTy<'_> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirNominalTy {
-    pub name: HirName,
+pub struct HirNominalTy<'ta> {
+    pub name: &'ta str,
+    pub name_span: Span,
 }
 
-impl Display for HirNominalTy {
+impl<'ta> Display for HirNominalTy<'ta> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name.name)
+        write!(f, "{}", self.name)
     }
 }
 
