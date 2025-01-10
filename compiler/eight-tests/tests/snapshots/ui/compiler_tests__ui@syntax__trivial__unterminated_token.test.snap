@@ -1,0 +1,24 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for ui
+info:
+  program: eightc
+  args:
+    - tests/ui/syntax/trivial/unterminated_token.test
+input_file: compiler/eight-tests/tests/ui/syntax/trivial/unterminated_token.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: syntax::unfinished_token
+
+  × expected another '|' character here
+   ╭─[tests/ui/syntax/trivial/unterminated_token.test:1:1]
+ 1 │ |
+   · ┬
+   · ╰── this alone does not form a valid token
+   ╰────
+  help: did you forget to add a '|' character here?

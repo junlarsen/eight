@@ -1,0 +1,49 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for type_inference
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - tests/type-inference/local_resolution.test
+input_file: compiler/eight-tests/tests/type-inference/local_resolution.test
+snapshot_kind: text
+---
+success: true
+exit_code: 0
+----- stdout -----
+hir_module {
+  declares {
+    // module types
+    
+    
+    // module struct types
+    
+    
+    // module functions
+    fn test() -> unit;
+    fn test_refer_function() -> unit;
+    
+    // module traits
+    
+    
+    // module instances
+  
+  }
+  
+  defining {
+    // module functions
+    fn test<>() -> unit {
+      let loc: i32 = (123 as i32);
+      let x: i32 = (loc as i32);
+    }
+    fn test_refer_function<>() -> unit {
+      let loc: fn(())->unit = (test as fn(())->unit);
+    }
+    // module intrinsic functions
+    
+  
+  }
+}
+
+----- stderr -----

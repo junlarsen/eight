@@ -1,0 +1,634 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax
+info:
+  program: eightc
+  args:
+    - "--emit-ast"
+    - tests/syntax/fma.test
+input_file: compiler/eight-tests/tests/syntax/fma.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+(
+    items: [
+        Struct((
+            span: (
+                low: 0,
+                high: 29,
+            ),
+            name: (
+                name: "vec512",
+                span: (
+                    low: 5,
+                    high: 11,
+                ),
+            ),
+            members: [
+                (
+                    span: (
+                        low: 18,
+                        high: 27,
+                    ),
+                    name: (
+                        name: "vs",
+                        span: (
+                            low: 18,
+                            high: 20,
+                        ),
+                    ),
+                    ty: Pointer((
+                        span: (
+                            low: 22,
+                            high: 26,
+                        ),
+                        inner: Integer32((
+                            span: (
+                                low: 23,
+                                high: 26,
+                            ),
+                        )),
+                    )),
+                ),
+            ],
+        )),
+        Function((
+            span: (
+                low: 31,
+                high: 254,
+            ),
+            name: (
+                name: "vec512_fma",
+                span: (
+                    low: 34,
+                    high: 44,
+                ),
+            ),
+            parameters: [
+                (
+                    span: (
+                        low: 45,
+                        high: 54,
+                    ),
+                    name: (
+                        name: "x",
+                        span: (
+                            low: 45,
+                            high: 46,
+                        ),
+                    ),
+                    ty: Named((
+                        span: (
+                            low: 48,
+                            high: 54,
+                        ),
+                        name: (
+                            name: "vec512",
+                            span: (
+                                low: 48,
+                                high: 54,
+                            ),
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 56,
+                        high: 65,
+                    ),
+                    name: (
+                        name: "y",
+                        span: (
+                            low: 56,
+                            high: 57,
+                        ),
+                    ),
+                    ty: Named((
+                        span: (
+                            low: 59,
+                            high: 65,
+                        ),
+                        name: (
+                            name: "vec512",
+                            span: (
+                                low: 59,
+                                high: 65,
+                            ),
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 67,
+                        high: 78,
+                    ),
+                    name: (
+                        name: "acc",
+                        span: (
+                            low: 67,
+                            high: 70,
+                        ),
+                    ),
+                    ty: Named((
+                        span: (
+                            low: 72,
+                            high: 78,
+                        ),
+                        name: (
+                            name: "vec512",
+                            span: (
+                                low: 72,
+                                high: 78,
+                            ),
+                        ),
+                    )),
+                ),
+            ],
+            type_parameters: [],
+            return_type: Some(Named((
+                span: (
+                    low: 83,
+                    high: 89,
+                ),
+                name: (
+                    name: "vec512",
+                    span: (
+                        low: 83,
+                        high: 89,
+                    ),
+                ),
+            ))),
+            body: [
+                Let((
+                    span: (
+                        low: 94,
+                        high: 145,
+                    ),
+                    name: (
+                        name: "vs",
+                        span: (
+                            low: 98,
+                            high: 100,
+                        ),
+                    ),
+                    ty: None,
+                    value: Construct((
+                        span: (
+                            low: 103,
+                            high: 144,
+                        ),
+                        callee: Named((
+                            span: (
+                                low: 107,
+                                high: 113,
+                            ),
+                            name: (
+                                name: "vec512",
+                                span: (
+                                    low: 107,
+                                    high: 113,
+                                ),
+                            ),
+                        )),
+                        arguments: [
+                            (
+                                span: (
+                                    low: 120,
+                                    high: 139,
+                                ),
+                                field: (
+                                    name: "vs",
+                                    span: (
+                                        low: 120,
+                                        high: 122,
+                                    ),
+                                ),
+                                expr: Call((
+                                    span: (
+                                        low: 124,
+                                        high: 139,
+                                    ),
+                                    callee: Reference((
+                                        span: (
+                                            low: 124,
+                                            high: 130,
+                                        ),
+                                        name: (
+                                            name: "malloc",
+                                            span: (
+                                                low: 124,
+                                                high: 130,
+                                            ),
+                                        ),
+                                    )),
+                                    arguments: [
+                                        BinaryOp((
+                                            span: (
+                                                low: 131,
+                                                high: 138,
+                                            ),
+                                            lhs: IntegerLiteral((
+                                                span: (
+                                                    low: 131,
+                                                    high: 134,
+                                                ),
+                                                value: 512,
+                                            )),
+                                            rhs: IntegerLiteral((
+                                                span: (
+                                                    low: 137,
+                                                    high: 138,
+                                                ),
+                                                value: 4,
+                                            )),
+                                            op: Div,
+                                            op_span: (
+                                                low: 135,
+                                                high: 136,
+                                            ),
+                                        )),
+                                    ],
+                                    type_arguments: [],
+                                )),
+                            ),
+                        ],
+                    )),
+                )),
+                For((
+                    span: (
+                        low: 148,
+                        high: 239,
+                    ),
+                    initializer: Some((
+                        span: (
+                            low: 153,
+                            high: 162,
+                        ),
+                        name: (
+                            name: "i",
+                            span: (
+                                low: 157,
+                                high: 158,
+                            ),
+                        ),
+                        initializer: IntegerLiteral((
+                            span: (
+                                low: 161,
+                                high: 162,
+                            ),
+                            value: 0,
+                        )),
+                    )),
+                    condition: Some(BinaryOp((
+                        span: (
+                            low: 164,
+                            high: 175,
+                        ),
+                        lhs: Reference((
+                            span: (
+                                low: 164,
+                                high: 165,
+                            ),
+                            name: (
+                                name: "i",
+                                span: (
+                                    low: 164,
+                                    high: 165,
+                                ),
+                            ),
+                        )),
+                        rhs: BinaryOp((
+                            span: (
+                                low: 168,
+                                high: 175,
+                            ),
+                            lhs: IntegerLiteral((
+                                span: (
+                                    low: 168,
+                                    high: 171,
+                                ),
+                                value: 512,
+                            )),
+                            rhs: IntegerLiteral((
+                                span: (
+                                    low: 174,
+                                    high: 175,
+                                ),
+                                value: 4,
+                            )),
+                            op: Div,
+                            op_span: (
+                                low: 172,
+                                high: 173,
+                            ),
+                        )),
+                        op: Lt,
+                        op_span: (
+                            low: 166,
+                            high: 167,
+                        ),
+                    ))),
+                    increment: Some(Assign((
+                        span: (
+                            low: 177,
+                            high: 186,
+                        ),
+                        lhs: Reference((
+                            span: (
+                                low: 177,
+                                high: 178,
+                            ),
+                            name: (
+                                name: "i",
+                                span: (
+                                    low: 177,
+                                    high: 178,
+                                ),
+                            ),
+                        )),
+                        rhs: BinaryOp((
+                            span: (
+                                low: 181,
+                                high: 186,
+                            ),
+                            lhs: Reference((
+                                span: (
+                                    low: 181,
+                                    high: 182,
+                                ),
+                                name: (
+                                    name: "i",
+                                    span: (
+                                        low: 181,
+                                        high: 182,
+                                    ),
+                                ),
+                            )),
+                            rhs: IntegerLiteral((
+                                span: (
+                                    low: 185,
+                                    high: 186,
+                                ),
+                                value: 1,
+                            )),
+                            op: Add,
+                            op_span: (
+                                low: 183,
+                                high: 184,
+                            ),
+                        )),
+                    ))),
+                    body: [
+                        Expr((
+                            span: (
+                                low: 194,
+                                high: 235,
+                            ),
+                            expr: Assign((
+                                span: (
+                                    low: 194,
+                                    high: 234,
+                                ),
+                                lhs: BracketIndex((
+                                    span: (
+                                        low: 194,
+                                        high: 202,
+                                    ),
+                                    origin: DotIndex((
+                                        span: (
+                                            low: 194,
+                                            high: 199,
+                                        ),
+                                        origin: Reference((
+                                            span: (
+                                                low: 194,
+                                                high: 196,
+                                            ),
+                                            name: (
+                                                name: "vs",
+                                                span: (
+                                                    low: 194,
+                                                    high: 196,
+                                                ),
+                                            ),
+                                        )),
+                                        index: (
+                                            name: "vs",
+                                            span: (
+                                                low: 197,
+                                                high: 199,
+                                            ),
+                                        ),
+                                    )),
+                                    index: Reference((
+                                        span: (
+                                            low: 200,
+                                            high: 201,
+                                        ),
+                                        name: (
+                                            name: "i",
+                                            span: (
+                                                low: 200,
+                                                high: 201,
+                                            ),
+                                        ),
+                                    )),
+                                )),
+                                rhs: BinaryOp((
+                                    span: (
+                                        low: 205,
+                                        high: 234,
+                                    ),
+                                    lhs: BinaryOp((
+                                        span: (
+                                            low: 205,
+                                            high: 222,
+                                        ),
+                                        lhs: BracketIndex((
+                                            span: (
+                                                low: 205,
+                                                high: 212,
+                                            ),
+                                            origin: DotIndex((
+                                                span: (
+                                                    low: 205,
+                                                    high: 209,
+                                                ),
+                                                origin: Reference((
+                                                    span: (
+                                                        low: 205,
+                                                        high: 206,
+                                                    ),
+                                                    name: (
+                                                        name: "x",
+                                                        span: (
+                                                            low: 205,
+                                                            high: 206,
+                                                        ),
+                                                    ),
+                                                )),
+                                                index: (
+                                                    name: "vs",
+                                                    span: (
+                                                        low: 207,
+                                                        high: 209,
+                                                    ),
+                                                ),
+                                            )),
+                                            index: Reference((
+                                                span: (
+                                                    low: 210,
+                                                    high: 211,
+                                                ),
+                                                name: (
+                                                    name: "i",
+                                                    span: (
+                                                        low: 210,
+                                                        high: 211,
+                                                    ),
+                                                ),
+                                            )),
+                                        )),
+                                        rhs: BracketIndex((
+                                            span: (
+                                                low: 215,
+                                                high: 222,
+                                            ),
+                                            origin: DotIndex((
+                                                span: (
+                                                    low: 215,
+                                                    high: 219,
+                                                ),
+                                                origin: Reference((
+                                                    span: (
+                                                        low: 215,
+                                                        high: 216,
+                                                    ),
+                                                    name: (
+                                                        name: "y",
+                                                        span: (
+                                                            low: 215,
+                                                            high: 216,
+                                                        ),
+                                                    ),
+                                                )),
+                                                index: (
+                                                    name: "vs",
+                                                    span: (
+                                                        low: 217,
+                                                        high: 219,
+                                                    ),
+                                                ),
+                                            )),
+                                            index: Reference((
+                                                span: (
+                                                    low: 220,
+                                                    high: 221,
+                                                ),
+                                                name: (
+                                                    name: "i",
+                                                    span: (
+                                                        low: 220,
+                                                        high: 221,
+                                                    ),
+                                                ),
+                                            )),
+                                        )),
+                                        op: Mul,
+                                        op_span: (
+                                            low: 213,
+                                            high: 214,
+                                        ),
+                                    )),
+                                    rhs: BracketIndex((
+                                        span: (
+                                            low: 225,
+                                            high: 234,
+                                        ),
+                                        origin: DotIndex((
+                                            span: (
+                                                low: 225,
+                                                high: 231,
+                                            ),
+                                            origin: Reference((
+                                                span: (
+                                                    low: 225,
+                                                    high: 228,
+                                                ),
+                                                name: (
+                                                    name: "acc",
+                                                    span: (
+                                                        low: 225,
+                                                        high: 228,
+                                                    ),
+                                                ),
+                                            )),
+                                            index: (
+                                                name: "vs",
+                                                span: (
+                                                    low: 229,
+                                                    high: 231,
+                                                ),
+                                            ),
+                                        )),
+                                        index: Reference((
+                                            span: (
+                                                low: 232,
+                                                high: 233,
+                                            ),
+                                            name: (
+                                                name: "i",
+                                                span: (
+                                                    low: 232,
+                                                    high: 233,
+                                                ),
+                                            ),
+                                        )),
+                                    )),
+                                    op: Add,
+                                    op_span: (
+                                        low: 223,
+                                        high: 224,
+                                    ),
+                                )),
+                            )),
+                        )),
+                    ],
+                )),
+                Return((
+                    span: (
+                        low: 242,
+                        high: 252,
+                    ),
+                    value: Some(Reference((
+                        span: (
+                            low: 249,
+                            high: 251,
+                        ),
+                        name: (
+                            name: "vs",
+                            span: (
+                                low: 249,
+                                high: 251,
+                            ),
+                        ),
+                    ))),
+                )),
+            ],
+        )),
+    ],
+)
+
+----- stderr -----
+Error: sema::invalid_reference
+
+  × invalid reference to malloc
+   ╭─[tests/syntax/fma.test:7:9]
+ 6 │   let vs = new vec512 {
+ 7 │     vs: malloc(512 / 4),
+   ·         ───┬──
+   ·            ╰── no value in scope named malloc
+ 8 │   };
+   ╰────

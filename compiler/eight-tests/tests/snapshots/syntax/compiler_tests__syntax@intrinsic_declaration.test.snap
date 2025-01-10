@@ -1,0 +1,88 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax
+info:
+  program: eightc
+  args:
+    - "--emit-ast"
+    - tests/syntax/intrinsic_declaration.test
+input_file: compiler/eight-tests/tests/syntax/intrinsic_declaration.test
+snapshot_kind: text
+---
+success: true
+exit_code: 0
+----- stdout -----
+(
+    items: [
+        IntrinsicFunction((
+            span: (
+                low: 0,
+                high: 40,
+            ),
+            name: (
+                name: "malloc",
+                span: (
+                    low: 13,
+                    high: 19,
+                ),
+            ),
+            parameters: [
+                (
+                    span: (
+                        low: 23,
+                        high: 32,
+                    ),
+                    name: (
+                        name: "size",
+                        span: (
+                            low: 23,
+                            high: 27,
+                        ),
+                    ),
+                    ty: Integer32((
+                        span: (
+                            low: 29,
+                            high: 32,
+                        ),
+                    )),
+                ),
+            ],
+            type_parameters: [
+                (
+                    span: (
+                        low: 20,
+                        high: 21,
+                    ),
+                    name: (
+                        name: "T",
+                        span: (
+                            low: 20,
+                            high: 21,
+                        ),
+                    ),
+                ),
+            ],
+            return_type: Pointer((
+                span: (
+                    low: 37,
+                    high: 39,
+                ),
+                inner: Named((
+                    span: (
+                        low: 38,
+                        high: 39,
+                    ),
+                    name: (
+                        name: "T",
+                        span: (
+                            low: 38,
+                            high: 39,
+                        ),
+                    ),
+                )),
+            )),
+        )),
+    ],
+)
+
+----- stderr -----

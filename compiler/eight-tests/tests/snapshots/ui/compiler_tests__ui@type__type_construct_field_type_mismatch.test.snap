@@ -1,0 +1,26 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for ui
+info:
+  program: eightc
+  args:
+    - tests/ui/type/type_construct_field_type_mismatch.test
+input_file: compiler/eight-tests/tests/ui/type/type_construct_field_type_mismatch.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::type_mismatch
+
+  × type mismatch
+    ╭─[tests/ui/type/type_construct_field_type_mismatch.test:9:8]
+  8 │     x: 123,
+  9 │     y: true,
+    ·        ──┬─┬
+    ·          │ ╰── expected type i32
+    ·          ╰── the expression has type bool
+ 10 │   };
+    ╰────

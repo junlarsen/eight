@@ -1,0 +1,1247 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax
+info:
+  program: eightc
+  args:
+    - "--emit-ast"
+    - tests/syntax/matmul.test
+input_file: compiler/eight-tests/tests/syntax/matmul.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+(
+    items: [
+        Struct((
+            span: (
+                low: 0,
+                high: 50,
+            ),
+            name: (
+                name: "Matrix",
+                span: (
+                    low: 5,
+                    high: 11,
+                ),
+            ),
+            members: [
+                (
+                    span: (
+                        low: 18,
+                        high: 25,
+                    ),
+                    name: (
+                        name: "r",
+                        span: (
+                            low: 18,
+                            high: 19,
+                        ),
+                    ),
+                    ty: Integer32((
+                        span: (
+                            low: 21,
+                            high: 24,
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 28,
+                        high: 35,
+                    ),
+                    name: (
+                        name: "c",
+                        span: (
+                            low: 28,
+                            high: 29,
+                        ),
+                    ),
+                    ty: Integer32((
+                        span: (
+                            low: 31,
+                            high: 34,
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 38,
+                        high: 48,
+                    ),
+                    name: (
+                        name: "buf",
+                        span: (
+                            low: 38,
+                            high: 41,
+                        ),
+                    ),
+                    ty: Pointer((
+                        span: (
+                            low: 43,
+                            high: 47,
+                        ),
+                        inner: Integer32((
+                            span: (
+                                low: 44,
+                                high: 47,
+                            ),
+                        )),
+                    )),
+                ),
+            ],
+        )),
+        Function((
+            span: (
+                low: 52,
+                high: 466,
+            ),
+            name: (
+                name: "matrix_matrix_multiply",
+                span: (
+                    low: 55,
+                    high: 77,
+                ),
+            ),
+            parameters: [
+                (
+                    span: (
+                        low: 78,
+                        high: 87,
+                    ),
+                    name: (
+                        name: "a",
+                        span: (
+                            low: 78,
+                            high: 79,
+                        ),
+                    ),
+                    ty: Named((
+                        span: (
+                            low: 81,
+                            high: 87,
+                        ),
+                        name: (
+                            name: "Matrix",
+                            span: (
+                                low: 81,
+                                high: 87,
+                            ),
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 89,
+                        high: 98,
+                    ),
+                    name: (
+                        name: "b",
+                        span: (
+                            low: 89,
+                            high: 90,
+                        ),
+                    ),
+                    ty: Named((
+                        span: (
+                            low: 92,
+                            high: 98,
+                        ),
+                        name: (
+                            name: "Matrix",
+                            span: (
+                                low: 92,
+                                high: 98,
+                            ),
+                        ),
+                    )),
+                ),
+            ],
+            type_parameters: [],
+            return_type: Some(Named((
+                span: (
+                    low: 103,
+                    high: 109,
+                ),
+                name: (
+                    name: "Matrix",
+                    span: (
+                        low: 103,
+                        high: 109,
+                    ),
+                ),
+            ))),
+            body: [
+                Let((
+                    span: (
+                        low: 114,
+                        high: 195,
+                    ),
+                    name: (
+                        name: "c",
+                        span: (
+                            low: 118,
+                            high: 119,
+                        ),
+                    ),
+                    ty: None,
+                    value: Construct((
+                        span: (
+                            low: 122,
+                            high: 194,
+                        ),
+                        callee: Named((
+                            span: (
+                                low: 126,
+                                high: 132,
+                            ),
+                            name: (
+                                name: "Matrix",
+                                span: (
+                                    low: 126,
+                                    high: 132,
+                                ),
+                            ),
+                        )),
+                        arguments: [
+                            (
+                                span: (
+                                    low: 139,
+                                    high: 145,
+                                ),
+                                field: (
+                                    name: "r",
+                                    span: (
+                                        low: 139,
+                                        high: 140,
+                                    ),
+                                ),
+                                expr: DotIndex((
+                                    span: (
+                                        low: 142,
+                                        high: 145,
+                                    ),
+                                    origin: Reference((
+                                        span: (
+                                            low: 142,
+                                            high: 143,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 142,
+                                                high: 143,
+                                            ),
+                                        ),
+                                    )),
+                                    index: (
+                                        name: "r",
+                                        span: (
+                                            low: 144,
+                                            high: 145,
+                                        ),
+                                    ),
+                                )),
+                            ),
+                            (
+                                span: (
+                                    low: 151,
+                                    high: 157,
+                                ),
+                                field: (
+                                    name: "c",
+                                    span: (
+                                        low: 151,
+                                        high: 152,
+                                    ),
+                                ),
+                                expr: DotIndex((
+                                    span: (
+                                        low: 154,
+                                        high: 157,
+                                    ),
+                                    origin: Reference((
+                                        span: (
+                                            low: 154,
+                                            high: 155,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 154,
+                                                high: 155,
+                                            ),
+                                        ),
+                                    )),
+                                    index: (
+                                        name: "c",
+                                        span: (
+                                            low: 156,
+                                            high: 157,
+                                        ),
+                                    ),
+                                )),
+                            ),
+                            (
+                                span: (
+                                    low: 163,
+                                    high: 189,
+                                ),
+                                field: (
+                                    name: "buf",
+                                    span: (
+                                        low: 163,
+                                        high: 166,
+                                    ),
+                                ),
+                                expr: Call((
+                                    span: (
+                                        low: 168,
+                                        high: 189,
+                                    ),
+                                    callee: Reference((
+                                        span: (
+                                            low: 168,
+                                            high: 174,
+                                        ),
+                                        name: (
+                                            name: "malloc",
+                                            span: (
+                                                low: 168,
+                                                high: 174,
+                                            ),
+                                        ),
+                                    )),
+                                    arguments: [
+                                        BinaryOp((
+                                            span: (
+                                                low: 175,
+                                                high: 188,
+                                            ),
+                                            lhs: DotIndex((
+                                                span: (
+                                                    low: 175,
+                                                    high: 178,
+                                                ),
+                                                origin: Reference((
+                                                    span: (
+                                                        low: 175,
+                                                        high: 176,
+                                                    ),
+                                                    name: (
+                                                        name: "a",
+                                                        span: (
+                                                            low: 175,
+                                                            high: 176,
+                                                        ),
+                                                    ),
+                                                )),
+                                                index: (
+                                                    name: "r",
+                                                    span: (
+                                                        low: 177,
+                                                        high: 178,
+                                                    ),
+                                                ),
+                                            )),
+                                            rhs: BinaryOp((
+                                                span: (
+                                                    low: 181,
+                                                    high: 188,
+                                                ),
+                                                lhs: DotIndex((
+                                                    span: (
+                                                        low: 181,
+                                                        high: 184,
+                                                    ),
+                                                    origin: Reference((
+                                                        span: (
+                                                            low: 181,
+                                                            high: 182,
+                                                        ),
+                                                        name: (
+                                                            name: "b",
+                                                            span: (
+                                                                low: 181,
+                                                                high: 182,
+                                                            ),
+                                                        ),
+                                                    )),
+                                                    index: (
+                                                        name: "c",
+                                                        span: (
+                                                            low: 183,
+                                                            high: 184,
+                                                        ),
+                                                    ),
+                                                )),
+                                                rhs: IntegerLiteral((
+                                                    span: (
+                                                        low: 187,
+                                                        high: 188,
+                                                    ),
+                                                    value: 4,
+                                                )),
+                                                op: Mul,
+                                                op_span: (
+                                                    low: 185,
+                                                    high: 186,
+                                                ),
+                                            )),
+                                            op: Mul,
+                                            op_span: (
+                                                low: 179,
+                                                high: 180,
+                                            ),
+                                        )),
+                                    ],
+                                    type_arguments: [],
+                                )),
+                            ),
+                        ],
+                    )),
+                )),
+                For((
+                    span: (
+                        low: 199,
+                        high: 452,
+                    ),
+                    initializer: Some((
+                        span: (
+                            low: 204,
+                            high: 213,
+                        ),
+                        name: (
+                            name: "i",
+                            span: (
+                                low: 208,
+                                high: 209,
+                            ),
+                        ),
+                        initializer: IntegerLiteral((
+                            span: (
+                                low: 212,
+                                high: 213,
+                            ),
+                            value: 0,
+                        )),
+                    )),
+                    condition: Some(BinaryOp((
+                        span: (
+                            low: 215,
+                            high: 222,
+                        ),
+                        lhs: Reference((
+                            span: (
+                                low: 215,
+                                high: 216,
+                            ),
+                            name: (
+                                name: "i",
+                                span: (
+                                    low: 215,
+                                    high: 216,
+                                ),
+                            ),
+                        )),
+                        rhs: DotIndex((
+                            span: (
+                                low: 219,
+                                high: 222,
+                            ),
+                            origin: Reference((
+                                span: (
+                                    low: 219,
+                                    high: 220,
+                                ),
+                                name: (
+                                    name: "a",
+                                    span: (
+                                        low: 219,
+                                        high: 220,
+                                    ),
+                                ),
+                            )),
+                            index: (
+                                name: "r",
+                                span: (
+                                    low: 221,
+                                    high: 222,
+                                ),
+                            ),
+                        )),
+                        op: Lt,
+                        op_span: (
+                            low: 217,
+                            high: 218,
+                        ),
+                    ))),
+                    increment: Some(Assign((
+                        span: (
+                            low: 224,
+                            high: 233,
+                        ),
+                        lhs: Reference((
+                            span: (
+                                low: 224,
+                                high: 225,
+                            ),
+                            name: (
+                                name: "i",
+                                span: (
+                                    low: 224,
+                                    high: 225,
+                                ),
+                            ),
+                        )),
+                        rhs: BinaryOp((
+                            span: (
+                                low: 228,
+                                high: 233,
+                            ),
+                            lhs: Reference((
+                                span: (
+                                    low: 228,
+                                    high: 229,
+                                ),
+                                name: (
+                                    name: "i",
+                                    span: (
+                                        low: 228,
+                                        high: 229,
+                                    ),
+                                ),
+                            )),
+                            rhs: IntegerLiteral((
+                                span: (
+                                    low: 232,
+                                    high: 233,
+                                ),
+                                value: 1,
+                            )),
+                            op: Add,
+                            op_span: (
+                                low: 230,
+                                high: 231,
+                            ),
+                        )),
+                    ))),
+                    body: [
+                        For((
+                            span: (
+                                low: 241,
+                                high: 448,
+                            ),
+                            initializer: Some((
+                                span: (
+                                    low: 246,
+                                    high: 255,
+                                ),
+                                name: (
+                                    name: "j",
+                                    span: (
+                                        low: 250,
+                                        high: 251,
+                                    ),
+                                ),
+                                initializer: IntegerLiteral((
+                                    span: (
+                                        low: 254,
+                                        high: 255,
+                                    ),
+                                    value: 0,
+                                )),
+                            )),
+                            condition: Some(BinaryOp((
+                                span: (
+                                    low: 257,
+                                    high: 264,
+                                ),
+                                lhs: Reference((
+                                    span: (
+                                        low: 257,
+                                        high: 258,
+                                    ),
+                                    name: (
+                                        name: "j",
+                                        span: (
+                                            low: 257,
+                                            high: 258,
+                                        ),
+                                    ),
+                                )),
+                                rhs: DotIndex((
+                                    span: (
+                                        low: 261,
+                                        high: 264,
+                                    ),
+                                    origin: Reference((
+                                        span: (
+                                            low: 261,
+                                            high: 262,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 261,
+                                                high: 262,
+                                            ),
+                                        ),
+                                    )),
+                                    index: (
+                                        name: "c",
+                                        span: (
+                                            low: 263,
+                                            high: 264,
+                                        ),
+                                    ),
+                                )),
+                                op: Lt,
+                                op_span: (
+                                    low: 259,
+                                    high: 260,
+                                ),
+                            ))),
+                            increment: Some(Assign((
+                                span: (
+                                    low: 266,
+                                    high: 275,
+                                ),
+                                lhs: Reference((
+                                    span: (
+                                        low: 266,
+                                        high: 267,
+                                    ),
+                                    name: (
+                                        name: "j",
+                                        span: (
+                                            low: 266,
+                                            high: 267,
+                                        ),
+                                    ),
+                                )),
+                                rhs: BinaryOp((
+                                    span: (
+                                        low: 270,
+                                        high: 275,
+                                    ),
+                                    lhs: Reference((
+                                        span: (
+                                            low: 270,
+                                            high: 271,
+                                        ),
+                                        name: (
+                                            name: "j",
+                                            span: (
+                                                low: 270,
+                                                high: 271,
+                                            ),
+                                        ),
+                                    )),
+                                    rhs: IntegerLiteral((
+                                        span: (
+                                            low: 274,
+                                            high: 275,
+                                        ),
+                                        value: 1,
+                                    )),
+                                    op: Add,
+                                    op_span: (
+                                        low: 272,
+                                        high: 273,
+                                    ),
+                                )),
+                            ))),
+                            body: [
+                                Let((
+                                    span: (
+                                        low: 285,
+                                        high: 297,
+                                    ),
+                                    name: (
+                                        name: "sum",
+                                        span: (
+                                            low: 289,
+                                            high: 292,
+                                        ),
+                                    ),
+                                    ty: None,
+                                    value: IntegerLiteral((
+                                        span: (
+                                            low: 295,
+                                            high: 296,
+                                        ),
+                                        value: 0,
+                                    )),
+                                )),
+                                For((
+                                    span: (
+                                        low: 304,
+                                        high: 410,
+                                    ),
+                                    initializer: Some((
+                                        span: (
+                                            low: 309,
+                                            high: 318,
+                                        ),
+                                        name: (
+                                            name: "k",
+                                            span: (
+                                                low: 313,
+                                                high: 314,
+                                            ),
+                                        ),
+                                        initializer: IntegerLiteral((
+                                            span: (
+                                                low: 317,
+                                                high: 318,
+                                            ),
+                                            value: 0,
+                                        )),
+                                    )),
+                                    condition: Some(BinaryOp((
+                                        span: (
+                                            low: 320,
+                                            high: 327,
+                                        ),
+                                        lhs: Reference((
+                                            span: (
+                                                low: 320,
+                                                high: 321,
+                                            ),
+                                            name: (
+                                                name: "k",
+                                                span: (
+                                                    low: 320,
+                                                    high: 321,
+                                                ),
+                                            ),
+                                        )),
+                                        rhs: DotIndex((
+                                            span: (
+                                                low: 324,
+                                                high: 327,
+                                            ),
+                                            origin: Reference((
+                                                span: (
+                                                    low: 324,
+                                                    high: 325,
+                                                ),
+                                                name: (
+                                                    name: "a",
+                                                    span: (
+                                                        low: 324,
+                                                        high: 325,
+                                                    ),
+                                                ),
+                                            )),
+                                            index: (
+                                                name: "c",
+                                                span: (
+                                                    low: 326,
+                                                    high: 327,
+                                                ),
+                                            ),
+                                        )),
+                                        op: Lt,
+                                        op_span: (
+                                            low: 322,
+                                            high: 323,
+                                        ),
+                                    ))),
+                                    increment: Some(Assign((
+                                        span: (
+                                            low: 329,
+                                            high: 338,
+                                        ),
+                                        lhs: Reference((
+                                            span: (
+                                                low: 329,
+                                                high: 330,
+                                            ),
+                                            name: (
+                                                name: "k",
+                                                span: (
+                                                    low: 329,
+                                                    high: 330,
+                                                ),
+                                            ),
+                                        )),
+                                        rhs: BinaryOp((
+                                            span: (
+                                                low: 333,
+                                                high: 338,
+                                            ),
+                                            lhs: Reference((
+                                                span: (
+                                                    low: 333,
+                                                    high: 334,
+                                                ),
+                                                name: (
+                                                    name: "k",
+                                                    span: (
+                                                        low: 333,
+                                                        high: 334,
+                                                    ),
+                                                ),
+                                            )),
+                                            rhs: IntegerLiteral((
+                                                span: (
+                                                    low: 337,
+                                                    high: 338,
+                                                ),
+                                                value: 1,
+                                            )),
+                                            op: Add,
+                                            op_span: (
+                                                low: 335,
+                                                high: 336,
+                                            ),
+                                        )),
+                                    ))),
+                                    body: [
+                                        Expr((
+                                            span: (
+                                                low: 350,
+                                                high: 402,
+                                            ),
+                                            expr: Assign((
+                                                span: (
+                                                    low: 350,
+                                                    high: 401,
+                                                ),
+                                                lhs: Reference((
+                                                    span: (
+                                                        low: 350,
+                                                        high: 353,
+                                                    ),
+                                                    name: (
+                                                        name: "sum",
+                                                        span: (
+                                                            low: 350,
+                                                            high: 353,
+                                                        ),
+                                                    ),
+                                                )),
+                                                rhs: BinaryOp((
+                                                    span: (
+                                                        low: 356,
+                                                        high: 401,
+                                                    ),
+                                                    lhs: Reference((
+                                                        span: (
+                                                            low: 356,
+                                                            high: 359,
+                                                        ),
+                                                        name: (
+                                                            name: "sum",
+                                                            span: (
+                                                                low: 356,
+                                                                high: 359,
+                                                            ),
+                                                        ),
+                                                    )),
+                                                    rhs: BinaryOp((
+                                                        span: (
+                                                            low: 362,
+                                                            high: 401,
+                                                        ),
+                                                        lhs: BracketIndex((
+                                                            span: (
+                                                                low: 362,
+                                                                high: 380,
+                                                            ),
+                                                            origin: DotIndex((
+                                                                span: (
+                                                                    low: 362,
+                                                                    high: 367,
+                                                                ),
+                                                                origin: Reference((
+                                                                    span: (
+                                                                        low: 362,
+                                                                        high: 363,
+                                                                    ),
+                                                                    name: (
+                                                                        name: "a",
+                                                                        span: (
+                                                                            low: 362,
+                                                                            high: 363,
+                                                                        ),
+                                                                    ),
+                                                                )),
+                                                                index: (
+                                                                    name: "buf",
+                                                                    span: (
+                                                                        low: 364,
+                                                                        high: 367,
+                                                                    ),
+                                                                ),
+                                                            )),
+                                                            index: BinaryOp((
+                                                                span: (
+                                                                    low: 368,
+                                                                    high: 379,
+                                                                ),
+                                                                lhs: BinaryOp((
+                                                                    span: (
+                                                                        low: 368,
+                                                                        high: 375,
+                                                                    ),
+                                                                    lhs: Reference((
+                                                                        span: (
+                                                                            low: 368,
+                                                                            high: 369,
+                                                                        ),
+                                                                        name: (
+                                                                            name: "i",
+                                                                            span: (
+                                                                                low: 368,
+                                                                                high: 369,
+                                                                            ),
+                                                                        ),
+                                                                    )),
+                                                                    rhs: DotIndex((
+                                                                        span: (
+                                                                            low: 372,
+                                                                            high: 375,
+                                                                        ),
+                                                                        origin: Reference((
+                                                                            span: (
+                                                                                low: 372,
+                                                                                high: 373,
+                                                                            ),
+                                                                            name: (
+                                                                                name: "a",
+                                                                                span: (
+                                                                                    low: 372,
+                                                                                    high: 373,
+                                                                                ),
+                                                                            ),
+                                                                        )),
+                                                                        index: (
+                                                                            name: "c",
+                                                                            span: (
+                                                                                low: 374,
+                                                                                high: 375,
+                                                                            ),
+                                                                        ),
+                                                                    )),
+                                                                    op: Mul,
+                                                                    op_span: (
+                                                                        low: 370,
+                                                                        high: 371,
+                                                                    ),
+                                                                )),
+                                                                rhs: Reference((
+                                                                    span: (
+                                                                        low: 378,
+                                                                        high: 379,
+                                                                    ),
+                                                                    name: (
+                                                                        name: "k",
+                                                                        span: (
+                                                                            low: 378,
+                                                                            high: 379,
+                                                                        ),
+                                                                    ),
+                                                                )),
+                                                                op: Add,
+                                                                op_span: (
+                                                                    low: 376,
+                                                                    high: 377,
+                                                                ),
+                                                            )),
+                                                        )),
+                                                        rhs: BracketIndex((
+                                                            span: (
+                                                                low: 383,
+                                                                high: 401,
+                                                            ),
+                                                            origin: DotIndex((
+                                                                span: (
+                                                                    low: 383,
+                                                                    high: 388,
+                                                                ),
+                                                                origin: Reference((
+                                                                    span: (
+                                                                        low: 383,
+                                                                        high: 384,
+                                                                    ),
+                                                                    name: (
+                                                                        name: "b",
+                                                                        span: (
+                                                                            low: 383,
+                                                                            high: 384,
+                                                                        ),
+                                                                    ),
+                                                                )),
+                                                                index: (
+                                                                    name: "buf",
+                                                                    span: (
+                                                                        low: 385,
+                                                                        high: 388,
+                                                                    ),
+                                                                ),
+                                                            )),
+                                                            index: BinaryOp((
+                                                                span: (
+                                                                    low: 389,
+                                                                    high: 400,
+                                                                ),
+                                                                lhs: BinaryOp((
+                                                                    span: (
+                                                                        low: 389,
+                                                                        high: 396,
+                                                                    ),
+                                                                    lhs: Reference((
+                                                                        span: (
+                                                                            low: 389,
+                                                                            high: 390,
+                                                                        ),
+                                                                        name: (
+                                                                            name: "k",
+                                                                            span: (
+                                                                                low: 389,
+                                                                                high: 390,
+                                                                            ),
+                                                                        ),
+                                                                    )),
+                                                                    rhs: DotIndex((
+                                                                        span: (
+                                                                            low: 393,
+                                                                            high: 396,
+                                                                        ),
+                                                                        origin: Reference((
+                                                                            span: (
+                                                                                low: 393,
+                                                                                high: 394,
+                                                                            ),
+                                                                            name: (
+                                                                                name: "b",
+                                                                                span: (
+                                                                                    low: 393,
+                                                                                    high: 394,
+                                                                                ),
+                                                                            ),
+                                                                        )),
+                                                                        index: (
+                                                                            name: "c",
+                                                                            span: (
+                                                                                low: 395,
+                                                                                high: 396,
+                                                                            ),
+                                                                        ),
+                                                                    )),
+                                                                    op: Mul,
+                                                                    op_span: (
+                                                                        low: 391,
+                                                                        high: 392,
+                                                                    ),
+                                                                )),
+                                                                rhs: Reference((
+                                                                    span: (
+                                                                        low: 399,
+                                                                        high: 400,
+                                                                    ),
+                                                                    name: (
+                                                                        name: "j",
+                                                                        span: (
+                                                                            low: 399,
+                                                                            high: 400,
+                                                                        ),
+                                                                    ),
+                                                                )),
+                                                                op: Add,
+                                                                op_span: (
+                                                                    low: 397,
+                                                                    high: 398,
+                                                                ),
+                                                            )),
+                                                        )),
+                                                        op: Mul,
+                                                        op_span: (
+                                                            low: 381,
+                                                            high: 382,
+                                                        ),
+                                                    )),
+                                                    op: Add,
+                                                    op_span: (
+                                                        low: 360,
+                                                        high: 361,
+                                                    ),
+                                                )),
+                                            )),
+                                        )),
+                                    ],
+                                )),
+                                Expr((
+                                    span: (
+                                        low: 417,
+                                        high: 442,
+                                    ),
+                                    expr: Assign((
+                                        span: (
+                                            low: 417,
+                                            high: 441,
+                                        ),
+                                        lhs: BracketIndex((
+                                            span: (
+                                                low: 417,
+                                                high: 435,
+                                            ),
+                                            origin: DotIndex((
+                                                span: (
+                                                    low: 417,
+                                                    high: 422,
+                                                ),
+                                                origin: Reference((
+                                                    span: (
+                                                        low: 417,
+                                                        high: 418,
+                                                    ),
+                                                    name: (
+                                                        name: "c",
+                                                        span: (
+                                                            low: 417,
+                                                            high: 418,
+                                                        ),
+                                                    ),
+                                                )),
+                                                index: (
+                                                    name: "buf",
+                                                    span: (
+                                                        low: 419,
+                                                        high: 422,
+                                                    ),
+                                                ),
+                                            )),
+                                            index: BinaryOp((
+                                                span: (
+                                                    low: 423,
+                                                    high: 434,
+                                                ),
+                                                lhs: BinaryOp((
+                                                    span: (
+                                                        low: 423,
+                                                        high: 430,
+                                                    ),
+                                                    lhs: Reference((
+                                                        span: (
+                                                            low: 423,
+                                                            high: 424,
+                                                        ),
+                                                        name: (
+                                                            name: "i",
+                                                            span: (
+                                                                low: 423,
+                                                                high: 424,
+                                                            ),
+                                                        ),
+                                                    )),
+                                                    rhs: DotIndex((
+                                                        span: (
+                                                            low: 427,
+                                                            high: 430,
+                                                        ),
+                                                        origin: Reference((
+                                                            span: (
+                                                                low: 427,
+                                                                high: 428,
+                                                            ),
+                                                            name: (
+                                                                name: "b",
+                                                                span: (
+                                                                    low: 427,
+                                                                    high: 428,
+                                                                ),
+                                                            ),
+                                                        )),
+                                                        index: (
+                                                            name: "c",
+                                                            span: (
+                                                                low: 429,
+                                                                high: 430,
+                                                            ),
+                                                        ),
+                                                    )),
+                                                    op: Mul,
+                                                    op_span: (
+                                                        low: 425,
+                                                        high: 426,
+                                                    ),
+                                                )),
+                                                rhs: Reference((
+                                                    span: (
+                                                        low: 433,
+                                                        high: 434,
+                                                    ),
+                                                    name: (
+                                                        name: "j",
+                                                        span: (
+                                                            low: 433,
+                                                            high: 434,
+                                                        ),
+                                                    ),
+                                                )),
+                                                op: Add,
+                                                op_span: (
+                                                    low: 431,
+                                                    high: 432,
+                                                ),
+                                            )),
+                                        )),
+                                        rhs: Reference((
+                                            span: (
+                                                low: 438,
+                                                high: 441,
+                                            ),
+                                            name: (
+                                                name: "sum",
+                                                span: (
+                                                    low: 438,
+                                                    high: 441,
+                                                ),
+                                            ),
+                                        )),
+                                    )),
+                                )),
+                            ],
+                        )),
+                    ],
+                )),
+                Return((
+                    span: (
+                        low: 455,
+                        high: 464,
+                    ),
+                    value: Some(Reference((
+                        span: (
+                            low: 462,
+                            high: 463,
+                        ),
+                        name: (
+                            name: "c",
+                            span: (
+                                low: 462,
+                                high: 463,
+                            ),
+                        ),
+                    ))),
+                )),
+            ],
+        )),
+    ],
+)
+
+----- stderr -----
+Error: sema::invalid_reference
+
+  × invalid reference to malloc
+    ╭─[tests/syntax/matmul.test:11:10]
+ 10 │     c: b.c,
+ 11 │     buf: malloc(a.r * b.c * 4),
+    ·          ───┬──
+    ·             ╰── no value in scope named malloc
+ 12 │   };
+    ╰────

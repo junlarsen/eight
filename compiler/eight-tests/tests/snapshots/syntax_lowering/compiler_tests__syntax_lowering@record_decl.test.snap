@@ -1,0 +1,26 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax_lowering
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - tests/syntax-lowering/record_decl.test
+input_file: compiler/eight-tests/tests/syntax-lowering/record_decl.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::invalid_reference
+
+  × invalid reference to malloc
+    ╭─[tests/syntax-lowering/record_decl.test:15:14]
+ 14 │   for (let curr = node; curr.next != 0; curr = curr.next) {}
+ 15 │   let node = malloc::<Node>(8 + 4);
+    ·              ───┬──
+    ·                 ╰── no value in scope named malloc
+ 16 │   node.value = value;
+    ╰────

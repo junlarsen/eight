@@ -1,0 +1,26 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax_lowering
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - tests/syntax-lowering/kitchen_sink.test
+input_file: compiler/eight-tests/tests/syntax-lowering/kitchen_sink.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::invalid_reference
+
+  × invalid reference to panic
+    ╭─[tests/syntax-lowering/kitchen_sink.test:12:5]
+ 11 │   if (a.r != b.c) {
+ 12 │     panic();
+    ·     ──┬──
+    ·       ╰── no value in scope named panic
+ 13 │   }
+    ╰────

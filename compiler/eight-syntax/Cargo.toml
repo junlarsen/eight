@@ -19,5 +19,3 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }
-insta = { workspace = true }
-ron = { workspace = true }

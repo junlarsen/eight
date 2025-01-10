@@ -1,0 +1,26 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax_lowering
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - tests/syntax-lowering/for_loop_reduction.test
+input_file: compiler/eight-tests/tests/syntax-lowering/for_loop_reduction.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::trait_does_not_exist
+
+  × trait Ord does not exist
+   ╭─[tests/syntax-lowering/for_loop_reduction.test:2:19]
+ 1 │ fn loop_transform() {
+ 2 │   for (let i = 0; i < 10; i = i + 1) {
+   ·                   ───┬──
+   ·                      ╰── required trait Ord to exist
+ 3 │     let x = i;
+   ╰────

@@ -1,0 +1,44 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax_lowering
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - tests/syntax-lowering/generic_substituion.test
+input_file: compiler/eight-tests/tests/syntax-lowering/generic_substituion.test
+snapshot_kind: text
+---
+success: true
+exit_code: 0
+----- stdout -----
+hir_module {
+  declares {
+    // module types
+    
+    
+    // module struct types
+    
+    
+    // module functions
+    fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V;
+    
+    // module traits
+    
+    
+    // module instances
+  
+  }
+  
+  defining {
+    // module functions
+    fn substitute<$1@0, $1@1, $1@2>(a: i32, b: T, c: U, d: V) -> $1@2 {
+      return (d as $1@2);
+    }
+    // module intrinsic functions
+    
+  
+  }
+}
+
+----- stderr -----

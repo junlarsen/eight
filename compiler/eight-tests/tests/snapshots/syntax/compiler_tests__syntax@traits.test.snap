@@ -1,0 +1,1607 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for syntax
+info:
+  program: eightc
+  args:
+    - "--emit-ast"
+    - tests/syntax/traits.test
+input_file: compiler/eight-tests/tests/syntax/traits.test
+snapshot_kind: text
+---
+success: true
+exit_code: 0
+----- stdout -----
+(
+    items: [
+        Trait((
+            span: (
+                low: 0,
+                high: 49,
+            ),
+            name: (
+                name: "Add",
+                span: (
+                    low: 6,
+                    high: 9,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 10,
+                        high: 11,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 10,
+                            high: 11,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 13,
+                        high: 14,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 13,
+                            high: 14,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 16,
+                        high: 17,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 16,
+                            high: 17,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 23,
+                        high: 47,
+                    ),
+                    name: (
+                        name: "add",
+                        span: (
+                            low: 26,
+                            high: 29,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 30,
+                                high: 34,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 30,
+                                    high: 31,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 33,
+                                    high: 34,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 33,
+                                        high: 34,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 36,
+                                high: 40,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 36,
+                                    high: 37,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 39,
+                                    high: 40,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 39,
+                                        high: 40,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 45,
+                            high: 46,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 45,
+                                high: 46,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 51,
+                high: 100,
+            ),
+            name: (
+                name: "Sub",
+                span: (
+                    low: 57,
+                    high: 60,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 61,
+                        high: 62,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 61,
+                            high: 62,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 64,
+                        high: 65,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 64,
+                            high: 65,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 67,
+                        high: 68,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 67,
+                            high: 68,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 74,
+                        high: 98,
+                    ),
+                    name: (
+                        name: "sub",
+                        span: (
+                            low: 77,
+                            high: 80,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 81,
+                                high: 85,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 81,
+                                    high: 82,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 84,
+                                    high: 85,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 84,
+                                        high: 85,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 87,
+                                high: 91,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 87,
+                                    high: 88,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 90,
+                                    high: 91,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 90,
+                                        high: 91,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 96,
+                            high: 97,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 96,
+                                high: 97,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 102,
+                high: 151,
+            ),
+            name: (
+                name: "Mul",
+                span: (
+                    low: 108,
+                    high: 111,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 112,
+                        high: 113,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 112,
+                            high: 113,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 115,
+                        high: 116,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 115,
+                            high: 116,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 118,
+                        high: 119,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 118,
+                            high: 119,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 125,
+                        high: 149,
+                    ),
+                    name: (
+                        name: "mul",
+                        span: (
+                            low: 128,
+                            high: 131,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 132,
+                                high: 136,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 132,
+                                    high: 133,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 135,
+                                    high: 136,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 135,
+                                        high: 136,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 138,
+                                high: 142,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 138,
+                                    high: 139,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 141,
+                                    high: 142,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 141,
+                                        high: 142,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 147,
+                            high: 148,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 147,
+                                high: 148,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 153,
+                high: 202,
+            ),
+            name: (
+                name: "Div",
+                span: (
+                    low: 159,
+                    high: 162,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 163,
+                        high: 164,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 163,
+                            high: 164,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 166,
+                        high: 167,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 166,
+                            high: 167,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 169,
+                        high: 170,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 169,
+                            high: 170,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 176,
+                        high: 200,
+                    ),
+                    name: (
+                        name: "div",
+                        span: (
+                            low: 179,
+                            high: 182,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 183,
+                                high: 187,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 183,
+                                    high: 184,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 186,
+                                    high: 187,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 186,
+                                        high: 187,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 189,
+                                high: 193,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 189,
+                                    high: 190,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 192,
+                                    high: 193,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 192,
+                                        high: 193,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 198,
+                            high: 199,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 198,
+                                high: 199,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 204,
+                high: 253,
+            ),
+            name: (
+                name: "Rem",
+                span: (
+                    low: 210,
+                    high: 213,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 214,
+                        high: 215,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 214,
+                            high: 215,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 217,
+                        high: 218,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 217,
+                            high: 218,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 220,
+                        high: 221,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 220,
+                            high: 221,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 227,
+                        high: 251,
+                    ),
+                    name: (
+                        name: "rem",
+                        span: (
+                            low: 230,
+                            high: 233,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 234,
+                                high: 238,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 234,
+                                    high: 235,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 237,
+                                    high: 238,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 237,
+                                        high: 238,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 240,
+                                high: 244,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 240,
+                                    high: 241,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 243,
+                                    high: 244,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 243,
+                                        high: 244,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 249,
+                            high: 250,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 249,
+                                high: 250,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 255,
+                high: 332,
+            ),
+            name: (
+                name: "Eq",
+                span: (
+                    low: 261,
+                    high: 263,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 264,
+                        high: 265,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 264,
+                            high: 265,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 267,
+                        high: 268,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 267,
+                            high: 268,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 274,
+                        high: 300,
+                    ),
+                    name: (
+                        name: "eq",
+                        span: (
+                            low: 277,
+                            high: 279,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 280,
+                                high: 284,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 280,
+                                    high: 281,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 283,
+                                    high: 284,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 283,
+                                        high: 284,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 286,
+                                high: 290,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 286,
+                                    high: 287,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 289,
+                                    high: 290,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 289,
+                                        high: 290,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 295,
+                            high: 299,
+                        ),
+                    ))),
+                ),
+                (
+                    span: (
+                        low: 303,
+                        high: 330,
+                    ),
+                    name: (
+                        name: "neq",
+                        span: (
+                            low: 306,
+                            high: 309,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 310,
+                                high: 314,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 310,
+                                    high: 311,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 313,
+                                    high: 314,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 313,
+                                        high: 314,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 316,
+                                high: 320,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 316,
+                                    high: 317,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 319,
+                                    high: 320,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 319,
+                                        high: 320,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 325,
+                            high: 329,
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 334,
+                high: 465,
+            ),
+            name: (
+                name: "Ord",
+                span: (
+                    low: 340,
+                    high: 343,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 344,
+                        high: 345,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 344,
+                            high: 345,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 347,
+                        high: 348,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 347,
+                            high: 348,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 354,
+                        high: 379,
+                    ),
+                    name: (
+                        name: "lt",
+                        span: (
+                            low: 357,
+                            high: 359,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 360,
+                                high: 364,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 360,
+                                    high: 361,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 363,
+                                    high: 364,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 363,
+                                        high: 364,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 366,
+                                high: 370,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 366,
+                                    high: 367,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 369,
+                                    high: 370,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 369,
+                                        high: 370,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 375,
+                            high: 378,
+                        ),
+                    ))),
+                ),
+                (
+                    span: (
+                        low: 382,
+                        high: 407,
+                    ),
+                    name: (
+                        name: "gt",
+                        span: (
+                            low: 385,
+                            high: 387,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 388,
+                                high: 392,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 388,
+                                    high: 389,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 391,
+                                    high: 392,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 391,
+                                        high: 392,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 394,
+                                high: 398,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 394,
+                                    high: 395,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 397,
+                                    high: 398,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 397,
+                                        high: 398,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 403,
+                            high: 406,
+                        ),
+                    ))),
+                ),
+                (
+                    span: (
+                        low: 410,
+                        high: 435,
+                    ),
+                    name: (
+                        name: "le",
+                        span: (
+                            low: 413,
+                            high: 415,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 416,
+                                high: 420,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 416,
+                                    high: 417,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 419,
+                                    high: 420,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 419,
+                                        high: 420,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 422,
+                                high: 426,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 422,
+                                    high: 423,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 425,
+                                    high: 426,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 425,
+                                        high: 426,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 431,
+                            high: 434,
+                        ),
+                    ))),
+                ),
+                (
+                    span: (
+                        low: 438,
+                        high: 463,
+                    ),
+                    name: (
+                        name: "ge",
+                        span: (
+                            low: 441,
+                            high: 443,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 444,
+                                high: 448,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 444,
+                                    high: 445,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 447,
+                                    high: 448,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 447,
+                                        high: 448,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 450,
+                                high: 454,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 450,
+                                    high: 451,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 453,
+                                    high: 454,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 453,
+                                        high: 454,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 459,
+                            high: 462,
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 467,
+                high: 507,
+            ),
+            name: (
+                name: "Neg",
+                span: (
+                    low: 473,
+                    high: 476,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 477,
+                        high: 478,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 477,
+                            high: 478,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 480,
+                        high: 481,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 480,
+                            high: 481,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 487,
+                        high: 505,
+                    ),
+                    name: (
+                        name: "neg",
+                        span: (
+                            low: 490,
+                            high: 493,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 494,
+                                high: 498,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 494,
+                                    high: 495,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 497,
+                                    high: 498,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 497,
+                                        high: 498,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 503,
+                            high: 504,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 503,
+                                high: 504,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 509,
+                high: 558,
+            ),
+            name: (
+                name: "And",
+                span: (
+                    low: 515,
+                    high: 518,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 519,
+                        high: 520,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 519,
+                            high: 520,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 522,
+                        high: 523,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 522,
+                            high: 523,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 525,
+                        high: 526,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 525,
+                            high: 526,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 532,
+                        high: 556,
+                    ),
+                    name: (
+                        name: "and",
+                        span: (
+                            low: 535,
+                            high: 538,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 539,
+                                high: 543,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 539,
+                                    high: 540,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 542,
+                                    high: 543,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 542,
+                                        high: 543,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 545,
+                                high: 549,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 545,
+                                    high: 546,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 548,
+                                    high: 549,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 548,
+                                        high: 549,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 554,
+                            high: 555,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 554,
+                                high: 555,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 560,
+                high: 607,
+            ),
+            name: (
+                name: "Or",
+                span: (
+                    low: 566,
+                    high: 568,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 569,
+                        high: 570,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 569,
+                            high: 570,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 572,
+                        high: 573,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 572,
+                            high: 573,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 575,
+                        high: 576,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 575,
+                            high: 576,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 582,
+                        high: 605,
+                    ),
+                    name: (
+                        name: "or",
+                        span: (
+                            low: 585,
+                            high: 587,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 588,
+                                high: 592,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 588,
+                                    high: 589,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 591,
+                                    high: 592,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 591,
+                                        high: 592,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 594,
+                                high: 598,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 594,
+                                    high: 595,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 597,
+                                    high: 598,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 597,
+                                        high: 598,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 603,
+                            high: 604,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 603,
+                                high: 604,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+    ],
+)
+
+----- stderr -----
