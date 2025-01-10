@@ -1,4 +1,4 @@
-type vec512 = {
+struct vec512 {
   vs: *i32,
 }
 

@@ -16,9 +16,9 @@ exit_code: 1
 Error: syntax::unexpected_character
 
   × found illegal character during parsing
-   ╭─[tests/ui/syntax/trivial/unexpected_character.test:1:11]
- 1 │ type Vec2 @ {
-   ·           ┬
-   ·           ╰── the character '@' does not parse into any tokens
+   ╭─[tests/ui/syntax/trivial/unexpected_character.test:1:13]
+ 1 │ struct Vec2 @ {
+   ·             ┬
+   ·             ╰── the character '@' does not parse into any tokens
  2 │   x: i32,
    ╰────

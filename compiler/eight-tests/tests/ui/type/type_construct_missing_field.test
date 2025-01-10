@@ -1,4 +1,4 @@
-type Box = {
+struct Box {
   p: *i32,
 }
 

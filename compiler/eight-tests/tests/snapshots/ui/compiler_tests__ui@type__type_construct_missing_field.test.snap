@@ -17,7 +17,7 @@ Error: sema::missing_field
 
   × the field p is missing in construction of Box
    ╭─[tests/ui/type/type_construct_missing_field.test:2:3]
- 1 │ type Box = {
+ 1 │ struct Box {
  2 │   p: *i32,
    ·   ────┬───
    ·       ╰── field p defined here

@@ -18,7 +18,7 @@ hir_module {
     
     
     // module struct types
-    type Agent = {
+    struct Agent {
       name: i32,
     }
     

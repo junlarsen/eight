@@ -33,7 +33,7 @@ impl fmt::Display for Token {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
-    KeywordType,
+    KeywordStruct,
     KeywordLet,
     KeywordFn,
     KeywordIntrinsicFn,
@@ -90,7 +90,7 @@ pub enum TokenType {
 impl fmt::Display for TokenType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            TokenType::KeywordType => write!(f, "type"),
+            TokenType::KeywordStruct => write!(f, "type"),
             TokenType::KeywordLet => write!(f, "let"),
             TokenType::KeywordFn => write!(f, "fn"),
             TokenType::KeywordIf => write!(f, "if"),

@@ -1,4 +1,4 @@
-type BrandedBool = {
+struct BrandedBool {
   brand: bool,
 }
 

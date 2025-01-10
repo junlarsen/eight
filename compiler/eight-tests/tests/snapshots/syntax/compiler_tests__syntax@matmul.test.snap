@@ -22,8 +22,8 @@ exit_code: 1
             name: (
                 name: "Matrix",
                 span: (
-                    low: 5,
-                    high: 11,
+                    low: 7,
+                    high: 13,
                 ),
             ),
             members: [

@@ -255,7 +255,7 @@ impl<'a> Lexer<'a> {
 
         let value = String::from_iter(buf);
         let ty = match value.as_str() {
-            "type" => TokenType::KeywordType,
+            "struct" => TokenType::KeywordStruct,
             "let" => TokenType::KeywordLet,
             "fn" => TokenType::KeywordFn,
             "if" => TokenType::KeywordIf,
@@ -342,7 +342,10 @@ mod tests {
 
     #[test]
     fn test_parse_keyword() {
-        assert_lexer_parse!("type", Token::new(TokenType::KeywordType, Span::new(0..4)));
+        assert_lexer_parse!(
+            "struct",
+            Token::new(TokenType::KeywordStruct, Span::new(0..6))
+        );
         assert_lexer_parse!("let", Token::new(TokenType::KeywordLet, Span::new(0..3)));
         // Non-keywords are turned into identifiers
         assert_lexer_parse!(

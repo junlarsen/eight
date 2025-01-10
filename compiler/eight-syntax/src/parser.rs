@@ -216,13 +216,13 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     /// Parse an item.
     ///
     /// ```text
-    /// item ::= fn_item | type_item | intrinsic_fn_item | trait_item | instance_item
+    /// item ::= fn_item | struct_item | intrinsic_fn_item | trait_item | instance_item
     /// ```
     pub fn parse_item(&mut self) -> ParseResult<AstItem<'ast>> {
         let token = self.lookahead_or_err()?;
         let node = match token.ty {
             TokenType::KeywordFn => AstItem::Function(self.parse_fn_item()?),
-            TokenType::KeywordType => AstItem::Struct(self.parse_struct_item()?),
+            TokenType::KeywordStruct => AstItem::Struct(self.parse_struct_item()?),
             TokenType::KeywordIntrinsicFn => {
                 AstItem::IntrinsicFunction(self.parse_intrinsic_fn_item()?)
             }
@@ -332,12 +332,11 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     /// Parse a struct item.
     ///
     /// ```text
-    /// struct_item ::= KEYWORD_STRUCT identifier EQUAL OPEN_BRACE type_member_item* CLOSE_BRACE
+    /// struct_item ::= KEYWORD_STRUCT identifier OPEN_BRACE type_member_item* CLOSE_BRACE
     /// ```
     pub fn parse_struct_item(&mut self) -> ParseResult<AstStructItem<'ast>> {
-        let start = self.check(&TokenType::KeywordType)?;
+        let start = self.check(&TokenType::KeywordStruct)?;
         let id = self.parse_identifier()?;
-        self.check(&TokenType::Equal)?;
         self.check(&TokenType::OpenBrace)?;
         let members =
             self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_type_member_item())?;
@@ -1399,7 +1398,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_type_member_item() {
+    fn test_parse_struct_member_item() {
         assert_parse!("x: i32,", |p: &mut Parser| {
             let production = p.parse_type_member_item();
             let production = assert_ok!(production);
@@ -1425,8 +1424,8 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_type_item() {
-        assert_parse!("type Matrix = { x: i32, y: i32, }", |p: &mut Parser| {
+    fn test_parse_struct_item() {
+        assert_parse!("struct Matrix { x: i32, y: i32, }", |p: &mut Parser| {
             let production = p.parse_struct_item();
             let production = assert_ok!(production);
             let name = production.name;
@@ -1437,7 +1436,7 @@ mod tests {
         });
 
         assert_parse!(
-            "type Matrix = { x: i32, y: i32, z: *vec2, }",
+            "struct Matrix { x: i32, y: i32, z: *vec2, }",
             |p: &mut Parser| {
                 let production = p.parse_struct_item();
                 let production = assert_ok!(production);

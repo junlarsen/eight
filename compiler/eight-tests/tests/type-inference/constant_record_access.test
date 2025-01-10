@@ -1,4 +1,4 @@
-type Agent = {
+struct Agent {
   name: i32,
 }
 

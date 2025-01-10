@@ -9,7 +9,7 @@ project are:
 3. A generic type system with a simple type inference algorithm.
 
 ```
-type Matrix = {
+struct Matrix {
   r: i32,
   c: i32,
   buf: *i32,

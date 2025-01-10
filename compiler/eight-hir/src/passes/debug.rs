@@ -271,11 +271,9 @@ impl HirModuleDebugPass {
         name: &'hir str,
         ty: &'hir HirStructApiSignature,
     ) -> RcDoc<'hir, ()> {
-        RcDoc::text("type")
+        RcDoc::text("struct")
             .append(RcDoc::space())
             .append(RcDoc::text(name))
-            .append(RcDoc::space())
-            .append(RcDoc::text("="))
             .append(RcDoc::space())
             .append(
                 RcDoc::text("{")
