@@ -1,4 +1,4 @@
-intrinsic_scalar i32;
+intrinsic_type i32;
 
 intrinsic_fn i32_add(a: i32, b: i32) -> i32;
 intrinsic_fn i32_sub(a: i32, b: i32) -> i32;

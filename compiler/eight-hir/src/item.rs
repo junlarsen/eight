@@ -1,6 +1,6 @@
 use crate::signature::{
-    HirFunctionApiSignature, HirInstanceApiSignature, HirRecordApiSignature, HirScalarApiSignature,
-    HirTraitApiSignature,
+    HirFunctionApiSignature, HirInstanceApiSignature, HirRecordApiSignature, HirTraitApiSignature,
+    HirTypeApiSignature,
 };
 use crate::stmt::HirStmt;
 use crate::ty::HirTy;
@@ -10,10 +10,10 @@ use std::collections::BTreeMap;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirIntrinsicScalar<'ta> {
+pub struct HirIntrinsicType<'ta> {
     pub span: Span,
     pub name: HirName,
-    pub signature: &'ta HirScalarApiSignature<'ta>,
+    pub signature: &'ta HirTypeApiSignature<'ta>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

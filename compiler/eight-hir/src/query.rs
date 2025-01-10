@@ -1,6 +1,4 @@
-use crate::signature::{
-    HirInstanceApiSignature, HirModuleSignature,
-};
+use crate::signature::{HirInstanceApiSignature, HirModuleSignature};
 use crate::ty::HirTy;
 use eight_diagnostics::ice;
 use std::collections::HashMap;

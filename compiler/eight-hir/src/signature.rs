@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 pub struct HirModuleSignature<'ta> {
     pub functions: BTreeMap<String, &'ta HirFunctionApiSignature<'ta>>,
     pub records: BTreeMap<String, &'ta HirRecordApiSignature<'ta>>,
-    pub scalars: BTreeMap<String, &'ta HirScalarApiSignature<'ta>>,
+    pub types: BTreeMap<String, &'ta HirTypeApiSignature<'ta>>,
     pub traits: BTreeMap<String, &'ta HirTraitApiSignature<'ta>>,
     /// Instances are stored in a flat list.
     ///
@@ -38,8 +38,8 @@ impl<'ta> HirModuleSignature<'ta> {
         self.records.insert(name.to_owned(), signature);
     }
 
-    pub fn add_scalar(&mut self, name: &str, signature: &'ta HirScalarApiSignature<'ta>) {
-        self.scalars.insert(name.to_owned(), signature);
+    pub fn add_type(&mut self, name: &str, signature: &'ta HirTypeApiSignature<'ta>) {
+        self.types.insert(name.to_owned(), signature);
     }
 
     pub fn add_trait(&mut self, name: &str, signature: &'ta HirTraitApiSignature<'ta>) {
@@ -58,8 +58,8 @@ impl<'ta> HirModuleSignature<'ta> {
         self.records.get(name).copied()
     }
 
-    pub fn get_scalar(&self, name: &str) -> Option<&'ta HirScalarApiSignature<'ta>> {
-        self.scalars.get(name).copied()
+    pub fn get_type(&self, name: &str) -> Option<&'ta HirTypeApiSignature<'ta>> {
+        self.types.get(name).copied()
     }
 
     pub fn get_trait(&self, name: &str) -> Option<&'ta HirTraitApiSignature<'ta>> {
@@ -72,7 +72,7 @@ impl<'ta> HirModuleSignature<'ta> {
 pub enum HirModuleItemSignature<'ta> {
     Function(&'ta HirFunctionApiSignature<'ta>),
     Record(&'ta HirRecordApiSignature<'ta>),
-    Scalar(&'ta HirScalarApiSignature<'ta>),
+    Type(&'ta HirTypeApiSignature<'ta>),
     Trait(&'ta HirTraitApiSignature<'ta>),
     Instance(&'ta HirInstanceApiSignature<'ta>),
 }
@@ -96,7 +96,7 @@ pub struct HirRecordFieldApiSignature<'ta> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirScalarApiSignature<'ta> {
+pub struct HirTypeApiSignature<'ta> {
     pub span: Span,
     pub declaration_name: HirName,
     pub ty: &'ta HirTy<'ta>,

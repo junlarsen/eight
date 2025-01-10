@@ -1040,7 +1040,7 @@ impl HirModuleTypeCheckerPass {
             return Ok(sub);
         }
         // Check if the name is a builtin or record type.
-        if cx.module_signature.get_scalar(&n.name.name).is_some() {
+        if cx.module_signature.get_type(&n.name.name).is_some() {
             return Ok(node);
         }
         if cx.module_signature.get_record(&n.name.name).is_some() {

@@ -5,7 +5,7 @@ snapshot_kind: text
 ---
 hir_module {
   declares {
-    // module scalar types
+    // module types
     
     
     // module record types

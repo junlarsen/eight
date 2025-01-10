@@ -19,7 +19,7 @@ declare_error_type! {
         UnknownField(UnknownFieldError),
         DuplicateField(DuplicateFieldError),
         MissingField(MissingFieldError),
-        UnknownIntrinsicScalarType(UnknownIntrinsicScalarTypeError),
+        UnknownIntrinsicType(UnknownIntrinsicTypeError),
         TraitInstanceMissingFn(TraitInstanceMissingFnError),
         TraitDoesNotExist(TraitDoesNotExistError),
         TraitMissingInstance(TraitMissingInstanceError),
@@ -157,11 +157,11 @@ pub struct MissingFieldError {
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(sema::unknown_intrinsic_scalar_type))]
-#[error("unknown intrinsic scalar type {name}")]
-pub struct UnknownIntrinsicScalarTypeError {
+#[diagnostic(code(sema::unknown_intrinsic_type_type))]
+#[error("unknown intrinsic type {name}")]
+pub struct UnknownIntrinsicTypeError {
     pub name: String,
-    #[label = "unknown intrinsic scalar type {name}"]
+    #[label = "could not find type {name}"]
     pub span: Span,
 }
 

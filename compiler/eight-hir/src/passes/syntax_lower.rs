@@ -1,7 +1,6 @@
 use crate::arena::HirArena;
 use crate::error::{
-    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult,
-    UnknownIntrinsicScalarTypeError,
+    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
 };
 use crate::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
@@ -9,13 +8,11 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::{
-    HirFunction, HirInstance, HirIntrinsicScalar, HirRecord, HirTrait,
-};
+use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirRecord, HirTrait};
 use crate::signature::{
     HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
-    HirModuleSignature, HirRecordApiSignature, HirRecordFieldApiSignature, HirScalarApiSignature,
-    HirTraitApiSignature, HirTypeParameterApiSignature,
+    HirModuleSignature, HirRecordApiSignature, HirRecordFieldApiSignature, HirTraitApiSignature,
+    HirTypeApiSignature, HirTypeParameterApiSignature,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -30,7 +27,7 @@ use eight_syntax::{
     AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument, AstContinueStmt,
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,
     AstGroupExpr, AstIdentifier, AstIfStmt, AstInstanceItem, AstIntegerLiteralExpr,
-    AstIntrinsicFunctionItem, AstIntrinsicScalarItem, AstItem, AstLetStmt, AstReferenceExpr,
+    AstIntrinsicFunctionItem, AstIntrinsicTypeItem, AstItem, AstLetStmt, AstReferenceExpr,
     AstReturnStmt, AstStmt, AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType,
     AstTypeItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
@@ -288,7 +285,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     /// Visit an item in the module.
-    /// 
+    ///
     /// The syntax lowering pass synthesizes intrinsic functions into regular functions with the
     /// linkage type marked external.
     pub fn visit_item(
@@ -306,19 +303,17 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             AstItem::IntrinsicFunction(f) => {
                 let fun = self.visit_intrinsic_function_item(f)?;
                 module_signature.add_function(f.name.name.as_str(), fun.signature);
-                module_body
-                    .functions
-                    .insert(f.name.name.to_owned(), fun);
+                module_body.functions.insert(f.name.name.to_owned(), fun);
             }
             AstItem::Type(t) => {
                 let record = self.visit_type_item(t)?;
                 module_signature.add_record(t.name.name.as_str(), record.signature);
                 module_body.records.insert(t.name.name.to_owned(), record);
             }
-            AstItem::IntrinsicScalar(s) => {
-                let scalar = self.visit_intrinsic_scalar_item(s)?;
-                module_signature.add_scalar(s.name.name.as_str(), scalar.signature);
-                module_body.scalars.insert(s.name.name.to_owned(), scalar);
+            AstItem::IntrinsicType(s) => {
+                let r#type = self.visit_intrinsic_type_item(s)?;
+                module_signature.add_type(s.name.name.as_str(), r#type.signature);
+                module_body.types.insert(s.name.name.to_owned(), r#type);
             }
             AstItem::Trait(t) => {
                 let r#trait = self.visit_trait_item(t)?;
@@ -441,12 +436,12 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_intrinsic_scalar_item(
+    pub fn visit_intrinsic_type_item(
         &mut self,
-        node: &'ast AstIntrinsicScalarItem,
-    ) -> HirResult<HirIntrinsicScalar<'ta>> {
+        node: &'ast AstIntrinsicTypeItem,
+    ) -> HirResult<HirIntrinsicType<'ta>> {
         let name = self.visit_identifier(&node.name)?;
-        let signature = self.arena.intern(HirScalarApiSignature {
+        let signature = self.arena.intern(HirTypeApiSignature {
             span: node.span,
             declaration_name: name.clone(),
             ty: match node.name.name.as_str() {
@@ -454,21 +449,19 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 "bool" => self.arena.types().get_boolean_ty(),
                 "unit" => self.arena.types().get_unit_ty(),
                 _ => {
-                    return Err(HirError::UnknownIntrinsicScalarType(
-                        UnknownIntrinsicScalarTypeError {
-                            name: node.name.name.to_owned(),
-                            span: node.name.span,
-                        },
-                    ))
+                    return Err(HirError::UnknownIntrinsicType(UnknownIntrinsicTypeError {
+                        name: node.name.name.to_owned(),
+                        span: node.name.span,
+                    }))
                 }
             },
         });
-        let scalar = HirIntrinsicScalar {
+        let r#type = HirIntrinsicType {
             span: node.span,
             name,
             signature,
         };
-        Ok(scalar)
+        Ok(r#type)
     }
 
     pub fn visit_trait_item(&mut self, node: &'ast AstTraitItem) -> HirResult<HirTrait<'ta>> {

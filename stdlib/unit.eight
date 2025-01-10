@@ -1,1 +1,1 @@
-intrinsic_scalar unit;
+intrinsic_type unit;

@@ -18,7 +18,7 @@ pub struct AstTranslationUnit {
 pub enum AstItem {
     Function(AstFunctionItem),
     IntrinsicFunction(AstIntrinsicFunctionItem),
-    IntrinsicScalar(AstIntrinsicScalarItem),
+    IntrinsicType(AstIntrinsicTypeItem),
     Type(AstTypeItem),
     Trait(AstTraitItem),
     Instance(AstInstanceItem),
@@ -29,7 +29,7 @@ impl AstItem {
         match self {
             AstItem::Function(f) => &f.span,
             AstItem::IntrinsicFunction(f) => &f.span,
-            AstItem::IntrinsicScalar(f) => &f.span,
+            AstItem::IntrinsicType(f) => &f.span,
             AstItem::Type(f) => &f.span,
             AstItem::Trait(f) => &f.span,
             AstItem::Instance(f) => &f.span,
@@ -75,7 +75,7 @@ pub struct AstFunctionParameterItem {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstIntrinsicScalarItem {
+pub struct AstIntrinsicTypeItem {
     pub span: Span,
     pub name: AstIdentifier,
 }

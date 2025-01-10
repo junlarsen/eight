@@ -1,4 +1,4 @@
-intrinsic_scalar bool;
+intrinsic_type bool;
 
 intrinsic_fn __builtin_bool_and(a: bool, b: bool) -> bool;
 intrinsic_fn __builtin_bool_or(a: bool, b: bool) -> bool;
