@@ -568,8 +568,6 @@ impl HirModuleDebugPass {
                 HirBinaryOp::Neq => "!=",
                 HirBinaryOp::Lt => "<",
                 HirBinaryOp::Gt => ">",
-                HirBinaryOp::Le => "<=",
-                HirBinaryOp::Ge => ">=",
                 HirBinaryOp::Lte => "<=",
                 HirBinaryOp::Gte => ">=",
                 HirBinaryOp::And => "&&",

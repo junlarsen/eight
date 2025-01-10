@@ -12,13 +12,13 @@ exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: sema::trait_does_not_exist
+Error: sema::trait_instance_missing_fn
 
-  × trait Not does not exist
+  × trait instance neg<i32, i32> does not derive method neg
     ╭─[tests/ui/trait/trait_instance_missing_fn.test:9:10]
   8 │ fn test(a: i32) -> i32 {
   9 │   return -a;
-    ·          ┬
-    ·          ╰── required trait Not to exist
+    ·          ─┬
+    ·           ╰── trait instance neg<i32, i32> does not derive method neg
  10 │ }
     ╰────

@@ -776,8 +776,6 @@ impl<'hir> TypingContext<'hir> {
             HirBinaryOp::Neq => (self.arena.names().get("Eq"), self.arena.names().get("neq")),
             HirBinaryOp::Lt => (self.arena.names().get("Ord"), self.arena.names().get("lt")),
             HirBinaryOp::Gt => (self.arena.names().get("Ord"), self.arena.names().get("gt")),
-            HirBinaryOp::Le => (self.arena.names().get("Ord"), self.arena.names().get("le")),
-            HirBinaryOp::Ge => (self.arena.names().get("Ord"), self.arena.names().get("ge")),
             HirBinaryOp::Lte => (self.arena.names().get("Ord"), self.arena.names().get("lte")),
             HirBinaryOp::Gte => (self.arena.names().get("Ord"), self.arena.names().get("gte")),
             HirBinaryOp::And => (self.arena.names().get("And"), self.arena.names().get("and")),

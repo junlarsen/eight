@@ -267,8 +267,6 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
             AstBinaryOp::Neq => Ok(HirBinaryOp::Neq),
             AstBinaryOp::Lt => Ok(HirBinaryOp::Lt),
             AstBinaryOp::Gt => Ok(HirBinaryOp::Gt),
-            AstBinaryOp::Le => Ok(HirBinaryOp::Le),
-            AstBinaryOp::Ge => Ok(HirBinaryOp::Ge),
             AstBinaryOp::Lte => Ok(HirBinaryOp::Lte),
             AstBinaryOp::Gte => Ok(HirBinaryOp::Gte),
             AstBinaryOp::And => Ok(HirBinaryOp::And),

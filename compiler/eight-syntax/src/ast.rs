@@ -423,8 +423,6 @@ pub enum AstBinaryOp {
     Neq,
     Lt,
     Gt,
-    Le,
-    Ge,
     Lte,
     Gte,
     And,

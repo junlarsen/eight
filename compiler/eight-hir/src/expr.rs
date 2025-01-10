@@ -207,8 +207,6 @@ pub enum HirBinaryOp {
     Neq,
     Lt,
     Gt,
-    Le,
-    Ge,
     Lte,
     Gte,
     And,
