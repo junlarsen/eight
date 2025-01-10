@@ -32,18 +32,18 @@ impl<'a, T: ?Sized> Eq for StableRef<'a, T> {}
 ///
 /// Because HirTy is interned and two equal types are guaranteed to point to th same address in
 /// memory, we use a pointer identity map as the inner hashmap.
-pub type TraitInstanceQueryCache<'ta> =
-    HashMap<&'ta str, HashMap<StableRef<'ta, HirTy<'ta>>, Vec<&'ta HirInstanceApiSignature<'ta>>>>;
+pub type TraitInstanceQueryCache<'hir> =
+    HashMap<&'hir str, HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceApiSignature<'hir>>>>;
 
 /// A query database over a Hir module.
-pub struct HirQueryDatabase<'ta> {
-    sig: &'ta HirModuleSignature<'ta>,
-    trait_instance_cache: TraitInstanceQueryCache<'ta>,
+pub struct HirQueryDatabase<'hir> {
+    sig: &'hir HirModuleSignature<'hir>,
+    trait_instance_cache: TraitInstanceQueryCache<'hir>,
 }
 
-impl<'ta> HirQueryDatabase<'ta> {
+impl<'hir> HirQueryDatabase<'hir> {
     /// Build a new query database from the given module signature.
-    pub fn new(sig: &'ta HirModuleSignature<'ta>) -> Self {
+    pub fn new(sig: &'hir HirModuleSignature<'hir>) -> Self {
         let mut tree = TraitInstanceQueryCache::new();
         for instance in sig.instances.iter() {
             let trait_index = tree.entry(instance.trait_name).or_default();
@@ -69,8 +69,8 @@ impl<'ta> HirQueryDatabase<'ta> {
     pub fn query_trait_instance_by_name_and_type_arguments(
         &self,
         trait_name: &str,
-        arguments: &[&'ta HirTy<'ta>],
-    ) -> Option<&'ta HirInstanceApiSignature<'ta>> {
+        arguments: &[&'hir HirTy<'hir>],
+    ) -> Option<&'hir HirInstanceApiSignature<'hir>> {
         let trait_index = self.trait_instance_cache.get(trait_name)?;
         let stable_ref = StableRef(*arguments.first()?);
         let instance_index = trait_index.get(&stable_ref)?;

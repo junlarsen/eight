@@ -10,37 +10,37 @@ use std::collections::BTreeMap;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirIntrinsicType<'ta> {
+pub struct HirIntrinsicType<'hir> {
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'ta HirTypeApiSignature<'ta>,
+    pub signature: &'hir HirTypeApiSignature<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirStruct<'ta> {
+pub struct HirStruct<'hir> {
     /// Span encapsulating the entire struct definition.
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'ta HirStructApiSignature<'ta>,
-    pub instantiated_fields: BTreeMap<&'ta str, &'ta HirTy<'ta>>,
+    pub signature: &'hir HirStructApiSignature<'hir>,
+    pub instantiated_fields: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirFunction<'ta> {
+pub struct HirFunction<'hir> {
     /// Span encapsulating the entire function definition.
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'ta HirFunctionApiSignature<'ta>,
-    pub body: Vec<HirStmt<'ta>>,
+    pub signature: &'hir HirFunctionApiSignature<'hir>,
+    pub body: Vec<HirStmt<'hir>>,
 
     // TODO: Replace with OnceCell
-    pub instantiated_return_type: Option<&'ta HirTy<'ta>>,
-    pub instantiated_parameters: BTreeMap<&'ta str, &'ta HirTy<'ta>>,
+    pub instantiated_return_type: Option<&'hir HirTy<'hir>>,
+    pub instantiated_parameters: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
     /// The type that was substituted in the current function.
     ///
     /// This is only for cosmetic purposes in the debug printing pass. This allows us to print the
@@ -54,35 +54,35 @@ pub struct HirFunction<'ta> {
     /// // or if the module is printed before type inference
     /// fn foo<T>(x: T) -> T {}
     /// ```
-    pub type_parameter_substitutions: BTreeMap<&'ta str, &'ta HirTy<'ta>>,
+    pub type_parameter_substitutions: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
     pub linkage_type: LinkageType,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirTrait<'ta> {
+pub struct HirTrait<'hir> {
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'ta HirTraitApiSignature<'ta>,
+    pub signature: &'hir HirTraitApiSignature<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirTraitFunctionItem<'ta> {
+pub struct HirTraitFunctionItem<'hir> {
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'ta HirFunctionApiSignature<'ta>,
+    pub signature: &'hir HirFunctionApiSignature<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirInstance<'ta> {
+pub struct HirInstance<'hir> {
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
-    pub instantiation_type_parameters: Vec<&'ta HirTy<'ta>>,
-    pub members: Vec<HirFunction<'ta>>,
-    pub signature: &'ta HirInstanceApiSignature<'ta>,
+    pub instantiation_type_parameters: Vec<&'hir HirTy<'hir>>,
+    pub members: Vec<HirFunction<'hir>>,
+    pub signature: &'hir HirInstanceApiSignature<'hir>,
 }

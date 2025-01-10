@@ -59,8 +59,8 @@ impl HirTyId {
     }
 }
 
-impl<'ta> From<&'ta HirTy<'ta>> for HirTyId {
-    fn from(ty: &'ta HirTy<'ta>) -> Self {
+impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
+    fn from(ty: &'hir HirTy<'hir>) -> Self {
         match ty {
             HirTy::Nominal(n) => HirTyId::compute_nominal_ty_id(n.name),
             HirTy::Pointer(p) => HirTyId::compute_pointer_ty_id(&HirTyId::from(p.inner)),
@@ -85,7 +85,7 @@ impl<'ta> From<&'ta HirTy<'ta>> for HirTyId {
 /// A single type in the HIR representation.
 #[must_use]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub enum HirTy<'ta> {
+pub enum HirTy<'hir> {
     /// The builtin type `i32`.
     Integer32(HirInteger32Ty),
     /// The builtin type `bool`.
@@ -132,15 +132,15 @@ pub enum HirTy<'ta> {
     ///   parameters: [HirConstantTy("i32")],
     /// }
     /// ```
-    Function(HirFunctionTy<'ta>),
+    Function(HirFunctionTy<'hir>),
     /// A pointer constructor type.
     ///
     /// The pointer has a single parameter type, which is the inner pointee type.
-    Pointer(HirPointerTy<'ta>),
+    Pointer(HirPointerTy<'hir>),
     /// A nominal type.
     ///
     /// This is used for structs at the moment, but could also be used for enums in the future.
-    Nominal(HirNominalTy<'ta>),
+    Nominal(HirNominalTy<'hir>),
     /// A type that has not yet been resolved.
     ///
     /// All uninitialized types are eliminated during type inference. This enum variant exists in
@@ -159,7 +159,7 @@ pub enum HirTy<'ta> {
     Uninitialized(HirUninitializedTy),
 }
 
-impl<'ta> HirTy<'ta> {
+impl<'hir> HirTy<'hir> {
     /// Determine if two types are trivially equal.
     ///
     /// Two types are trivially equal if they refer to the same type.
@@ -291,9 +291,9 @@ impl Display for HirVariableTy {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirFunctionTy<'ta> {
-    pub return_type: &'ta HirTy<'ta>,
-    pub parameters: Vec<&'ta HirTy<'ta>>,
+pub struct HirFunctionTy<'hir> {
+    pub return_type: &'hir HirTy<'hir>,
+    pub parameters: Vec<&'hir HirTy<'hir>>,
 }
 
 impl Display for HirFunctionTy<'_> {
@@ -310,8 +310,8 @@ impl Display for HirFunctionTy<'_> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirPointerTy<'ta> {
-    pub inner: &'ta HirTy<'ta>,
+pub struct HirPointerTy<'hir> {
+    pub inner: &'hir HirTy<'hir>,
 }
 
 impl Display for HirPointerTy<'_> {
@@ -322,12 +322,12 @@ impl Display for HirPointerTy<'_> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirNominalTy<'ta> {
-    pub name: &'ta str,
+pub struct HirNominalTy<'hir> {
+    pub name: &'hir str,
     pub name_span: Span,
 }
 
-impl<'ta> Display for HirNominalTy<'ta> {
+impl<'hir> Display for HirNominalTy<'hir> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
     }

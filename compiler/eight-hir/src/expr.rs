@@ -3,23 +3,23 @@ use eight_span::Span;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub enum HirExpr<'ta> {
-    IntegerLiteral(HirIntegerLiteralExpr<'ta>),
-    BooleanLiteral(HirBooleanLiteralExpr<'ta>),
-    Assign(HirAssignExpr<'ta>),
-    UnaryOp(HirUnaryOpExpr<'ta>),
-    BinaryOp(HirBinaryOpExpr<'ta>),
-    Reference(HirReferenceExpr<'ta>),
-    ConstantIndex(HirConstantIndexExpr<'ta>),
-    OffsetIndex(HirOffsetIndexExpr<'ta>),
-    Call(HirCallExpr<'ta>),
-    Construct(HirConstructExpr<'ta>),
-    Group(HirGroupExpr<'ta>),
-    AddressOf(HirAddressOfExpr<'ta>),
-    Deref(HirDerefExpr<'ta>),
+pub enum HirExpr<'hir> {
+    IntegerLiteral(HirIntegerLiteralExpr<'hir>),
+    BooleanLiteral(HirBooleanLiteralExpr<'hir>),
+    Assign(HirAssignExpr<'hir>),
+    UnaryOp(HirUnaryOpExpr<'hir>),
+    BinaryOp(HirBinaryOpExpr<'hir>),
+    Reference(HirReferenceExpr<'hir>),
+    ConstantIndex(HirConstantIndexExpr<'hir>),
+    OffsetIndex(HirOffsetIndexExpr<'hir>),
+    Call(HirCallExpr<'hir>),
+    Construct(HirConstructExpr<'hir>),
+    Group(HirGroupExpr<'hir>),
+    AddressOf(HirAddressOfExpr<'hir>),
+    Deref(HirDerefExpr<'hir>),
 }
 
-impl<'ta> HirExpr<'ta> {
+impl<'hir> HirExpr<'hir> {
     pub fn span(&self) -> &Span {
         match self {
             HirExpr::IntegerLiteral(e) => &e.span,
@@ -38,7 +38,7 @@ impl<'ta> HirExpr<'ta> {
         }
     }
 
-    pub fn ty(&self) -> &'ta HirTy<'ta> {
+    pub fn ty(&self) -> &'hir HirTy<'hir> {
         match self {
             HirExpr::IntegerLiteral(e) => e.ty,
             HirExpr::BooleanLiteral(e) => e.ty,
@@ -59,133 +59,133 @@ impl<'ta> HirExpr<'ta> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirIntegerLiteralExpr<'ta> {
+pub struct HirIntegerLiteralExpr<'hir> {
     pub span: Span,
     pub value: i32,
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirBooleanLiteralExpr<'ta> {
+pub struct HirBooleanLiteralExpr<'hir> {
     pub span: Span,
     pub value: bool,
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirAssignExpr<'ta> {
+pub struct HirAssignExpr<'hir> {
     pub span: Span,
-    pub lhs: Box<HirExpr<'ta>>,
-    pub rhs: Box<HirExpr<'ta>>,
-    pub ty: &'ta HirTy<'ta>,
+    pub lhs: Box<HirExpr<'hir>>,
+    pub rhs: Box<HirExpr<'hir>>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirUnaryOpExpr<'ta> {
+pub struct HirUnaryOpExpr<'hir> {
     pub span: Span,
-    pub operand: Box<HirExpr<'ta>>,
+    pub operand: Box<HirExpr<'hir>>,
     pub op: HirUnaryOp,
     pub op_span: Span,
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirBinaryOpExpr<'ta> {
+pub struct HirBinaryOpExpr<'hir> {
     pub span: Span,
-    pub lhs: Box<HirExpr<'ta>>,
-    pub rhs: Box<HirExpr<'ta>>,
+    pub lhs: Box<HirExpr<'hir>>,
+    pub rhs: Box<HirExpr<'hir>>,
     pub op: HirBinaryOp,
     pub op_span: Span,
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirAddressOfExpr<'ta> {
+pub struct HirAddressOfExpr<'hir> {
     pub span: Span,
-    pub inner: Box<HirExpr<'ta>>,
-    pub ty: &'ta HirTy<'ta>,
+    pub inner: Box<HirExpr<'hir>>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirDerefExpr<'ta> {
+pub struct HirDerefExpr<'hir> {
     pub span: Span,
-    pub inner: Box<HirExpr<'ta>>,
-    pub ty: &'ta HirTy<'ta>,
+    pub inner: Box<HirExpr<'hir>>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirReferenceExpr<'ta> {
+pub struct HirReferenceExpr<'hir> {
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
     /// The type of `name` in the current scope.
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirOffsetIndexExpr<'ta> {
+pub struct HirOffsetIndexExpr<'hir> {
     pub span: Span,
-    pub origin: Box<HirExpr<'ta>>,
-    pub index: Box<HirExpr<'ta>>,
+    pub origin: Box<HirExpr<'hir>>,
+    pub index: Box<HirExpr<'hir>>,
     /// The type of the result of expression.
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirConstantIndexExpr<'ta> {
+pub struct HirConstantIndexExpr<'hir> {
     pub span: Span,
-    pub origin: Box<HirExpr<'ta>>,
-    pub index: &'ta str,
+    pub origin: Box<HirExpr<'hir>>,
+    pub index: &'hir str,
     pub index_span: Span,
     /// The type of the result of expression.
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirCallExpr<'ta> {
+pub struct HirCallExpr<'hir> {
     pub span: Span,
-    pub callee: Box<HirExpr<'ta>>,
-    pub arguments: Vec<Box<HirExpr<'ta>>>,
-    pub type_arguments: Vec<&'ta HirTy<'ta>>,
+    pub callee: Box<HirExpr<'hir>>,
+    pub arguments: Vec<Box<HirExpr<'hir>>>,
+    pub type_arguments: Vec<&'hir HirTy<'hir>>,
     /// The type of the result of the call expression.
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirConstructExpr<'ta> {
+pub struct HirConstructExpr<'hir> {
     pub span: Span,
-    pub callee: &'ta HirTy<'ta>,
-    pub arguments: Vec<HirConstructExprArgument<'ta>>,
+    pub callee: &'hir HirTy<'hir>,
+    pub arguments: Vec<HirConstructExprArgument<'hir>>,
     /// The returned type of the construct expression. (i.e., the type of the struct)
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirConstructExprArgument<'ta> {
+pub struct HirConstructExprArgument<'hir> {
     pub span: Span,
-    pub field: &'ta str,
+    pub field: &'hir str,
     pub field_span: Span,
-    pub expr: Box<HirExpr<'ta>>,
+    pub expr: Box<HirExpr<'hir>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirGroupExpr<'ta> {
+pub struct HirGroupExpr<'hir> {
     pub span: Span,
-    pub inner: Box<HirExpr<'ta>>,
-    pub ty: &'ta HirTy<'ta>,
+    pub inner: Box<HirExpr<'hir>>,
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

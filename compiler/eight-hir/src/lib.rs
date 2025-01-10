@@ -39,23 +39,23 @@ pub enum LinkageType {
 /// emitting code.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirModule<'ta> {
-    pub signature: &'ta HirModuleSignature<'ta>,
-    pub body: HirModuleBody<'ta>,
+pub struct HirModule<'hir> {
+    pub signature: &'hir HirModuleSignature<'hir>,
+    pub body: HirModuleBody<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
-pub struct HirModuleBody<'ta> {
-    pub functions: BTreeMap<&'ta str, HirFunction<'ta>>,
-    pub structs: BTreeMap<&'ta str, HirStruct<'ta>>,
-    pub traits: BTreeMap<&'ta str, HirTrait<'ta>>,
-    pub types: BTreeMap<&'ta str, HirIntrinsicType<'ta>>,
-    pub instances: Vec<HirInstance<'ta>>,
+pub struct HirModuleBody<'hir> {
+    pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
+    pub structs: BTreeMap<&'hir str, HirStruct<'hir>>,
+    pub traits: BTreeMap<&'hir str, HirTrait<'hir>>,
+    pub types: BTreeMap<&'hir str, HirIntrinsicType<'hir>>,
+    pub instances: Vec<HirInstance<'hir>>,
 }
 
-impl<'ta> HirModule<'ta> {
-    pub fn new(signature: &'ta HirModuleSignature<'ta>, body: HirModuleBody<'ta>) -> Self {
+impl<'hir> HirModule<'hir> {
+    pub fn new(signature: &'hir HirModuleSignature<'hir>, body: HirModuleBody<'hir>) -> Self {
         Self { signature, body }
     }
 }

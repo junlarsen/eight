@@ -6,9 +6,9 @@ macro_rules! assert_hir_module_compiles {
         use bumpalo::Bump;
         use eight_hir::arena::HirArena;
         use eight_hir::passes::ASTSyntaxLoweringPass;
+        use eight_syntax::arena::AstArena;
         use eight_syntax::lexer::Lexer;
         use eight_syntax::parser::Parser;
-        use eight_syntax::arena::AstArena;
 
         let mut lexer = Lexer::new($input);
         let bump = Bump::new();
@@ -38,9 +38,9 @@ macro_rules! assert_hir_module_infers {
         use eight_hir::passes::ASTSyntaxLoweringPass;
         use eight_hir::passes::HirModuleTypeCheckerPass;
         use eight_hir::passes::TypingContext;
+        use eight_syntax::arena::AstArena;
         use eight_syntax::lexer::Lexer;
         use eight_syntax::parser::Parser;
-        use eight_syntax::arena::AstArena;
 
         let bump = Bump::new();
         let arena = AstArena::new(&bump);

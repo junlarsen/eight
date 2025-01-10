@@ -4,15 +4,15 @@ use eight_span::Span;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub enum HirStmt<'ta> {
-    Let(HirLetStmt<'ta>),
-    Loop(HirLoopStmt<'ta>),
-    Expr(HirExprStmt<'ta>),
-    Return(HirReturnStmt<'ta>),
-    If(HirIfStmt<'ta>),
+pub enum HirStmt<'hir> {
+    Let(HirLetStmt<'hir>),
+    Loop(HirLoopStmt<'hir>),
+    Expr(HirExprStmt<'hir>),
+    Return(HirReturnStmt<'hir>),
+    If(HirIfStmt<'hir>),
     Break(HirBreakStmt),
     Continue(HirContinueStmt),
-    Block(HirBlockStmt<'ta>),
+    Block(HirBlockStmt<'hir>),
 }
 
 impl HirStmt<'_> {
@@ -32,40 +32,40 @@ impl HirStmt<'_> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirLetStmt<'ta> {
+pub struct HirLetStmt<'hir> {
     pub span: Span,
-    pub name: &'ta str,
+    pub name: &'hir str,
     pub name_span: Span,
-    pub ty: &'ta HirTy<'ta>,
+    pub ty: &'hir HirTy<'hir>,
     pub type_annotation: Option<Span>,
-    pub value: HirExpr<'ta>,
+    pub value: HirExpr<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirIfStmt<'ta> {
+pub struct HirIfStmt<'hir> {
     pub span: Span,
-    pub condition: HirExpr<'ta>,
-    pub happy_path: Vec<HirStmt<'ta>>,
-    pub unhappy_path: Vec<HirStmt<'ta>>,
+    pub condition: HirExpr<'hir>,
+    pub happy_path: Vec<HirStmt<'hir>>,
+    pub unhappy_path: Vec<HirStmt<'hir>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirExprStmt<'ta> {
+pub struct HirExprStmt<'hir> {
     pub span: Span,
-    pub expr: HirExpr<'ta>,
+    pub expr: HirExpr<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirLoopStmt<'ta> {
+pub struct HirLoopStmt<'hir> {
     pub span: Span,
     /// The condition for the loop to continue.
     ///
     /// For infinite loops, this node should be a constant literal of boolean true.
-    pub condition: HirExpr<'ta>,
-    pub body: Vec<HirStmt<'ta>>,
+    pub condition: HirExpr<'hir>,
+    pub body: Vec<HirStmt<'hir>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -82,14 +82,14 @@ pub struct HirContinueStmt {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirReturnStmt<'ta> {
+pub struct HirReturnStmt<'hir> {
     pub span: Span,
-    pub value: Option<HirExpr<'ta>>,
+    pub value: Option<HirExpr<'hir>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirBlockStmt<'ta> {
+pub struct HirBlockStmt<'hir> {
     pub span: Span,
-    pub body: Vec<Box<HirStmt<'ta>>>,
+    pub body: Vec<Box<HirStmt<'hir>>>,
 }

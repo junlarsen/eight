@@ -43,13 +43,13 @@ use std::collections::{BTreeMap, VecDeque};
 /// lowered into a TConst type, despite the fact that the type checker will replace this with a
 /// fresh type variable. This is to allow the type checker to generate a fresh type variable for
 /// each type parameter for the local context.
-pub struct ASTSyntaxLoweringPass<'ast, 'ta> {
-    arena: &'ta HirArena<'ta>,
+pub struct ASTSyntaxLoweringPass<'ast, 'hir> {
+    arena: &'hir HirArena<'hir>,
     loop_depth: RefCell<VecDeque<&'ast AstForStmt<'ast>>>,
 }
 
-impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
-    pub fn new(arena: &'ta HirArena<'ta>) -> Self {
+impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
+    pub fn new(arena: &'hir HirArena<'hir>) -> Self {
         Self {
             arena,
             loop_depth: RefCell::new(VecDeque::new()),
@@ -57,8 +57,8 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 }
 
-impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
-    pub fn visit_expr(&'ta self, node: &'ast AstExpr) -> HirResult<HirExpr<'ta>> {
+impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
+    pub fn visit_expr(&'hir self, node: &'ast AstExpr) -> HirResult<HirExpr<'hir>> {
         match node {
             AstExpr::Assign(e) => self.visit_assign_expr(e),
             AstExpr::Call(e) => self.visit_call_expr(e),
@@ -74,7 +74,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         }
     }
 
-    pub fn visit_assign_expr(&'ta self, node: &'ast AstAssignExpr) -> HirResult<HirExpr<'ta>> {
+    pub fn visit_assign_expr(&'hir self, node: &'ast AstAssignExpr) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::Assign(HirAssignExpr {
             span: node.span,
             lhs: Box::new(self.visit_expr(node.lhs)?),
@@ -84,7 +84,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_call_expr(&'ta self, node: &'ast AstCallExpr) -> HirResult<HirExpr<'ta>> {
+    pub fn visit_call_expr(&'hir self, node: &'ast AstCallExpr) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::Call(HirCallExpr {
             span: node.span,
             callee: Box::new(self.visit_expr(node.callee)?),
@@ -104,9 +104,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_construct_expr(
-        &'ta self,
+        &'hir self,
         node: &'ast AstConstructExpr,
-    ) -> HirResult<HirExpr<'ta>> {
+    ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::Construct(HirConstructExpr {
             span: node.span,
             callee: self.visit_type(&node.callee)?,
@@ -121,9 +121,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_constructor_expr_argument(
-        &'ta self,
+        &'hir self,
         node: &'ast AstConstructorExprArgument,
-    ) -> HirResult<HirConstructExprArgument<'ta>> {
+    ) -> HirResult<HirConstructExprArgument<'hir>> {
         let hir = HirConstructExprArgument {
             span: node.span,
             field: self.arena.names().get(&node.field.name),
@@ -133,7 +133,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_group_expr(&'ta self, node: &'ast AstGroupExpr) -> HirResult<HirExpr<'ta>> {
+    pub fn visit_group_expr(&'hir self, node: &'ast AstGroupExpr) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::Group(HirGroupExpr {
             span: node.span,
             inner: Box::new(self.visit_expr(node.inner)?),
@@ -143,9 +143,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_integer_literal_expr(
-        &'ta self,
+        &'hir self,
         node: &'ast AstIntegerLiteralExpr,
-    ) -> HirResult<HirExpr<'ta>> {
+    ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::IntegerLiteral(HirIntegerLiteralExpr {
             span: node.span,
             value: node.value,
@@ -155,9 +155,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_boolean_literal_expr(
-        &'ta self,
+        &'hir self,
         node: &'ast AstBooleanLiteralExpr,
-    ) -> HirResult<HirExpr<'ta>> {
+    ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::BooleanLiteral(HirBooleanLiteralExpr {
             span: node.span,
             value: node.value,
@@ -170,7 +170,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     ///
     /// We translate the AddressOf and Deref operators into separate expressions, as they produce
     /// different types
-    pub fn visit_unary_op_expr(&'ta self, node: &'ast AstUnaryOpExpr) -> HirResult<HirExpr<'ta>> {
+    pub fn visit_unary_op_expr(&'hir self, node: &'ast AstUnaryOpExpr) -> HirResult<HirExpr<'hir>> {
         let hir = match &node.op {
             AstUnaryOp::Not | AstUnaryOp::Neg => HirExpr::UnaryOp(HirUnaryOpExpr {
                 span: node.span,
@@ -193,7 +193,10 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_binary_op_expr(&'ta self, node: &'ast AstBinaryOpExpr) -> HirResult<HirExpr<'ta>> {
+    pub fn visit_binary_op_expr(
+        &'hir self,
+        node: &'ast AstBinaryOpExpr,
+    ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::BinaryOp(HirBinaryOpExpr {
             span: node.span,
             lhs: Box::new(self.visit_expr(node.lhs)?),
@@ -205,7 +208,10 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_dot_index_expr(&'ta self, node: &'ast AstDotIndexExpr) -> HirResult<HirExpr<'ta>> {
+    pub fn visit_dot_index_expr(
+        &'hir self,
+        node: &'ast AstDotIndexExpr,
+    ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::ConstantIndex(HirConstantIndexExpr {
             span: node.span,
             origin: Box::new(self.visit_expr(node.origin)?),
@@ -217,9 +223,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_bracket_index_expr(
-        &'ta self,
+        &'hir self,
         node: &'ast AstBracketIndexExpr,
-    ) -> HirResult<HirExpr<'ta>> {
+    ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::OffsetIndex(HirOffsetIndexExpr {
             span: node.span,
             origin: Box::new(self.visit_expr(node.origin)?),
@@ -230,9 +236,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_reference_expr(
-        &'ta self,
+        &'hir self,
         node: &'ast AstReferenceExpr,
-    ) -> HirResult<HirExpr<'ta>> {
+    ) -> HirResult<HirExpr<'hir>> {
         let hir = HirExpr::Reference(HirReferenceExpr {
             span: node.span,
             name: self.arena.names().get(&node.name.name),
@@ -242,7 +248,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_unary_op(&'ta self, node: &'ast AstUnaryOp) -> HirResult<HirUnaryOp> {
+    pub fn visit_unary_op(&'hir self, node: &'ast AstUnaryOp) -> HirResult<HirUnaryOp> {
         match node {
             AstUnaryOp::Not => Ok(HirUnaryOp::Not),
             AstUnaryOp::Neg => Ok(HirUnaryOp::Neg),
@@ -250,7 +256,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         }
     }
 
-    pub fn visit_binary_op(&'ta self, node: &'ast AstBinaryOp) -> HirResult<HirBinaryOp> {
+    pub fn visit_binary_op(&'hir self, node: &'ast AstBinaryOp) -> HirResult<HirBinaryOp> {
         match node {
             AstBinaryOp::Add => Ok(HirBinaryOp::Add),
             AstBinaryOp::Sub => Ok(HirBinaryOp::Sub),
@@ -271,9 +277,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_translation_unit(
-        &'ta self,
+        &'hir self,
         node: &'ast AstTranslationUnit,
-    ) -> HirResult<HirModule<'ta>> {
+    ) -> HirResult<HirModule<'hir>> {
         let mut module_body = HirModuleBody::default();
         let mut module_signature = HirModuleSignature::default();
 
@@ -293,9 +299,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// The syntax lowering pass synthesizes intrinsic functions into regular functions with the
     /// linkage type marked external.
     pub fn visit_item(
-        &'ta self,
-        module_body: &mut HirModuleBody<'ta>,
-        module_signature: &mut HirModuleSignature<'ta>,
+        &'hir self,
+        module_body: &mut HirModuleBody<'hir>,
+        module_signature: &mut HirModuleSignature<'hir>,
         node: &'ast AstItem,
     ) -> HirResult<()> {
         match node {
@@ -339,9 +345,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_function_item(
-        &'ta self,
+        &'hir self,
         node: &'ast AstFunctionItem,
-    ) -> HirResult<HirFunction<'ta>> {
+    ) -> HirResult<HirFunction<'hir>> {
         let type_parameters = node
             .type_parameters
             .iter()
@@ -384,9 +390,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_intrinsic_function_item(
-        &'ta self,
+        &'hir self,
         node: &'ast AstIntrinsicFunctionItem,
-    ) -> HirResult<HirFunction<'ta>> {
+    ) -> HirResult<HirFunction<'hir>> {
         let type_parameters = node
             .type_parameters
             .iter()
@@ -421,9 +427,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_function_parameter(
-        &'ta self,
+        &'hir self,
         node: &'ast AstFunctionParameterItem,
-    ) -> HirResult<&'ta HirFunctionParameterApiSignature<'ta>> {
+    ) -> HirResult<&'hir HirFunctionParameterApiSignature<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let ty = self.visit_type(&node.ty)?;
         let hir = self.arena.intern(HirFunctionParameterApiSignature {
@@ -437,9 +443,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_type_parameter_item(
-        &'ta self,
+        &'hir self,
         node: &'ast AstTypeParameterItem,
-    ) -> HirResult<&'ta HirTypeParameterApiSignature> {
+    ) -> HirResult<&'hir HirTypeParameterApiSignature> {
         let name = self.arena.names().get(&node.name.name);
         let hir = self.arena.intern(HirTypeParameterApiSignature {
             span: node.span,
@@ -450,9 +456,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_intrinsic_type_item(
-        &'ta self,
+        &'hir self,
         node: &'ast AstIntrinsicTypeItem,
-    ) -> HirResult<HirIntrinsicType<'ta>> {
+    ) -> HirResult<HirIntrinsicType<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let signature = self.arena.intern(HirTypeApiSignature {
             span: node.span,
@@ -479,7 +485,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(r#type)
     }
 
-    pub fn visit_trait_item(&'ta self, node: &'ast AstTraitItem) -> HirResult<HirTrait<'ta>> {
+    pub fn visit_trait_item(&'hir self, node: &'ast AstTraitItem) -> HirResult<HirTrait<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let type_parameters = node
             .type_parameters
@@ -509,9 +515,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_trait_function_item(
-        &'ta self,
+        &'hir self,
         node: &'ast AstTraitFunctionItem,
-    ) -> HirResult<&'ta HirFunctionApiSignature<'ta>> {
+    ) -> HirResult<&'hir HirFunctionApiSignature<'hir>> {
         let type_parameters = node
             .type_parameters
             .iter()
@@ -538,9 +544,9 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     }
 
     pub fn visit_instance_item(
-        &'ta self,
+        &'hir self,
         node: &'ast AstInstanceItem,
-    ) -> HirResult<HirInstance<'ta>> {
+    ) -> HirResult<HirInstance<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let instantiation_type_parameters = node
             .instantiation_type_parameters
@@ -585,7 +591,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// ```text
     /// type Node = { value: i32, left: *Node, right: *Node, }
     /// ```
-    pub fn visit_type_item(&'ta self, node: &'ast AstStructItem) -> HirResult<HirStruct<'ta>> {
+    pub fn visit_type_item(&'hir self, node: &'ast AstStructItem) -> HirResult<HirStruct<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {
@@ -616,7 +622,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(rec)
     }
 
-    pub fn visit_stmt(&'ta self, node: &'ast AstStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_stmt(&'hir self, node: &'ast AstStmt) -> HirResult<HirStmt<'hir>> {
         match node {
             AstStmt::Let(s) => self.visit_let_stmt(s),
             AstStmt::Return(s) => self.visit_return_stmt(s),
@@ -628,7 +634,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         }
     }
 
-    pub fn visit_let_stmt(&'ta self, node: &'ast AstLetStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_let_stmt(&'hir self, node: &'ast AstLetStmt) -> HirResult<HirStmt<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let ty = match &node.ty {
             Some(t) => self.visit_type(t)?,
@@ -646,7 +652,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_return_stmt(&'ta self, node: &'ast AstReturnStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_return_stmt(&'hir self, node: &'ast AstReturnStmt) -> HirResult<HirStmt<'hir>> {
         let value = node
             .value
             .as_ref()
@@ -680,7 +686,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// - If the initializer is missing, then the induced `let` statement is replaced with a {}
     /// - If the condition is missing, then a literal true is used as the condition.
     /// - If the increment is missing, then the increment block is replaced with a {}
-    pub fn visit_for_stmt(&'ta self, node: &'ast AstForStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_for_stmt(&'hir self, node: &'ast AstForStmt) -> HirResult<HirStmt<'hir>> {
         self.loop_depth.borrow_mut().push_back(node);
         // Build the let statement for the initializer
         let initializer = node
@@ -754,7 +760,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     ///
     /// The synthesis of the if statement simply replaces a missing unhappy path with an empty
     /// block.
-    pub fn visit_if_stmt(&'ta self, node: &'ast AstIfStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_if_stmt(&'hir self, node: &'ast AstIfStmt) -> HirResult<HirStmt<'hir>> {
         let condition = self.visit_expr(&node.condition)?;
         let happy_path = node
             .happy_path
@@ -777,7 +783,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_break_stmt(&'ta self, node: &'ast AstBreakStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_break_stmt(&'hir self, node: &'ast AstBreakStmt) -> HirResult<HirStmt<'hir>> {
         self.loop_depth
             .borrow()
             .back()
@@ -788,7 +794,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_expr_stmt(&'ta self, node: &'ast AstExprStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_expr_stmt(&'hir self, node: &'ast AstExprStmt) -> HirResult<HirStmt<'hir>> {
         let expr = self.visit_expr(&node.expr)?;
         let hir = HirStmt::Expr(HirExprStmt {
             span: node.span,
@@ -797,7 +803,10 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         Ok(hir)
     }
 
-    pub fn visit_continue_stmt(&'ta self, node: &'ast AstContinueStmt) -> HirResult<HirStmt<'ta>> {
+    pub fn visit_continue_stmt(
+        &'hir self,
+        node: &'ast AstContinueStmt,
+    ) -> HirResult<HirStmt<'hir>> {
         self.loop_depth
             .borrow()
             .back()
@@ -818,7 +827,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     /// fn foo<T>(x: T) -> T {}
     /// ```
     #[allow(clippy::only_used_in_recursion)]
-    pub fn visit_type(&'ta self, node: &'ast AstType) -> HirResult<&'ta HirTy<'ta>> {
+    pub fn visit_type(&'hir self, node: &'ast AstType) -> HirResult<&'hir HirTy<'hir>> {
         let ty = match node {
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
             AstType::Integer32(_) => self.arena.types().get_integer32_ty(),

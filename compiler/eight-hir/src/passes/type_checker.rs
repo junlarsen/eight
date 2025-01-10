@@ -26,20 +26,20 @@ use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 
 #[derive(Debug)]
-pub enum Constraint<'ta> {
-    Equality(EqualityConstraint<'ta>),
-    FieldProjection(FieldProjectionConstraint<'ta>),
-    Instance(InstanceConstraint<'ta>),
+pub enum Constraint<'hir> {
+    Equality(EqualityConstraint<'hir>),
+    FieldProjection(FieldProjectionConstraint<'hir>),
+    Instance(InstanceConstraint<'hir>),
 }
 
 /// Represent a constraint that two types have to be equal.
 #[derive(Debug)]
-pub struct EqualityConstraint<'ta> {
+pub struct EqualityConstraint<'hir> {
     /// The type that was expected, generally the left-hand side
-    pub expected: &'ta HirTy<'ta>,
+    pub expected: &'hir HirTy<'hir>,
     pub expected_loc: Span,
     /// The type that was actually found, generally the right-hand side
-    pub actual: &'ta HirTy<'ta>,
+    pub actual: &'hir HirTy<'hir>,
     pub actual_loc: Span,
 }
 
@@ -49,12 +49,12 @@ pub struct EqualityConstraint<'ta> {
 /// given name N. The Nth field of the struct is then constrained to be equal to the
 /// `resolved_type`.
 #[derive(Debug)]
-pub struct FieldProjectionConstraint<'ta> {
-    pub origin: &'ta HirTy<'ta>,
-    pub field: &'ta str,
+pub struct FieldProjectionConstraint<'hir> {
+    pub origin: &'hir HirTy<'hir>,
+    pub field: &'hir str,
     pub field_span: Span,
     /// The expectation for the field's type.
-    pub resolved_type: &'ta HirTy<'ta>,
+    pub resolved_type: &'hir HirTy<'hir>,
 }
 
 /// Represent a type class instance constraint.
@@ -62,25 +62,25 @@ pub struct FieldProjectionConstraint<'ta> {
 /// This constraint requires that there exists an instance of trait `name` that for the given types
 /// `type_arguments`.
 #[derive(Debug)]
-pub struct InstanceConstraint<'ta> {
-    pub name: &'ta str,
+pub struct InstanceConstraint<'hir> {
+    pub name: &'hir str,
     pub name_span: Span,
-    pub method: &'ta str,
+    pub method: &'hir str,
     pub method_span: Span,
-    pub type_arguments: Vec<&'ta HirTy<'ta>>,
+    pub type_arguments: Vec<&'hir HirTy<'hir>>,
     /// The expectation for the instance method's return type.
-    pub resolved_type: &'ta HirTy<'ta>,
+    pub resolved_type: &'hir HirTy<'hir>,
 }
 
-pub struct TypingContext<'ta> {
+pub struct TypingContext<'hir> {
     /// A reference to the Hir arena for allocating types.
-    arena: &'ta HirArena<'ta>,
+    arena: &'hir HirArena<'hir>,
 
-    constraints: Vec<Constraint<'ta>>,
+    constraints: Vec<Constraint<'hir>>,
     /// The substitutions during unification.
     ///
     /// Indexed by (depth, index)
-    substitutions: HashMap<(u32, u32), &'ta HirTy<'ta>>,
+    substitutions: HashMap<(u32, u32), &'hir HirTy<'hir>>,
     /// The depth of the current type binding context.
     ///
     /// Used to generate the depth term of a fresh type variable. Whenever the type checker enters
@@ -89,7 +89,7 @@ pub struct TypingContext<'ta> {
     /// The index of the current type binding context.
     type_binding_index: u32,
 
-    locals: LocalContext<&'ta HirTy<'ta>>,
+    locals: LocalContext<&'hir HirTy<'hir>>,
     /// Type parameters that are currently being substituted in the current function.
     ///
     /// This is required when traversing function bodies, as we need to substitute `let x: T = 1;`
@@ -97,15 +97,15 @@ pub struct TypingContext<'ta> {
     ///
     /// We currently don't support nested functions or lambdas, so this does not necessarily have to
     /// be a VecDeque, but it's here for future use.
-    local_type_parameter_substitutions: LocalContext<&'ta HirTy<'ta>>,
-    current_function: VecDeque<&'ta HirFunctionTy<'ta>>,
+    local_type_parameter_substitutions: LocalContext<&'hir HirTy<'hir>>,
+    current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
 
     /// The signature of the module being type checked.
-    module_signature: &'ta HirModuleSignature<'ta>,
-    module_query_db: HirQueryDatabase<'ta>,
+    module_signature: &'hir HirModuleSignature<'hir>,
+    module_query_db: HirQueryDatabase<'hir>,
 }
 
-impl<'ta> Debug for TypingContext<'ta> {
+impl<'hir> Debug for TypingContext<'hir> {
     /// Debug implementation for TypingContext skipping the arena.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TypingContext")
@@ -122,8 +122,11 @@ impl<'ta> Debug for TypingContext<'ta> {
     }
 }
 
-impl<'ta> TypingContext<'ta> {
-    pub fn new(arena: &'ta HirArena<'ta>, module_signature: &'ta HirModuleSignature<'ta>) -> Self {
+impl<'hir> TypingContext<'hir> {
+    pub fn new(
+        arena: &'hir HirArena<'hir>,
+        module_signature: &'hir HirModuleSignature<'hir>,
+    ) -> Self {
         Self {
             arena,
             constraints: Vec::new(),
@@ -141,10 +144,10 @@ impl<'ta> TypingContext<'ta> {
     /// Imply a new field projection constraint
     pub fn constrain_field_projection(
         &mut self,
-        ty: &'ta HirTy<'ta>,
-        field: &'ta str,
+        ty: &'hir HirTy<'hir>,
+        field: &'hir str,
         field_span: Span,
-        inner: &'ta HirTy<'ta>,
+        inner: &'hir HirTy<'hir>,
     ) {
         let constraint = Constraint::FieldProjection(FieldProjectionConstraint {
             origin: ty,
@@ -158,8 +161,8 @@ impl<'ta> TypingContext<'ta> {
     /// Imply a new equality constraint
     pub fn constrain_eq(
         &mut self,
-        expected: &'ta HirTy<'ta>,
-        actual: &'ta HirTy<'ta>,
+        expected: &'hir HirTy<'hir>,
+        actual: &'hir HirTy<'hir>,
         expected_loc: Span,
         actual_loc: Span,
     ) {
@@ -175,12 +178,12 @@ impl<'ta> TypingContext<'ta> {
     /// Imply a new instance constraint
     pub fn constrain_instance(
         &mut self,
-        name: &'ta str,
+        name: &'hir str,
         name_span: Span,
-        method: &'ta str,
+        method: &'hir str,
         method_span: Span,
-        type_arguments: Vec<&'ta HirTy<'ta>>,
-        resolved_type: &'ta HirTy<'ta>,
+        type_arguments: Vec<&'hir HirTy<'hir>>,
+        resolved_type: &'hir HirTy<'hir>,
     ) {
         let constraint = Constraint::Instance(InstanceConstraint {
             name,
@@ -218,7 +221,7 @@ impl<'ta> TypingContext<'ta> {
             field,
             field_span,
             resolved_type,
-        }: FieldProjectionConstraint<'ta>,
+        }: FieldProjectionConstraint<'hir>,
     ) -> HirResult<()> {
         match origin {
             HirTy::Variable(v) if !self.is_substitution_equal_to_self(v) => {
@@ -278,7 +281,7 @@ impl<'ta> TypingContext<'ta> {
             method_span,
             type_arguments,
             resolved_type,
-        }: InstanceConstraint<'ta>,
+        }: InstanceConstraint<'hir>,
     ) -> HirResult<()> {
         let _ = self
             .module_signature
@@ -347,7 +350,7 @@ impl<'ta> TypingContext<'ta> {
             actual,
             expected_loc,
             actual_loc,
-        }: EqualityConstraint<'ta>,
+        }: EqualityConstraint<'hir>,
     ) -> HirResult<()> {
         match (&expected, &actual) {
             (HirTy::Variable(lhs), HirTy::Variable(rhs))
@@ -452,7 +455,7 @@ impl<'ta> TypingContext<'ta> {
     }
 
     /// Create a fresh type variable.
-    pub fn fresh_type_variable(&mut self) -> &'ta HirTy<'ta> {
+    pub fn fresh_type_variable(&mut self) -> &'hir HirTy<'hir> {
         let depth = self.type_binding_depth;
         let index = self.type_binding_index;
         let ty = self.arena.types().get_variable_ty(depth, index);
@@ -464,8 +467,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of an integer literal expression.
     pub fn infer_integer_literal_expr(
         &mut self,
-        expr: &mut HirIntegerLiteralExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirIntegerLiteralExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
@@ -479,8 +482,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of a boolean literal expression.
     pub fn infer_boolean_literal_expr(
         &mut self,
-        expr: &mut HirBooleanLiteralExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirBooleanLiteralExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
@@ -494,8 +497,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of an assign expression.
     pub fn infer_assign_expr(
         &mut self,
-        expr: &mut HirAssignExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirAssignExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
@@ -509,8 +512,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of a reference expression.
     pub fn infer_reference_expr(
         &mut self,
-        expr: &mut HirReferenceExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirReferenceExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // We attempt to look up a local variable first. This is cheaper than attempting to
         // instantiate a generic function.
@@ -564,8 +567,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of an offset index expression.
     pub fn infer_offset_index_expr(
         &mut self,
-        expr: &mut HirOffsetIndexExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirOffsetIndexExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // The index must be an integer type
         self.constrain_eq(
@@ -590,8 +593,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of a constant index expression.
     pub fn infer_constant_index_expr(
         &mut self,
-        expr: &mut HirConstantIndexExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirConstantIndexExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.constrain_eq(expectation, expr.ty, expr.span, *expr.origin.span());
         self.constrain_field_projection(expr.origin.ty(), expr.index, expr.index_span, expectation);
@@ -601,8 +604,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of a call expression.
     pub fn infer_call_expr(
         &mut self,
-        expr: &mut HirCallExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirCallExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
         let expected_signature = self
@@ -629,8 +632,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of a construct expression.
     pub fn infer_construct_expr(
         &mut self,
-        expr: &mut HirConstructExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirConstructExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         let HirTy::Nominal(n) = expr.callee else {
             ice!("construct expression callee is not a nominal type");
@@ -688,8 +691,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of an address of expression.
     pub fn infer_address_of_expr(
         &mut self,
-        expr: &mut HirAddressOfExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirAddressOfExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // &a means that e is *inner, and expectation is *inner
         let result_ty = self.arena.types().get_pointer_ty(expr.inner.ty());
@@ -701,8 +704,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of a deref expression.
     pub fn infer_deref_expr(
         &mut self,
-        expr: &mut HirDerefExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirDerefExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // *a means inner is a pointer type, and expected and e are unbox inner
         let inner_ptr = self.arena.types().get_pointer_ty(expectation);
@@ -714,8 +717,8 @@ impl<'ta> TypingContext<'ta> {
     /// Infer the type of a group expression.
     pub fn infer_group_expr(
         &mut self,
-        expr: &mut HirGroupExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirGroupExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.infer(&mut expr.inner, expectation)?;
         self.constrain_eq(expectation, expr.ty, expr.span, *expr.inner.span());
@@ -732,8 +735,8 @@ impl<'ta> TypingContext<'ta> {
     /// ```
     pub fn infer_unary_op_expr(
         &mut self,
-        expr: &mut HirUnaryOpExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirUnaryOpExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.constrain_eq(expr.ty, expectation, expr.span, *expr.operand.span());
         match &expr.op {
@@ -764,8 +767,8 @@ impl<'ta> TypingContext<'ta> {
     /// constraints of the current node and its children have been collected.
     pub fn infer(
         &mut self,
-        expr: &mut HirExpr<'ta>,
-        expectation: &'ta HirTy<'ta>,
+        expr: &mut HirExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         match expr {
             HirExpr::IntegerLiteral(e) => self.infer_integer_literal_expr(e, expectation),
@@ -788,7 +791,7 @@ impl<'ta> TypingContext<'ta> {
     ///
     /// This function substitutes any type variables in the given type with the matching type in the
     /// local substitution set $T, as long as the type variable is not equal to $T.
-    pub fn substitute(&mut self, ty: &'ta HirTy<'ta>) -> HirResult<&'ta HirTy<'ta>> {
+    pub fn substitute(&mut self, ty: &'hir HirTy<'hir>) -> HirResult<&'hir HirTy<'hir>> {
         match ty {
             // We substitute type variables as long as they don't point to $T
             HirTy::Variable(v)
@@ -831,7 +834,7 @@ impl<'ta> TypingContext<'ta> {
     }
 
     /// Get the substitution for the given type variable.
-    pub fn substitution(&self, v: &HirVariableTy) -> Option<&'ta HirTy<'ta>> {
+    pub fn substitution(&self, v: &HirVariableTy) -> Option<&'hir HirTy<'hir>> {
         self.substitutions.get(&(v.depth, v.index)).copied()
     }
 
@@ -846,7 +849,7 @@ impl<'ta> TypingContext<'ta> {
     ///
     /// This is required for HM type inference, as we need to determine if a type variable points to
     /// itself. An example is a constraint like `$0 = fn() -> $0`, which cannot be satisfied ever.
-    pub fn occurs_in(&self, v: &HirVariableTy, ty: &'ta HirTy<'ta>) -> bool {
+    pub fn occurs_in(&self, v: &HirVariableTy, ty: &'hir HirTy<'hir>) -> bool {
         match ty {
             // If the variable points to a substitution of itself, it occurs in itself
             HirTy::Variable(o) if !self.is_substitution_equal_to_self(o) => true,
@@ -870,7 +873,10 @@ pub struct HirModuleTypeCheckerPass();
 
 impl HirModuleTypeCheckerPass {
     /// Type-check and perform type inference on the given module.
-    pub fn visit<'ta>(module: &mut HirModule<'ta>, cx: &mut TypingContext<'ta>) -> HirResult<()> {
+    pub fn visit<'hir>(
+        module: &mut HirModule<'hir>,
+        cx: &mut TypingContext<'hir>,
+    ) -> HirResult<()> {
         cx.locals.enter_scope();
 
         Self::visit_module_functions(cx, &mut module.body.functions)?;
@@ -880,9 +886,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Traverse the functions in the given module.
-    pub fn visit_module_functions<'ta>(
-        cx: &mut TypingContext<'ta>,
-        functions: &mut BTreeMap<&'ta str, HirFunction<'ta>>,
+    pub fn visit_module_functions<'hir>(
+        cx: &mut TypingContext<'hir>,
+        functions: &mut BTreeMap<&'hir str, HirFunction<'hir>>,
     ) -> HirResult<()> {
         for fun in functions.values_mut() {
             Self::visit_function(cx, fun)?;
@@ -891,9 +897,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Traverse the structs in the given module.
-    pub fn visit_module_structs<'ta>(
-        cx: &mut TypingContext<'ta>,
-        structs: &mut BTreeMap<&'ta str, HirStruct<'ta>>,
+    pub fn visit_module_structs<'hir>(
+        cx: &mut TypingContext<'hir>,
+        structs: &mut BTreeMap<&'hir str, HirStruct<'hir>>,
     ) -> HirResult<()> {
         for rec in structs.values_mut() {
             Self::visit_struct(cx, rec)?;
@@ -905,9 +911,9 @@ impl HirModuleTypeCheckerPass {
     ///
     /// This ensures the types of the function's parameters and return type are correct, then it
     /// recurses down into the function body.
-    pub fn visit_function<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirFunction<'ta>,
+    pub fn visit_function<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirFunction<'hir>,
     ) -> HirResult<()> {
         // Create substitutions for all the type parameters.
         cx.local_type_parameter_substitutions.enter_scope();
@@ -968,9 +974,9 @@ impl HirModuleTypeCheckerPass {
     /// A struct type is infinitely recursive if any of its fields are unable to break the cycle.
     /// Types that can be break the cycle are pointer types. This means that if a type directly
     /// references itself by name
-    pub fn visit_struct<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirStruct<'ta>,
+    pub fn visit_struct<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirStruct<'hir>,
     ) -> HirResult<()> {
         // Instantiate the types of the struct fields.
         for field in node.signature.fields.values() {
@@ -1006,10 +1012,10 @@ impl HirModuleTypeCheckerPass {
     ///
     /// Because all uninitialized types are eliminated during type inference, we must replace all
     /// uninitialized types with fresh type variables here.
-    pub fn visit_type<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &'ta HirTy<'ta>,
-    ) -> HirResult<&'ta HirTy<'ta>> {
+    pub fn visit_type<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &'hir HirTy<'hir>,
+    ) -> HirResult<&'hir HirTy<'hir>> {
         match node {
             t @ HirTy::Nominal(_) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
@@ -1033,10 +1039,10 @@ impl HirModuleTypeCheckerPass {
     ///
     /// It is important that we check for local type parameter substitutions first, as they can
     /// shadow global names.
-    pub fn visit_nominal_ty<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &'ta HirTy<'ta>,
-    ) -> HirResult<&'ta HirTy<'ta>> {
+    pub fn visit_nominal_ty<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &'hir HirTy<'hir>,
+    ) -> HirResult<&'hir HirTy<'hir>> {
         let HirTy::Nominal(n) = node else {
             ice!("visit_nominal_ty called with non-nominal type");
         };
@@ -1057,10 +1063,10 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Visit a function type.
-    pub fn visit_function_ty<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &HirFunctionTy<'ta>,
-    ) -> HirResult<&'ta HirTy<'ta>> {
+    pub fn visit_function_ty<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &HirFunctionTy<'hir>,
+    ) -> HirResult<&'hir HirTy<'hir>> {
         let parameters = node
             .parameters
             .iter()
@@ -1071,16 +1077,19 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Visit a pointer type.
-    pub fn visit_pointer_ty<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &'ta HirPointerTy<'ta>,
-    ) -> HirResult<&'ta HirTy<'ta>> {
+    pub fn visit_pointer_ty<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &'hir HirPointerTy<'hir>,
+    ) -> HirResult<&'hir HirTy<'hir>> {
         let inner = Self::visit_type(cx, node.inner)?;
         Ok(cx.arena.types().get_pointer_ty(inner))
     }
 
     /// Collect type constraints for an expression.
-    pub fn enter_expr<'ta>(cx: &mut TypingContext<'ta>, node: &mut HirExpr<'ta>) -> HirResult<()> {
+    pub fn enter_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirExpr<'hir>,
+    ) -> HirResult<()> {
         match node {
             HirExpr::IntegerLiteral(e) => Self::enter_integer_literal_expr(cx, e),
             HirExpr::BooleanLiteral(e) => Self::enter_boolean_literal_expr(cx, e),
@@ -1099,7 +1108,10 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for an expression.
-    pub fn leave_expr<'ta>(cx: &mut TypingContext<'ta>, node: &mut HirExpr<'ta>) -> HirResult<()> {
+    pub fn leave_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirExpr<'hir>,
+    ) -> HirResult<()> {
         match node {
             HirExpr::IntegerLiteral(e) => Self::leave_integer_literal_expr(cx, e),
             HirExpr::BooleanLiteral(e) => Self::leave_boolean_literal_expr(cx, e),
@@ -1120,9 +1132,9 @@ impl HirModuleTypeCheckerPass {
     /// Collect type constraints for an integer literal expression.
     ///
     /// Inference ensures that the integer literal is tied to the i32 type.
-    pub fn enter_integer_literal_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirIntegerLiteralExpr<'ta>,
+    pub fn enter_integer_literal_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirIntegerLiteralExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         cx.infer_integer_literal_expr(node, node.ty)?;
@@ -1130,9 +1142,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for an integer literal expression.
-    pub fn leave_integer_literal_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirIntegerLiteralExpr<'ta>,
+    pub fn leave_integer_literal_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirIntegerLiteralExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = cx.substitute(node.ty)?;
         Ok(())
@@ -1141,9 +1153,9 @@ impl HirModuleTypeCheckerPass {
     /// Collect type constraints for a boolean literal expression.
     ///
     /// [`infer_expr`] ensures that the boolean literal is tied to the boolean type.
-    pub fn enter_boolean_literal_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirBooleanLiteralExpr<'ta>,
+    pub fn enter_boolean_literal_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirBooleanLiteralExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         cx.infer_boolean_literal_expr(node, node.ty)?;
@@ -1151,9 +1163,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a boolean literal expression.
-    pub fn leave_boolean_literal_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirBooleanLiteralExpr<'ta>,
+    pub fn leave_boolean_literal_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirBooleanLiteralExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = cx.substitute(node.ty)?;
         Ok(())
@@ -1162,9 +1174,9 @@ impl HirModuleTypeCheckerPass {
     /// Collect type constraints for a group expression.
     ///
     /// The grouping expression's type is inferred from the inner expression.
-    pub fn enter_group_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirGroupExpr<'ta>,
+    pub fn enter_group_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirGroupExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.inner)?;
@@ -1173,9 +1185,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a group expression.
-    pub fn leave_group_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirGroupExpr<'ta>,
+    pub fn leave_group_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirGroupExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.inner)?;
         node.ty = cx.substitute(node.ty)?;
@@ -1188,9 +1200,9 @@ impl HirModuleTypeCheckerPass {
     /// context.
     ///
     /// This function also performs validation on the local lookup.
-    pub fn enter_reference_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirReferenceExpr<'ta>,
+    pub fn enter_reference_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirReferenceExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         // See if the name resolves to a local let-binding or a function name.
@@ -1207,9 +1219,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a reference expression.
-    pub fn leave_reference_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirReferenceExpr<'ta>,
+    pub fn leave_reference_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirReferenceExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = cx.substitute(node.ty)?;
         Ok(())
@@ -1219,9 +1231,9 @@ impl HirModuleTypeCheckerPass {
     ///
     /// In order to prevent chaining of assignment such as `a = b = c`, we simply infer the type of
     /// the entire expression to be void.
-    pub fn enter_assign_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirAssignExpr<'ta>,
+    pub fn enter_assign_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirAssignExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.lhs)?;
@@ -1230,9 +1242,9 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
-    pub fn leave_assign_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirAssignExpr<'ta>,
+    pub fn leave_assign_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirAssignExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.lhs)?;
         Self::leave_expr(cx, &mut node.rhs)?;
@@ -1244,9 +1256,9 @@ impl HirModuleTypeCheckerPass {
     ///
     /// Since offsets only work on pointer types, infer will constrain the origin to be a pointer,
     /// and the index to be an integer.
-    pub fn enter_offset_index_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirOffsetIndexExpr<'ta>,
+    pub fn enter_offset_index_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirOffsetIndexExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.origin)?;
@@ -1256,9 +1268,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for an offset index expression.
-    pub fn leave_offset_index_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirOffsetIndexExpr<'ta>,
+    pub fn leave_offset_index_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirOffsetIndexExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.origin)?;
         Self::leave_expr(cx, &mut node.index)?;
@@ -1267,9 +1279,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for a constant index expression.
-    pub fn enter_constant_index_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirConstantIndexExpr<'ta>,
+    pub fn enter_constant_index_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirConstantIndexExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.origin)?;
@@ -1278,9 +1290,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a constant index expression.
-    pub fn leave_constant_index_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirConstantIndexExpr<'ta>,
+    pub fn leave_constant_index_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirConstantIndexExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.origin)?;
         node.ty = cx.substitute(node.ty)?;
@@ -1288,9 +1300,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for a call expression.
-    pub fn enter_call_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirCallExpr<'ta>,
+    pub fn enter_call_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirCallExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.callee)?;
@@ -1302,9 +1314,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a call expression.
-    pub fn leave_call_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirCallExpr<'ta>,
+    pub fn leave_call_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirCallExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.callee)?;
         for arg in node.arguments.iter_mut() {
@@ -1315,9 +1327,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for a construct expression.
-    pub fn enter_construct_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirConstructExpr<'ta>,
+    pub fn enter_construct_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirConstructExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         for arg in node.arguments.iter_mut() {
@@ -1328,9 +1340,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a construct expression.
-    pub fn leave_construct_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirConstructExpr<'ta>,
+    pub fn leave_construct_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirConstructExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = cx.substitute(node.ty)?;
         for arg in node.arguments.iter_mut() {
@@ -1340,9 +1352,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for an address of expression.
-    pub fn enter_address_of_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirAddressOfExpr<'ta>,
+    pub fn enter_address_of_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirAddressOfExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.inner)?;
@@ -1351,9 +1363,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for an address of expression.
-    pub fn leave_address_of_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirAddressOfExpr<'ta>,
+    pub fn leave_address_of_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirAddressOfExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.inner)?;
         node.ty = cx.substitute(node.ty)?;
@@ -1361,9 +1373,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for a deref expression.
-    pub fn enter_deref_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirDerefExpr<'ta>,
+    pub fn enter_deref_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirDerefExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.inner)?;
@@ -1372,9 +1384,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a deref expression.
-    pub fn leave_deref_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirDerefExpr<'ta>,
+    pub fn leave_deref_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirDerefExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.inner)?;
         node.ty = cx.substitute(node.ty)?;
@@ -1382,9 +1394,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for an unary operation expression.
-    pub fn enter_unary_op_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirUnaryOpExpr<'ta>,
+    pub fn enter_unary_op_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirUnaryOpExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         Self::enter_expr(cx, &mut node.operand)?;
@@ -1392,9 +1404,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for an unary operation expression.
-    pub fn leave_unary_op_expr<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirUnaryOpExpr<'ta>,
+    pub fn leave_unary_op_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirUnaryOpExpr<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.operand)?;
         node.ty = cx.substitute(node.ty)?;
@@ -1408,7 +1420,10 @@ impl HirModuleTypeCheckerPass {
     ///
     /// In a second pass, we will perform substitution on the same expressions, after all the
     /// constraints have been collected.
-    pub fn enter_stmt<'ta>(cx: &mut TypingContext<'ta>, node: &mut HirStmt<'ta>) -> HirResult<()> {
+    pub fn enter_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirStmt<'hir>,
+    ) -> HirResult<()> {
         match node {
             HirStmt::Let(s) => Self::enter_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::enter_expr_stmt(cx, e),
@@ -1422,7 +1437,10 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution on the given statement.
-    pub fn leave_stmt<'ta>(cx: &mut TypingContext<'ta>, node: &mut HirStmt<'ta>) -> HirResult<()> {
+    pub fn leave_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirStmt<'hir>,
+    ) -> HirResult<()> {
         match node {
             HirStmt::Let(s) => Self::leave_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::leave_expr_stmt(cx, e),
@@ -1439,9 +1457,9 @@ impl HirModuleTypeCheckerPass {
     ///
     /// When visiting a let binding, we first visit the type to replace any uninitialized types
     /// with a fresh type variable, then we update the type environment with the new type.
-    pub fn enter_let_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirLetStmt<'ta>,
+    pub fn enter_let_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirLetStmt<'hir>,
     ) -> HirResult<()> {
         // Replace any uninitialized types with a fresh type variable.
         node.ty = Self::visit_type(cx, node.ty)?;
@@ -1454,9 +1472,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a let statement.
-    pub fn leave_let_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirLetStmt<'ta>,
+    pub fn leave_let_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirLetStmt<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.value)?;
         // Propagate the type of the expression to the type of the let-binding
@@ -1465,27 +1483,27 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for an expression statement.
-    pub fn enter_expr_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirExprStmt<'ta>,
+    pub fn enter_expr_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirExprStmt<'hir>,
     ) -> HirResult<()> {
         Self::enter_expr(cx, &mut node.expr)?;
         Ok(())
     }
 
     /// Perform substitution for an expression statement.
-    pub fn leave_expr_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirExprStmt<'ta>,
+    pub fn leave_expr_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirExprStmt<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.expr)?;
         Ok(())
     }
 
     /// Collect type constraints for a loop statement.
-    pub fn enter_loop_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirLoopStmt<'ta>,
+    pub fn enter_loop_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirLoopStmt<'hir>,
     ) -> HirResult<()> {
         Self::enter_expr(cx, &mut node.condition)?;
         // We also impose a new constraint that the condition must be a boolean
@@ -1499,9 +1517,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a loop statement.
-    pub fn leave_loop_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirLoopStmt<'ta>,
+    pub fn leave_loop_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirLoopStmt<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.condition)?;
         for stmt in node.body.iter_mut() {
@@ -1511,9 +1529,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for a block statement.
-    pub fn enter_block_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirBlockStmt<'ta>,
+    pub fn enter_block_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirBlockStmt<'hir>,
     ) -> HirResult<()> {
         cx.locals.enter_scope();
         for stmt in node.body.iter_mut() {
@@ -1524,9 +1542,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a block statement.
-    pub fn leave_block_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirBlockStmt<'ta>,
+    pub fn leave_block_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirBlockStmt<'hir>,
     ) -> HirResult<()> {
         for stmt in node.body.iter_mut() {
             Self::leave_stmt(cx, stmt)?;
@@ -1535,9 +1553,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for a break statement.
-    pub fn enter_return_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirReturnStmt<'ta>,
+    pub fn enter_return_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirReturnStmt<'hir>,
     ) -> HirResult<()> {
         if let Some(inner) = node.value.as_mut() {
             Self::enter_expr(cx, inner)?;
@@ -1553,9 +1571,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Perform substitution for a return statement.
-    pub fn leave_return_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirReturnStmt<'ta>,
+    pub fn leave_return_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirReturnStmt<'hir>,
     ) -> HirResult<()> {
         if let Some(inner) = node.value.as_mut() {
             Self::leave_expr(cx, inner)?;
@@ -1564,9 +1582,9 @@ impl HirModuleTypeCheckerPass {
     }
 
     /// Collect type constraints for an if statement.
-    pub fn enter_if_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirIfStmt<'ta>,
+    pub fn enter_if_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirIfStmt<'hir>,
     ) -> HirResult<()> {
         Self::enter_expr(cx, &mut node.condition)?;
         // We also impose a new constraint that the condition must be a boolean
@@ -1589,9 +1607,9 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
-    pub fn leave_if_stmt<'ta>(
-        cx: &mut TypingContext<'ta>,
-        node: &mut HirIfStmt<'ta>,
+    pub fn leave_if_stmt<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirIfStmt<'hir>,
     ) -> HirResult<()> {
         Self::leave_expr(cx, &mut node.condition)?;
         for stmt in node.happy_path.iter_mut() {
