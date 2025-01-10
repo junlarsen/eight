@@ -36,8 +36,8 @@ pub enum Constraint<'hir> {
 #[derive(Debug)]
 pub struct EqualityConstraint<'hir> {
     /// The type that was expected, generally the left-hand side
-    pub expected: &'hir HirTy<'hir>,
-    pub expected_loc: Span,
+    pub expectation: &'hir HirTy<'hir>,
+    pub expectation_loc: Span,
     /// The type that was actually found, generally the right-hand side
     pub actual: &'hir HirTy<'hir>,
     pub actual_loc: Span,
@@ -53,8 +53,7 @@ pub struct FieldProjectionConstraint<'hir> {
     pub origin: &'hir HirTy<'hir>,
     pub field: &'hir str,
     pub field_span: Span,
-    /// The expectation for the field's type.
-    pub resolved_type: &'hir HirTy<'hir>,
+    pub expectation: &'hir HirTy<'hir>,
 }
 
 /// Represent a type class instance constraint.
@@ -68,8 +67,7 @@ pub struct InstanceConstraint<'hir> {
     pub method: &'hir str,
     pub method_span: Span,
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
-    /// The expectation for the instance method's return type.
-    pub resolved_type: &'hir HirTy<'hir>,
+    pub expectation: &'hir HirTy<'hir>,
 }
 
 pub struct TypingContext<'hir> {
@@ -153,7 +151,7 @@ impl<'hir> TypingContext<'hir> {
             origin: ty,
             field,
             field_span,
-            resolved_type: inner,
+            expectation: inner,
         });
         self.constraints.push(constraint)
     }
@@ -168,9 +166,9 @@ impl<'hir> TypingContext<'hir> {
     ) {
         self.constraints
             .push(Constraint::Equality(EqualityConstraint {
-                expected,
+                expectation: expected,
                 actual,
-                expected_loc,
+                expectation_loc: expected_loc,
                 actual_loc,
             }))
     }
@@ -191,7 +189,7 @@ impl<'hir> TypingContext<'hir> {
             method,
             method_span,
             type_arguments,
-            resolved_type,
+            expectation: resolved_type,
         });
         self.constraints.push(constraint)
     }
@@ -216,22 +214,17 @@ impl<'hir> TypingContext<'hir> {
     /// field `field` has type `inner`. This function unifies the two types.
     pub fn unify_field_projection(
         &mut self,
-        FieldProjectionConstraint {
-            origin,
-            field,
-            field_span,
-            resolved_type,
-        }: FieldProjectionConstraint<'hir>,
+        constraint: FieldProjectionConstraint<'hir>,
     ) -> HirResult<()> {
-        match origin {
+        match constraint.origin {
             HirTy::Variable(v) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = FieldProjectionConstraint {
                     origin: self
                         .substitution(v)
                         .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
-                    field,
-                    field_span,
-                    resolved_type,
+                    field: constraint.field,
+                    field_span: constraint.field_span,
+                    expectation: constraint.expectation,
                 };
                 self.unify_field_projection(constraint)
             }
@@ -240,29 +233,29 @@ impl<'hir> TypingContext<'hir> {
                     .module_signature
                     .get_struct(n.name)
                     .unwrap_or_else(|| ice!("struct type not found"));
-                let Some(struct_field) = ty.fields.get(field) else {
+                let Some(struct_field) = ty.fields.get(constraint.field) else {
                     return Err(HirError::InvalidStructFieldReference(
                         InvalidStructFieldReferenceError {
                             type_name: n.name.to_owned(),
-                            name: field.to_owned(),
-                            span: field_span,
+                            name: constraint.field.to_owned(),
+                            span: constraint.field_span,
                         },
                     ));
                 };
                 let constraint = EqualityConstraint {
-                    expected: struct_field.ty,
-                    expected_loc: struct_field.span,
+                    expectation: struct_field.ty,
+                    expectation_loc: struct_field.span,
                     actual_loc: n.name_span,
-                    actual: resolved_type,
+                    actual: constraint.expectation,
                 };
                 self.unify_eq(constraint)?;
                 Ok(())
             }
             _ => Err(HirError::InvalidFieldReferenceOfNonStruct(
                 InvalidFieldReferenceOfNonStructError {
-                    ty: format!("{}", resolved_type),
-                    name: field.to_owned(),
-                    span: field_span,
+                    ty: constraint.expectation.format(),
+                    name: constraint.field.to_owned(),
+                    span: constraint.field_span,
                 },
             )),
         }
@@ -272,67 +265,56 @@ impl<'hir> TypingContext<'hir> {
     ///
     /// An instance constraint requires that there exists an instance of trait `name` that for the
     /// given types `type_arguments`.
-    pub fn unify_instance(
-        &mut self,
-        InstanceConstraint {
-            name,
-            name_span,
-            method,
-            method_span,
-            type_arguments,
-            resolved_type,
-        }: InstanceConstraint<'hir>,
-    ) -> HirResult<()> {
-        let _ = self
-            .module_signature
-            .get_trait(name)
-            .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
-                name: name.to_owned(),
-                span: name_span,
-            }))?;
-        let substitutions = type_arguments
+    pub fn unify_instance(&mut self, constraint: InstanceConstraint<'hir>) -> HirResult<()> {
+        let _ =
+            self.module_signature
+                .get_trait(constraint.name)
+                .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
+                    name: constraint.name.to_owned(),
+                    span: constraint.name_span,
+                }))?;
+        let substitutions = constraint
+            .type_arguments
             .iter()
             .map(|t| self.substitute(t))
             .collect::<HirResult<Vec<_>>>()?;
         let instance = self
             .module_query_db
-            .query_trait_instance_by_name_and_type_arguments(name, substitutions.as_slice())
+            .query_trait_instance_by_name_and_type_arguments(
+                constraint.name,
+                substitutions.as_slice(),
+            )
             .ok_or(HirError::TraitMissingInstance(TraitMissingInstanceError {
                 instance_name: format!(
-                    "{}<{}>",
-                    name,
-                    substitutions
-                        .iter()
-                        .map(|s| format!("{}", s))
-                        .collect::<Vec<_>>()
-                        .join(", ")
+                    "{}{}",
+                    constraint.name,
+                    HirTy::format_substitutable_type_parameter_list(substitutions.as_slice())
                 ),
-                name: name.to_owned(),
-                span: name_span,
+                name: constraint.name.to_owned(),
+                span: constraint.name_span,
             }))?;
 
-        let method = instance
-            .methods
-            .get(method)
-            .ok_or(HirError::TraitInstanceMissingFn(
-                TraitInstanceMissingFnError {
-                    name: format!(
-                        "{}<{}>",
-                        method,
-                        substitutions
-                            .iter()
-                            .map(|s| format!("{}", s))
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    ),
-                    method: method.to_owned(),
-                    span: method_span,
-                },
-            ))?;
+        let method =
+            instance
+                .methods
+                .get(constraint.method)
+                .ok_or(HirError::TraitInstanceMissingFn(
+                    TraitInstanceMissingFnError {
+                        name: format!(
+                            "{}{}",
+                            constraint.method,
+                            HirTy::format_substitutable_type_parameter_list(
+                                substitutions.as_slice(),
+                            )
+                        ),
+                        method: constraint.method.to_owned(),
+                        span: constraint.method_span,
+                    },
+                ))?;
         let constraint = EqualityConstraint {
-            expected: resolved_type,
+            expectation: constraint.expectation,
             actual: method.return_type,
-            expected_loc: Span::empty(),
+            expectation_loc: Span::empty(),
             actual_loc: Span::empty(),
         };
         self.unify_eq(constraint)?;
@@ -346,9 +328,9 @@ impl<'hir> TypingContext<'hir> {
     pub fn unify_eq(
         &mut self,
         EqualityConstraint {
-            expected,
+            expectation: expected,
             actual,
-            expected_loc,
+            expectation_loc: expected_loc,
             actual_loc,
         }: EqualityConstraint<'hir>,
     ) -> HirResult<()> {
@@ -361,22 +343,22 @@ impl<'hir> TypingContext<'hir> {
             (HirTy::Nominal(a), HirTy::Nominal(b)) if std::ptr::eq(a.name, b.name) => Ok(()),
             (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
-                    expected: self
+                    expectation: self
                         .substitution(v)
                         .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
                     actual,
-                    expected_loc,
+                    expectation_loc: expected_loc,
                     actual_loc,
                 };
                 self.unify_eq(constraint)
             }
             (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
-                    expected,
+                    expectation: expected,
                     actual: self
                         .substitution(v)
                         .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
-                    expected_loc,
+                    expectation_loc: expected_loc,
                     actual_loc,
                 };
                 self.unify_eq(constraint)
@@ -403,8 +385,8 @@ impl<'hir> TypingContext<'hir> {
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {
                 let constraint = EqualityConstraint {
-                    expected: a.inner,
-                    expected_loc,
+                    expectation: a.inner,
+                    expectation_loc: expected_loc,
                     actual: b.inner,
                     actual_loc,
                 };
@@ -416,13 +398,13 @@ impl<'hir> TypingContext<'hir> {
             (HirTy::Function(definition), HirTy::Function(application)) => {
                 if definition.parameters.len() != application.parameters.len() {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
-                        expected_ty: format!("{}", application),
+                        expected_ty: actual.format(),
                         span: expected_loc,
                     }));
                 }
                 let constraint = EqualityConstraint {
-                    expected: definition.return_type,
-                    expected_loc,
+                    expectation: definition.return_type,
+                    expectation_loc: expected_loc,
                     actual: application.return_type,
                     actual_loc,
                 };
@@ -433,8 +415,8 @@ impl<'hir> TypingContext<'hir> {
                     .zip(application.parameters.iter())
                 {
                     let constraint = EqualityConstraint {
-                        expected: parameter,
-                        expected_loc,
+                        expectation: parameter,
+                        expectation_loc: expected_loc,
                         actual: argument,
                         actual_loc,
                     };
@@ -448,8 +430,8 @@ impl<'hir> TypingContext<'hir> {
             (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
                 actual_loc,
                 expected_loc,
-                actual_type: format!("{}", rhs),
-                expected_type: format!("{}", lhs),
+                actual_type: rhs.format(),
+                expected_type: lhs.format(),
             })),
         }
     }
@@ -613,17 +595,17 @@ impl<'hir> TypingContext<'hir> {
             .types()
             .get_function_ty(expectation, expected_args);
         self.unify_eq(EqualityConstraint {
-            expected: expected_signature,
+            expectation: expected_signature,
             actual: expr.callee.ty(),
-            expected_loc: expr.span,
+            expectation_loc: expr.span,
             actual_loc: *expr.callee.span(),
         })?;
 
         // Constrain the return type of the expression to the wanted type
         self.unify_eq(EqualityConstraint {
-            expected: expectation,
+            expectation,
             actual: expr.ty,
-            expected_loc: expr.span,
+            expectation_loc: expr.span,
             actual_loc: *expr.callee.span(),
         })?;
         Ok(())
@@ -656,8 +638,8 @@ impl<'hir> TypingContext<'hir> {
             self.unify_eq(EqualityConstraint {
                 actual: provided_field.expr.ty(),
                 actual_loc: *provided_field.expr.span(),
-                expected: field_definition.ty,
-                expected_loc: field_definition.span,
+                expectation: field_definition.ty,
+                expectation_loc: field_definition.span,
             })?;
         }
         // If some of the fields from the struct are missing
@@ -674,14 +656,14 @@ impl<'hir> TypingContext<'hir> {
         // Constrain the expected type to the callee type, and the callee to the type being
         // constructed.
         self.unify_eq(EqualityConstraint {
-            expected: expr.ty,
-            expected_loc: expr.span,
+            expectation: expr.ty,
+            expectation_loc: expr.span,
             actual: expr.callee,
             actual_loc: expr.span,
         })?;
         self.unify_eq(EqualityConstraint {
-            expected: expr.ty,
-            expected_loc: expr.span,
+            expectation: expr.ty,
+            expectation_loc: expr.span,
             actual: expectation,
             actual_loc: expr.span,
         })?;

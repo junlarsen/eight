@@ -186,11 +186,77 @@ impl<'hir> HirTy<'hir> {
         }
     }
 
+    /// Is this type equal to a type variable of the same depth and index?
     pub fn is_equal_to_variable(&self, m: &HirVariableTy) -> bool {
         match self {
-            HirTy::Variable(v) => v.depth == m.depth && v.index == m.index,
+            HirTy::Variable(v) => std::ptr::eq(v, m),
             _ => false,
         }
+    }
+
+    /// Format a type that may contain substitution variables.
+    ///
+    /// This is used when a type is emitted in an error message at a point in time where all the
+    /// types are not yet deducible. For example, in the following code snippet, the type `R` of
+    /// `Add` is not yet deducible, because `R` is also used to infer the type of `k`.
+    ///
+    /// Because we're not interested in exposing De Bruijn indices to the user, we simply replace
+    /// all to-be-deduced types with the placeholder type `_`.
+    ///
+    /// ```text
+    /// trait Add<A, B, R> {
+    ///   fn add(a: A, b: B) -> R;
+    /// }
+    ///
+    /// instance Add<i32, i32, i32> {
+    ///   fn add(a: i32, b: i32) -> i32 {
+    ///     ...
+    ///   }
+    /// }
+    ///
+    /// fn test(a: i32, b: bool) {
+    ///   let k = a + b;
+    ///   // ^ produces an error for Add<i32, bool, $V> instance could not be found
+    /// }
+    /// ```
+    pub fn format_substitutable_type(&self) -> String {
+        match self {
+            HirTy::Variable(_) => "_".to_owned(),
+            HirTy::Function(f) => {
+                let parameters = f
+                    .parameters
+                    .iter()
+                    .map(|p| p.format_substitutable_type())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!(
+                    "fn({}) -> {}",
+                    parameters,
+                    f.return_type.format_substitutable_type()
+                )
+            }
+            HirTy::Integer32(_) => "i32".to_owned(),
+            HirTy::Boolean(_) => "bool".to_owned(),
+            HirTy::Unit(_) => "unit".to_owned(),
+            HirTy::Nominal(n) => n.name.to_owned(),
+            HirTy::Pointer(p) => format!("*{}", p.inner.format_substitutable_type()),
+            HirTy::Uninitialized(_) => ice!("attempted to format uninitialized type"),
+        }
+    }
+
+    /// Format a list of type parameters with the semantics of `format_substitutable_type`.
+    pub fn format_substitutable_type_parameter_list(parameters: &[&HirTy]) -> String {
+        let arguments = parameters
+            .iter()
+            .map(|p| p.format_substitutable_type())
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("<{}>", arguments)
+    }
+
+    /// Explicit shorthand for the `Display` implementation of `HirTy`.
+    pub fn format(&self) -> String {
+        self.to_string()
     }
 }
 
