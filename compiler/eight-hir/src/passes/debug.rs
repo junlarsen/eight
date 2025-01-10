@@ -24,7 +24,7 @@ use crate::stmt::{
     HirReturnStmt, HirStmt,
 };
 use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy};
-use crate::HirModule;
+use crate::{HirModule, LinkageType};
 use eight_diagnostics::ice;
 use pretty::RcDoc;
 
@@ -126,6 +126,7 @@ impl HirModuleDebugPass {
                                     .body
                                     .functions
                                     .values()
+                                    .filter(|f| f.linkage_type == LinkageType::Eight)
                                     .map(|f| Self::format_hir_function(f)),
                                 RcDoc::hardline(),
                             ))

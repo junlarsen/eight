@@ -12,7 +12,7 @@ use crate::expr::{
     HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr, HirIntegerLiteralExpr,
     HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirIntrinsicFunction, HirRecord};
+use crate::item::{HirFunction, HirRecord};
 use crate::query::HirQueryDatabase;
 use crate::signature::HirModuleSignature;
 use crate::stmt::{
@@ -868,7 +868,6 @@ impl HirModuleTypeCheckerPass {
         cx.locals.enter_scope();
 
         Self::visit_module_functions(cx, &mut module.body.functions)?;
-        Self::visit_module_intrinsic_functions(cx, &mut module.body.intrinsic_functions)?;
         Self::visit_module_records(cx, &mut module.body.records)?;
         cx.locals.leave_scope();
         Ok(())
@@ -885,17 +884,6 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
-    /// Traverse the intrinsic functions in the given module.
-    pub fn visit_module_intrinsic_functions<'ta>(
-        cx: &mut TypingContext<'ta>,
-        functions: &mut BTreeMap<String, HirIntrinsicFunction<'ta>>,
-    ) -> HirResult<()> {
-        for fun in functions.values_mut() {
-            Self::visit_intrinsic_function(cx, fun)?;
-        }
-        Ok(())
-    }
-
     /// Traverse the records in the given module.
     pub fn visit_module_records<'ta>(
         cx: &mut TypingContext<'ta>,
@@ -904,16 +892,6 @@ impl HirModuleTypeCheckerPass {
         for rec in records.values_mut() {
             Self::visit_hir_record(cx, rec)?;
         }
-        Ok(())
-    }
-
-    /// Traverse the intrinsic function.
-    ///
-    /// Right now the compiler just assumes that the intrinsic functions are correct.
-    pub fn visit_intrinsic_function<'ta>(
-        _: &mut TypingContext<'ta>,
-        _: &mut HirIntrinsicFunction<'ta>,
-    ) -> HirResult<()> {
         Ok(())
     }
 

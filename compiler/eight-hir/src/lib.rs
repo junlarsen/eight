@@ -9,7 +9,7 @@
 //! program than the AST.
 
 use crate::item::{
-    HirFunction, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord, HirTrait,
+    HirFunction, HirInstance, HirIntrinsicScalar, HirRecord, HirTrait,
 };
 use crate::signature::HirModuleSignature;
 use eight_span::Span;
@@ -26,6 +26,16 @@ pub mod signature;
 pub mod stmt;
 pub mod ty;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum LinkageType {
+    /// The symbol is to be resolved at link-time. Typically used for symbols that are marked as
+    /// intrinsic.
+    External,
+    /// The symbol is defined in Eight code visible to the linker.
+    Eight,
+}
+
 /// A module containing all the types and functions defined in a program.
 ///
 /// We use a BTreeMap here instead of a HashMap to preserve the order of the types for when we're
@@ -41,7 +51,6 @@ pub struct HirModule<'ta> {
 #[derive(Debug, Default)]
 pub struct HirModuleBody<'ta> {
     pub functions: BTreeMap<String, HirFunction<'ta>>,
-    pub intrinsic_functions: BTreeMap<String, HirIntrinsicFunction<'ta>>,
     pub records: BTreeMap<String, HirRecord<'ta>>,
     pub traits: BTreeMap<String, HirTrait<'ta>>,
     pub scalars: BTreeMap<String, HirIntrinsicScalar<'ta>>,

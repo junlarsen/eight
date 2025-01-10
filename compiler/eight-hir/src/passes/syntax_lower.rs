@@ -10,7 +10,7 @@ use crate::expr::{
     HirUnaryOpExpr,
 };
 use crate::item::{
-    HirFunction, HirInstance, HirIntrinsicFunction, HirIntrinsicScalar, HirRecord, HirTrait,
+    HirFunction, HirInstance, HirIntrinsicScalar, HirRecord, HirTrait,
 };
 use crate::signature::{
     HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
@@ -22,7 +22,7 @@ use crate::stmt::{
     HirReturnStmt, HirStmt,
 };
 use crate::ty::HirTy;
-use crate::{HirModule, HirModuleBody, HirName};
+use crate::{HirModule, HirModuleBody, HirName, LinkageType};
 use eight_diagnostics::ice;
 use eight_span::Span;
 use eight_syntax::{
@@ -287,6 +287,10 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
         ))
     }
 
+    /// Visit an item in the module.
+    /// 
+    /// The syntax lowering pass synthesizes intrinsic functions into regular functions with the
+    /// linkage type marked external.
     pub fn visit_item(
         &mut self,
         module_body: &mut HirModuleBody<'ta>,
@@ -303,7 +307,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
                 let fun = self.visit_intrinsic_function_item(f)?;
                 module_signature.add_function(f.name.name.as_str(), fun.signature);
                 module_body
-                    .intrinsic_functions
+                    .functions
                     .insert(f.name.name.to_owned(), fun);
             }
             AstItem::Type(t) => {
@@ -369,6 +373,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             type_parameter_substitutions: BTreeMap::new(),
             instantiated_parameters: BTreeMap::new(),
             instantiated_return_type: None,
+            linkage_type: LinkageType::Eight,
         };
         Ok(fun)
     }
@@ -376,7 +381,7 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
     pub fn visit_intrinsic_function_item(
         &mut self,
         node: &'ast AstIntrinsicFunctionItem,
-    ) -> HirResult<HirIntrinsicFunction<'ta>> {
+    ) -> HirResult<HirFunction<'ta>> {
         let type_parameters = node
             .type_parameters
             .iter()
@@ -396,10 +401,15 @@ impl<'ast, 'ta> ASTSyntaxLoweringPass<'ast, 'ta> {
             return_type,
             return_type_annotation: Some(return_type_annotation),
         });
-        let fun = HirIntrinsicFunction {
+        let fun = HirFunction {
             span: node.span,
             name: self.visit_identifier(&node.name)?,
             signature,
+            body: Vec::new(),
+            type_parameter_substitutions: BTreeMap::new(),
+            instantiated_parameters: BTreeMap::new(),
+            instantiated_return_type: None,
+            linkage_type: LinkageType::External,
         };
         Ok(fun)
     }

@@ -4,7 +4,7 @@ use crate::signature::{
 };
 use crate::stmt::HirStmt;
 use crate::ty::HirTy;
-use crate::HirName;
+use crate::{HirName, LinkageType};
 use eight_span::Span;
 use std::collections::BTreeMap;
 
@@ -23,7 +23,6 @@ pub struct HirRecord<'ta> {
     pub span: Span,
     pub name: HirName,
     pub signature: &'ta HirRecordApiSignature<'ta>,
-
     pub instantiated_fields: BTreeMap<String, &'ta HirTy<'ta>>,
 }
 
@@ -53,15 +52,7 @@ pub struct HirFunction<'ta> {
     /// fn foo<T>(x: T) -> T {}
     /// ```
     pub type_parameter_substitutions: BTreeMap<String, &'ta HirTy<'ta>>,
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-pub struct HirIntrinsicFunction<'ta> {
-    /// Span encapsulating the entire function definition.
-    pub span: Span,
-    pub name: HirName,
-    pub signature: &'ta HirFunctionApiSignature<'ta>,
+    pub linkage_type: LinkageType,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
