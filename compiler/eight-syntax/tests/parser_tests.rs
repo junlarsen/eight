@@ -1,5 +1,5 @@
-use eight_syntax::Lexer;
-use eight_syntax::Parser;
+use eight_syntax::lexer::Lexer;
+use eight_syntax::parser::Parser;
 use insta::assert_ron_snapshot;
 
 #[test]

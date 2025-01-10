@@ -19,8 +19,8 @@ impl Pipeline {
     }
 
     pub fn run<T: AsRef<str>>(&self, source: T) -> miette::Result<()> {
-        let mut lexer = eight_syntax::Lexer::new(source.as_ref());
-        let mut parser = eight_syntax::Parser::new(&mut lexer);
+        let mut lexer = eight_syntax::lexer::Lexer::new(source.as_ref());
+        let mut parser = eight_syntax::parser::Parser::new(&mut lexer);
 
         let bump = Bump::new();
         let arena = HirArena::new(&bump);

@@ -1,18 +1,16 @@
 use crate::ast::{
-    AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBracketIndexExpr, AstBreakStmt, AstCallExpr,
-    AstConstructExpr, AstConstructorExprArgument, AstContinueStmt, AstDotIndexExpr, AstExpr,
-    AstExprStmt, AstForStmt, AstForStmtInitializer, AstFunctionItem, AstFunctionParameterItem,
-    AstGroupExpr, AstIfStmt, AstInteger32Type, AstIntegerLiteralExpr, AstItem, AstLetStmt,
-    AstNamedType, AstPointerType, AstReferenceExpr, AstReturnStmt, AstStmt, AstTranslationUnit,
-    AstType, AstTypeItem, AstTypeMemberItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
+    AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBooleanType,
+    AstBracketIndexExpr, AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument,
+    AstContinueStmt, AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstForStmtInitializer,
+    AstFunctionItem, AstFunctionParameterItem, AstGroupExpr, AstIdentifier, AstIfStmt,
+    AstInstanceItem, AstInteger32Type, AstIntegerLiteralExpr, AstIntrinsicFunctionItem,
+    AstIntrinsicTypeItem, AstItem, AstLetStmt, AstNamedType, AstPointerType, AstReferenceExpr,
+    AstReturnStmt, AstStmt, AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType,
+    AstTypeItem, AstTypeMemberItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
 };
+use crate::error::{ParseError, ParseResult, UnexpectedEndOfFileError, UnexpectedTokenError};
 use crate::lexer::Lexer;
-use crate::{
-    AstBooleanLiteralExpr, AstBooleanType, AstIdentifier, AstInstanceItem,
-    AstIntrinsicFunctionItem, AstIntrinsicTypeItem, AstTraitFunctionItem, AstTraitItem,
-    AstTypeParameterItem, ParseError, ParseResult, Token, TokenType, UnexpectedEndOfFileError,
-    UnexpectedTokenError,
-};
+use crate::tok::{Token, TokenType};
 use eight_span::Span;
 
 pub struct ParserInput<'a> {
@@ -1315,9 +1313,9 @@ mod tests {
     use crate::ast::{
         AstBinaryOp, AstBreakStmt, AstContinueStmt, AstExpr, AstIdentifier, AstType, AstUnaryOp,
     };
+    use crate::error::{InvalidIntegerLiteralError, ParseError, ParseResult};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-    use crate::{InvalidIntegerLiteralError, ParseError, ParseResult};
     use eight_macros::{assert_err, assert_none, assert_ok, assert_some};
     use eight_span::Span;
 

@@ -1,11 +1,5 @@
-mod ast;
-mod error;
-mod lexer;
-mod parser;
-mod tok;
-
-pub use ast::*;
-pub use error::*;
-pub use lexer::*;
-pub use parser::*;
-pub use tok::*;
+pub mod ast;
+pub mod error;
+pub mod lexer;
+pub mod parser;
+pub mod tok;

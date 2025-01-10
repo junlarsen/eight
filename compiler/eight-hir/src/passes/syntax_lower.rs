@@ -22,7 +22,7 @@ use crate::ty::HirTy;
 use crate::{HirModule, HirModuleBody, LinkageType};
 use eight_diagnostics::ice;
 use eight_span::Span;
-use eight_syntax::{
+use eight_syntax::ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBracketIndexExpr,
     AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument, AstContinueStmt,
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,

@@ -8,7 +8,7 @@
 //! of future lexer-related syntax errors. These will only be triggered by the parser upon
 //! attempting to consume further tokens.
 
-use crate::Token;
+use crate::tok::Token;
 use eight_macros::declare_error_type;
 use eight_span::Span;
 use miette::Diagnostic;
