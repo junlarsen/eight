@@ -1,5 +1,6 @@
 use bumpalo::Bump;
 use eight_hir::arena::HirArena;
+use eight_hir::query::HirQueryDatabase;
 use eight_hir::syntax_lowering_pass::ASTSyntaxLoweringPass;
 use eight_hir::textual_pass::HirModuleDebugPass;
 use eight_hir::type_check_pass::{HirModuleTypeCheckerPass, TypingContext};
@@ -35,7 +36,8 @@ impl Pipeline {
         let hir_arena = HirArena::new(&hir_bump);
         let lowering_pass = ASTSyntaxLoweringPass::new(&hir_arena);
         let mut module = lowering_pass.visit_translation_unit(&tu)?;
-        let mut cx = TypingContext::new(&hir_arena, module.signature);
+        let query_database = HirQueryDatabase::new(module.signature);
+        let mut cx = TypingContext::new(&hir_arena, &query_database);
         HirModuleTypeCheckerPass::visit(&mut module, &mut cx)?;
         if self.options.emit_hir {
             let doc = HirModuleDebugPass::format_hir_module_to_string(&module);

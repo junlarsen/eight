@@ -1,12 +1,12 @@
 mod typing_context;
 
 use crate::error::{
-    HirError, HirResult,
-    InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError, WrongTraitTypeArgumentCount,
+    HirError, HirResult, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
+    WrongTraitTypeArgumentCount,
 };
 use crate::expr::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
+    HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOpExpr,
 };
 use crate::item::{HirFunction, HirInstance, HirStruct, HirTrait};

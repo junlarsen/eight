@@ -12,7 +12,6 @@ use crate::expr::{
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
 use crate::query::HirQueryDatabase;
-use crate::signature::HirModuleSignature;
 use crate::ty::{HirFunctionTy, HirTy, HirVariableTy};
 use crate::type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, HirModuleTypeCheckerPass,
@@ -56,10 +55,7 @@ pub struct TypingContext<'hir> {
 
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
-
-    /// The signature of the module being type checked.
-    module_signature: &'hir HirModuleSignature<'hir>,
-    pub module_query_db: HirQueryDatabase<'hir>,
+    pub module_query_db: &'hir HirQueryDatabase<'hir>,
 }
 
 impl<'hir> Debug for TypingContext<'hir> {
@@ -74,19 +70,16 @@ impl<'hir> Debug for TypingContext<'hir> {
                 &self.type_binding_context,
             )
             .field("current_function", &self.current_function)
-            .field("module_signature", &self.module_signature)
             .finish()
     }
 }
 
 impl<'hir> TypingContext<'hir> {
     /// Create a new typing context given the HIR arena and module signature derived from the AST.
-    pub fn new(
-        arena: &'hir HirArena<'hir>,
-        module_signature: &'hir HirModuleSignature<'hir>,
-    ) -> Self {
+    pub fn new(arena: &'hir HirArena<'hir>, module_query_db: &'hir HirQueryDatabase<'hir>) -> Self {
         Self {
             arena,
+            module_query_db,
             constraints: Vec::new(),
             substitutions: HashMap::new(),
             type_binding_depth: 0,
@@ -94,8 +87,6 @@ impl<'hir> TypingContext<'hir> {
             let_binding_context: LocalContext::new(),
             type_binding_context: LocalContext::new(),
             current_function: VecDeque::new(),
-            module_signature,
-            module_query_db: HirQueryDatabase::new(module_signature),
         }
     }
 
@@ -306,8 +297,8 @@ impl<'hir> TypingContext<'hir> {
             }
             HirTy::Nominal(n) => {
                 let ty = self
-                    .module_signature
-                    .get_struct(n.name)
+                    .module_query_db
+                    .query_struct_by_name(n.name)
                     .unwrap_or_else(|| ice!("struct type not found"));
                 let Some(struct_field) = ty.fields.get(constraint.field) else {
                     return Err(HirError::InvalidStructFieldReference(
@@ -342,8 +333,8 @@ impl<'hir> TypingContext<'hir> {
     /// An instance constraint requires that there exists an instance of trait `name` that for the
     /// given types `type_arguments`.
     pub fn unify_instance(&mut self, constraint: InstanceConstraint<'hir>) -> HirResult<()> {
-        self.module_signature
-            .get_trait(constraint.name)
+        self.module_query_db
+            .query_trait_by_name(constraint.name)
             .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
                 name: constraint.name.to_owned(),
                 span: constraint.name_span,
@@ -581,7 +572,7 @@ impl<'hir> TypingContext<'hir> {
 
         // If the function refers to a function signature, we attempt to instantiate it if
         // it is generic.
-        let Some(signature) = self.module_signature.get_function(expr.name) else {
+        let Some(signature) = self.module_query_db.query_function_by_name(expr.name) else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
         // Non-generic functions are already "instantiated" and can be constrained directly.
@@ -696,8 +687,8 @@ impl<'hir> TypingContext<'hir> {
         };
         // TODO: Produce a proper diagnostic here
         let ty = self
-            .module_signature
-            .get_struct(n.name)
+            .module_query_db
+            .query_struct_by_name(n.name)
             .unwrap_or_else(|| ice!("struct type not found"));
         let mut visited_fields = HashSet::new();
         for provided_field in expr.arguments.iter() {
