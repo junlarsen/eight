@@ -30,6 +30,7 @@ pub struct TypingContext<'hir> {
     ///
     /// TODO: Should this be private?
     pub arena: &'hir HirArena<'hir>,
+    pub module_query_db: &'hir HirQueryDatabase<'hir>,
 
     /// Collected constraints during inference, to be solved during unification.
     constraints: Vec<Constraint<'hir>>,
@@ -55,7 +56,6 @@ pub struct TypingContext<'hir> {
 
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
-    pub module_query_db: &'hir HirQueryDatabase<'hir>,
 }
 
 impl<'hir> Debug for TypingContext<'hir> {
@@ -206,310 +206,6 @@ impl<'hir> TypingContext<'hir> {
     /// Find the function that is currently being visited.
     pub fn find_function_context(&self) -> Option<&'hir HirFunctionTy<'hir>> {
         self.current_function.back().copied()
-    }
-
-    /// Imply a new field projection constraint
-    pub fn constrain_field_projection(
-        &mut self,
-        origin: &'hir HirTy<'hir>,
-        field: &'hir str,
-        field_span: Span,
-        expectation: &'hir HirTy<'hir>,
-    ) {
-        let constraint = Constraint::FieldProjection(FieldProjectionConstraint {
-            origin,
-            field,
-            field_span,
-            expectation,
-        });
-        self.constraints.push(constraint)
-    }
-
-    /// Imply a new equality constraint
-    pub fn constrain_eq(
-        &mut self,
-        expectation: &'hir HirTy<'hir>,
-        actual: &'hir HirTy<'hir>,
-        expectation_loc: Span,
-        actual_loc: Span,
-    ) {
-        self.constraints
-            .push(Constraint::Equality(EqualityConstraint {
-                expectation,
-                actual,
-                expectation_loc,
-                actual_loc,
-            }))
-    }
-
-    /// Imply a new instance constraint
-    pub fn constrain_instance(
-        &mut self,
-        name: &'hir str,
-        name_span: Span,
-        method: &'hir str,
-        method_span: Span,
-        type_arguments: Vec<&'hir HirTy<'hir>>,
-        expectation: &'hir HirTy<'hir>,
-    ) {
-        let constraint = Constraint::Instance(InstanceConstraint {
-            name,
-            name_span,
-            method,
-            method_span,
-            type_arguments,
-            expectation,
-        });
-        self.constraints.push(constraint)
-    }
-
-    /// Solve the constraints that have been implied on the context so far.
-    pub fn solve_constraints(&mut self) -> HirResult<()> {
-        let constraints = self.constraints.drain(..).collect::<Vec<_>>();
-
-        for constraint in constraints {
-            match constraint {
-                Constraint::Equality(c) => self.unify_eq(c)?,
-                Constraint::FieldProjection(c) => self.unify_field_projection(c)?,
-                Constraint::Instance(c) => self.unify_instance(c)?,
-            }
-        }
-        Ok(())
-    }
-
-    /// Perform unification of a field projection.
-    ///
-    /// A field projection constraint requires that the type `ty` is a struct type, and that the
-    /// field `field` has type `inner`. This function unifies the two types.
-    pub fn unify_field_projection(
-        &mut self,
-        constraint: FieldProjectionConstraint<'hir>,
-    ) -> HirResult<()> {
-        match constraint.origin {
-            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v) => {
-                let constraint = FieldProjectionConstraint {
-                    origin: self.substitute(constraint.origin)?,
-                    field: constraint.field,
-                    field_span: constraint.field_span,
-                    expectation: constraint.expectation,
-                };
-                self.unify_field_projection(constraint)
-            }
-            HirTy::Nominal(n) => {
-                let ty = self
-                    .module_query_db
-                    .query_struct_by_name(n.name)
-                    .unwrap_or_else(|| ice!("struct type not found"));
-                let Some(struct_field) = ty.fields.get(constraint.field) else {
-                    return Err(HirError::InvalidStructFieldReference(
-                        InvalidStructFieldReferenceError {
-                            type_name: n.name.to_owned(),
-                            name: constraint.field.to_owned(),
-                            span: constraint.field_span,
-                        },
-                    ));
-                };
-                let constraint = EqualityConstraint {
-                    expectation: struct_field.ty,
-                    expectation_loc: struct_field.span,
-                    actual_loc: n.name_span,
-                    actual: constraint.expectation,
-                };
-                self.unify_eq(constraint)?;
-                Ok(())
-            }
-            _ => Err(HirError::InvalidFieldReferenceOfNonStruct(
-                InvalidFieldReferenceOfNonStructError {
-                    ty: constraint.origin.format(),
-                    name: constraint.field.to_owned(),
-                    span: constraint.field_span,
-                },
-            )),
-        }
-    }
-
-    /// Perform unification of an instance constraint.
-    ///
-    /// An instance constraint requires that there exists an instance of trait `name` that for the
-    /// given types `type_arguments`.
-    pub fn unify_instance(&mut self, constraint: InstanceConstraint<'hir>) -> HirResult<()> {
-        self.module_query_db
-            .query_trait_by_name(constraint.name)
-            .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
-                name: constraint.name.to_owned(),
-                span: constraint.name_span,
-            }))?;
-        let substitutions = constraint
-            .type_arguments
-            .iter()
-            .map(|t| self.substitute(t))
-            .collect::<HirResult<Vec<_>>>()?;
-        let instance = self
-            .module_query_db
-            .query_trait_instance_by_name_and_type_arguments(
-                constraint.name,
-                substitutions.as_slice(),
-            )
-            .ok_or(HirError::TraitMissingInstance(TraitMissingInstanceError {
-                instance_name: format!(
-                    "{}{}",
-                    constraint.name,
-                    HirTy::format_substitutable_type_parameter_list(substitutions.as_slice())
-                ),
-                name: constraint.name.to_owned(),
-                span: constraint.name_span,
-            }))?;
-
-        let method =
-            instance
-                .methods
-                .get(constraint.method)
-                .ok_or(HirError::TraitInstanceMissingFn(
-                    TraitInstanceMissingFnError {
-                        name: format!(
-                            "{}{}",
-                            constraint.method,
-                            HirTy::format_substitutable_type_parameter_list(
-                                substitutions.as_slice(),
-                            )
-                        ),
-                        method: constraint.method.to_owned(),
-                        span: constraint.method_span,
-                    },
-                ))?;
-        let constraint = EqualityConstraint {
-            expectation: constraint.expectation,
-            actual: method.return_type,
-            expectation_loc: Span::empty(),
-            actual_loc: Span::empty(),
-        };
-        self.unify_eq(constraint)?;
-        Ok(())
-    }
-
-    /// Perform unification of two types.
-    ///
-    /// Unification is the process of determining if two types can be unified into a single type.
-    /// Because we currently do not support subtyping, this is always an equivalence check.
-    pub fn unify_eq(
-        &mut self,
-        EqualityConstraint {
-            expectation: expected,
-            actual,
-            expectation_loc: expected_loc,
-            actual_loc,
-        }: EqualityConstraint<'hir>,
-    ) -> HirResult<()> {
-        match (&expected, &actual) {
-            (HirTy::Variable(lhs), HirTy::Variable(rhs))
-                if lhs.depth == rhs.depth && lhs.index == rhs.index =>
-            {
-                Ok(())
-            }
-            (HirTy::Nominal(a), HirTy::Nominal(b)) if std::ptr::eq(a.name, b.name) => Ok(()),
-            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v) => {
-                let constraint = EqualityConstraint {
-                    expectation: self
-                        .substitution(v)
-                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
-                    actual,
-                    expectation_loc: expected_loc,
-                    actual_loc,
-                };
-                self.unify_eq(constraint)
-            }
-            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v) => {
-                let constraint = EqualityConstraint {
-                    expectation: expected,
-                    actual: self
-                        .substitution(v)
-                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
-                    expectation_loc: expected_loc,
-                    actual_loc,
-                };
-                self.unify_eq(constraint)
-            }
-            (HirTy::Variable(v), _) => {
-                if self.occurs_in(v, actual) {
-                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: actual_loc,
-                        right: expected_loc,
-                    }));
-                }
-                self.substitutions.insert((v.depth, v.index), actual);
-                Ok(())
-            }
-            (_, HirTy::Variable(v)) => {
-                if self.occurs_in(v, expected) {
-                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: expected_loc,
-                        right: actual_loc,
-                    }));
-                }
-                self.substitutions.insert((v.depth, v.index), expected);
-                Ok(())
-            }
-            (HirTy::Pointer(a), HirTy::Pointer(b)) => {
-                let constraint = EqualityConstraint {
-                    expectation: a.inner,
-                    expectation_loc: expected_loc,
-                    actual: b.inner,
-                    actual_loc,
-                };
-                self.unify_eq(constraint)
-            }
-            (HirTy::Integer32(_), HirTy::Integer32(_)) => Ok(()),
-            (HirTy::Boolean(_), HirTy::Boolean(_)) => Ok(()),
-            (HirTy::Unit(_), HirTy::Unit(_)) => Ok(()),
-            (HirTy::Function(definition), HirTy::Function(application)) => {
-                if definition.parameters.len() != application.parameters.len() {
-                    return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
-                        expected_ty: actual.format(),
-                        span: expected_loc,
-                    }));
-                }
-                let constraint = EqualityConstraint {
-                    expectation: definition.return_type,
-                    expectation_loc: expected_loc,
-                    actual: application.return_type,
-                    actual_loc,
-                };
-                self.unify_eq(constraint)?;
-                for (parameter, argument) in definition
-                    .parameters
-                    .iter()
-                    .zip(application.parameters.iter())
-                {
-                    let constraint = EqualityConstraint {
-                        expectation: parameter,
-                        expectation_loc: expected_loc,
-                        actual: argument,
-                        actual_loc,
-                    };
-                    self.unify_eq(constraint)?;
-                }
-                Ok(())
-            }
-            (HirTy::Uninitialized(_), _) | (_, HirTy::Uninitialized(_)) => {
-                ice!("tried to unify with uninitialized type")
-            }
-            (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
-                actual_loc,
-                expected_loc,
-                actual_type: rhs.format(),
-                expected_type: lhs.format(),
-            })),
-        }
-    }
-
-    /// Create a fresh type variable.
-    pub fn fresh_type_variable(&mut self) -> &'hir HirTy<'hir> {
-        let depth = self.type_binding_depth;
-        let index = self.type_binding_index;
-        let ty = self.arena.types().get_variable_ty(depth, index);
-        self.type_binding_index += 1;
-        self.substitutions.insert((depth, index), ty);
-        ty
     }
 
     /// Infer the type of an integer literal expression.
@@ -945,5 +641,311 @@ impl<'hir> TypingContext<'hir> {
             | HirTy::Nominal(_)
             | HirTy::Pointer(_) => false,
         }
+    }
+}
+
+impl<'hir> TypingContext<'hir> {
+    /// Imply a new field projection constraint
+    pub fn constrain_field_projection(
+        &mut self,
+        origin: &'hir HirTy<'hir>,
+        field: &'hir str,
+        field_span: Span,
+        expectation: &'hir HirTy<'hir>,
+    ) {
+        let constraint = Constraint::FieldProjection(FieldProjectionConstraint {
+            origin,
+            field,
+            field_span,
+            expectation,
+        });
+        self.constraints.push(constraint)
+    }
+
+    /// Imply a new equality constraint
+    pub fn constrain_eq(
+        &mut self,
+        expectation: &'hir HirTy<'hir>,
+        actual: &'hir HirTy<'hir>,
+        expectation_loc: Span,
+        actual_loc: Span,
+    ) {
+        self.constraints
+            .push(Constraint::Equality(EqualityConstraint {
+                expectation,
+                actual,
+                expectation_loc,
+                actual_loc,
+            }))
+    }
+
+    /// Imply a new instance constraint
+    pub fn constrain_instance(
+        &mut self,
+        name: &'hir str,
+        name_span: Span,
+        method: &'hir str,
+        method_span: Span,
+        type_arguments: Vec<&'hir HirTy<'hir>>,
+        expectation: &'hir HirTy<'hir>,
+    ) {
+        let constraint = Constraint::Instance(InstanceConstraint {
+            name,
+            name_span,
+            method,
+            method_span,
+            type_arguments,
+            expectation,
+        });
+        self.constraints.push(constraint)
+    }
+
+    /// Solve the constraints that have been implied on the context so far.
+    pub fn solve_constraints(&mut self) -> HirResult<()> {
+        let constraints = self.constraints.drain(..).collect::<Vec<_>>();
+
+        for constraint in constraints {
+            match constraint {
+                Constraint::Equality(c) => self.unify_eq(c)?,
+                Constraint::FieldProjection(c) => self.unify_field_projection(c)?,
+                Constraint::Instance(c) => self.unify_instance(c)?,
+            }
+        }
+        Ok(())
+    }
+
+    /// Perform unification of a field projection.
+    ///
+    /// A field projection constraint requires that the type `ty` is a struct type, and that the
+    /// field `field` has type `inner`. This function unifies the two types.
+    pub fn unify_field_projection(
+        &mut self,
+        constraint: FieldProjectionConstraint<'hir>,
+    ) -> HirResult<()> {
+        match constraint.origin {
+            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v) => {
+                let constraint = FieldProjectionConstraint {
+                    origin: self.substitute(constraint.origin)?,
+                    field: constraint.field,
+                    field_span: constraint.field_span,
+                    expectation: constraint.expectation,
+                };
+                self.unify_field_projection(constraint)
+            }
+            HirTy::Nominal(n) => {
+                let ty = self
+                    .module_query_db
+                    .query_struct_by_name(n.name)
+                    .unwrap_or_else(|| ice!("struct type not found"));
+                let Some(struct_field) = ty.fields.get(constraint.field) else {
+                    return Err(HirError::InvalidStructFieldReference(
+                        InvalidStructFieldReferenceError {
+                            type_name: n.name.to_owned(),
+                            name: constraint.field.to_owned(),
+                            span: constraint.field_span,
+                        },
+                    ));
+                };
+                let constraint = EqualityConstraint {
+                    expectation: struct_field.ty,
+                    expectation_loc: struct_field.span,
+                    actual_loc: n.name_span,
+                    actual: constraint.expectation,
+                };
+                self.unify_eq(constraint)?;
+                Ok(())
+            }
+            _ => Err(HirError::InvalidFieldReferenceOfNonStruct(
+                InvalidFieldReferenceOfNonStructError {
+                    ty: constraint.origin.format(),
+                    name: constraint.field.to_owned(),
+                    span: constraint.field_span,
+                },
+            )),
+        }
+    }
+
+    /// Perform unification of an instance constraint.
+    ///
+    /// An instance constraint requires that there exists an instance of trait `name` that for the
+    /// given types `type_arguments`.
+    pub fn unify_instance(&mut self, constraint: InstanceConstraint<'hir>) -> HirResult<()> {
+        self.module_query_db
+            .query_trait_by_name(constraint.name)
+            .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
+                name: constraint.name.to_owned(),
+                span: constraint.name_span,
+            }))?;
+        let substitutions = constraint
+            .type_arguments
+            .iter()
+            .map(|t| self.substitute(t))
+            .collect::<HirResult<Vec<_>>>()?;
+        let instance = self
+            .module_query_db
+            .query_trait_instance_by_name_and_type_arguments(
+                constraint.name,
+                substitutions.as_slice(),
+            )
+            .ok_or(HirError::TraitMissingInstance(TraitMissingInstanceError {
+                instance_name: format!(
+                    "{}{}",
+                    constraint.name,
+                    HirTy::format_substitutable_type_parameter_list(substitutions.as_slice())
+                ),
+                name: constraint.name.to_owned(),
+                span: constraint.name_span,
+            }))?;
+
+        let method =
+            instance
+                .methods
+                .get(constraint.method)
+                .ok_or(HirError::TraitInstanceMissingFn(
+                    TraitInstanceMissingFnError {
+                        name: format!(
+                            "{}{}",
+                            constraint.method,
+                            HirTy::format_substitutable_type_parameter_list(
+                                substitutions.as_slice(),
+                            )
+                        ),
+                        method: constraint.method.to_owned(),
+                        span: constraint.method_span,
+                    },
+                ))?;
+        let constraint = EqualityConstraint {
+            expectation: constraint.expectation,
+            actual: method.return_type,
+            expectation_loc: Span::empty(),
+            actual_loc: Span::empty(),
+        };
+        self.unify_eq(constraint)?;
+        Ok(())
+    }
+
+    /// Perform unification of two types.
+    ///
+    /// Unification is the process of determining if two types can be unified into a single type.
+    /// Because we currently do not support subtyping, this is always an equivalence check.
+    pub fn unify_eq(
+        &mut self,
+        EqualityConstraint {
+            expectation: expected,
+            actual,
+            expectation_loc: expected_loc,
+            actual_loc,
+        }: EqualityConstraint<'hir>,
+    ) -> HirResult<()> {
+        match (&expected, &actual) {
+            (HirTy::Variable(lhs), HirTy::Variable(rhs))
+                if lhs.depth == rhs.depth && lhs.index == rhs.index =>
+            {
+                Ok(())
+            }
+            (HirTy::Nominal(a), HirTy::Nominal(b)) if std::ptr::eq(a.name, b.name) => Ok(()),
+            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v) => {
+                let constraint = EqualityConstraint {
+                    expectation: self
+                        .substitution(v)
+                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
+                    actual,
+                    expectation_loc: expected_loc,
+                    actual_loc,
+                };
+                self.unify_eq(constraint)
+            }
+            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v) => {
+                let constraint = EqualityConstraint {
+                    expectation: expected,
+                    actual: self
+                        .substitution(v)
+                        .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
+                    expectation_loc: expected_loc,
+                    actual_loc,
+                };
+                self.unify_eq(constraint)
+            }
+            (HirTy::Variable(v), _) => {
+                if self.occurs_in(v, actual) {
+                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
+                        left: actual_loc,
+                        right: expected_loc,
+                    }));
+                }
+                self.substitutions.insert((v.depth, v.index), actual);
+                Ok(())
+            }
+            (_, HirTy::Variable(v)) => {
+                if self.occurs_in(v, expected) {
+                    return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
+                        left: expected_loc,
+                        right: actual_loc,
+                    }));
+                }
+                self.substitutions.insert((v.depth, v.index), expected);
+                Ok(())
+            }
+            (HirTy::Pointer(a), HirTy::Pointer(b)) => {
+                let constraint = EqualityConstraint {
+                    expectation: a.inner,
+                    expectation_loc: expected_loc,
+                    actual: b.inner,
+                    actual_loc,
+                };
+                self.unify_eq(constraint)
+            }
+            (HirTy::Integer32(_), HirTy::Integer32(_)) => Ok(()),
+            (HirTy::Boolean(_), HirTy::Boolean(_)) => Ok(()),
+            (HirTy::Unit(_), HirTy::Unit(_)) => Ok(()),
+            (HirTy::Function(definition), HirTy::Function(application)) => {
+                if definition.parameters.len() != application.parameters.len() {
+                    return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
+                        expected_ty: actual.format(),
+                        span: expected_loc,
+                    }));
+                }
+                let constraint = EqualityConstraint {
+                    expectation: definition.return_type,
+                    expectation_loc: expected_loc,
+                    actual: application.return_type,
+                    actual_loc,
+                };
+                self.unify_eq(constraint)?;
+                for (parameter, argument) in definition
+                    .parameters
+                    .iter()
+                    .zip(application.parameters.iter())
+                {
+                    let constraint = EqualityConstraint {
+                        expectation: parameter,
+                        expectation_loc: expected_loc,
+                        actual: argument,
+                        actual_loc,
+                    };
+                    self.unify_eq(constraint)?;
+                }
+                Ok(())
+            }
+            (HirTy::Uninitialized(_), _) | (_, HirTy::Uninitialized(_)) => {
+                ice!("tried to unify with uninitialized type")
+            }
+            (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
+                actual_loc,
+                expected_loc,
+                actual_type: rhs.format(),
+                expected_type: lhs.format(),
+            })),
+        }
+    }
+
+    /// Create a fresh type variable.
+    pub fn fresh_type_variable(&mut self) -> &'hir HirTy<'hir> {
+        let depth = self.type_binding_depth;
+        let index = self.type_binding_index;
+        let ty = self.arena.types().get_variable_ty(depth, index);
+        self.type_binding_index += 1;
+        self.substitutions.insert((depth, index), ty);
+        ty
     }
 }
