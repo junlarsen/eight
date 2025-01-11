@@ -108,22 +108,22 @@ impl<'hir> TypingContext<'hir> {
     }
 
     /// Substitute the type binding with the given name with the given type.
-    ///
-    /// Currently, shadowing type parameters is not allowed at all. This is also very often a bug in
-    /// user code when it happens, so it's OK to just deny it in the type checker.
     pub fn record_type_binding(
         &mut self,
         name: &str,
         span: Span,
         ty: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        if self.type_binding_context.find(name).is_some() {
-            return Err(HirError::TypeParameterShadowsExisting(
-                TypeParameterShadowsExisting {
-                    name: name.to_owned(),
-                    span,
-                },
-            ));
+        let current_depth = self.let_binding_context.depth();
+        if let Some((depth, _)) = self.type_binding_context.find_with_depth(name) {
+            if depth >= current_depth {
+                return Err(HirError::TypeParameterShadowsExisting(
+                    TypeParameterShadowsExisting {
+                        name: name.to_owned(),
+                        span,
+                    },
+                ));
+            }
         }
         self.type_binding_context.add(name, ty);
         Ok(())
@@ -261,7 +261,7 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         // We attempt to look up a local variable first. This is cheaper than attempting to
         // instantiate a generic function.
-        if let Some(local_ty) = self.let_binding_context.find(expr.name) {
+        if let Some(local_ty) = self.find_let_binding(expr.name) {
             self.constrain_eq(expectation, local_ty, expr.span, expr.name_span);
             return Ok(());
         }
@@ -289,10 +289,9 @@ impl<'hir> TypingContext<'hir> {
         // Otherwise, we need to instantiate the generic parameters of the function, and
         // substitute the parameters and return types if they refer to one of the generic
         // type parameters.
-        self.type_binding_context.enter_scope();
         for type_parameter in signature.type_parameters.iter() {
             let ty = self.fresh_type_variable();
-            self.type_binding_context.add(type_parameter.name, ty);
+            self.record_type_binding(type_parameter.name, type_parameter.span, ty)?;
         }
         // The types of the signature can refer to the type parameters at arbitrary depths,
         // e.g. `**T`, so we just recurse down to substitute.
