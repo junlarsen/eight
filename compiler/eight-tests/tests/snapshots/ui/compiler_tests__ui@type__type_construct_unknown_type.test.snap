@@ -1,0 +1,25 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for ui
+info:
+  program: eightc
+  args:
+    - tests/ui/type/type_construct_unknown_type.test
+input_file: compiler/eight-tests/tests/ui/type/type_construct_unknown_type.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::unknown_type
+
+  × UnknownType does not name a known type
+   ╭─[tests/ui/type/type_construct_unknown_type.test:2:15]
+ 1 │ fn test() {
+ 2 │   let k = new UnknownType {};
+   ·               ─────┬─────
+   ·                    ╰── could not find type UnknownType
+ 3 │ }
+   ╰────

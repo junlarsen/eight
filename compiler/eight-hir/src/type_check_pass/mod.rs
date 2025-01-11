@@ -653,6 +653,9 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirConstructExpr<'hir>,
     ) -> HirResult<()> {
+        // Nothing to re-assign here. This is just a check that the type that is being constructed
+        // actually exists.
+        Self::visit_type(cx, node.callee)?;
         node.ty = Self::visit_type(cx, node.ty)?;
         for arg in node.arguments.iter_mut() {
             Self::enter_expr(cx, arg.expr.as_mut())?;

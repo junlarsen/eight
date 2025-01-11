@@ -379,9 +379,8 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         let HirTy::Nominal(n) = expr.callee else {
-            ice!("construct expression callee is not a nominal type");
+            ice!("called infer_construct_expr on a type that doesn't exist");
         };
-        // TODO: Produce a proper diagnostic here
         let ty = self
             .module_query_db
             .query_struct_by_name(n.name)
@@ -831,13 +830,13 @@ impl<'hir> TypingContext<'hir> {
     pub fn unify_eq(
         &mut self,
         EqualityConstraint {
-            expectation: expected,
+            expectation,
             actual,
-            expectation_loc: expected_loc,
+            expectation_loc,
             actual_loc,
         }: EqualityConstraint<'hir>,
     ) -> HirResult<()> {
-        match (&expected, &actual) {
+        match (&expectation, &actual) {
             (HirTy::Variable(lhs), HirTy::Variable(rhs))
                 if lhs.depth == rhs.depth && lhs.index == rhs.index =>
             {
@@ -850,18 +849,18 @@ impl<'hir> TypingContext<'hir> {
                         .substitution(v)
                         .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
                     actual,
-                    expectation_loc: expected_loc,
+                    expectation_loc,
                     actual_loc,
                 };
                 self.unify_eq(constraint)
             }
             (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
-                    expectation: expected,
+                    expectation,
                     actual: self
                         .substitution(v)
                         .unwrap_or_else(|| ice!("unreachable: tested variable no longer exists")),
-                    expectation_loc: expected_loc,
+                    expectation_loc,
                     actual_loc,
                 };
                 self.unify_eq(constraint)
@@ -870,26 +869,26 @@ impl<'hir> TypingContext<'hir> {
                 if self.occurs_in(v, actual) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: actual_loc,
-                        right: expected_loc,
+                        right: expectation_loc,
                     }));
                 }
                 self.substitutions.insert((v.depth, v.index), actual);
                 Ok(())
             }
             (_, HirTy::Variable(v)) => {
-                if self.occurs_in(v, expected) {
+                if self.occurs_in(v, expectation) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
-                        left: expected_loc,
+                        left: expectation_loc,
                         right: actual_loc,
                     }));
                 }
-                self.substitutions.insert((v.depth, v.index), expected);
+                self.substitutions.insert((v.depth, v.index), expectation);
                 Ok(())
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {
                 let constraint = EqualityConstraint {
                     expectation: a.inner,
-                    expectation_loc: expected_loc,
+                    expectation_loc,
                     actual: b.inner,
                     actual_loc,
                 };
@@ -902,12 +901,12 @@ impl<'hir> TypingContext<'hir> {
                 if definition.parameters.len() != application.parameters.len() {
                     return Err(HirError::FunctionTypeMismatch(FunctionTypeMismatchError {
                         expected_ty: actual.format(),
-                        span: expected_loc,
+                        span: expectation_loc,
                     }));
                 }
                 let constraint = EqualityConstraint {
                     expectation: definition.return_type,
-                    expectation_loc: expected_loc,
+                    expectation_loc,
                     actual: application.return_type,
                     actual_loc,
                 };
@@ -919,7 +918,7 @@ impl<'hir> TypingContext<'hir> {
                 {
                     let constraint = EqualityConstraint {
                         expectation: parameter,
-                        expectation_loc: expected_loc,
+                        expectation_loc,
                         actual: argument,
                         actual_loc,
                     };
@@ -932,7 +931,7 @@ impl<'hir> TypingContext<'hir> {
             }
             (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
                 actual_loc,
-                expected_loc,
+                expected_loc: expectation_loc,
                 actual_type: rhs.format(),
                 expected_type: lhs.format(),
             })),
