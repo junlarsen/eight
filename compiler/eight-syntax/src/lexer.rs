@@ -134,8 +134,11 @@ impl<'a> Lexer<'a> {
             ',' => Ok(Token::new(TokenType::Comma, Span::pos(pos_before_eat))),
             '+' => Ok(Token::new(TokenType::Plus, Span::pos(pos_before_eat))),
             '*' => Ok(Token::new(TokenType::Star, Span::pos(pos_before_eat))),
-            '/' => Ok(Token::new(TokenType::Slash, Span::pos(pos_before_eat))),
             '%' => Ok(Token::new(TokenType::Percent, Span::pos(pos_before_eat))),
+            '/' => match self.input.peek() {
+                Some('/') => self.produce_comment(ch),
+                _ => Ok(Token::new(TokenType::Slash, Span::pos(pos_before_eat))),
+            },
             // Double-character operations
             '=' => self
                 .input
@@ -236,6 +239,27 @@ impl<'a> Lexer<'a> {
         })?;
         Ok(Token::new(
             TokenType::IntegerLiteral(integer),
+            Span::new(start..self.pos()),
+        ))
+    }
+
+    /// Produce a comment token from the input stream.
+    fn produce_comment(&mut self, ch: char) -> ParseResult<Token> {
+        // The incoming ch has already been consumed, so we offset by 1
+        let start = self.input.pos() - 1;
+        let mut buf = vec![ch, self.input.next()?];
+
+        // Must also consider that the newline doesn't come if the comment is the last token in the
+        // file.
+        while self.input.peek() != Some(&'\n') && self.input.peek().is_some() {
+            let ch = self.input.next().unwrap_or_else(|_| {
+                ice!("lexer should never fail to produce an already peeked token")
+            });
+            buf.push(ch);
+        }
+        let value = String::from_iter(buf);
+        Ok(Token::new(
+            TokenType::Comment(value),
             Span::new(start..self.pos()),
         ))
     }
@@ -424,5 +448,21 @@ mod tests {
 
         assert_failure!("|-", Err(ParseError::UnexpectedCharacter(UnexpectedCharacterError { ch, span })) if ch == '-' && span == Span::new(1..2));
         assert_failure!("|", Err(ParseError::UnfinishedToken(UnfinishedTokenError { span, expected })) if span == Span::new(0..1) && expected == '|');
+    }
+
+    #[test]
+    fn test_parse_comment() {
+        assert_lexer_parse!(
+            "// foo",
+            Token::new(TokenType::Comment("// foo".to_string()), Span::new(0..6))
+        );
+        // assert_lexer_parse!(
+        //     "// foo\n",
+        //     Token::new(TokenType::Comment("// foo".to_string()), Span::new(0..6))
+        // );
+        // assert_lexer_parse!(
+        //     "// foo\n// bar",
+        //     Token::new(TokenType::Comment("// foo".to_string()), Span::new(0..6))
+        // );
     }
 }

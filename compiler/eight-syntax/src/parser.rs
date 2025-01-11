@@ -34,12 +34,13 @@ impl<'a> ParserInput<'a> {
     /// the lexer reaches the end of input.
     pub fn lookahead(&mut self) -> ParseResult<Option<&Token>> {
         if self.la.is_none() {
-            self.la = match self.lexer.produce() {
-                Ok(tok) => Some(tok),
-                // If the end of source is reached, we might be able to recover. For example, if
-                // statements may or may not have an `else` after them.
-                Err(ParseError::UnexpectedEndOfFile(_)) => None,
-                Err(err) => return Err(err),
+            self.la = loop {
+                match self.lexer.produce() {
+                    Ok(tok) if matches!(tok.ty, TokenType::Comment(_)) => continue,
+                    Ok(tok) => break Some(tok),
+                    Err(ParseError::UnexpectedEndOfFile(_)) => break None,
+                    Err(err) => return Err(err),
+                }
             };
         }
         Ok(self.la.as_ref())
@@ -53,7 +54,12 @@ impl<'a> ParserInput<'a> {
         if let Some(token) = self.la.take() {
             return Ok(token);
         }
-        self.lexer.produce()
+        loop {
+            match self.lexer.produce() {
+                Ok(tok) if matches!(tok.ty, TokenType::Comment(_)) => continue,
+                e => break e,
+            }
+        }
     }
 }
 
@@ -2038,6 +2044,21 @@ mod tests {
                     span, ..
                 }) if span.low == 8 && span.high == 36)
             );
+        });
+    }
+
+    #[test]
+    fn test_parse_comment() {
+        assert_parse!("struct Module {// foo\n}", |p: &mut Parser| {
+            let production = p.parse_struct_item();
+            let production = assert_ok!(production);
+            assert_eq!(production.span, Span::new(0..23));
+        });
+
+        assert_parse!("struct Module // foo\n{}", |p: &mut Parser| {
+            let production = p.parse_struct_item();
+            let production = assert_ok!(production);
+            assert_eq!(production.span, Span::new(0..23));
         });
     }
 }
