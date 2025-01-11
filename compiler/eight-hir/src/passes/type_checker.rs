@@ -12,7 +12,7 @@ use crate::expr::{
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirStruct, HirTrait};
+use crate::item::{HirFunction, HirInstance, HirStruct, HirTrait};
 use crate::query::HirQueryDatabase;
 use crate::signature::HirModuleSignature;
 use crate::stmt::{
@@ -894,11 +894,13 @@ impl HirModuleTypeCheckerPass {
         Self::visit_module_functions(cx, &mut module.body.functions)?;
         Self::visit_module_structs(cx, &mut module.body.structs)?;
         Self::visit_module_traits(cx, &mut module.body.traits)?;
+        for instance in module.body.instances.iter_mut() {
+            Self::visit_instance(cx, instance)?;
+        }
         cx.locals.leave_scope();
         Ok(())
     }
 
-    /// Traverse the functions in the given module.
     pub fn visit_module_functions<'hir>(
         cx: &mut TypingContext<'hir>,
         functions: &mut BTreeMap<&'hir str, HirFunction<'hir>>,
@@ -909,7 +911,6 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
-    /// Traverse the structs in the given module.
     pub fn visit_module_structs<'hir>(
         cx: &mut TypingContext<'hir>,
         structs: &mut BTreeMap<&'hir str, HirStruct<'hir>>,
@@ -920,7 +921,6 @@ impl HirModuleTypeCheckerPass {
         Ok(())
     }
 
-    /// Traverse the traits in the given module.
     pub fn visit_module_traits<'hir>(
         cx: &mut TypingContext<'hir>,
         traits: &mut BTreeMap<&'hir str, HirTrait<'hir>>,
@@ -1039,6 +1039,7 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirTrait<'hir>,
     ) -> HirResult<()> {
         // Push the trait type parameters onto the substitution stack
+        let depth_upon_function_entry = cx.type_binding_depth;
         cx.local_type_parameter_substitutions.enter_scope();
         for type_parameter in node.signature.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
@@ -1064,6 +1065,59 @@ impl HirModuleTypeCheckerPass {
             cx.local_type_parameter_substitutions.leave_scope();
         }
         cx.local_type_parameter_substitutions.leave_scope();
+        // Only clear substitutions that are related to the current De Bruijn depth. This ensures
+        // that trait substitutions are not cleared when visiting methods in a trait with multiple
+        // methods.
+        cx.substitutions
+            .retain(|(depth, _), _| *depth >= depth_upon_function_entry);
+        Ok(())
+    }
+
+    /// Visit an instance.
+    ///
+    /// An instance essentially only acts as a type scope for its methods. That means we can simply
+    /// call `visit_function` on each method once we've taken care of the prep-work for the trait
+    /// itself.
+    pub fn visit_instance<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirInstance<'hir>,
+    ) -> HirResult<()> {
+        // We acquire the trait's type parameters, and match the substitutions to the type arguments
+        // the current instance instantiates them with.
+        cx.local_type_parameter_substitutions.enter_scope();
+        cx.type_binding_depth += 1;
+        cx.type_binding_index = 0;
+        for (argument_index, type_argument) in node.type_arguments.iter().enumerate() {
+            // Match this type argument to the type parameters in the trait.
+            let r#trait = cx
+                .module_query_db
+                .query_trait_by_name(node.name)
+                .unwrap_or_else(|| ice!(format!("trait {} not found", node.name)));
+            let Some(type_parameter) = r#trait.type_parameters.get(argument_index) else {
+                ice!(format!(
+                    "type parameter {} not found in trait {}",
+                    type_argument, node.name
+                ));
+            };
+            // Hack around the borrow checker. This returns the exact same value, but the lifetime
+            // of the reference is not tied to `r#trait` anymore.
+            let name = cx.arena.names().get(type_parameter.name);
+            debug_assert!(std::ptr::eq(type_parameter.name, name));
+            let substitution = cx.fresh_type_variable();
+            cx.local_type_parameter_substitutions
+                .add(name, substitution);
+        }
+
+        // Traverse down each of the methods in the instance.
+        for method in node.members.iter_mut() {
+            Self::visit_function(cx, method)?;
+        }
+
+        cx.type_binding_depth -= 1;
+        cx.type_binding_index = 0;
+        cx.local_type_parameter_substitutions.leave_scope();
+        // TODO: If we ever support generics on a higher level, we need to do the same retrain as we
+        //   do for functions.
         cx.substitutions.clear();
         Ok(())
     }

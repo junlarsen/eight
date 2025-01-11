@@ -546,7 +546,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
         node: &'ast AstInstanceItem,
     ) -> HirResult<HirInstance<'hir>> {
         let name = self.arena.names().get(&node.name.name);
-        let instantiation_type_parameters = node
+        let type_arguments = node
             .instantiation_type_parameters
             .iter()
             .map(|t| self.visit_type(t))
@@ -560,7 +560,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
             span: node.span,
             name,
             name_span: node.name.span,
-            type_arguments: instantiation_type_parameters.clone(),
+            type_arguments: type_arguments.clone(),
             trait_name: name,
             trait_name_span: node.name.span,
             methods: members.iter().map(|m| (m.name, m.signature)).collect(),
@@ -569,7 +569,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
             span: node.span,
             name,
             name_span: node.name.span,
-            instantiation_type_parameters,
+            type_arguments,
             members,
             signature,
         };

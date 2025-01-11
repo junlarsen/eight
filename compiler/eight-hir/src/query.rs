@@ -1,4 +1,4 @@
-use crate::signature::{HirInstanceApiSignature, HirModuleSignature};
+use crate::signature::{HirInstanceApiSignature, HirModuleSignature, HirTraitApiSignature};
 use crate::ty::HirTy;
 use eight_diagnostics::ice;
 use std::collections::HashMap;
@@ -89,5 +89,10 @@ impl<'hir> HirQueryDatabase<'hir> {
             }
         }
         None
+    }
+
+    /// Query the database for a trait by its name.
+    pub fn query_trait_by_name(&self, name: &str) -> Option<&HirTraitApiSignature> {
+        self.sig.traits.get(name).copied()
     }
 }

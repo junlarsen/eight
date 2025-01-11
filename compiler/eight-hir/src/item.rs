@@ -82,7 +82,7 @@ pub struct HirInstance<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
-    pub instantiation_type_parameters: Vec<&'hir HirTy<'hir>>,
+    pub type_arguments: Vec<&'hir HirTy<'hir>>,
     pub members: Vec<HirFunction<'hir>>,
     pub signature: &'hir HirInstanceApiSignature<'hir>,
 }
