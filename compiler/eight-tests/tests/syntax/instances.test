@@ -15,6 +15,38 @@ intrinsic_fn i32_ge(a: i32, b: i32) -> bool;
 intrinsic_fn i32_lte(a: i32, b: i32) -> bool;
 intrinsic_fn i32_gte(a: i32, b: i32) -> bool;
 
+trait Ord<A, B> {
+  fn lt(a: A, b: B) -> bool;
+  fn gt(a: A, b: B) -> bool;
+  fn le(a: A, b: B) -> bool;
+  fn ge(a: A, b: B) -> bool;
+}
+
+trait Add<A, B, R> {
+  fn add(a: A, b: B) -> R;
+}
+
+trait Sub<A, B, R> {
+  fn sub(a: A, b: B) -> R;
+}
+
+trait Mul<A, B, R> {
+  fn mul(a: A, b: B) -> R;
+}
+
+trait Div<A, B, R> {
+  fn div(a: A, b: B) -> R;
+}
+
+trait Rem<A, B, R> {
+  fn rem(a: A, b: B) -> R;
+}
+
+trait Eq<A, B> {
+  fn eq(a: A, b: B) -> bool;
+  fn neq(a: A, b: B) -> bool;
+}
+
 instance Ord<i32, i32> {
   fn lt(a: i32, b: i32) -> bool {
     return i32_lt(a, b);

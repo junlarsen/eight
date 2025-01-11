@@ -807,1243 +807,1703 @@ exit_code: 0
                 ),
             )),
         )),
-        Instance((
+        Trait((
             span: (
                 low: 611,
-                high: 889,
+                high: 746,
             ),
             name: (
                 name: "Ord",
                 span: (
-                    low: 620,
-                    high: 623,
+                    low: 617,
+                    high: 620,
                 ),
             ),
-            instantiation_type_parameters: [
-                Integer32((
+            type_parameters: [
+                (
+                    span: (
+                        low: 621,
+                        high: 622,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 621,
+                            high: 622,
+                        ),
+                    ),
+                ),
+                (
                     span: (
                         low: 624,
-                        high: 627,
+                        high: 625,
                     ),
-                )),
-                Integer32((
-                    span: (
-                        low: 629,
-                        high: 632,
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 624,
+                            high: 625,
+                        ),
                     ),
-                )),
+                ),
             ],
             members: [
                 (
                     span: (
-                        low: 638,
-                        high: 698,
+                        low: 631,
+                        high: 657,
                     ),
                     name: (
                         name: "lt",
                         span: (
-                            low: 641,
-                            high: 643,
+                            low: 634,
+                            high: 636,
                         ),
                     ),
+                    type_parameters: [],
                     parameters: [
                         (
                             span: (
-                                low: 644,
-                                high: 650,
+                                low: 637,
+                                high: 641,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 644,
-                                    high: 645,
+                                    low: 637,
+                                    high: 638,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 647,
-                                    high: 650,
+                                    low: 640,
+                                    high: 641,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 640,
+                                        high: 641,
+                                    ),
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 652,
-                                high: 658,
+                                low: 643,
+                                high: 647,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 652,
-                                    high: 653,
+                                    low: 643,
+                                    high: 644,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 655,
-                                    high: 658,
+                                    low: 646,
+                                    high: 647,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 646,
+                                        high: 647,
+                                    ),
                                 ),
                             )),
                         ),
                     ],
-                    type_parameters: [],
                     return_type: Some(Boolean((
                         span: (
-                            low: 663,
-                            high: 667,
+                            low: 652,
+                            high: 656,
                         ),
                     ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 674,
-                                high: 694,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 681,
-                                    high: 693,
-                                ),
-                                callee: Reference((
-                                    span: (
-                                        low: 681,
-                                        high: 687,
-                                    ),
-                                    name: (
-                                        name: "i32_lt",
-                                        span: (
-                                            low: 681,
-                                            high: 687,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 688,
-                                            high: 689,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 688,
-                                                high: 689,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 691,
-                                            high: 692,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 691,
-                                                high: 692,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
                 ),
                 (
                     span: (
-                        low: 701,
-                        high: 761,
+                        low: 660,
+                        high: 686,
                     ),
                     name: (
                         name: "gt",
                         span: (
-                            low: 704,
-                            high: 706,
+                            low: 663,
+                            high: 665,
                         ),
                     ),
+                    type_parameters: [],
                     parameters: [
                         (
                             span: (
-                                low: 707,
-                                high: 713,
+                                low: 666,
+                                high: 670,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 707,
-                                    high: 708,
+                                    low: 666,
+                                    high: 667,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 710,
-                                    high: 713,
+                                    low: 669,
+                                    high: 670,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 669,
+                                        high: 670,
+                                    ),
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 715,
-                                high: 721,
+                                low: 672,
+                                high: 676,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 715,
-                                    high: 716,
+                                    low: 672,
+                                    high: 673,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 718,
-                                    high: 721,
+                                    low: 675,
+                                    high: 676,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 675,
+                                        high: 676,
+                                    ),
                                 ),
                             )),
                         ),
                     ],
-                    type_parameters: [],
                     return_type: Some(Boolean((
                         span: (
-                            low: 726,
-                            high: 730,
+                            low: 681,
+                            high: 685,
                         ),
                     ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 737,
-                                high: 757,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 744,
-                                    high: 756,
-                                ),
-                                callee: Reference((
-                                    span: (
-                                        low: 744,
-                                        high: 750,
-                                    ),
-                                    name: (
-                                        name: "i32_gt",
-                                        span: (
-                                            low: 744,
-                                            high: 750,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 751,
-                                            high: 752,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 751,
-                                                high: 752,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 754,
-                                            high: 755,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 754,
-                                                high: 755,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
                 ),
                 (
                     span: (
-                        low: 764,
-                        high: 824,
+                        low: 689,
+                        high: 715,
                     ),
                     name: (
                         name: "le",
                         span: (
-                            low: 767,
-                            high: 769,
+                            low: 692,
+                            high: 694,
                         ),
                     ),
+                    type_parameters: [],
                     parameters: [
                         (
                             span: (
-                                low: 770,
-                                high: 776,
+                                low: 695,
+                                high: 699,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 770,
-                                    high: 771,
+                                    low: 695,
+                                    high: 696,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 773,
-                                    high: 776,
+                                    low: 698,
+                                    high: 699,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 698,
+                                        high: 699,
+                                    ),
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 778,
-                                high: 784,
+                                low: 701,
+                                high: 705,
                             ),
                             name: (
                                 name: "b",
+                                span: (
+                                    low: 701,
+                                    high: 702,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 704,
+                                    high: 705,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 704,
+                                        high: 705,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 710,
+                            high: 714,
+                        ),
+                    ))),
+                ),
+                (
+                    span: (
+                        low: 718,
+                        high: 744,
+                    ),
+                    name: (
+                        name: "ge",
+                        span: (
+                            low: 721,
+                            high: 723,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 724,
+                                high: 728,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 724,
+                                    high: 725,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 727,
+                                    high: 728,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 727,
+                                        high: 728,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 730,
+                                high: 734,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 730,
+                                    high: 731,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 733,
+                                    high: 734,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 733,
+                                        high: 734,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 739,
+                            high: 743,
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 748,
+                high: 797,
+            ),
+            name: (
+                name: "Add",
+                span: (
+                    low: 754,
+                    high: 757,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 758,
+                        high: 759,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 758,
+                            high: 759,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 761,
+                        high: 762,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 761,
+                            high: 762,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 764,
+                        high: 765,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 764,
+                            high: 765,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 771,
+                        high: 795,
+                    ),
+                    name: (
+                        name: "add",
+                        span: (
+                            low: 774,
+                            high: 777,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 778,
+                                high: 782,
+                            ),
+                            name: (
+                                name: "a",
                                 span: (
                                     low: 778,
                                     high: 779,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
                                     low: 781,
-                                    high: 784,
+                                    high: 782,
                                 ),
-                            )),
-                        ),
-                    ],
-                    type_parameters: [],
-                    return_type: Some(Boolean((
-                        span: (
-                            low: 789,
-                            high: 793,
-                        ),
-                    ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 800,
-                                high: 820,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 807,
-                                    high: 819,
-                                ),
-                                callee: Reference((
+                                name: (
+                                    name: "A",
                                     span: (
-                                        low: 807,
-                                        high: 813,
+                                        low: 781,
+                                        high: 782,
                                     ),
-                                    name: (
-                                        name: "i32_le",
-                                        span: (
-                                            low: 807,
-                                            high: 813,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 814,
-                                            high: 815,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 814,
-                                                high: 815,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 817,
-                                            high: 818,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 817,
-                                                high: 818,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
-                ),
-                (
-                    span: (
-                        low: 827,
-                        high: 887,
-                    ),
-                    name: (
-                        name: "ge",
-                        span: (
-                            low: 830,
-                            high: 832,
-                        ),
-                    ),
-                    parameters: [
-                        (
-                            span: (
-                                low: 833,
-                                high: 839,
-                            ),
-                            name: (
-                                name: "a",
-                                span: (
-                                    low: 833,
-                                    high: 834,
-                                ),
-                            ),
-                            ty: Integer32((
-                                span: (
-                                    low: 836,
-                                    high: 839,
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 841,
-                                high: 847,
+                                low: 784,
+                                high: 788,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 841,
-                                    high: 842,
+                                    low: 784,
+                                    high: 785,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 844,
-                                    high: 847,
+                                    low: 787,
+                                    high: 788,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 787,
+                                        high: 788,
+                                    ),
                                 ),
                             )),
                         ),
                     ],
-                    type_parameters: [],
-                    return_type: Some(Boolean((
+                    return_type: Some(Named((
                         span: (
-                            low: 852,
-                            high: 856,
+                            low: 793,
+                            high: 794,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 793,
+                                high: 794,
+                            ),
                         ),
                     ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 863,
-                                high: 883,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 870,
-                                    high: 882,
-                                ),
-                                callee: Reference((
-                                    span: (
-                                        low: 870,
-                                        high: 876,
-                                    ),
-                                    name: (
-                                        name: "i32_ge",
-                                        span: (
-                                            low: 870,
-                                            high: 876,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 877,
-                                            high: 878,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 877,
-                                                high: 878,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 880,
-                                            high: 881,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 880,
-                                                high: 881,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
                 ),
             ],
         )),
-        Instance((
+        Trait((
             span: (
-                low: 891,
-                high: 986,
-            ),
-            name: (
-                name: "Add",
-                span: (
-                    low: 900,
-                    high: 903,
-                ),
-            ),
-            instantiation_type_parameters: [
-                Integer32((
-                    span: (
-                        low: 904,
-                        high: 907,
-                    ),
-                )),
-                Integer32((
-                    span: (
-                        low: 909,
-                        high: 912,
-                    ),
-                )),
-                Integer32((
-                    span: (
-                        low: 914,
-                        high: 917,
-                    ),
-                )),
-            ],
-            members: [
-                (
-                    span: (
-                        low: 923,
-                        high: 984,
-                    ),
-                    name: (
-                        name: "add",
-                        span: (
-                            low: 926,
-                            high: 929,
-                        ),
-                    ),
-                    parameters: [
-                        (
-                            span: (
-                                low: 930,
-                                high: 936,
-                            ),
-                            name: (
-                                name: "a",
-                                span: (
-                                    low: 930,
-                                    high: 931,
-                                ),
-                            ),
-                            ty: Integer32((
-                                span: (
-                                    low: 933,
-                                    high: 936,
-                                ),
-                            )),
-                        ),
-                        (
-                            span: (
-                                low: 938,
-                                high: 944,
-                            ),
-                            name: (
-                                name: "b",
-                                span: (
-                                    low: 938,
-                                    high: 939,
-                                ),
-                            ),
-                            ty: Integer32((
-                                span: (
-                                    low: 941,
-                                    high: 944,
-                                ),
-                            )),
-                        ),
-                    ],
-                    type_parameters: [],
-                    return_type: Some(Integer32((
-                        span: (
-                            low: 949,
-                            high: 952,
-                        ),
-                    ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 959,
-                                high: 980,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 966,
-                                    high: 979,
-                                ),
-                                callee: Reference((
-                                    span: (
-                                        low: 966,
-                                        high: 973,
-                                    ),
-                                    name: (
-                                        name: "i32_add",
-                                        span: (
-                                            low: 966,
-                                            high: 973,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 974,
-                                            high: 975,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 974,
-                                                high: 975,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 977,
-                                            high: 978,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 977,
-                                                high: 978,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
-                ),
-            ],
-        )),
-        Instance((
-            span: (
-                low: 988,
-                high: 1083,
+                low: 799,
+                high: 848,
             ),
             name: (
                 name: "Sub",
                 span: (
-                    low: 997,
-                    high: 1000,
+                    low: 805,
+                    high: 808,
                 ),
             ),
-            instantiation_type_parameters: [
-                Integer32((
+            type_parameters: [
+                (
                     span: (
-                        low: 1001,
-                        high: 1004,
+                        low: 809,
+                        high: 810,
                     ),
-                )),
-                Integer32((
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 809,
+                            high: 810,
+                        ),
+                    ),
+                ),
+                (
                     span: (
-                        low: 1006,
-                        high: 1009,
+                        low: 812,
+                        high: 813,
                     ),
-                )),
-                Integer32((
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 812,
+                            high: 813,
+                        ),
+                    ),
+                ),
+                (
                     span: (
-                        low: 1011,
-                        high: 1014,
+                        low: 815,
+                        high: 816,
                     ),
-                )),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 815,
+                            high: 816,
+                        ),
+                    ),
+                ),
             ],
             members: [
                 (
                     span: (
-                        low: 1020,
-                        high: 1081,
+                        low: 822,
+                        high: 846,
                     ),
                     name: (
                         name: "sub",
                         span: (
-                            low: 1023,
-                            high: 1026,
+                            low: 825,
+                            high: 828,
                         ),
                     ),
+                    type_parameters: [],
                     parameters: [
                         (
                             span: (
-                                low: 1027,
-                                high: 1033,
+                                low: 829,
+                                high: 833,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 1027,
-                                    high: 1028,
+                                    low: 829,
+                                    high: 830,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 1030,
-                                    high: 1033,
+                                    low: 832,
+                                    high: 833,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 832,
+                                        high: 833,
+                                    ),
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 1035,
-                                high: 1041,
+                                low: 835,
+                                high: 839,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 1035,
-                                    high: 1036,
+                                    low: 835,
+                                    high: 836,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 1038,
-                                    high: 1041,
+                                    low: 838,
+                                    high: 839,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 838,
+                                        high: 839,
+                                    ),
                                 ),
                             )),
                         ),
                     ],
-                    type_parameters: [],
-                    return_type: Some(Integer32((
+                    return_type: Some(Named((
                         span: (
-                            low: 1046,
-                            high: 1049,
+                            low: 844,
+                            high: 845,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 844,
+                                high: 845,
+                            ),
                         ),
                     ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 1056,
-                                high: 1077,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 1063,
-                                    high: 1076,
-                                ),
-                                callee: Reference((
-                                    span: (
-                                        low: 1063,
-                                        high: 1070,
-                                    ),
-                                    name: (
-                                        name: "i32_sub",
-                                        span: (
-                                            low: 1063,
-                                            high: 1070,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 1071,
-                                            high: 1072,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 1071,
-                                                high: 1072,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 1074,
-                                            high: 1075,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 1074,
-                                                high: 1075,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
                 ),
             ],
         )),
-        Instance((
+        Trait((
             span: (
-                low: 1085,
-                high: 1180,
+                low: 850,
+                high: 899,
             ),
             name: (
                 name: "Mul",
                 span: (
-                    low: 1094,
-                    high: 1097,
+                    low: 856,
+                    high: 859,
                 ),
             ),
-            instantiation_type_parameters: [
-                Integer32((
+            type_parameters: [
+                (
                     span: (
-                        low: 1098,
-                        high: 1101,
+                        low: 860,
+                        high: 861,
                     ),
-                )),
-                Integer32((
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 860,
+                            high: 861,
+                        ),
+                    ),
+                ),
+                (
                     span: (
-                        low: 1103,
-                        high: 1106,
+                        low: 863,
+                        high: 864,
                     ),
-                )),
-                Integer32((
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 863,
+                            high: 864,
+                        ),
+                    ),
+                ),
+                (
                     span: (
-                        low: 1108,
-                        high: 1111,
+                        low: 866,
+                        high: 867,
                     ),
-                )),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 866,
+                            high: 867,
+                        ),
+                    ),
+                ),
             ],
             members: [
                 (
                     span: (
-                        low: 1117,
-                        high: 1178,
+                        low: 873,
+                        high: 897,
                     ),
                     name: (
                         name: "mul",
                         span: (
-                            low: 1120,
-                            high: 1123,
+                            low: 876,
+                            high: 879,
                         ),
                     ),
+                    type_parameters: [],
                     parameters: [
                         (
                             span: (
-                                low: 1124,
-                                high: 1130,
+                                low: 880,
+                                high: 884,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 1124,
-                                    high: 1125,
+                                    low: 880,
+                                    high: 881,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 1127,
-                                    high: 1130,
+                                    low: 883,
+                                    high: 884,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 883,
+                                        high: 884,
+                                    ),
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 1132,
-                                high: 1138,
+                                low: 886,
+                                high: 890,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 1132,
-                                    high: 1133,
+                                    low: 886,
+                                    high: 887,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 1135,
-                                    high: 1138,
+                                    low: 889,
+                                    high: 890,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 889,
+                                        high: 890,
+                                    ),
                                 ),
                             )),
                         ),
                     ],
-                    type_parameters: [],
-                    return_type: Some(Integer32((
+                    return_type: Some(Named((
                         span: (
-                            low: 1143,
-                            high: 1146,
+                            low: 895,
+                            high: 896,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 895,
+                                high: 896,
+                            ),
                         ),
                     ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 1153,
-                                high: 1174,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 1160,
-                                    high: 1173,
-                                ),
-                                callee: Reference((
-                                    span: (
-                                        low: 1160,
-                                        high: 1167,
-                                    ),
-                                    name: (
-                                        name: "i32_mul",
-                                        span: (
-                                            low: 1160,
-                                            high: 1167,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 1168,
-                                            high: 1169,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 1168,
-                                                high: 1169,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 1171,
-                                            high: 1172,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 1171,
-                                                high: 1172,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
                 ),
             ],
         )),
-        Instance((
+        Trait((
             span: (
-                low: 1182,
-                high: 1277,
+                low: 901,
+                high: 950,
             ),
             name: (
                 name: "Div",
                 span: (
-                    low: 1191,
-                    high: 1194,
+                    low: 907,
+                    high: 910,
                 ),
             ),
-            instantiation_type_parameters: [
-                Integer32((
+            type_parameters: [
+                (
                     span: (
-                        low: 1195,
-                        high: 1198,
+                        low: 911,
+                        high: 912,
                     ),
-                )),
-                Integer32((
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 911,
+                            high: 912,
+                        ),
+                    ),
+                ),
+                (
                     span: (
-                        low: 1200,
-                        high: 1203,
+                        low: 914,
+                        high: 915,
                     ),
-                )),
-                Integer32((
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 914,
+                            high: 915,
+                        ),
+                    ),
+                ),
+                (
                     span: (
-                        low: 1205,
-                        high: 1208,
+                        low: 917,
+                        high: 918,
                     ),
-                )),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 917,
+                            high: 918,
+                        ),
+                    ),
+                ),
             ],
             members: [
                 (
                     span: (
-                        low: 1214,
-                        high: 1275,
+                        low: 924,
+                        high: 948,
                     ),
                     name: (
                         name: "div",
                         span: (
-                            low: 1217,
-                            high: 1220,
+                            low: 927,
+                            high: 930,
                         ),
                     ),
+                    type_parameters: [],
                     parameters: [
                         (
                             span: (
-                                low: 1221,
-                                high: 1227,
+                                low: 931,
+                                high: 935,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 1221,
-                                    high: 1222,
+                                    low: 931,
+                                    high: 932,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 1224,
-                                    high: 1227,
+                                    low: 934,
+                                    high: 935,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 934,
+                                        high: 935,
+                                    ),
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 1229,
-                                high: 1235,
+                                low: 937,
+                                high: 941,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 1229,
-                                    high: 1230,
+                                    low: 937,
+                                    high: 938,
                                 ),
                             ),
-                            ty: Integer32((
+                            ty: Named((
                                 span: (
-                                    low: 1232,
-                                    high: 1235,
+                                    low: 940,
+                                    high: 941,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 940,
+                                        high: 941,
+                                    ),
                                 ),
                             )),
                         ),
                     ],
-                    type_parameters: [],
-                    return_type: Some(Integer32((
+                    return_type: Some(Named((
                         span: (
-                            low: 1240,
-                            high: 1243,
+                            low: 946,
+                            high: 947,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 946,
+                                high: 947,
+                            ),
                         ),
                     ))),
-                    body: [
-                        Return((
-                            span: (
-                                low: 1250,
-                                high: 1271,
-                            ),
-                            value: Some(Call((
-                                span: (
-                                    low: 1257,
-                                    high: 1270,
-                                ),
-                                callee: Reference((
-                                    span: (
-                                        low: 1257,
-                                        high: 1264,
-                                    ),
-                                    name: (
-                                        name: "i32_div",
-                                        span: (
-                                            low: 1257,
-                                            high: 1264,
-                                        ),
-                                    ),
-                                )),
-                                arguments: [
-                                    Reference((
-                                        span: (
-                                            low: 1265,
-                                            high: 1266,
-                                        ),
-                                        name: (
-                                            name: "a",
-                                            span: (
-                                                low: 1265,
-                                                high: 1266,
-                                            ),
-                                        ),
-                                    )),
-                                    Reference((
-                                        span: (
-                                            low: 1268,
-                                            high: 1269,
-                                        ),
-                                        name: (
-                                            name: "b",
-                                            span: (
-                                                low: 1268,
-                                                high: 1269,
-                                            ),
-                                        ),
-                                    )),
-                                ],
-                                type_arguments: [],
-                            ))),
-                        )),
-                    ],
                 ),
             ],
         )),
-        Instance((
+        Trait((
             span: (
-                low: 1279,
-                high: 1374,
+                low: 952,
+                high: 1001,
             ),
             name: (
                 name: "Rem",
                 span: (
-                    low: 1288,
-                    high: 1291,
+                    low: 958,
+                    high: 961,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 962,
+                        high: 963,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 962,
+                            high: 963,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 965,
+                        high: 966,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 965,
+                            high: 966,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 968,
+                        high: 969,
+                    ),
+                    name: (
+                        name: "R",
+                        span: (
+                            low: 968,
+                            high: 969,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 975,
+                        high: 999,
+                    ),
+                    name: (
+                        name: "rem",
+                        span: (
+                            low: 978,
+                            high: 981,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 982,
+                                high: 986,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 982,
+                                    high: 983,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 985,
+                                    high: 986,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 985,
+                                        high: 986,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 988,
+                                high: 992,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 988,
+                                    high: 989,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 991,
+                                    high: 992,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 991,
+                                        high: 992,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Named((
+                        span: (
+                            low: 997,
+                            high: 998,
+                        ),
+                        name: (
+                            name: "R",
+                            span: (
+                                low: 997,
+                                high: 998,
+                            ),
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Trait((
+            span: (
+                low: 1003,
+                high: 1080,
+            ),
+            name: (
+                name: "Eq",
+                span: (
+                    low: 1009,
+                    high: 1011,
+                ),
+            ),
+            type_parameters: [
+                (
+                    span: (
+                        low: 1012,
+                        high: 1013,
+                    ),
+                    name: (
+                        name: "A",
+                        span: (
+                            low: 1012,
+                            high: 1013,
+                        ),
+                    ),
+                ),
+                (
+                    span: (
+                        low: 1015,
+                        high: 1016,
+                    ),
+                    name: (
+                        name: "B",
+                        span: (
+                            low: 1015,
+                            high: 1016,
+                        ),
+                    ),
+                ),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 1022,
+                        high: 1048,
+                    ),
+                    name: (
+                        name: "eq",
+                        span: (
+                            low: 1025,
+                            high: 1027,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 1028,
+                                high: 1032,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1028,
+                                    high: 1029,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 1031,
+                                    high: 1032,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 1031,
+                                        high: 1032,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1034,
+                                high: 1038,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1034,
+                                    high: 1035,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 1037,
+                                    high: 1038,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 1037,
+                                        high: 1038,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 1043,
+                            high: 1047,
+                        ),
+                    ))),
+                ),
+                (
+                    span: (
+                        low: 1051,
+                        high: 1078,
+                    ),
+                    name: (
+                        name: "neq",
+                        span: (
+                            low: 1054,
+                            high: 1057,
+                        ),
+                    ),
+                    type_parameters: [],
+                    parameters: [
+                        (
+                            span: (
+                                low: 1058,
+                                high: 1062,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1058,
+                                    high: 1059,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 1061,
+                                    high: 1062,
+                                ),
+                                name: (
+                                    name: "A",
+                                    span: (
+                                        low: 1061,
+                                        high: 1062,
+                                    ),
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1064,
+                                high: 1068,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1064,
+                                    high: 1065,
+                                ),
+                            ),
+                            ty: Named((
+                                span: (
+                                    low: 1067,
+                                    high: 1068,
+                                ),
+                                name: (
+                                    name: "B",
+                                    span: (
+                                        low: 1067,
+                                        high: 1068,
+                                    ),
+                                ),
+                            )),
+                        ),
+                    ],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 1073,
+                            high: 1077,
+                        ),
+                    ))),
+                ),
+            ],
+        )),
+        Instance((
+            span: (
+                low: 1082,
+                high: 1360,
+            ),
+            name: (
+                name: "Ord",
+                span: (
+                    low: 1091,
+                    high: 1094,
                 ),
             ),
             instantiation_type_parameters: [
                 Integer32((
                     span: (
-                        low: 1292,
-                        high: 1295,
+                        low: 1095,
+                        high: 1098,
                     ),
                 )),
                 Integer32((
                     span: (
-                        low: 1297,
-                        high: 1300,
-                    ),
-                )),
-                Integer32((
-                    span: (
-                        low: 1302,
-                        high: 1305,
+                        low: 1100,
+                        high: 1103,
                     ),
                 )),
             ],
             members: [
                 (
                     span: (
-                        low: 1311,
-                        high: 1372,
+                        low: 1109,
+                        high: 1169,
                     ),
                     name: (
-                        name: "rem",
+                        name: "lt",
                         span: (
-                            low: 1314,
-                            high: 1317,
+                            low: 1112,
+                            high: 1114,
                         ),
                     ),
                     parameters: [
                         (
                             span: (
-                                low: 1318,
-                                high: 1324,
+                                low: 1115,
+                                high: 1121,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 1318,
-                                    high: 1319,
+                                    low: 1115,
+                                    high: 1116,
                                 ),
                             ),
                             ty: Integer32((
                                 span: (
-                                    low: 1321,
-                                    high: 1324,
+                                    low: 1118,
+                                    high: 1121,
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 1326,
-                                high: 1332,
+                                low: 1123,
+                                high: 1129,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 1326,
-                                    high: 1327,
+                                    low: 1123,
+                                    high: 1124,
                                 ),
                             ),
                             ty: Integer32((
                                 span: (
-                                    low: 1329,
-                                    high: 1332,
+                                    low: 1126,
+                                    high: 1129,
                                 ),
                             )),
                         ),
                     ],
                     type_parameters: [],
-                    return_type: Some(Integer32((
+                    return_type: Some(Boolean((
                         span: (
-                            low: 1337,
-                            high: 1340,
+                            low: 1134,
+                            high: 1138,
                         ),
                     ))),
                     body: [
                         Return((
                             span: (
-                                low: 1347,
-                                high: 1368,
+                                low: 1145,
+                                high: 1165,
                             ),
                             value: Some(Call((
                                 span: (
-                                    low: 1354,
-                                    high: 1367,
+                                    low: 1152,
+                                    high: 1164,
                                 ),
                                 callee: Reference((
                                     span: (
-                                        low: 1354,
-                                        high: 1361,
+                                        low: 1152,
+                                        high: 1158,
                                     ),
                                     name: (
-                                        name: "i32_rem",
+                                        name: "i32_lt",
                                         span: (
-                                            low: 1354,
-                                            high: 1361,
+                                            low: 1152,
+                                            high: 1158,
                                         ),
                                     ),
                                 )),
                                 arguments: [
                                     Reference((
                                         span: (
-                                            low: 1362,
-                                            high: 1363,
+                                            low: 1159,
+                                            high: 1160,
                                         ),
                                         name: (
                                             name: "a",
                                             span: (
-                                                low: 1362,
-                                                high: 1363,
+                                                low: 1159,
+                                                high: 1160,
                                             ),
                                         ),
                                     )),
                                     Reference((
                                         span: (
-                                            low: 1365,
-                                            high: 1366,
+                                            low: 1162,
+                                            high: 1163,
                                         ),
                                         name: (
                                             name: "b",
                                             span: (
-                                                low: 1365,
-                                                high: 1366,
+                                                low: 1162,
+                                                high: 1163,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+                (
+                    span: (
+                        low: 1172,
+                        high: 1232,
+                    ),
+                    name: (
+                        name: "gt",
+                        span: (
+                            low: 1175,
+                            high: 1177,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1178,
+                                high: 1184,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1178,
+                                    high: 1179,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1181,
+                                    high: 1184,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1186,
+                                high: 1192,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1186,
+                                    high: 1187,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1189,
+                                    high: 1192,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 1197,
+                            high: 1201,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1208,
+                                high: 1228,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1215,
+                                    high: 1227,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1215,
+                                        high: 1221,
+                                    ),
+                                    name: (
+                                        name: "i32_gt",
+                                        span: (
+                                            low: 1215,
+                                            high: 1221,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1222,
+                                            high: 1223,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1222,
+                                                high: 1223,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1225,
+                                            high: 1226,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1225,
+                                                high: 1226,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+                (
+                    span: (
+                        low: 1235,
+                        high: 1295,
+                    ),
+                    name: (
+                        name: "le",
+                        span: (
+                            low: 1238,
+                            high: 1240,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1241,
+                                high: 1247,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1241,
+                                    high: 1242,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1244,
+                                    high: 1247,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1249,
+                                high: 1255,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1249,
+                                    high: 1250,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1252,
+                                    high: 1255,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 1260,
+                            high: 1264,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1271,
+                                high: 1291,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1278,
+                                    high: 1290,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1278,
+                                        high: 1284,
+                                    ),
+                                    name: (
+                                        name: "i32_le",
+                                        span: (
+                                            low: 1278,
+                                            high: 1284,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1285,
+                                            high: 1286,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1285,
+                                                high: 1286,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1288,
+                                            high: 1289,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1288,
+                                                high: 1289,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+                (
+                    span: (
+                        low: 1298,
+                        high: 1358,
+                    ),
+                    name: (
+                        name: "ge",
+                        span: (
+                            low: 1301,
+                            high: 1303,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1304,
+                                high: 1310,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1304,
+                                    high: 1305,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1307,
+                                    high: 1310,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1312,
+                                high: 1318,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1312,
+                                    high: 1313,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1315,
+                                    high: 1318,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Boolean((
+                        span: (
+                            low: 1323,
+                            high: 1327,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1334,
+                                high: 1354,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1341,
+                                    high: 1353,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1341,
+                                        high: 1347,
+                                    ),
+                                    name: (
+                                        name: "i32_ge",
+                                        span: (
+                                            low: 1341,
+                                            high: 1347,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1348,
+                                            high: 1349,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1348,
+                                                high: 1349,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1351,
+                                            high: 1352,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1351,
+                                                high: 1352,
                                             ),
                                         ),
                                     )),
@@ -2057,79 +2517,834 @@ exit_code: 0
         )),
         Instance((
             span: (
-                low: 1376,
-                high: 1529,
+                low: 1362,
+                high: 1457,
             ),
             name: (
-                name: "Eq",
+                name: "Add",
                 span: (
-                    low: 1385,
-                    high: 1387,
+                    low: 1371,
+                    high: 1374,
                 ),
             ),
             instantiation_type_parameters: [
                 Integer32((
                     span: (
-                        low: 1388,
-                        high: 1391,
+                        low: 1375,
+                        high: 1378,
                     ),
                 )),
                 Integer32((
                     span: (
-                        low: 1393,
-                        high: 1396,
+                        low: 1380,
+                        high: 1383,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1385,
+                        high: 1388,
                     ),
                 )),
             ],
             members: [
                 (
                     span: (
-                        low: 1402,
-                        high: 1462,
+                        low: 1394,
+                        high: 1455,
                     ),
                     name: (
-                        name: "eq",
+                        name: "add",
                         span: (
-                            low: 1405,
-                            high: 1407,
+                            low: 1397,
+                            high: 1400,
                         ),
                     ),
                     parameters: [
                         (
                             span: (
-                                low: 1408,
-                                high: 1414,
+                                low: 1401,
+                                high: 1407,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 1408,
-                                    high: 1409,
+                                    low: 1401,
+                                    high: 1402,
                                 ),
                             ),
                             ty: Integer32((
                                 span: (
-                                    low: 1411,
-                                    high: 1414,
+                                    low: 1404,
+                                    high: 1407,
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 1416,
-                                high: 1422,
+                                low: 1409,
+                                high: 1415,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 1416,
-                                    high: 1417,
+                                    low: 1409,
+                                    high: 1410,
                                 ),
                             ),
                             ty: Integer32((
                                 span: (
-                                    low: 1419,
-                                    high: 1422,
+                                    low: 1412,
+                                    high: 1415,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 1420,
+                            high: 1423,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1430,
+                                high: 1451,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1437,
+                                    high: 1450,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1437,
+                                        high: 1444,
+                                    ),
+                                    name: (
+                                        name: "i32_add",
+                                        span: (
+                                            low: 1437,
+                                            high: 1444,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1445,
+                                            high: 1446,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1445,
+                                                high: 1446,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1448,
+                                            high: 1449,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1448,
+                                                high: 1449,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+            ],
+        )),
+        Instance((
+            span: (
+                low: 1459,
+                high: 1554,
+            ),
+            name: (
+                name: "Sub",
+                span: (
+                    low: 1468,
+                    high: 1471,
+                ),
+            ),
+            instantiation_type_parameters: [
+                Integer32((
+                    span: (
+                        low: 1472,
+                        high: 1475,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1477,
+                        high: 1480,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1482,
+                        high: 1485,
+                    ),
+                )),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 1491,
+                        high: 1552,
+                    ),
+                    name: (
+                        name: "sub",
+                        span: (
+                            low: 1494,
+                            high: 1497,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1498,
+                                high: 1504,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1498,
+                                    high: 1499,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1501,
+                                    high: 1504,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1506,
+                                high: 1512,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1506,
+                                    high: 1507,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1509,
+                                    high: 1512,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 1517,
+                            high: 1520,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1527,
+                                high: 1548,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1534,
+                                    high: 1547,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1534,
+                                        high: 1541,
+                                    ),
+                                    name: (
+                                        name: "i32_sub",
+                                        span: (
+                                            low: 1534,
+                                            high: 1541,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1542,
+                                            high: 1543,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1542,
+                                                high: 1543,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1545,
+                                            high: 1546,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1545,
+                                                high: 1546,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+            ],
+        )),
+        Instance((
+            span: (
+                low: 1556,
+                high: 1651,
+            ),
+            name: (
+                name: "Mul",
+                span: (
+                    low: 1565,
+                    high: 1568,
+                ),
+            ),
+            instantiation_type_parameters: [
+                Integer32((
+                    span: (
+                        low: 1569,
+                        high: 1572,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1574,
+                        high: 1577,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1579,
+                        high: 1582,
+                    ),
+                )),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 1588,
+                        high: 1649,
+                    ),
+                    name: (
+                        name: "mul",
+                        span: (
+                            low: 1591,
+                            high: 1594,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1595,
+                                high: 1601,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1595,
+                                    high: 1596,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1598,
+                                    high: 1601,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1603,
+                                high: 1609,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1603,
+                                    high: 1604,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1606,
+                                    high: 1609,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 1614,
+                            high: 1617,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1624,
+                                high: 1645,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1631,
+                                    high: 1644,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1631,
+                                        high: 1638,
+                                    ),
+                                    name: (
+                                        name: "i32_mul",
+                                        span: (
+                                            low: 1631,
+                                            high: 1638,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1639,
+                                            high: 1640,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1639,
+                                                high: 1640,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1642,
+                                            high: 1643,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1642,
+                                                high: 1643,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+            ],
+        )),
+        Instance((
+            span: (
+                low: 1653,
+                high: 1748,
+            ),
+            name: (
+                name: "Div",
+                span: (
+                    low: 1662,
+                    high: 1665,
+                ),
+            ),
+            instantiation_type_parameters: [
+                Integer32((
+                    span: (
+                        low: 1666,
+                        high: 1669,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1671,
+                        high: 1674,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1676,
+                        high: 1679,
+                    ),
+                )),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 1685,
+                        high: 1746,
+                    ),
+                    name: (
+                        name: "div",
+                        span: (
+                            low: 1688,
+                            high: 1691,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1692,
+                                high: 1698,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1692,
+                                    high: 1693,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1695,
+                                    high: 1698,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1700,
+                                high: 1706,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1700,
+                                    high: 1701,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1703,
+                                    high: 1706,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 1711,
+                            high: 1714,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1721,
+                                high: 1742,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1728,
+                                    high: 1741,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1728,
+                                        high: 1735,
+                                    ),
+                                    name: (
+                                        name: "i32_div",
+                                        span: (
+                                            low: 1728,
+                                            high: 1735,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1736,
+                                            high: 1737,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1736,
+                                                high: 1737,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1739,
+                                            high: 1740,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1739,
+                                                high: 1740,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+            ],
+        )),
+        Instance((
+            span: (
+                low: 1750,
+                high: 1845,
+            ),
+            name: (
+                name: "Rem",
+                span: (
+                    low: 1759,
+                    high: 1762,
+                ),
+            ),
+            instantiation_type_parameters: [
+                Integer32((
+                    span: (
+                        low: 1763,
+                        high: 1766,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1768,
+                        high: 1771,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1773,
+                        high: 1776,
+                    ),
+                )),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 1782,
+                        high: 1843,
+                    ),
+                    name: (
+                        name: "rem",
+                        span: (
+                            low: 1785,
+                            high: 1788,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1789,
+                                high: 1795,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1789,
+                                    high: 1790,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1792,
+                                    high: 1795,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1797,
+                                high: 1803,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1797,
+                                    high: 1798,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1800,
+                                    high: 1803,
+                                ),
+                            )),
+                        ),
+                    ],
+                    type_parameters: [],
+                    return_type: Some(Integer32((
+                        span: (
+                            low: 1808,
+                            high: 1811,
+                        ),
+                    ))),
+                    body: [
+                        Return((
+                            span: (
+                                low: 1818,
+                                high: 1839,
+                            ),
+                            value: Some(Call((
+                                span: (
+                                    low: 1825,
+                                    high: 1838,
+                                ),
+                                callee: Reference((
+                                    span: (
+                                        low: 1825,
+                                        high: 1832,
+                                    ),
+                                    name: (
+                                        name: "i32_rem",
+                                        span: (
+                                            low: 1825,
+                                            high: 1832,
+                                        ),
+                                    ),
+                                )),
+                                arguments: [
+                                    Reference((
+                                        span: (
+                                            low: 1833,
+                                            high: 1834,
+                                        ),
+                                        name: (
+                                            name: "a",
+                                            span: (
+                                                low: 1833,
+                                                high: 1834,
+                                            ),
+                                        ),
+                                    )),
+                                    Reference((
+                                        span: (
+                                            low: 1836,
+                                            high: 1837,
+                                        ),
+                                        name: (
+                                            name: "b",
+                                            span: (
+                                                low: 1836,
+                                                high: 1837,
+                                            ),
+                                        ),
+                                    )),
+                                ],
+                                type_arguments: [],
+                            ))),
+                        )),
+                    ],
+                ),
+            ],
+        )),
+        Instance((
+            span: (
+                low: 1847,
+                high: 2000,
+            ),
+            name: (
+                name: "Eq",
+                span: (
+                    low: 1856,
+                    high: 1858,
+                ),
+            ),
+            instantiation_type_parameters: [
+                Integer32((
+                    span: (
+                        low: 1859,
+                        high: 1862,
+                    ),
+                )),
+                Integer32((
+                    span: (
+                        low: 1864,
+                        high: 1867,
+                    ),
+                )),
+            ],
+            members: [
+                (
+                    span: (
+                        low: 1873,
+                        high: 1933,
+                    ),
+                    name: (
+                        name: "eq",
+                        span: (
+                            low: 1876,
+                            high: 1878,
+                        ),
+                    ),
+                    parameters: [
+                        (
+                            span: (
+                                low: 1879,
+                                high: 1885,
+                            ),
+                            name: (
+                                name: "a",
+                                span: (
+                                    low: 1879,
+                                    high: 1880,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1882,
+                                    high: 1885,
+                                ),
+                            )),
+                        ),
+                        (
+                            span: (
+                                low: 1887,
+                                high: 1893,
+                            ),
+                            name: (
+                                name: "b",
+                                span: (
+                                    low: 1887,
+                                    high: 1888,
+                                ),
+                            ),
+                            ty: Integer32((
+                                span: (
+                                    low: 1890,
+                                    high: 1893,
                                 ),
                             )),
                         ),
@@ -2137,58 +3352,58 @@ exit_code: 0
                     type_parameters: [],
                     return_type: Some(Boolean((
                         span: (
-                            low: 1427,
-                            high: 1431,
+                            low: 1898,
+                            high: 1902,
                         ),
                     ))),
                     body: [
                         Return((
                             span: (
-                                low: 1438,
-                                high: 1458,
+                                low: 1909,
+                                high: 1929,
                             ),
                             value: Some(Call((
                                 span: (
-                                    low: 1445,
-                                    high: 1457,
+                                    low: 1916,
+                                    high: 1928,
                                 ),
                                 callee: Reference((
                                     span: (
-                                        low: 1445,
-                                        high: 1451,
+                                        low: 1916,
+                                        high: 1922,
                                     ),
                                     name: (
                                         name: "i32_eq",
                                         span: (
-                                            low: 1445,
-                                            high: 1451,
+                                            low: 1916,
+                                            high: 1922,
                                         ),
                                     ),
                                 )),
                                 arguments: [
                                     Reference((
                                         span: (
-                                            low: 1452,
-                                            high: 1453,
+                                            low: 1923,
+                                            high: 1924,
                                         ),
                                         name: (
                                             name: "a",
                                             span: (
-                                                low: 1452,
-                                                high: 1453,
+                                                low: 1923,
+                                                high: 1924,
                                             ),
                                         ),
                                     )),
                                     Reference((
                                         span: (
-                                            low: 1455,
-                                            high: 1456,
+                                            low: 1926,
+                                            high: 1927,
                                         ),
                                         name: (
                                             name: "b",
                                             span: (
-                                                low: 1455,
-                                                high: 1456,
+                                                low: 1926,
+                                                high: 1927,
                                             ),
                                         ),
                                     )),
@@ -2200,52 +3415,52 @@ exit_code: 0
                 ),
                 (
                     span: (
-                        low: 1465,
-                        high: 1527,
+                        low: 1936,
+                        high: 1998,
                     ),
                     name: (
                         name: "neq",
                         span: (
-                            low: 1468,
-                            high: 1471,
+                            low: 1939,
+                            high: 1942,
                         ),
                     ),
                     parameters: [
                         (
                             span: (
-                                low: 1472,
-                                high: 1478,
+                                low: 1943,
+                                high: 1949,
                             ),
                             name: (
                                 name: "a",
                                 span: (
-                                    low: 1472,
-                                    high: 1473,
+                                    low: 1943,
+                                    high: 1944,
                                 ),
                             ),
                             ty: Integer32((
                                 span: (
-                                    low: 1475,
-                                    high: 1478,
+                                    low: 1946,
+                                    high: 1949,
                                 ),
                             )),
                         ),
                         (
                             span: (
-                                low: 1480,
-                                high: 1486,
+                                low: 1951,
+                                high: 1957,
                             ),
                             name: (
                                 name: "b",
                                 span: (
-                                    low: 1480,
-                                    high: 1481,
+                                    low: 1951,
+                                    high: 1952,
                                 ),
                             ),
                             ty: Integer32((
                                 span: (
-                                    low: 1483,
-                                    high: 1486,
+                                    low: 1954,
+                                    high: 1957,
                                 ),
                             )),
                         ),
@@ -2253,58 +3468,58 @@ exit_code: 0
                     type_parameters: [],
                     return_type: Some(Boolean((
                         span: (
-                            low: 1491,
-                            high: 1495,
+                            low: 1962,
+                            high: 1966,
                         ),
                     ))),
                     body: [
                         Return((
                             span: (
-                                low: 1502,
-                                high: 1523,
+                                low: 1973,
+                                high: 1994,
                             ),
                             value: Some(Call((
                                 span: (
-                                    low: 1509,
-                                    high: 1522,
+                                    low: 1980,
+                                    high: 1993,
                                 ),
                                 callee: Reference((
                                     span: (
-                                        low: 1509,
-                                        high: 1516,
+                                        low: 1980,
+                                        high: 1987,
                                     ),
                                     name: (
                                         name: "i32_neq",
                                         span: (
-                                            low: 1509,
-                                            high: 1516,
+                                            low: 1980,
+                                            high: 1987,
                                         ),
                                     ),
                                 )),
                                 arguments: [
                                     Reference((
                                         span: (
-                                            low: 1517,
-                                            high: 1518,
+                                            low: 1988,
+                                            high: 1989,
                                         ),
                                         name: (
                                             name: "a",
                                             span: (
-                                                low: 1517,
-                                                high: 1518,
+                                                low: 1988,
+                                                high: 1989,
                                             ),
                                         ),
                                     )),
                                     Reference((
                                         span: (
-                                            low: 1520,
-                                            high: 1521,
+                                            low: 1991,
+                                            high: 1992,
                                         ),
                                         name: (
                                             name: "b",
                                             span: (
-                                                low: 1520,
-                                                high: 1521,
+                                                low: 1991,
+                                                high: 1992,
                                             ),
                                         ),
                                     )),
