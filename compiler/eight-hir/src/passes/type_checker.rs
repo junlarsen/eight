@@ -12,7 +12,7 @@ use crate::expr::{
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirStruct};
+use crate::item::{HirFunction, HirStruct, HirTrait};
 use crate::query::HirQueryDatabase;
 use crate::signature::HirModuleSignature;
 use crate::stmt::{
@@ -893,6 +893,7 @@ impl HirModuleTypeCheckerPass {
 
         Self::visit_module_functions(cx, &mut module.body.functions)?;
         Self::visit_module_structs(cx, &mut module.body.structs)?;
+        Self::visit_module_traits(cx, &mut module.body.traits)?;
         cx.locals.leave_scope();
         Ok(())
     }
@@ -915,6 +916,17 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         for rec in structs.values_mut() {
             Self::visit_struct(cx, rec)?;
+        }
+        Ok(())
+    }
+
+    /// Traverse the traits in the given module.
+    pub fn visit_module_traits<'hir>(
+        cx: &mut TypingContext<'hir>,
+        traits: &mut BTreeMap<&'hir str, HirTrait<'hir>>,
+    ) -> HirResult<()> {
+        for rec in traits.values_mut() {
+            Self::visit_trait(cx, rec)?;
         }
         Ok(())
     }
@@ -1015,6 +1027,44 @@ impl HirModuleTypeCheckerPass {
                 ));
             }
         }
+        Ok(())
+    }
+
+    /// Visit a trait.
+    ///
+    /// Because trait functions are all ambient declarations, there is nothing to recurse down.
+    /// Instead, we just ensure that the types that are being referred to are well
+    pub fn visit_trait<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirTrait<'hir>,
+    ) -> HirResult<()> {
+        // Push the trait type parameters onto the substitution stack
+        cx.local_type_parameter_substitutions.enter_scope();
+        for type_parameter in node.signature.type_parameters.iter() {
+            let substitution = cx.fresh_type_variable();
+            cx.local_type_parameter_substitutions
+                .add(type_parameter.name, substitution);
+        }
+
+        // Iterate through the ambient method declarations
+        for method in node.signature.methods.values() {
+            // Push any method type parameters onto the substitution stack
+            cx.local_type_parameter_substitutions.enter_scope();
+            for type_parameter in method.type_parameters.iter() {
+                let substitution = cx.fresh_type_variable();
+                cx.local_type_parameter_substitutions
+                    .add(type_parameter.name, substitution);
+            }
+
+            Self::visit_type(cx, method.return_type)?;
+            for parameter in method.parameters.iter() {
+                Self::visit_type(cx, parameter.ty)?;
+            }
+
+            cx.local_type_parameter_substitutions.leave_scope();
+        }
+        cx.local_type_parameter_substitutions.leave_scope();
+        cx.substitutions.clear();
         Ok(())
     }
 
