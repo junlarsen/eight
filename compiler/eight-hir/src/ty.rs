@@ -147,7 +147,7 @@ pub enum HirTy<'hir> {
     /// order to allow the Hir to rewrite syntax, or add inferrable types to code that is not yet
     /// annotated.
     ///
-    /// In the Hir textual format, uninitialized types are represented as `_`. The following example
+    /// In the Hir textual_pass format, uninitialized types are represented as `_`. The following example
     /// informs the type checker that the type of `x` was not provided by the programmer, and that
     /// it should be inferred to be `i32`.
     ///

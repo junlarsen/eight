@@ -3,7 +3,7 @@
 //! The IR is a simplified representation of the source language. We base on SSA-form which only
 //! allows for single assignment.
 //!
-//! Note that the IR does not truly have a textual form, but as a simplified example of how the
+//! Note that the IR does not truly have a textual_pass form, but as a simplified example of how the
 //! hierarchy of the types could look like, we can write the following
 //! (compiled for a 64-bit system, where pointer size = 8):
 //!

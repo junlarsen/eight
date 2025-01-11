@@ -17,11 +17,13 @@ pub mod context;
 pub mod error;
 pub mod expr;
 pub mod item;
-pub mod passes;
 pub mod query;
 pub mod signature;
 pub mod stmt;
+pub mod syntax_lowering_pass;
+pub mod textual_pass;
 pub mod ty;
+pub mod type_check_pass;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Eq)]

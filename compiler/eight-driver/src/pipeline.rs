@@ -1,8 +1,8 @@
 use bumpalo::Bump;
 use eight_hir::arena::HirArena;
-use eight_hir::passes::{
-    ASTSyntaxLoweringPass, HirModuleDebugPass, HirModuleTypeCheckerPass, TypingContext,
-};
+use eight_hir::syntax_lowering_pass::ASTSyntaxLoweringPass;
+use eight_hir::textual_pass::HirModuleDebugPass;
+use eight_hir::type_check_pass::{HirModuleTypeCheckerPass, TypingContext};
 use eight_syntax::arena::AstArena;
 
 pub struct PipelineOptions {
