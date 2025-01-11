@@ -3,12 +3,12 @@ intrinsic_type bool;
 intrinsic_fn __builtin_bool_and(a: bool, b: bool) -> bool;
 intrinsic_fn __builtin_bool_or(a: bool, b: bool) -> bool;
 
-instance And<bool, bool, bool> {
+instance And<bool, bool> {
   fn and(a: bool, b: bool) -> bool {
     return __builtin_bool_and(a, b);
   }
 }
-instance Or<bool, bool, bool> {
+instance Or<bool, bool> {
   fn or(a: bool, b: bool) -> bool {
     return __builtin_bool_or(a, b);
   }

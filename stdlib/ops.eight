@@ -38,10 +38,10 @@ trait Not<A, R> {
   fn not(a: A) -> R;
 }
 
-trait And<A, B, R> {
-  fn and(a: A, b: B) -> R;
+trait And<A, B> {
+  fn and(a: A, b: B) -> bool;
 }
 
-trait Or<A, B, R> {
-  fn or(a: A, b: B) -> R;
+trait Or<A, B> {
+  fn or(a: A, b: B) -> bool;
 }

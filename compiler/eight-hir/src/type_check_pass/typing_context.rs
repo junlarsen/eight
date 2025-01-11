@@ -522,12 +522,30 @@ impl<'hir> TypingContext<'hir> {
             HirBinaryOp::And => (self.arena.names().get("And"), self.arena.names().get("and")),
             HirBinaryOp::Or => (self.arena.names().get("Or"), self.arena.names().get("or")),
         };
+        let arguments = match &expr.op {
+            HirBinaryOp::And
+            | HirBinaryOp::Or
+            | HirBinaryOp::Eq
+            | HirBinaryOp::Neq
+            | HirBinaryOp::Lt
+            | HirBinaryOp::Gt
+            | HirBinaryOp::Lte
+            | HirBinaryOp::Gte => vec![expr.lhs.ty(), expr.rhs.ty()],
+            HirBinaryOp::Add
+            | HirBinaryOp::Sub
+            | HirBinaryOp::Mul
+            | HirBinaryOp::Div
+            | HirBinaryOp::Rem => {
+                vec![expr.lhs.ty(), expr.rhs.ty(), expectation]
+            }
+        };
+
         self.constrain_instance(
             trait_name,
             expr.span,
             method_name,
             expr.span,
-            vec![expr.lhs.ty(), expr.rhs.ty(), expectation],
+            arguments,
             expectation,
         );
         Ok(())
