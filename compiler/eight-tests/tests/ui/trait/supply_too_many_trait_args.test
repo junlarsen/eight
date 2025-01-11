@@ -1,0 +1,9 @@
+trait Id<T> {
+  fn id(x: T) -> T;
+}
+
+instance Id<i32, i32> {
+  fn id(x: i32) -> i32 {
+    return x;
+  }
+}

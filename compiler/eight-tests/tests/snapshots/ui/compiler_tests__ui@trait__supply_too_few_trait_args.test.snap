@@ -1,0 +1,31 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for ui
+info:
+  program: eightc
+  args:
+    - tests/ui/trait/supply_too_few_trait_args.test
+input_file: compiler/eight-tests/tests/ui/trait/supply_too_few_trait_args.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::wrong_trait_type_argument_count
+
+  × trait Add requires 3 type arguments, but 2 were supplied
+   ╭─[tests/ui/trait/supply_too_few_trait_args.test:1:7]
+ 1 │ trait Add<A, B, R> {
+   ·       ─┬─
+   ·        ╰── declares 3 type arguments
+ 2 │   fn add(a: A, b: B) -> R;
+   ╰────
+   ╭─[tests/ui/trait/supply_too_few_trait_args.test:5:10]
+ 4 │ 
+ 5 │ instance Add<i32, i32> {
+   ·          ─┬─
+   ·           ╰── supplied 2 type arguments
+ 6 │   fn add(a: i32, b: i32) -> i32 {
+   ╰────

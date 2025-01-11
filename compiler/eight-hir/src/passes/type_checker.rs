@@ -5,7 +5,7 @@ use crate::error::{
     InvalidReferenceError, InvalidStructFieldReferenceError, MissingFieldError,
     SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
     TraitMissingInstanceError, TypeFieldInfiniteRecursionError, TypeMismatchError,
-    UnknownFieldError, UnknownTypeError,
+    UnknownFieldError, UnknownTypeError, WrongTraitTypeArgumentCount,
 };
 use crate::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
@@ -1087,16 +1087,31 @@ impl HirModuleTypeCheckerPass {
         cx.local_type_parameter_substitutions.enter_scope();
         cx.type_binding_depth += 1;
         cx.type_binding_index = 0;
-        for (argument_index, type_argument) in node.type_arguments.iter().enumerate() {
+        for argument_index in 0..node.type_arguments.len() {
             // Match this type argument to the type parameters in the trait.
             let r#trait = cx
                 .module_query_db
                 .query_trait_by_name(node.name)
                 .unwrap_or_else(|| ice!(format!("trait {} not found", node.name)));
+
+            // This is an ownership workaround. Ideally this should be checked above the loop, but
+            // works here, because instances are syntactically required to have at least one type
+            // argument.
+            if argument_index == 0 && r#trait.type_parameters.len() != node.type_arguments.len() {
+                return Err(HirError::WrongTraitTypeArgumentCount(
+                    WrongTraitTypeArgumentCount {
+                        expected: r#trait.type_parameters.len(),
+                        actual: node.type_arguments.len(),
+                        name: node.name.to_owned(),
+                        span: node.name_span,
+                        trait_declaration_loc: r#trait.name_span,
+                    },
+                ));
+            }
             let Some(type_parameter) = r#trait.type_parameters.get(argument_index) else {
                 ice!(format!(
-                    "type parameter {} not found in trait {}",
-                    type_argument, node.name
+                    "type parameter at position {} did not exist after check",
+                    argument_index
                 ));
             };
             // Hack around the borrow checker. This returns the exact same value, but the lifetime

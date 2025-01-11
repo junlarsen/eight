@@ -23,6 +23,7 @@ declare_error_type! {
         TraitInstanceMissingFn(TraitInstanceMissingFnError),
         TraitDoesNotExist(TraitDoesNotExistError),
         TraitMissingInstance(TraitMissingInstanceError),
+        WrongTraitTypeArgumentCount(WrongTraitTypeArgumentCount),
     }
 }
 
@@ -192,4 +193,17 @@ pub struct TraitMissingInstanceError {
     pub name: String,
     #[label = "required instance {instance_name} for trait {name}"]
     pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::wrong_trait_type_argument_count))]
+#[error("trait {name} requires {expected} type arguments, but {actual} were supplied")]
+pub struct WrongTraitTypeArgumentCount {
+    pub expected: usize,
+    pub actual: usize,
+    pub name: String,
+    #[label = "supplied {actual} type arguments"]
+    pub span: Span,
+    #[label = "declares {expected} type arguments"]
+    pub trait_declaration_loc: Span,
 }
