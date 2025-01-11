@@ -58,6 +58,13 @@ pub struct HirFunction<'hir> {
     pub linkage_type: LinkageType,
 }
 
+impl<'hir> HirFunction<'hir> {
+    /// Records that the type parameter named `name` is now substituted with `ty`.
+    pub fn record_substitution(&mut self, name: &'hir str, ty: &'hir HirTy<'hir>) {
+        self.type_parameter_substitutions.insert(name, ty);
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirTrait<'hir> {

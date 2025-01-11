@@ -35,10 +35,21 @@ impl<T> LocalContext<T> {
         self.scopes.len()
     }
 
+    /// Find an item in the context.
     pub fn find(&self, name: &str) -> Option<&T> {
         for scope in &self.scopes {
             if let Some(item) = scope.get(name) {
                 return Some(item);
+            }
+        }
+        None
+    }
+
+    /// Find an item in the context, and return the distance from the root scope.
+    pub fn find_with_depth(&self, name: &str) -> Option<(usize, &T)> {
+        for (depth, scope) in self.scopes.iter().enumerate() {
+            if let Some(item) = scope.get(name) {
+                return Some((depth, item));
             }
         }
         None

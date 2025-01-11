@@ -24,6 +24,8 @@ declare_error_type! {
         TraitDoesNotExist(TraitDoesNotExistError),
         TraitMissingInstance(TraitMissingInstanceError),
         WrongTraitTypeArgumentCount(WrongTraitTypeArgumentCount),
+        TypeParameterShadowsExisting(TypeParameterShadowsExisting),
+        BindingReDeclaresName(BindingReDeclaresName),
     }
 }
 
@@ -206,4 +208,25 @@ pub struct WrongTraitTypeArgumentCount {
     pub span: Span,
     #[label = "declares {expected} type arguments"]
     pub trait_declaration_loc: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::type_parameter_shadows_existing))]
+#[error("type parameter {name} shadows existing type parameter")]
+pub struct TypeParameterShadowsExisting {
+    pub name: String,
+    #[label = "the type parameter {name} shadows an existing type with the same name"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(sema::binding_re_declares_name),
+    help("give this binding a different name")
+)]
+#[error("binding {name} re-declares name")]
+pub struct BindingReDeclaresName {
+    pub name: String,
+    #[label = "the binding {name} shadows an existing binding with the same name"]
+    pub span: Span,
 }

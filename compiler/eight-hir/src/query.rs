@@ -1,4 +1,7 @@
-use crate::signature::{HirInstanceApiSignature, HirModuleSignature, HirTraitApiSignature};
+use crate::signature::{
+    HirFunctionApiSignature, HirInstanceApiSignature, HirModuleSignature, HirStructApiSignature,
+    HirTraitApiSignature, HirTypeApiSignature,
+};
 use crate::ty::HirTy;
 use eight_diagnostics::ice;
 use std::collections::HashMap;
@@ -94,5 +97,20 @@ impl<'hir> HirQueryDatabase<'hir> {
     /// Query the database for a trait by its name.
     pub fn query_trait_by_name(&self, name: &str) -> Option<&HirTraitApiSignature> {
         self.sig.traits.get(name).copied()
+    }
+
+    /// Query the database for a struct by its name.
+    pub fn query_struct_by_name(&self, name: &str) -> Option<&HirStructApiSignature> {
+        self.sig.structs.get(name).copied()
+    }
+
+    /// Query the database for a function by its name.
+    pub fn query_function_by_name(&self, name: &str) -> Option<&HirFunctionApiSignature> {
+        self.sig.functions.get(name).copied()
+    }
+
+    /// Query the database for a type by its name.
+    pub fn query_type_by_name(&self, name: &str) -> Option<&HirTypeApiSignature> {
+        self.sig.types.get(name).copied()
     }
 }
