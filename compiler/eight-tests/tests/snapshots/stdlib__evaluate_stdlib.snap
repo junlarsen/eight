@@ -134,77 +134,77 @@ hir_module {
     // module intrinsic functions
     instance And<bool, bool, bool> {
       fn and<>(a: bool, b: bool) -> bool {
-        return ((__builtin_bool_and as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_bool_and as fn((bool, bool))->bool)::<>((a as bool),(b as bool)) as bool);
       }
     }
     instance Or<bool, bool, bool> {
       fn or<>(a: bool, b: bool) -> bool {
-        return ((__builtin_bool_or as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_bool_or as fn((bool, bool))->bool)::<>((a as bool),(b as bool)) as bool);
       }
     }
     instance Eq<bool, bool> {
       fn eq<>(a: bool, b: bool) -> bool {
-        return ((__builtin_bool_eq as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_bool_eq as fn((bool, bool))->bool)::<>((a as bool),(b as bool)) as bool);
       }
       fn neq<>(a: bool, b: bool) -> bool {
-        return ((__builtin_bool_neq as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_bool_neq as fn((bool, bool))->bool)::<>((a as bool),(b as bool)) as bool);
       }
     }
     instance Not<bool, bool> {
       fn not<>(a: bool) -> bool {
-        return ((__builtin_bool_not as _)::<>((a as _)) as _);
+        return ((__builtin_bool_not as fn((bool))->bool)::<>((a as bool)) as bool);
       }
     }
     instance Add<i32, i32, i32> {
       fn add<>(a: i32, b: i32) -> i32 {
-        return ((__builtin_i32_add as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_add as fn((i32, i32))->i32)::<>((a as i32),(b as i32)) as i32);
       }
     }
     instance Sub<i32, i32, i32> {
       fn sub<>(a: i32, b: i32) -> i32 {
-        return ((__builtin_i32_sub as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_sub as fn((i32, i32))->i32)::<>((a as i32),(b as i32)) as i32);
       }
     }
     instance Mul<i32, i32, i32> {
       fn mul<>(a: i32, b: i32) -> i32 {
-        return ((__builtin_i32_mul as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_mul as fn((i32, i32))->i32)::<>((a as i32),(b as i32)) as i32);
       }
     }
     instance Div<i32, i32, i32> {
       fn div<>(a: i32, b: i32) -> i32 {
-        return ((__builtin_i32_div as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_div as fn((i32, i32))->i32)::<>((a as i32),(b as i32)) as i32);
       }
     }
     instance Rem<i32, i32, i32> {
       fn rem<>(a: i32, b: i32) -> i32 {
-        return ((__builtin_i32_rem as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_rem as fn((i32, i32))->i32)::<>((a as i32),(b as i32)) as i32);
       }
     }
     instance Eq<i32, i32> {
       fn eq<>(a: i32, b: i32) -> bool {
-        return ((__builtin_i32_eq as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_eq as fn((i32, i32))->bool)::<>((a as i32),(b as i32)) as bool);
       }
       fn neq<>(a: i32, b: i32) -> bool {
-        return ((__builtin_i32_neq as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_neq as fn((i32, i32))->bool)::<>((a as i32),(b as i32)) as bool);
       }
     }
     instance Ord<i32, i32> {
       fn lt<>(a: i32, b: i32) -> bool {
-        return ((__builtin_i32_lt as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_lt as fn((i32, i32))->bool)::<>((a as i32),(b as i32)) as bool);
       }
       fn gt<>(a: i32, b: i32) -> bool {
-        return ((__builtin_i32_gt as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_gt as fn((i32, i32))->bool)::<>((a as i32),(b as i32)) as bool);
       }
       fn le<>(a: i32, b: i32) -> bool {
-        return ((__builtin_i32_le as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_le as fn((i32, i32))->bool)::<>((a as i32),(b as i32)) as bool);
       }
       fn ge<>(a: i32, b: i32) -> bool {
-        return ((__builtin_i32_ge as _)::<>((a as _),(b as _)) as _);
+        return ((__builtin_i32_ge as fn((i32, i32))->bool)::<>((a as i32),(b as i32)) as bool);
       }
     }
     instance Neg<i32, i32> {
       fn neg<>(a: i32) -> i32 {
-        return ((__builtin_i32_neg as _)::<>((a as _)) as _);
+        return ((__builtin_i32_neg as fn((i32))->i32)::<>((a as i32)) as i32);
       }
     }
   

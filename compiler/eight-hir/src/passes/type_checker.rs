@@ -121,6 +121,7 @@ impl<'hir> Debug for TypingContext<'hir> {
 }
 
 impl<'hir> TypingContext<'hir> {
+    /// Create a new typing context given the HIR arena and module signature derived from the AST.
     pub fn new(
         arena: &'hir HirArena<'hir>,
         module_signature: &'hir HirModuleSignature<'hir>,
@@ -137,6 +138,44 @@ impl<'hir> TypingContext<'hir> {
             module_signature,
             module_query_db: HirQueryDatabase::new(module_signature),
         }
+    }
+
+    /// Enter a new type binding scope.
+    ///
+    /// This is only to be used for generic type parameter boundaries, such as entering a function
+    /// with generic type parameters, or the body of a trait.
+    pub fn enter_type_binding_scope(&mut self) {
+        self.type_binding_depth += 1;
+        self.type_binding_index = 0;
+        self.local_type_parameter_substitutions.enter_scope();
+    }
+
+    /// Leave the current type binding scope.
+    pub fn leave_type_binding_scope(&mut self) {
+        self.local_type_parameter_substitutions.leave_scope();
+        self.type_binding_depth -= 1;
+        self.type_binding_index = 0;
+    }
+
+    /// Get a reference to the current type binding depth.
+    ///
+    /// This is used in conjunction with [`drain_substitutions_by_depth`] to remove all the
+    /// substitutions that no longer apply, because we're leaving a function body.
+    pub fn get_type_binding_depth_bookmark(&self) -> u32 {
+        self.type_binding_depth
+    }
+
+    /// Removes all the substitutions that applied to the provided depth bookmark, or deeper.
+    ///
+    /// This ensures that no substitutions that were made in a function body are carried over to a
+    /// adjacent function body.
+    ///
+    /// This only makes sense in context of trait instances, where we track the arguments passed to
+    /// the trait's type parameters, while also allowing for generic type parameters on the trait
+    /// methods themselves.
+    pub fn drain_substitutions_by_depth_bookmark(&mut self, bookmark: u32) {
+        self.substitutions
+            .retain(|(depth, _), _| *depth >= bookmark);
     }
 
     /// Imply a new field projection constraint
@@ -264,13 +303,12 @@ impl<'hir> TypingContext<'hir> {
     /// An instance constraint requires that there exists an instance of trait `name` that for the
     /// given types `type_arguments`.
     pub fn unify_instance(&mut self, constraint: InstanceConstraint<'hir>) -> HirResult<()> {
-        let _ =
-            self.module_signature
-                .get_trait(constraint.name)
-                .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
-                    name: constraint.name.to_owned(),
-                    span: constraint.name_span,
-                }))?;
+        self.module_signature
+            .get_trait(constraint.name)
+            .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
+                name: constraint.name.to_owned(),
+                span: constraint.name_span,
+            }))?;
         let substitutions = constraint
             .type_arguments
             .iter()
@@ -939,10 +977,11 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirFunction<'hir>,
     ) -> HirResult<()> {
-        // Create substitutions for all the type parameters.
-        cx.local_type_parameter_substitutions.enter_scope();
-        cx.type_binding_depth += 1;
-        cx.type_binding_index = 0;
+        let bookmark = cx.get_type_binding_depth_bookmark();
+        cx.enter_type_binding_scope();
+
+        // Insert all type parameters into the local context. Effectively making `T` visible to the
+        // function body, in case of `let x: T = ...`
         for type_parameter in node.signature.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
             node.type_parameter_substitutions
@@ -984,10 +1023,8 @@ impl HirModuleTypeCheckerPass {
         }
         cx.locals.leave_scope();
         cx.current_function.pop_back();
-        cx.type_binding_depth -= 1;
-        cx.type_binding_index = 0;
-        cx.local_type_parameter_substitutions.leave_scope();
-        cx.substitutions.clear();
+        cx.leave_type_binding_scope();
+        cx.drain_substitutions_by_depth_bookmark(bookmark);
         Ok(())
     }
 
@@ -1038,8 +1075,12 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirTrait<'hir>,
     ) -> HirResult<()> {
-        // Push the trait type parameters onto the substitution stack
-        let depth_upon_function_entry = cx.type_binding_depth;
+        let bookmark = cx.get_type_binding_depth_bookmark();
+        cx.enter_type_binding_scope();
+
+        // Push the trait type parameters onto the substitution stack. As with `visit_function`,
+        // this makes the `T` in `trait Foo<T> {}` visible to the trait body. While there are no let
+        // bindings in traits because they are ambient, methods can still use these types.
         cx.local_type_parameter_substitutions.enter_scope();
         for type_parameter in node.signature.type_parameters.iter() {
             let substitution = cx.fresh_type_variable();
@@ -1049,27 +1090,26 @@ impl HirModuleTypeCheckerPass {
 
         // Iterate through the ambient method declarations
         for method in node.signature.methods.values() {
-            // Push any method type parameters onto the substitution stack
-            cx.local_type_parameter_substitutions.enter_scope();
+            let bookmark = cx.get_type_binding_depth_bookmark();
+            cx.enter_type_binding_scope();
+            // Push all the type arguments of the method onto the substitution stack, allowing the
+            // parameters and return type to refer to them.
             for type_parameter in method.type_parameters.iter() {
                 let substitution = cx.fresh_type_variable();
                 cx.local_type_parameter_substitutions
                     .add(type_parameter.name, substitution);
             }
-
+            // It is impossible that these types are uninitialized.
             Self::visit_type(cx, method.return_type)?;
             for parameter in method.parameters.iter() {
+                // It is impossible that these types are uninitialized.
                 Self::visit_type(cx, parameter.ty)?;
             }
-
-            cx.local_type_parameter_substitutions.leave_scope();
+            cx.leave_type_binding_scope();
+            cx.drain_substitutions_by_depth_bookmark(bookmark);
         }
-        cx.local_type_parameter_substitutions.leave_scope();
-        // Only clear substitutions that are related to the current De Bruijn depth. This ensures
-        // that trait substitutions are not cleared when visiting methods in a trait with multiple
-        // methods.
-        cx.substitutions
-            .retain(|(depth, _), _| *depth >= depth_upon_function_entry);
+        cx.leave_type_binding_scope();
+        cx.drain_substitutions_by_depth_bookmark(bookmark);
         Ok(())
     }
 
@@ -1084,9 +1124,11 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         // We acquire the trait's type parameters, and match the substitutions to the type arguments
         // the current instance instantiates them with.
-        cx.local_type_parameter_substitutions.enter_scope();
-        cx.type_binding_depth += 1;
-        cx.type_binding_index = 0;
+        let bookmark = cx.get_type_binding_depth_bookmark();
+        cx.enter_type_binding_scope();
+
+        // Ensure and substitute all the trait type parameters with the instantiated type arguments
+        // declared in the instance.
         for argument_index in 0..node.type_arguments.len() {
             // Match this type argument to the type parameters in the trait.
             let r#trait = cx
@@ -1128,12 +1170,8 @@ impl HirModuleTypeCheckerPass {
             Self::visit_function(cx, method)?;
         }
 
-        cx.type_binding_depth -= 1;
-        cx.type_binding_index = 0;
-        cx.local_type_parameter_substitutions.leave_scope();
-        // TODO: If we ever support generics on a higher level, we need to do the same retrain as we
-        //   do for functions.
-        cx.substitutions.clear();
+        cx.leave_type_binding_scope();
+        cx.drain_substitutions_by_depth_bookmark(bookmark);
         Ok(())
     }
 
