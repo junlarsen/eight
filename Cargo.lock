@@ -274,6 +274,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "eight-not"
+version = "0.1.0"
+
+[[package]]
 name = "eight-span"
 version = "0.1.0"
 dependencies = [

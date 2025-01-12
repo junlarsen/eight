@@ -9,6 +9,7 @@ members = [
     "compiler/eight-span",
     "compiler/eight-syntax",
     "compiler/eight-tests",
+    "tools/eight-not",
 ]
 
 [profile.dev.package]
