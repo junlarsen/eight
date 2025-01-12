@@ -13,7 +13,7 @@ instance Add<i32, i32> {
 // CHECK-LABEL: sema::wrong_trait_type_argument_count
 // CHECK-ERR-EMPTY:
 // CHECK-ERR-NEXT:   × trait Add requires 3 type arguments, but 2 were supplied
-// CHECK-ERR-NEXT:       ╭─[[[PATH:.*\/tests\/type-checker\/trait\/instantiation-missing-type-arguments\.eight:3:7]]]
+// CHECK-ERR-NEXT:       ╭─[[[PATH:.*\/tests\/ui\/trait\/instantiation-missing-type-arguments\.eight:3:7]]]
 // CHECK-ERR-NEXT:    2  │
 // CHECK-ERR-NEXT:    3  │ trait Add<A, B, R> {
 // CHECK-ERR-NEXT:       ·       ─┬─
