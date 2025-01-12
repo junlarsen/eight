@@ -11,18 +11,18 @@ instance Add<i32, i32> {
 }
 
 // CHECK-LABEL: sema::wrong_trait_type_argument_count
-// CHECK-ERR-EMPTY:
-// CHECK-ERR-NEXT:   × trait Add requires 3 type arguments, but 2 were supplied
-// CHECK-ERR-NEXT:       ╭─[[[PATH:.*\/tests\/ui\/trait\/instantiation-missing-type-arguments\.eight:3:7]]]
-// CHECK-ERR-NEXT:    2  │
-// CHECK-ERR-NEXT:    3  │ trait Add<A, B, R> {
-// CHECK-ERR-NEXT:       ·       ─┬─
-// CHECK-ERR-NEXT:       ·        ╰── declares 3 type arguments
-// CHECK-ERR-NEXT:    4  │   fn add(a: A, b: B) -> R;
-// CHECK-ERR-NEXT:    5  │ }
-// CHECK-ERR-NEXT:    6  │
-// CHECK-ERR-NEXT:    7  │ instance Add<i32, i32> {
-// CHECK-ERR-NEXT:       ·          ─┬─
-// CHECK-ERR-NEXT:       ·           ╰── supplied 2 type arguments
-// CHECK-ERR-NEXT:    8  │   fn add(a: i32, b: i32) -> i32 {
-// CHECK-ERR-NEXT:       ╰────
+// CHECK-EMPTY:
+// CHECK-NEXT:   × trait Add requires 3 type arguments, but 2 were supplied
+// CHECK-NEXT:       ╭─[[[PATH:.*\/tests\/ui\/trait\/instantiation-missing-type-arguments\.eight:3:7]]]
+// CHECK-NEXT:    2  │
+// CHECK-NEXT:    3  │ trait Add<A, B, R> {
+// CHECK-NEXT:       ·       ─┬─
+// CHECK-NEXT:       ·        ╰── declares 3 type arguments
+// CHECK-NEXT:    4  │   fn add(a: A, b: B) -> R;
+// CHECK-NEXT:    5  │ }
+// CHECK-NEXT:    6  │
+// CHECK-NEXT:    7  │ instance Add<i32, i32> {
+// CHECK-NEXT:       ·          ─┬─
+// CHECK-NEXT:       ·           ╰── supplied 2 type arguments
+// CHECK-NEXT:    8  │   fn add(a: i32, b: i32) -> i32 {
+// CHECK-NEXT:       ╰────
