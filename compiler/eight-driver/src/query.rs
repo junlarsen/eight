@@ -1,13 +1,15 @@
+use miette::Diagnostic;
 use nom::bytes::complete::take_while;
 use nom::character::complete::char;
-use nom::combinator::rest;
+use nom::combinator::{complete, rest};
+use nom::sequence::tuple;
 use nom::IResult;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Diagnostic)]
 pub enum QueryError {
     #[error("failed to parse emit query")]
-    InvalidQuery(#[from] nom::Err<nom::error::Error<String>>),
+    InvalidQuery,
 }
 
 /// A query for the output of the compiler.
@@ -40,16 +42,23 @@ pub enum EmitQuery {
 }
 
 impl EmitQuery {
-    pub fn new(input: &str) -> Result<Self, QueryError> {
-        todo!()
+    /// Parse a list of queries.
+    pub fn from_queries(queries: &[String]) -> Result<Vec<Self>, QueryError> {
+        let mut parsed_queries = Vec::with_capacity(queries.len());
+        for query in queries {
+            let (_, query) = EmitQuery::parse(query).map_err(|_| QueryError::InvalidQuery)?;
+            parsed_queries.push(query);
+        }
+        Ok(parsed_queries)
     }
 
+    /// Parse a single query.
     fn parse(input: &str) -> IResult<&str, Self> {
-        let (input, namespace) = take_while(|c: char| c != '.')(input)?;
-        let (input, _) = char('.')(input)?;
+        let (_, (namespace, _)) =
+            complete(tuple((take_while(|c: char| c != '.'), char('.'))))(input)?;
         match namespace {
             "hir" => {
-                let (input, query) = HirEmitQuery::parse(input)?;
+                let (_, query) = complete(HirEmitQuery::parse)(input)?;
                 Ok((input, Self::Hir(query)))
             }
             _ => unreachable!(),
@@ -63,6 +72,7 @@ pub enum HirEmitQuery {
 }
 
 impl HirEmitQuery {
+    /// Parse a `hir` namespace query.
     pub fn parse(input: &str) -> IResult<&str, Self> {
         let (input, category) = take_while(|c: char| c != '.')(input)?;
         let (input, _) = char('.')(input)?;
@@ -75,6 +85,7 @@ impl HirEmitQuery {
         }
     }
 
+    /// Parse a `hir.fn` category query.
     fn parse_function_query(input: &str) -> IResult<&str, Self> {
         let (input, name) = rest(input)?;
         Ok((input, Self::Function(name.to_owned())))

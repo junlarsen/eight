@@ -43,12 +43,12 @@ use std::collections::{BTreeMap, VecDeque};
 /// lowered into a TConst type, despite the fact that the type checker will replace this with a
 /// fresh type variable. This is to allow the type checker to generate a fresh type variable for
 /// each type parameter for the local context.
-pub struct ASTSyntaxLoweringPass<'ast, 'hir> {
+pub struct AstSyntaxLoweringPass<'ast, 'hir> {
     arena: &'hir HirArena<'hir>,
     loop_depth: RefCell<VecDeque<&'ast AstForStmt<'ast>>>,
 }
 
-impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
+impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     pub fn new(arena: &'hir HirArena<'hir>) -> Self {
         Self {
             arena,
@@ -57,7 +57,7 @@ impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
     }
 }
 
-impl<'ast, 'hir> ASTSyntaxLoweringPass<'ast, 'hir> {
+impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     pub fn visit_expr(&self, node: &'ast AstExpr) -> HirResult<HirExpr<'hir>> {
         match node {
             AstExpr::Assign(e) => self.visit_assign_expr(e),

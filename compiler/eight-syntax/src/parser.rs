@@ -1326,7 +1326,7 @@ mod tests {
         AstBinaryOp, AstBreakStmt, AstContinueStmt, AstExpr, AstIdentifier, AstType, AstUnaryOp,
     };
     use crate::error::{InvalidIntegerLiteralError, ParseError};
-    
+
     use eight_macros::{assert_err, assert_matches, assert_none, assert_ok, assert_some};
     use eight_span::Span;
 

@@ -1,7 +1,6 @@
 use clap::Parser;
-use eight_driver::pipeline::{
-    execute_compilation_pipeline, PipelineOptions,
-};
+use eight_driver::pipeline::{execute_compilation_pipeline, PipelineOptions};
+use eight_driver::query::{EmitQuery, QueryError};
 use miette::NamedSource;
 use std::io::BufRead;
 
@@ -20,17 +19,26 @@ struct AppArgs {
     emit_hir: bool,
 
     /// Emission queries to specify which nodes should be emitted.
-    #[arg(long, default_value = "")]
-    emit_query: Vec<String>,
+    #[arg(long)]
+    emit_query: Option<Vec<String>>,
 }
 
-impl From<AppArgs> for PipelineOptions {
-    fn from(args: AppArgs) -> Self {
-        Self {
-            emit_ast: args.emit_ast,
-            emit_hir: args.emit_hir,
-            queries: vec![]
-        }
+// NOTE: We don't care to use From here, because the PipelineOptions should be completely
+// independent of AppArgs. For all the PipelineOptions knows, the AppArgs don't even exist.
+impl TryInto<PipelineOptions> for AppArgs {
+    type Error = QueryError;
+
+    fn try_into(self) -> Result<PipelineOptions, Self::Error> {
+        let queries = self
+            .emit_query
+            .map(|q| EmitQuery::from_queries(&q))
+            .transpose()?
+            .unwrap_or_default();
+        Ok(PipelineOptions {
+            emit_ast: self.emit_ast,
+            emit_hir: self.emit_hir,
+            queries,
+        })
     }
 }
 
@@ -46,9 +54,9 @@ fn main() -> miette::Result<()> {
         path => std::fs::read_to_string(path).expect("Failed to read input file"),
     };
     let source_code = NamedSource::new(&args.input, source.clone());
-    let options = PipelineOptions::from(args);
 
     let result = || -> miette::Result<()> {
+        let options = args.try_into()?;
         execute_compilation_pipeline(options, &source)?;
         Ok(())
     }();

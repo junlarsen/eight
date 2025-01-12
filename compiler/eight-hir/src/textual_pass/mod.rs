@@ -25,538 +25,606 @@ use crate::stmt::{
 use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy};
 use crate::{HirModule, LinkageType};
 use eight_diagnostics::ice;
-use pretty::RcDoc;
+use pretty::{Arena, DocAllocator, DocBuilder};
 
-pub struct HirModuleDebugPass();
+#[derive(Default)]
+pub struct HirModuleTextualPass<'a> {
+    arena: Arena<'a>,
+}
 
-impl HirModuleDebugPass {
-    pub fn format_hir_module_to_string<'hir>(module: &'hir HirModule<'hir>) -> String {
-        let doc = Self::format_hir_module(module);
+impl<'a> HirModuleTextualPass<'a> {
+    pub fn format_doc_to_string(doc: DocBuilder<'a, Arena<'a>>) -> String {
         let mut w = Vec::new();
         doc.render(80, &mut w)
             .unwrap_or_else(|_| ice!("failed to render hir module"));
         String::from_utf8(w).unwrap()
     }
 
-    pub fn format_hir_module<'hir>(module: &'hir HirModule<'hir>) -> RcDoc<'hir, ()> {
-        RcDoc::text("hir_module")
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+    pub fn visit_module<'hir: 'a>(
+        &'a self,
+        module: &'hir HirModule<'hir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("hir_module")
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::text("declares"))
-                    .append(RcDoc::space())
-                    .append(RcDoc::text("{"))
+                self.arena
+                    .hardline()
+                    .append(self.arena.text("declares"))
+                    .append(self.arena.space())
+                    .append(self.arena.text("{"))
                     .append(
-                        RcDoc::hardline()
-                            .append(RcDoc::text("// module types"))
-                            .append(RcDoc::hardline())
+                        self.arena
+                            .hardline()
+                            .append(self.arena.text("// module types"))
+                            .append(self.arena.hardline())
                             .append(
-                                RcDoc::intersperse(
-                                    module.signature.types.iter().map(|(name, sig)| {
-                                        Self::format_hir_type_signature(name, sig)
-                                    }),
-                                    RcDoc::hardline(),
-                                )
-                                .append(RcDoc::hardline())
-                                .append(RcDoc::hardline())
-                                .append(RcDoc::text("// module struct types"))
-                                .append(RcDoc::hardline())
-                                .append(
-                                    RcDoc::intersperse(
-                                        module.signature.structs.iter().map(|(name, sig)| {
-                                            Self::format_hir_struct_signature(name, sig)
+                                self.arena
+                                    .intersperse(
+                                        module.signature.types.iter().map(|(name, sig)| {
+                                            self.visit_type_signature(name, sig)
                                         }),
-                                        RcDoc::hardline(),
+                                        self.arena.hardline(),
                                     )
-                                    .append(RcDoc::hardline())
-                                    .append(RcDoc::hardline())
-                                    .append(RcDoc::text("// module functions"))
-                                    .append(RcDoc::hardline())
-                                    .append(RcDoc::intersperse(
-                                        module.signature.functions.iter().map(|(name, sig)| {
-                                            Self::format_hir_function_signature(name, sig)
-                                        }),
-                                        RcDoc::hardline(),
-                                    ))
-                                    .append(RcDoc::hardline())
-                                    .append(RcDoc::hardline())
-                                    .append("// module traits")
-                                    .append(RcDoc::hardline())
-                                    .append(RcDoc::intersperse(
-                                        module.signature.traits.iter().map(|(name, sig)| {
-                                            Self::format_hir_trait_signature(name, sig)
-                                        }),
-                                        RcDoc::hardline(),
-                                    ))
-                                    .append(RcDoc::hardline())
-                                    .append(RcDoc::hardline())
-                                    .append(RcDoc::text("// module instances"))
-                                    .append(RcDoc::hardline())
+                                    .append(self.arena.hardline())
+                                    .append(self.arena.hardline())
+                                    .append(self.arena.text("// module struct types"))
+                                    .append(self.arena.hardline())
                                     .append(
-                                        RcDoc::intersperse(
-                                            module.signature.instances.iter().map(|sig| {
-                                                Self::format_hir_instance_signature(
-                                                    sig.trait_name,
-                                                    sig,
-                                                )
-                                            }),
-                                            RcDoc::hardline(),
-                                        ),
+                                        self.arena
+                                            .intersperse(
+                                                module.signature.structs.iter().map(
+                                                    |(name, sig)| {
+                                                        self.visit_struct_signature(name, sig)
+                                                    },
+                                                ),
+                                                self.arena.hardline(),
+                                            )
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.text("// module functions"))
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.intersperse(
+                                                module.signature.functions.iter().map(
+                                                    |(name, sig)| {
+                                                        self.visit_function_signature(name, sig)
+                                                    },
+                                                ),
+                                                self.arena.hardline(),
+                                            ))
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.hardline())
+                                            .append("// module traits")
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.intersperse(
+                                                module.signature.traits.iter().map(
+                                                    |(name, sig)| {
+                                                        self.visit_trait_signature(name, sig)
+                                                    },
+                                                ),
+                                                self.arena.hardline(),
+                                            ))
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.text("// module instances"))
+                                            .append(self.arena.hardline())
+                                            .append(self.arena.intersperse(
+                                                module.signature.instances.iter().map(|sig| {
+                                                    self.visit_instance_signature(
+                                                        sig.trait_name,
+                                                        sig,
+                                                    )
+                                                }),
+                                                self.arena.hardline(),
+                                            )),
                                     ),
-                                ),
                             )
                             .nest(2)
                             .group(),
                     )
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::text("}"))
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::text("defining"))
-                    .append(RcDoc::space())
-                    .append(RcDoc::text("{"))
+                    .append(self.arena.hardline())
+                    .append(self.arena.text("}"))
+                    .append(self.arena.hardline())
+                    .append(self.arena.hardline())
+                    .append(self.arena.text("defining"))
+                    .append(self.arena.space())
+                    .append(self.arena.text("{"))
                     .append(
-                        RcDoc::hardline()
+                        self.arena
+                            .hardline()
                             .append("// module functions")
-                            .append(RcDoc::hardline())
-                            .append(RcDoc::intersperse(
-                                module
-                                    .body
-                                    .functions
-                                    .values()
-                                    .filter(|f| f.linkage_type == LinkageType::Eight)
-                                    .map(|f| Self::format_hir_function(f)),
-                                RcDoc::hardline(),
-                            ))
-                            .append(RcDoc::hardline())
+                            .append(self.arena.hardline())
+                            .append(
+                                self.arena.intersperse(
+                                    module
+                                        .body
+                                        .functions
+                                        .values()
+                                        .filter(|f| f.linkage_type == LinkageType::Eight)
+                                        .map(|f| self.visit_function(f)),
+                                    self.arena.hardline(),
+                                ),
+                            )
+                            .append(self.arena.hardline())
                             .append("// module intrinsic functions")
-                            .append(RcDoc::hardline())
-                            .append(RcDoc::intersperse(
-                                module
-                                    .body
-                                    .instances
-                                    .iter()
-                                    .map(|i| Self::format_hir_instance(i)),
-                                RcDoc::hardline(),
+                            .append(self.arena.hardline())
+                            .append(self.arena.intersperse(
+                                module.body.instances.iter().map(|i| self.visit_instance(i)),
+                                self.arena.hardline(),
                             ))
-                            .append(RcDoc::hardline())
+                            .append(self.arena.hardline())
                             .nest(2)
                             .group(),
                     )
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::text("}")),
+                    .append(self.arena.hardline())
+                    .append(self.arena.text("}")),
             )
             .nest(2)
             .group()
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_function<'hir>(function: &'hir HirFunction) -> RcDoc<'hir, ()> {
-        RcDoc::text("fn")
-            .append(RcDoc::space())
-            .append(RcDoc::text(function.name))
-            .append(RcDoc::text("<"))
-            .append(RcDoc::intersperse(
+    pub fn visit_function<'hir: 'a>(
+        &'a self,
+        function: &'hir HirFunction,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("fn")
+            .append(self.arena.space())
+            .append(self.arena.text(function.name))
+            .append(self.arena.text("<"))
+            .append(self.arena.intersperse(
                 function.signature.type_parameters.iter().map(|p| {
                     match function.type_parameter_substitutions.get(p.name) {
-                        Some(t) => Self::format_hir_ty(t),
-                        None => RcDoc::text(p.name),
+                        Some(t) => self.visit_ty(t),
+                        None => self.arena.text(p.name),
                     }
                 }),
-                RcDoc::text(", "),
+                self.arena.text(", "),
             ))
-            .append(RcDoc::text(">"))
-            .append(RcDoc::text("("))
-            .append(RcDoc::intersperse(
+            .append(self.arena.text(">"))
+            .append(self.arena.text("("))
+            .append(self.arena.intersperse(
                 function.signature.parameters.iter().map(|p| {
-                    RcDoc::text(p.name)
-                        .append(RcDoc::text(":"))
-                        .append(RcDoc::space())
-                        .append(Self::format_hir_ty(p.ty))
+                    self.arena
+                        .text(p.name)
+                        .append(self.arena.text(":"))
+                        .append(self.arena.space())
+                        .append(self.visit_ty(p.ty))
                 }),
-                RcDoc::text(", "),
+                self.arena.text(", "),
             ))
-            .append(RcDoc::text(")"))
-            .append(RcDoc::space())
-            .append(RcDoc::text("->"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(
-                match &function.instantiated_return_type {
-                    Some(t) => t,
-                    None => function.signature.return_type,
-                },
-            ))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+            .append(self.arena.text(")"))
+            .append(self.arena.space())
+            .append(self.arena.text("->"))
+            .append(self.arena.space())
+            .append(self.visit_ty(match &function.instantiated_return_type {
+                Some(t) => t,
+                None => function.signature.return_type,
+            }))
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
+                self.arena
+                    .hardline()
                     .append(
-                        RcDoc::intersperse(
-                            function.body.iter().map(|s| Self::format_hir_stmt(s)),
-                            RcDoc::line(),
-                        )
-                        .append(RcDoc::hardline()),
+                        self.arena
+                            .intersperse(
+                                function.body.iter().map(|s| self.visit_stmt(s)),
+                                self.arena.line(),
+                            )
+                            .append(self.arena.hardline()),
                     )
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::text("}"))
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_instance<'hir>(instance: &'hir HirInstance<'hir>) -> RcDoc<'hir, ()> {
-        RcDoc::text("instance")
-            .append(RcDoc::space())
-            .append(RcDoc::text(instance.name))
-            .append(RcDoc::text("<"))
-            .append(RcDoc::intersperse(
-                instance
-                    .signature
-                    .type_arguments
-                    .iter()
-                    .map(|p| Self::format_hir_ty(p)),
-                RcDoc::text(", "),
-            ))
-            .append(RcDoc::text(">"))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+    pub fn visit_instance<'hir: 'a>(
+        &'a self,
+        instance: &'hir HirInstance<'hir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("instance")
+            .append(self.arena.space())
+            .append(self.arena.text(instance.name))
+            .append(self.arena.text("<"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        instance
-                            .members
-                            .iter()
-                            .map(|f| Self::format_hir_function(f)),
-                        RcDoc::hardline(),
+                self.arena.intersperse(
+                    instance
+                        .signature
+                        .type_arguments
+                        .iter()
+                        .map(|p| self.visit_ty(p)),
+                    self.arena.text(", "),
+                ),
+            )
+            .append(self.arena.text(">"))
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
+            .append(
+                self.arena
+                    .hardline()
+                    .append(self.arena.intersperse(
+                        instance.members.iter().map(|f| self.visit_function(f)),
+                        self.arena.hardline(),
                     ))
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_function_signature<'hir>(
+    pub fn visit_function_signature<'hir: 'a>(
+        &'a self,
         name: &'hir str,
         signature: &'hir HirFunctionApiSignature<'hir>,
-    ) -> RcDoc<'hir, ()> {
-        RcDoc::text("fn")
-            .append(RcDoc::space())
-            .append(RcDoc::text(name))
-            .append(Self::format_hir_type_parameter_signature(
-                signature.type_parameters.as_slice(),
-            ))
-            .append(Self::format_function_parameters(
-                signature.parameters.as_slice(),
-            ))
-            .append(RcDoc::space())
-            .append(RcDoc::text("->"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(signature.return_type))
-            .append(RcDoc::text(";"))
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("fn")
+            .append(self.arena.space())
+            .append(self.arena.text(name))
+            .append(self.visit_type_parameter_signature(signature.type_parameters.as_slice()))
+            .append(self.visit_function_parameter_list(signature.parameters.as_slice()))
+            .append(self.arena.space())
+            .append(self.arena.text("->"))
+            .append(self.arena.space())
+            .append(self.visit_ty(signature.return_type))
+            .append(self.arena.text(";"))
     }
 
-    pub fn format_hir_type_signature<'hir>(
+    pub fn visit_type_signature<'hir: 'a>(
+        &'a self,
         name: &'hir str,
-        _: &'hir HirTypeApiSignature,
-    ) -> RcDoc<'hir, ()> {
-        RcDoc::text("type")
-            .append(RcDoc::space())
-            .append(RcDoc::text(name))
-            .append(RcDoc::text(";"))
+        _: &'hir HirTypeApiSignature<'hir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("type")
+            .append(self.arena.space())
+            .append(self.arena.text(name))
+            .append(self.arena.text(";"))
     }
 
-    pub fn format_hir_struct_signature<'hir>(
+    pub fn visit_struct_signature<'hir: 'a>(
+        &'a self,
         name: &'hir str,
         ty: &'hir HirStructApiSignature,
-    ) -> RcDoc<'hir, ()> {
-        RcDoc::text("struct")
-            .append(RcDoc::space())
-            .append(RcDoc::text(name))
-            .append(RcDoc::space())
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("struct")
+            .append(self.arena.space())
+            .append(self.arena.text(name))
+            .append(self.arena.space())
             .append(
-                RcDoc::text("{")
+                self.arena
+                    .text("{")
                     .append(
-                        RcDoc::hardline()
-                            .append(RcDoc::intersperse(
+                        self.arena
+                            .hardline()
+                            .append(self.arena.intersperse(
                                 ty.fields.iter().map(|(name, ty)| {
-                                    RcDoc::text(*name)
-                                        .append(RcDoc::text(":"))
-                                        .append(RcDoc::space())
-                                        .append(Self::format_hir_ty(ty.ty))
-                                        .append(RcDoc::text(","))
+                                    self.arena
+                                        .text(*name)
+                                        .append(self.arena.text(":"))
+                                        .append(self.arena.space())
+                                        .append(self.visit_ty(ty.ty))
+                                        .append(self.arena.text(","))
                                 }),
-                                RcDoc::line(),
+                                self.arena.line(),
                             ))
                             .nest(2)
                             .group(),
                     )
-                    .append(RcDoc::hardline())
-                    .append(RcDoc::text("}")),
+                    .append(self.arena.hardline())
+                    .append(self.arena.text("}")),
             )
     }
 
-    pub fn format_function_parameters<'hir>(
+    pub fn visit_function_parameter_list<'hir: 'a>(
+        &'a self,
         parameters: &'hir [&'hir HirFunctionParameterApiSignature],
-    ) -> RcDoc<'hir, ()> {
-        RcDoc::text("(")
-            .append(RcDoc::intersperse(
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("(")
+            .append(self.arena.intersperse(
                 parameters.iter().map(|p| {
-                    RcDoc::text(p.name).append(
-                        RcDoc::text(":")
-                            .append(RcDoc::space())
-                            .append(Self::format_hir_ty(p.ty)),
+                    self.arena.text(p.name).append(
+                        self.arena
+                            .text(":")
+                            .append(self.arena.space())
+                            .append(self.visit_ty(p.ty)),
                     )
                 }),
-                RcDoc::text(", "),
+                self.arena.text(", "),
             ))
-            .append(RcDoc::text(")"))
+            .append(self.arena.text(")"))
     }
 
-    pub fn format_hir_instance_signature<'hir>(
+    pub fn visit_instance_signature<'hir: 'a>(
+        &'a self,
         name: &'hir str,
         sig: &'hir HirInstanceApiSignature,
-    ) -> RcDoc<'hir, ()> {
-        RcDoc::text("instance")
-            .append(RcDoc::space())
-            .append(RcDoc::text(name))
-            .append(RcDoc::text("<"))
-            .append(RcDoc::intersperse(
-                sig.type_arguments.iter().map(|p| Self::format_hir_ty(p)),
-                RcDoc::text(", "),
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("instance")
+            .append(self.arena.space())
+            .append(self.arena.text(name))
+            .append(self.arena.text("<"))
+            .append(self.arena.intersperse(
+                sig.type_arguments.iter().map(|p| self.visit_ty(p)),
+                self.arena.text(", "),
             ))
-            .append(RcDoc::text(">"))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+            .append(self.arena.text(">"))
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        sig.methods
-                            .iter()
-                            .map(|(name, sig)| Self::format_hir_function_signature(name, sig)),
-                        RcDoc::hardline(),
-                    ))
+                self.arena
+                    .hardline()
+                    .append(
+                        self.arena.intersperse(
+                            sig.methods
+                                .iter()
+                                .map(|(name, sig)| self.visit_function_signature(name, sig)),
+                            self.arena.hardline(),
+                        ),
+                    )
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_trait_signature<'hir>(
+    pub fn visit_trait_signature<'hir: 'a>(
+        &'a self,
         name: &'hir str,
         sig: &'hir HirTraitApiSignature,
-    ) -> RcDoc<'hir, ()> {
-        RcDoc::text("trait")
-            .append(RcDoc::space())
-            .append(RcDoc::text(name))
-            .append(Self::format_hir_type_parameter_signature(
-                sig.type_parameters.as_slice(),
-            ))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("trait")
+            .append(self.arena.space())
+            .append(self.arena.text(name))
+            .append(self.visit_type_parameter_signature(sig.type_parameters.as_slice()))
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        sig.methods
-                            .iter()
-                            .map(|(name, sig)| Self::format_hir_function_signature(name, sig)),
-                        RcDoc::hardline(),
-                    ))
+                self.arena
+                    .hardline()
+                    .append(
+                        self.arena.intersperse(
+                            sig.methods
+                                .iter()
+                                .map(|(name, sig)| self.visit_function_signature(name, sig)),
+                            self.arena.hardline(),
+                        ),
+                    )
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_type_parameter_signature<'hir>(
+    pub fn visit_type_parameter_signature<'hir: 'a>(
+        &'a self,
         parameters: &[&'hir HirTypeParameterApiSignature],
-    ) -> RcDoc<'hir, ()> {
+    ) -> DocBuilder<Arena<'a>> {
         if parameters.is_empty() {
-            return RcDoc::nil();
+            return self.arena.nil();
         }
-        RcDoc::text("<")
-            .append(RcDoc::intersperse(
-                parameters.iter().map(|p| RcDoc::text(p.name)),
-                RcDoc::text(", "),
+        self.arena
+            .text("<")
+            .append(self.arena.intersperse(
+                parameters.iter().map(|p| self.arena.text(p.name)),
+                self.arena.text(", "),
             ))
-            .append(RcDoc::text(">"))
+            .append(self.arena.text(">"))
     }
 
-    pub fn format_hir_stmt<'hir>(stmt: &'hir HirStmt) -> RcDoc<'hir, ()> {
+    pub fn visit_stmt<'hir: 'a>(&'a self, stmt: &'hir HirStmt) -> DocBuilder<Arena<'a>> {
         match stmt {
-            HirStmt::Let(s) => Self::format_hir_let_stmt(s),
-            HirStmt::Return(s) => Self::format_hir_return_stmt(s),
-            HirStmt::Loop(s) => Self::format_hir_loop_stmt(s),
-            HirStmt::Expr(s) => Self::format_hir_expr_stmt(s),
-            HirStmt::If(s) => Self::format_hir_if_stmt(s),
-            HirStmt::Break(s) => Self::format_hir_break_stmt(s),
-            HirStmt::Continue(s) => Self::format_hir_continue_stmt(s),
-            HirStmt::Block(s) => Self::format_hir_block_stmt(s),
+            HirStmt::Let(s) => self.visit_let_stmt(s),
+            HirStmt::Return(s) => self.visit_return_stmt(s),
+            HirStmt::Loop(s) => self.visit_loop_stmt(s),
+            HirStmt::Expr(s) => self.visit_expr_stmt(s),
+            HirStmt::If(s) => self.visit_if_stmt(s),
+            HirStmt::Break(s) => self.visit_break_stmt(s),
+            HirStmt::Continue(s) => self.visit_continue_stmt(s),
+            HirStmt::Block(s) => self.visit_block_stmt(s),
         }
     }
 
-    pub fn format_hir_let_stmt<'hir>(stmt: &'hir HirLetStmt) -> RcDoc<'hir, ()> {
-        RcDoc::text("let")
-            .append(RcDoc::space())
-            .append(RcDoc::text(stmt.name))
-            .append(RcDoc::text(":"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(stmt.ty))
-            .append(RcDoc::space())
-            .append(RcDoc::text("="))
-            .append(RcDoc::space())
-            .append(Self::format_hir_expr(&stmt.value))
-            .append(RcDoc::text(";"))
+    pub fn visit_let_stmt<'hir: 'a>(&'a self, stmt: &'hir HirLetStmt) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("let")
+            .append(self.arena.space())
+            .append(self.arena.text(stmt.name))
+            .append(self.arena.text(":"))
+            .append(self.arena.space())
+            .append(self.visit_ty(stmt.ty))
+            .append(self.arena.space())
+            .append(self.arena.text("="))
+            .append(self.arena.space())
+            .append(self.visit_expr(&stmt.value))
+            .append(self.arena.text(";"))
     }
 
-    pub fn format_hir_return_stmt<'hir>(stmt: &'hir HirReturnStmt) -> RcDoc<'hir, ()> {
-        let mut doc = RcDoc::text("return");
+    pub fn visit_return_stmt<'hir: 'a>(
+        &'a self,
+        stmt: &'hir HirReturnStmt,
+    ) -> DocBuilder<Arena<'a>> {
+        let mut doc = self.arena.text("return");
         if let Some(value) = &stmt.value {
             doc = doc
-                .append(RcDoc::space())
-                .append(Self::format_hir_expr(value))
-                .append(RcDoc::text(";"));
+                .append(self.arena.space())
+                .append(self.visit_expr(value))
+                .append(self.arena.text(";"));
         }
         doc
     }
 
-    pub fn format_hir_loop_stmt<'hir>(stmt: &'hir HirLoopStmt) -> RcDoc<'hir, ()> {
-        RcDoc::text("while")
-            .append(RcDoc::space())
-            .append(RcDoc::text("("))
-            .append(Self::format_hir_expr(&stmt.condition))
-            .append(RcDoc::text(")"))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+    pub fn visit_loop_stmt<'hir: 'a>(&'a self, stmt: &'hir HirLoopStmt) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("while")
+            .append(self.arena.space())
+            .append(self.arena.text("("))
+            .append(self.visit_expr(&stmt.condition))
+            .append(self.arena.text(")"))
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        stmt.body.iter().map(|s| Self::format_hir_stmt(s)),
-                        RcDoc::hardline(),
+                self.arena
+                    .hardline()
+                    .append(self.arena.intersperse(
+                        stmt.body.iter().map(|s| self.visit_stmt(s)),
+                        self.arena.hardline(),
                     ))
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_if_stmt<'hir>(stmt: &'hir HirIfStmt) -> RcDoc<'hir, ()> {
-        RcDoc::text("if")
-            .append(RcDoc::space())
-            .append(RcDoc::text("("))
-            .append(Self::format_hir_expr(&stmt.condition))
-            .append(RcDoc::text(")"))
-            .append(RcDoc::text("{"))
+    pub fn visit_if_stmt<'hir: 'a>(&'a self, stmt: &'hir HirIfStmt) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("if")
+            .append(self.arena.space())
+            .append(self.arena.text("("))
+            .append(self.visit_expr(&stmt.condition))
+            .append(self.arena.text(")"))
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        stmt.happy_path.iter().map(|s| Self::format_hir_stmt(s)),
-                        RcDoc::hardline(),
+                self.arena
+                    .hardline()
+                    .append(self.arena.intersperse(
+                        stmt.happy_path.iter().map(|s| self.visit_stmt(s)),
+                        self.arena.hardline(),
                     ))
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
-            .append(RcDoc::space())
-            .append(RcDoc::text("else"))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
+            .append(self.arena.space())
+            .append(self.arena.text("else"))
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        stmt.unhappy_path.iter().map(|s| Self::format_hir_stmt(s)),
-                        RcDoc::hardline(),
+                self.arena
+                    .hardline()
+                    .append(self.arena.intersperse(
+                        stmt.unhappy_path.iter().map(|s| self.visit_stmt(s)),
+                        self.arena.hardline(),
                     ))
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_break_stmt(_: &HirBreakStmt) -> RcDoc<()> {
-        RcDoc::text("break").append(RcDoc::text(";"))
+    pub fn visit_break_stmt(&'a self, _: &HirBreakStmt) -> DocBuilder<Arena<'a>> {
+        self.arena.text("break").append(self.arena.text(";"))
     }
 
-    pub fn format_hir_continue_stmt(_: &HirContinueStmt) -> RcDoc<()> {
-        RcDoc::text("continue").append(RcDoc::text(";"))
+    pub fn visit_continue_stmt(&'a self, _: &HirContinueStmt) -> DocBuilder<Arena<'a>> {
+        self.arena.text("continue").append(self.arena.text(";"))
     }
 
-    pub fn format_hir_expr_stmt<'hir>(stmt: &'hir HirExprStmt) -> RcDoc<'hir, ()> {
-        Self::format_hir_expr(&stmt.expr).append(RcDoc::text(";"))
+    pub fn visit_expr_stmt<'hir: 'a>(&'a self, stmt: &'hir HirExprStmt) -> DocBuilder<Arena<'a>> {
+        self.visit_expr(&stmt.expr).append(self.arena.text(";"))
     }
 
-    pub fn format_hir_block_stmt<'hir>(stmt: &'hir HirBlockStmt) -> RcDoc<'hir, ()> {
-        RcDoc::text("{")
+    pub fn visit_block_stmt<'hir: 'a>(&'a self, stmt: &'hir HirBlockStmt) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("{")
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        stmt.body.iter().map(|s| Self::format_hir_stmt(s)),
-                        RcDoc::hardline(),
+                self.arena
+                    .hardline()
+                    .append(self.arena.intersperse(
+                        stmt.body.iter().map(|s| self.visit_stmt(s)),
+                        self.arena.hardline(),
                     ))
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_expr<'hir>(expr: &'hir HirExpr) -> RcDoc<'hir, ()> {
+    pub fn visit_expr<'hir: 'a>(&'a self, expr: &'hir HirExpr) -> DocBuilder<Arena<'a>> {
         let inner = match expr {
-            HirExpr::IntegerLiteral(e) => Self::format_hir_integer_literal_expr(e),
-            HirExpr::BooleanLiteral(e) => Self::format_hir_boolean_literal_expr(e),
-            HirExpr::Assign(e) => Self::format_hir_assign_expr(e),
-            HirExpr::UnaryOp(e) => Self::format_hir_unary_op_expr(e),
-            HirExpr::BinaryOp(e) => Self::format_hir_binary_op_expr(e),
-            HirExpr::Reference(e) => Self::format_hir_reference_expr(e),
-            HirExpr::ConstantIndex(e) => Self::format_hir_constant_index_expr(e),
-            HirExpr::OffsetIndex(e) => Self::format_hir_offset_index_expr(e),
-            HirExpr::Call(e) => Self::format_hir_call_expr(e),
-            HirExpr::Construct(e) => Self::format_hir_construct_expr(e),
-            HirExpr::Group(e) => Self::format_hir_group_expr(e),
-            HirExpr::AddressOf(e) => Self::format_hir_address_of_expr(e),
-            HirExpr::Deref(e) => Self::format_hir_deref_expr(e),
+            HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(e),
+            HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(e),
+            HirExpr::Assign(e) => self.visit_assign_expr(e),
+            HirExpr::UnaryOp(e) => self.visit_unary_op_expr(e),
+            HirExpr::BinaryOp(e) => self.visit_binary_op_expr(e),
+            HirExpr::Reference(e) => self.visit_reference_expr(e),
+            HirExpr::ConstantIndex(e) => self.visit_constant_index_expr(e),
+            HirExpr::OffsetIndex(e) => self.visit_offset_index_expr(e),
+            HirExpr::Call(e) => self.visit_call_expr(e),
+            HirExpr::Construct(e) => self.visit_construct_expr(e),
+            HirExpr::Group(e) => self.visit_group_expr(e),
+            HirExpr::AddressOf(e) => self.visit_address_of_expr(e),
+            HirExpr::Deref(e) => self.visit_deref_expr(e),
         };
-        RcDoc::text("(")
+        self.arena
+            .text("(")
             .append(inner)
-            .append(RcDoc::space())
-            .append(RcDoc::text("as"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(expr.ty()))
-            .append(RcDoc::text(")"))
+            .append(self.arena.space())
+            .append(self.arena.text("as"))
+            .append(self.arena.space())
+            .append(self.visit_ty(expr.ty()))
+            .append(self.arena.text(")"))
     }
 
-    pub fn format_hir_integer_literal_expr<'hir>(expr: &HirIntegerLiteralExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text(expr.value.to_string())
+    pub fn visit_integer_literal_expr<'hir: 'a>(
+        &'a self,
+        expr: &HirIntegerLiteralExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena.text(expr.value.to_string())
     }
 
-    pub fn format_hir_boolean_literal_expr<'hir>(expr: &HirBooleanLiteralExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text(expr.value.to_string())
+    pub fn visit_boolean_literal_expr<'hir: 'a>(
+        &'a self,
+        expr: &HirBooleanLiteralExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena.text(expr.value.to_string())
     }
 
-    pub fn format_hir_assign_expr<'hir>(expr: &'hir HirAssignExpr) -> RcDoc<'hir, ()> {
-        Self::format_hir_expr(&expr.lhs)
-            .append(RcDoc::text(" = "))
-            .append(Self::format_hir_expr(&expr.rhs))
+    pub fn visit_assign_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirAssignExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.visit_expr(&expr.lhs)
+            .append(self.arena.text(" = "))
+            .append(self.visit_expr(&expr.rhs))
     }
 
-    pub fn format_hir_unary_op_expr<'hir>(expr: &'hir HirUnaryOpExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text(match &expr.op {
-            HirUnaryOp::Not => "!",
-            HirUnaryOp::Neg => "-",
-        })
-        .append(Self::format_hir_expr(&expr.operand))
+    pub fn visit_unary_op_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirUnaryOpExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text(match &expr.op {
+                HirUnaryOp::Not => "!",
+                HirUnaryOp::Neg => "-",
+            })
+            .append(self.visit_expr(&expr.operand))
     }
 
-    pub fn format_hir_binary_op_expr<'hir>(expr: &'hir HirBinaryOpExpr) -> RcDoc<'hir, ()> {
-        Self::format_hir_expr(&expr.lhs)
-            .append(RcDoc::text(" "))
-            .append(RcDoc::text(match &expr.op {
+    pub fn visit_binary_op_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirBinaryOpExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.visit_expr(&expr.lhs)
+            .append(self.arena.text(" "))
+            .append(self.arena.text(match &expr.op {
                 HirBinaryOp::Add => "+",
                 HirBinaryOp::Sub => "-",
                 HirBinaryOp::Mul => "*",
@@ -571,136 +639,159 @@ impl HirModuleDebugPass {
                 HirBinaryOp::And => "&&",
                 HirBinaryOp::Or => "||",
             }))
-            .append(RcDoc::text(" "))
-            .append(Self::format_hir_expr(&expr.rhs))
+            .append(self.arena.text(" "))
+            .append(self.visit_expr(&expr.rhs))
     }
 
-    pub fn format_hir_reference_expr<'hir>(expr: &'hir HirReferenceExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text(expr.name)
+    pub fn visit_reference_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirReferenceExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena.text(expr.name)
     }
 
-    pub fn format_hir_constant_index_expr<'hir>(
+    pub fn visit_constant_index_expr<'hir: 'a>(
+        &'a self,
         expr: &'hir HirConstantIndexExpr,
-    ) -> RcDoc<'hir, ()> {
-        Self::format_hir_expr(&expr.origin)
-            .append(RcDoc::text("."))
+    ) -> DocBuilder<Arena<'a>> {
+        self.visit_expr(&expr.origin)
+            .append(self.arena.text("."))
             .append(expr.index)
     }
 
-    pub fn format_hir_offset_index_expr<'hir>(expr: &'hir HirOffsetIndexExpr) -> RcDoc<'hir, ()> {
-        Self::format_hir_expr(&expr.origin)
-            .append(RcDoc::text("["))
-            .append(Self::format_hir_expr(&expr.index))
-            .append(RcDoc::text("]"))
+    pub fn visit_offset_index_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirOffsetIndexExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.visit_expr(&expr.origin)
+            .append(self.arena.text("["))
+            .append(self.visit_expr(&expr.index))
+            .append(self.arena.text("]"))
     }
 
-    pub fn format_hir_call_expr<'hir>(expr: &'hir HirCallExpr) -> RcDoc<'hir, ()> {
-        Self::format_hir_expr(&expr.callee)
-            .append(RcDoc::text("::"))
-            .append(RcDoc::text("<"))
-            .append(RcDoc::intersperse(
-                expr.type_arguments.iter().map(|a| Self::format_hir_ty(a)),
-                RcDoc::text(","),
+    pub fn visit_call_expr<'hir: 'a>(&'a self, expr: &'hir HirCallExpr) -> DocBuilder<Arena<'a>> {
+        self.visit_expr(&expr.callee)
+            .append(self.arena.text("::"))
+            .append(self.arena.text("<"))
+            .append(self.arena.intersperse(
+                expr.type_arguments.iter().map(|a| self.visit_ty(a)),
+                self.arena.text(","),
             ))
-            .append(RcDoc::text(">"))
-            .append(RcDoc::text("("))
-            .append(RcDoc::intersperse(
-                expr.arguments.iter().map(|a| Self::format_hir_expr(a)),
-                RcDoc::text(","),
+            .append(self.arena.text(">"))
+            .append(self.arena.text("("))
+            .append(self.arena.intersperse(
+                expr.arguments.iter().map(|a| self.visit_expr(a)),
+                self.arena.text(","),
             ))
-            .append(RcDoc::text(")"))
+            .append(self.arena.text(")"))
     }
 
-    pub fn format_hir_construct_expr<'hir>(expr: &'hir HirConstructExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text("new")
-            .append(RcDoc::space())
-            .append(Self::format_hir_ty(expr.callee))
-            .append(RcDoc::space())
-            .append(RcDoc::text("{"))
+    pub fn visit_construct_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirConstructExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("new")
+            .append(self.arena.space())
+            .append(self.visit_ty(expr.callee))
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
             .append(
-                RcDoc::hardline()
-                    .append(RcDoc::intersperse(
-                        expr.arguments
-                            .iter()
-                            .map(|a| Self::format_hir_construct_expr_argument(a)),
-                        RcDoc::line(),
-                    ))
+                self.arena
+                    .hardline()
+                    .append(
+                        self.arena.intersperse(
+                            expr.arguments
+                                .iter()
+                                .map(|a| self.visit_construct_expr_argument(a)),
+                            self.arena.line(),
+                        ),
+                    )
                     .nest(2)
                     .group(),
             )
-            .append(RcDoc::hardline())
-            .append(RcDoc::text("}"))
+            .append(self.arena.hardline())
+            .append(self.arena.text("}"))
     }
 
-    pub fn format_hir_construct_expr_argument<'hir>(
+    pub fn visit_construct_expr_argument<'hir: 'a>(
+        &'a self,
         expr: &'hir HirConstructExprArgument,
-    ) -> RcDoc<'hir, ()> {
-        RcDoc::text(expr.field)
-            .append(RcDoc::text(":"))
-            .append(RcDoc::space())
-            .append(Self::format_hir_expr(&expr.expr))
-            .append(RcDoc::text(","))
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text(expr.field)
+            .append(self.arena.text(":"))
+            .append(self.arena.space())
+            .append(self.visit_expr(&expr.expr))
+            .append(self.arena.text(","))
     }
 
-    pub fn format_hir_group_expr<'hir>(expr: &'hir HirGroupExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text("(")
-            .append(Self::format_hir_expr(&expr.inner))
-            .append(RcDoc::text(")"))
+    pub fn visit_group_expr<'hir: 'a>(&'a self, expr: &'hir HirGroupExpr) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("(")
+            .append(self.visit_expr(&expr.inner))
+            .append(self.arena.text(")"))
     }
 
-    pub fn format_hir_address_of_expr<'hir>(expr: &'hir HirAddressOfExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text("&").append(Self::format_hir_expr(&expr.inner))
+    pub fn visit_address_of_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirAddressOfExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena.text("&").append(self.visit_expr(&expr.inner))
     }
 
-    pub fn format_hir_deref_expr<'hir>(expr: &'hir HirDerefExpr) -> RcDoc<'hir, ()> {
-        RcDoc::text("*").append(Self::format_hir_expr(&expr.inner))
+    pub fn visit_deref_expr<'hir: 'a>(&'a self, expr: &'hir HirDerefExpr) -> DocBuilder<Arena<'a>> {
+        self.arena.text("*").append(self.visit_expr(&expr.inner))
     }
 
-    pub fn format_hir_ty<'hir>(ty: &'hir HirTy) -> RcDoc<'hir, ()> {
+    pub fn visit_ty<'hir: 'a>(&'a self, ty: &'hir HirTy) -> DocBuilder<Arena<'a>> {
         match ty {
-            HirTy::Integer32(_) => RcDoc::text("i32"),
-            HirTy::Boolean(_) => RcDoc::text("bool"),
-            HirTy::Unit(_) => RcDoc::text("unit"),
-            HirTy::Variable(t) => Self::format_hir_variable_ty(t),
-            HirTy::Function(t) => Self::format_hir_function_ty(t),
-            HirTy::Nominal(t) => Self::format_hir_nominal_ty(t),
-            HirTy::Pointer(t) => Self::format_hir_pointer_ty(t),
-            HirTy::Uninitialized(_) => Self::format_hir_uninitialized_ty(ty),
+            HirTy::Integer32(_) => self.arena.text("i32"),
+            HirTy::Boolean(_) => self.arena.text("bool"),
+            HirTy::Unit(_) => self.arena.text("unit"),
+            HirTy::Variable(t) => self.visit_variable_ty(t),
+            HirTy::Function(t) => self.visit_function_ty(t),
+            HirTy::Nominal(t) => self.visit_nominal_ty(t),
+            HirTy::Pointer(t) => self.visit_pointer_ty(t),
+            HirTy::Uninitialized(_) => self.visit_uninitialized_ty(ty),
         }
     }
 
-    pub fn format_hir_variable_ty(ty: &HirVariableTy) -> RcDoc<()> {
-        RcDoc::text("$")
-            .append(RcDoc::text(ty.depth.to_string()))
-            .append(RcDoc::text("@"))
-            .append(RcDoc::text(ty.index.to_string()))
+    pub fn visit_variable_ty<'hir: 'a>(&'a self, ty: &'hir HirVariableTy) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("$")
+            .append(self.arena.text(ty.depth.to_string()))
+            .append(self.arena.text("@"))
+            .append(self.arena.text(ty.index.to_string()))
     }
 
-    pub fn format_hir_function_ty<'hir>(ty: &'hir HirFunctionTy) -> RcDoc<'hir, ()> {
-        RcDoc::text("fn")
-            .append(RcDoc::text("("))
+    pub fn visit_function_ty<'hir: 'a>(&'a self, ty: &'hir HirFunctionTy) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("fn")
+            .append(self.arena.text("("))
             .append(
-                RcDoc::text("(")
-                    .append(RcDoc::intersperse(
-                        ty.parameters.iter().map(|p| Self::format_hir_ty(p)),
-                        RcDoc::text(", "),
+                self.arena
+                    .text("(")
+                    .append(self.arena.intersperse(
+                        ty.parameters.iter().map(|p| self.visit_ty(p)),
+                        self.arena.text(", "),
                     ))
-                    .append(RcDoc::text(")")),
+                    .append(self.arena.text(")")),
             )
-            .append(RcDoc::text(")"))
-            .append(RcDoc::text("->"))
-            .append(Self::format_hir_ty(ty.return_type))
+            .append(self.arena.text(")"))
+            .append(self.arena.text("->"))
+            .append(self.visit_ty(ty.return_type))
     }
 
-    pub fn format_hir_nominal_ty<'hir>(ty: &'hir HirNominalTy) -> RcDoc<'hir, ()> {
-        RcDoc::text(ty.name)
+    pub fn visit_nominal_ty<'hir: 'a>(&'a self, ty: &'hir HirNominalTy) -> DocBuilder<Arena<'a>> {
+        self.arena.text(ty.name)
     }
 
-    pub fn format_hir_pointer_ty<'hir>(ty: &'hir HirPointerTy) -> RcDoc<'hir, ()> {
-        RcDoc::text("*").append(Self::format_hir_ty(ty.inner))
+    pub fn visit_pointer_ty<'hir: 'a>(&'a self, ty: &'hir HirPointerTy) -> DocBuilder<Arena<'a>> {
+        self.arena.text("*").append(self.visit_ty(ty.inner))
     }
 
-    pub fn format_hir_uninitialized_ty<'hir>(_: &HirTy) -> RcDoc<'hir, ()> {
-        RcDoc::text("_")
+    pub fn visit_uninitialized_ty<'hir: 'a>(&'a self, _: &HirTy) -> DocBuilder<Arena<'a>> {
+        self.arena.text("_")
     }
 }
