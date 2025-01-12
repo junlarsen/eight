@@ -64,11 +64,8 @@ impl<'hir> Debug for TypingContext<'hir> {
         f.debug_struct("TypingContext")
             .field("constraints", &self.constraints)
             .field("substitutions", &self.substitutions)
-            .field("locals", &self.let_binding_context)
-            .field(
-                "local_type_parameter_substitutions",
-                &self.type_binding_context,
-            )
+            .field("let_binding_context", &self.let_binding_context)
+            .field("type_binding_context", &self.type_binding_context)
             .field("current_function", &self.current_function)
             .finish()
     }

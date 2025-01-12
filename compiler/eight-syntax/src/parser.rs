@@ -1326,7 +1326,7 @@ mod tests {
         AstBinaryOp, AstBreakStmt, AstContinueStmt, AstExpr, AstIdentifier, AstType, AstUnaryOp,
     };
     use crate::error::{InvalidIntegerLiteralError, ParseError};
-    use bumpalo::Bump;
+    
     use eight_macros::{assert_err, assert_matches, assert_none, assert_ok, assert_some};
     use eight_span::Span;
 
@@ -1337,8 +1337,7 @@ mod tests {
             use crate::parser::Parser;
 
             let mut lexer = Lexer::new($input);
-            let bump = Bump::new();
-            let arena = AstArena::new(&bump);
+            let arena = AstArena::default();
             let mut parser = Parser::new(&mut lexer, &arena);
             $body(&mut parser);
             // Ensure there are no more items in the parser

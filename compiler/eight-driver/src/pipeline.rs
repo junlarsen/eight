@@ -1,48 +1,168 @@
-use bumpalo::Bump;
+use crate::query::EmitQuery;
+use eight_diagnostics::ice;
 use eight_hir::arena::HirArena;
+use eight_hir::error::HirError;
 use eight_hir::query::HirQueryDatabase;
 use eight_hir::syntax_lowering_pass::ASTSyntaxLoweringPass;
 use eight_hir::textual_pass::HirModuleDebugPass;
 use eight_hir::type_check_pass::{HirModuleTypeCheckerPass, TypingContext};
+use eight_hir::HirModule;
 use eight_syntax::arena::AstArena;
+use eight_syntax::ast::AstTranslationUnit;
+use eight_syntax::error::ParseError;
+use eight_syntax::lexer::Lexer;
+use eight_syntax::parser::Parser;
+use miette::Diagnostic;
+use std::cell::OnceCell;
+use std::mem::ManuallyDrop;
+use thiserror::Error;
 
+/// Execute the entire compilation pipeline.
+pub fn execute_compilation_pipeline(opts: PipelineOptions, input: &str) -> Result<(), PipelineError> {
+    let pipeline = Pipeline::new(opts);
+    let tu = ParseOperation::execute(&pipeline, input)?;
+    let tu = AstEmitOperation::execute(&pipeline, tu)?;
+    let module = SyntaxLowerOperation::execute(&pipeline, tu)?;
+    let module = TypeCheckOperation::execute(&pipeline, module)?;
+    let _ = HirEmitOperation::execute(&pipeline, module)?;
+    Ok(())
+}
+
+#[derive(Debug, Error, Diagnostic)]
+pub enum PipelineError {
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    LexerError(#[from] ParseError),
+    #[diagnostic(transparent)]
+    #[error(transparent)]
+    HirError(#[from] HirError),
+}
+
+/// Options for the compilation pipeline.
+///
+/// Most of these are derived from the command line arguments.
 pub struct PipelineOptions {
     pub emit_ast: bool,
     pub emit_hir: bool,
+    pub queries: Vec<EmitQuery>,
 }
 
-pub struct Pipeline {
-    options: PipelineOptions,
+/// A compilation pipeline for the compiler.
+pub struct Pipeline<'c> {
+    opts: PipelineOptions,
+    ast_arena: ManuallyDrop<AstArena<'c>>,
+    hir_arena: ManuallyDrop<HirArena<'c>>,
+    hir_query_database: OnceCell<HirQueryDatabase<'c>>,
 }
 
-impl Pipeline {
-    pub fn new(options: PipelineOptions) -> Self {
-        Self { options }
+impl<'c> Pipeline<'c> {
+    pub fn new(opts: PipelineOptions) -> Self {
+        Self {
+            opts,
+            ast_arena: ManuallyDrop::new(AstArena::default()),
+            hir_arena: ManuallyDrop::new(HirArena::default()),
+            hir_query_database: OnceCell::new(),
+        }
     }
+}
 
-    pub fn run<T: AsRef<str>>(&self, source: T) -> miette::Result<()> {
-        let ast_bump = Bump::new();
-        let ast_arena = AstArena::new(&ast_bump);
-        let mut lexer = eight_syntax::lexer::Lexer::new(source.as_ref());
-        let mut parser = eight_syntax::parser::Parser::new(&mut lexer, &ast_arena);
-        let tu = parser.parse()?;
-        if self.options.emit_ast {
-            let syntax = ron::ser::to_string_pretty(&tu, Default::default())
-                .expect("failed to serialize ast to ron");
-            println!("{}", syntax);
-        }
+/// Enum describing how crucial a pass in the pipeline is.
+pub enum PipelineRequirement {
+    Required,
+    Optional,
+}
 
-        let hir_bump = Bump::new();
-        let hir_arena = HirArena::new(&hir_bump);
-        let lowering_pass = ASTSyntaxLoweringPass::new(&hir_arena);
-        let mut module = lowering_pass.visit_translation_unit(&tu)?;
-        let query_database = HirQueryDatabase::new(module.signature);
-        let mut cx = TypingContext::new(&hir_arena, &query_database);
-        HirModuleTypeCheckerPass::visit(&mut module, &mut cx)?;
-        if self.options.emit_hir {
-            let doc = HirModuleDebugPass::format_hir_module_to_string(&module);
-            println!("{}", doc);
+pub trait PipelineOperation<'c, I, O> {
+    fn execute(pipeline: &'c Pipeline<'c>, input: I) -> Result<O, PipelineError>;
+}
+
+/// Operation for parsing the input source into an AST.
+pub struct ParseOperation {}
+impl<'ast, T: AsRef<str>> PipelineOperation<'ast, T, AstTranslationUnit<'ast>> for ParseOperation {
+    fn execute(
+        pipeline: &'ast Pipeline<'ast>,
+        input: T,
+    ) -> Result<AstTranslationUnit<'ast>, PipelineError> {
+        let mut lexer = Lexer::new(input.as_ref());
+        let mut parser = Parser::new(&mut lexer, &pipeline.ast_arena);
+        let translation_unit = parser.parse()?;
+        Ok(translation_unit)
+    }
+}
+
+/// Operation for lowering the AST to HIR.
+pub struct SyntaxLowerOperation {}
+impl<'hir> PipelineOperation<'hir, AstTranslationUnit<'hir>, HirModule<'hir>>
+    for SyntaxLowerOperation
+{
+    fn execute(
+        pipeline: &'hir Pipeline<'hir>,
+        input: AstTranslationUnit<'hir>,
+    ) -> Result<HirModule<'hir>, PipelineError> {
+        let lowering_pass = ASTSyntaxLoweringPass::new(&pipeline.hir_arena);
+        let module = lowering_pass.visit_translation_unit(&input)?;
+        Ok(module)
+    }
+}
+
+/// Operation for type checking the HIR.
+pub struct TypeCheckOperation {}
+impl<'hir> PipelineOperation<'hir, HirModule<'hir>, HirModule<'hir>> for TypeCheckOperation {
+    fn execute(
+        pipeline: &'hir Pipeline<'hir>,
+        mut input: HirModule<'hir>,
+    ) -> Result<HirModule<'hir>, PipelineError> {
+        let query_database = HirQueryDatabase::new(input.signature);
+        pipeline
+            .hir_query_database
+            .set(query_database)
+            .unwrap_or_else(|_| {
+                ice!("failed to assign OnceCell for query database");
+            });
+
+        let mut typing_context = TypingContext::new(
+            &pipeline.hir_arena,
+            pipeline
+                .hir_query_database
+                .get()
+                .unwrap_or_else(|| ice!("failed to get query database")),
+        );
+        HirModuleTypeCheckerPass::visit(&mut input, &mut typing_context)?;
+        Ok(input)
+    }
+}
+
+/// Operation for emitting the AST.
+pub struct AstEmitOperation {}
+impl<'ast> PipelineOperation<'ast, AstTranslationUnit<'ast>, AstTranslationUnit<'ast>>
+    for AstEmitOperation
+{
+    fn execute(
+        pipeline: &'ast Pipeline<'ast>,
+        input: AstTranslationUnit<'ast>,
+    ) -> Result<AstTranslationUnit<'ast>, PipelineError> {
+        if !pipeline.opts.emit_ast {
+            return Ok(input);
         }
-        Ok(())
+        let syntax = ron::ser::to_string_pretty(&input, Default::default())
+            .expect("failed to serialize ast to ron");
+        println!("{}", syntax);
+        Ok(input)
+    }
+}
+
+/// Operation for emitting the HIR.
+pub struct HirEmitOperation;
+impl<'hir> PipelineOperation<'hir, HirModule<'hir>, HirModule<'hir>> for HirEmitOperation {
+    fn execute(
+        pipeline: &'hir Pipeline<'hir>,
+        input: HirModule<'hir>,
+    ) -> Result<HirModule<'hir>, PipelineError> {
+        if !pipeline.opts.emit_hir {
+            return Ok(input);
+        }
+        let doc = HirModuleDebugPass::format_hir_module_to_string(&input);
+        println!("{}", doc);
+        Ok(input)
     }
 }
