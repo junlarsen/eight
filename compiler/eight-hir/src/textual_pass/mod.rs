@@ -32,6 +32,8 @@ pub struct HirModuleTextualPass<'a> {
     arena: Arena<'a>,
 }
 
+pub type Document<'a> = DocBuilder<'a, Arena<'a>>;
+
 impl<'a> HirModuleTextualPass<'a> {
     pub fn format_doc_to_string(doc: DocBuilder<'a, Arena<'a>>) -> String {
         let mut w = Vec::new();

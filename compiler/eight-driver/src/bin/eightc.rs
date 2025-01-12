@@ -31,7 +31,7 @@ impl TryInto<PipelineOptions> for AppArgs {
     fn try_into(self) -> Result<PipelineOptions, Self::Error> {
         let queries = self
             .emit_query
-            .map(|q| EmitQuery::from_queries(&q))
+            .map(|q| EmitQuery::from_queries(&q.iter().map(|s| s.as_str()).collect::<Vec<_>>()))
             .transpose()?
             .unwrap_or_default();
         Ok(PipelineOptions {

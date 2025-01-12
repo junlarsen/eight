@@ -11,7 +11,7 @@ use crate::expr::{
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
-use crate::query::HirQueryDatabase;
+use crate::query::HirSignatureQueryDatabase;
 use crate::ty::{HirFunctionTy, HirTy, HirVariableTy};
 use crate::type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, HirModuleTypeCheckerPass,
@@ -30,7 +30,7 @@ pub struct TypingContext<'hir> {
     ///
     /// TODO: Should this be private?
     pub arena: &'hir HirArena<'hir>,
-    pub module_query_db: &'hir HirQueryDatabase<'hir>,
+    pub module_query_db: &'hir HirSignatureQueryDatabase<'hir>,
 
     /// Collected constraints during inference, to be solved during unification.
     constraints: Vec<Constraint<'hir>>,
@@ -73,7 +73,10 @@ impl<'hir> Debug for TypingContext<'hir> {
 
 impl<'hir> TypingContext<'hir> {
     /// Create a new typing context given the HIR arena and module signature derived from the AST.
-    pub fn new(arena: &'hir HirArena<'hir>, module_query_db: &'hir HirQueryDatabase<'hir>) -> Self {
+    pub fn new(
+        arena: &'hir HirArena<'hir>,
+        module_query_db: &'hir HirSignatureQueryDatabase<'hir>,
+    ) -> Self {
         Self {
             arena,
             module_query_db,

@@ -41,12 +41,12 @@ pub type TraitInstanceQueryCache<'hir> = HashMap<
 >;
 
 /// A query database over a Hir module.
-pub struct HirQueryDatabase<'hir> {
+pub struct HirSignatureQueryDatabase<'hir> {
     sig: &'hir HirModuleSignature<'hir>,
     trait_instance_cache: TraitInstanceQueryCache<'hir>,
 }
 
-impl<'hir> HirQueryDatabase<'hir> {
+impl<'hir> HirSignatureQueryDatabase<'hir> {
     /// Build a new query database from the given module signature.
     pub fn new(sig: &'hir HirModuleSignature<'hir>) -> Self {
         let mut tree = TraitInstanceQueryCache::new();

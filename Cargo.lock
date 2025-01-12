@@ -230,6 +230,7 @@ dependencies = [
  "clap",
  "eight-diagnostics",
  "eight-hir",
+ "eight-macros",
  "eight-syntax",
  "miette",
  "nom",

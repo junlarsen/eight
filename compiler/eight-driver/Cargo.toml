@@ -18,3 +18,6 @@ nom = "7.1.3"
 eight-hir = { path = "../eight-hir" }
 eight-syntax = { path = "../eight-syntax" }
 eight-diagnostics = { path = "../eight-diagnostics" }
+
+[dev-dependencies]
+eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }

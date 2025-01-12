@@ -2,7 +2,6 @@ use miette::Diagnostic;
 use nom::bytes::complete::take_while;
 use nom::character::complete::char;
 use nom::combinator::{complete, rest};
-use nom::sequence::tuple;
 use nom::IResult;
 use thiserror::Error;
 
@@ -37,13 +36,14 @@ pub enum QueryError {
 ///
 /// For example, the query `hir.fn.must_return_i32_ptr` would request the HIR for the function named
 /// `must_return_i32_ptr` to be emitted.
+#[derive(Debug)]
 pub enum EmitQuery {
     Hir(HirEmitQuery),
 }
 
 impl EmitQuery {
     /// Parse a list of queries.
-    pub fn from_queries(queries: &[String]) -> Result<Vec<Self>, QueryError> {
+    pub fn from_queries(queries: &[&str]) -> Result<Vec<Self>, QueryError> {
         let mut parsed_queries = Vec::with_capacity(queries.len());
         for query in queries {
             let (_, query) = EmitQuery::parse(query).map_err(|_| QueryError::InvalidQuery)?;
@@ -54,8 +54,8 @@ impl EmitQuery {
 
     /// Parse a single query.
     fn parse(input: &str) -> IResult<&str, Self> {
-        let (_, (namespace, _)) =
-            complete(tuple((take_while(|c: char| c != '.'), char('.'))))(input)?;
+        let (input, namespace) = take_while(|c: char| c != '.')(input)?;
+        let (input, _) = char('.')(input)?;
         match namespace {
             "hir" => {
                 let (_, query) = complete(HirEmitQuery::parse)(input)?;
@@ -66,6 +66,7 @@ impl EmitQuery {
     }
 }
 
+#[derive(Debug)]
 pub enum HirEmitQuery {
     /// Emit the HIR for this function
     Function(String),
@@ -89,5 +90,21 @@ impl HirEmitQuery {
     fn parse_function_query(input: &str) -> IResult<&str, Self> {
         let (input, name) = rest(input)?;
         Ok((input, Self::Function(name.to_owned())))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::query::{EmitQuery, HirEmitQuery};
+    use eight_macros::{assert_matches, assert_ok};
+
+    #[test]
+    fn test_parse_hir_fn_query() {
+        let query = EmitQuery::from_queries(&["hir.fn.must_return_i32_ptr"]);
+        let query = assert_ok!(query);
+        assert_eq!(query.len(), 1);
+        let function_name =
+            assert_matches!(&query[0], EmitQuery::Hir(HirEmitQuery::Function(p)) => p);
+        assert_eq!(function_name, "must_return_i32_ptr");
     }
 }
