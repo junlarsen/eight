@@ -1,0 +1,10 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+intrinsic_fn zero() -> i32;
+
+fn test() -> i32 {
+// CHECK-LABEL: test
+  let k = zero();
+// CHECK-NEXT: let k: i32
+  return k;
+}

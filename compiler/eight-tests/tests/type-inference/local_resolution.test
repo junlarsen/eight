@@ -1,8 +1,0 @@
-fn test() {
-  let loc = 123;
-  let x = loc;
-}
-
-fn test_refer_function() {
-  let loc = test;
-}

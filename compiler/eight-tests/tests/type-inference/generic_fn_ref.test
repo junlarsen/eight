@@ -1,6 +1,0 @@
-intrinsic_fn id<T>(x: T) -> T;
-
-fn test() {
-  let z = id(true);
-  let k = id(123);
-}

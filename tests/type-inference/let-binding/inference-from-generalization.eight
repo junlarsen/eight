@@ -1,0 +1,9 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+intrinsic_fn malloc<T>(size: i32) -> *T;
+
+fn test() -> *i32 {
+// CHECK-LABEL: test
+  let infer = malloc(123);
+// CHECK-NEXT: let infer: *i32
+  return infer;
+}

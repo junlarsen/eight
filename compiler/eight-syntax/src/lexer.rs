@@ -79,7 +79,7 @@ impl<'a> LexerInput<'a> {
     /// Select the next token based on the current and next character
     ///
     /// This is useful for parsing tokens that may have a wider production based on the next
-    /// character in the input stream. For example, the '&' character means dereference on its own,
+    /// character in the input stream. For example, the '&' character means deref-expr on its own,
     /// but may also be used as a logical and when followed by another '&'.
     fn select_peek<F>(
         &mut self,

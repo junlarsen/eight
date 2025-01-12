@@ -1,0 +1,8 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+fn test(xs: *i32) -> i32 {
+// CHECK-LABEL: test
+  let k = *xs;
+// CHECK-NEXT: let k: i32
+  return k;
+}

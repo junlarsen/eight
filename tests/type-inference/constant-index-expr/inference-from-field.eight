@@ -1,0 +1,13 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+struct Point {
+  x: i32,
+  y: i32,
+}
+
+fn test(point: Point) -> i32 {
+// CHECK-LABEL: test
+  let x = point.x;
+// CHECK-NEXT: let x: i32
+  return x;
+}

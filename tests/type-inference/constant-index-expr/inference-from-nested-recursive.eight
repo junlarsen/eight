@@ -1,0 +1,14 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+struct Node {
+  value: i32,
+  left: *Node,
+  right: *Node,
+}
+
+fn test(node: Node) -> i32 {
+// CHECK-LABEL: test
+  let complex = (*(node.left)).right;
+// CHECK-NEXT: let complex: *Node
+  return (*complex).value;
+}

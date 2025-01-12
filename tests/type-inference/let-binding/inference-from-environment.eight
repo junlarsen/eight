@@ -1,0 +1,8 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.foo %s | %fc %s
+fn foo(incoming: i32) {
+// CHECK-LABEL: foo
+  let infer = incoming;
+// CHECK-NEXT: let infer: i32
+  let infer_child = infer;
+// CHECK-NEXT: let infer_child: i32
+}

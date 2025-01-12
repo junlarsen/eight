@@ -1,3 +1,4 @@
 /target
+/tests/**/Output
 
 .lit_test_times.txt

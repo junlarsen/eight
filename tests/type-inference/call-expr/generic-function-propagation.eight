@@ -1,0 +1,11 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+intrinsic_fn id<T>(x: T) -> T;
+
+fn test<T>(x: T) -> T {
+// CHECK-LABEL: test<
+  let k = id(x);
+// CHECK: let k: [[TYPE_VAR:\$[0-9]+@[0-9]+]] =
+  return k;
+// CHECK: return (k as [[TYPE_VAR]]);
+}
