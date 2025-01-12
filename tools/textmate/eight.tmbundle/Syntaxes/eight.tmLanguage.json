@@ -1,0 +1,93 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "eight",
+  "scopeName": "source.eight",
+  "foldingStartMarker": "\\{\\s*$",
+  "foldingStopMarker": "^\\s*\\}",
+  "fileTypes": ["eight"],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#true-false"
+    },
+    {
+      "include": "#type-literals"
+    },
+    {
+      "include": "#functions"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.eight",
+          "match": "^\\s*(?=//\\s).*$"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.eight",
+          "match": "\\b(==|!=|>=|<=|\\&|\\*|=|>|<|-|%|\\.|\\+|/|::|->)\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.eight",
+          "match": "\\b(break|continue|else|if|for|return)\\b"
+        },
+        {
+          "name": "keyword.other.eight",
+          "match": "\\b(fn|let|new|struct|trait|instance|intrinsic_fn|intrinsic_type)\\b"
+        }
+      ]
+    },
+    "true-false": {
+      "patterns": [
+        {
+          "name": "constant.language.eight",
+          "match": "\\b(true|false)\\b"
+        }
+      ]
+    },
+    "type-literals": {
+      "patterns": [
+        {
+          "name": "constant.language.eight",
+          "match": "\\b(bool|unit|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.eight",
+          "match": "\\b[a-zA-Z]+\\s*\\("
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.eight",
+          "match": "[0-9]+"
+        }
+      ]
+    }
+  }
+}
