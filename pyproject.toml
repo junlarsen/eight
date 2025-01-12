@@ -1,0 +1,18 @@
+[project]
+name = "eight"
+version = "0.1.0"
+description = "Eight compiler"
+authors = [
+    {name = "Mats Jun Larsen",email = "mats@jun.codes"}
+]
+license = {text = "Apache 2.0"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "lit (>=18.1.8,<19.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

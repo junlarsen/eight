@@ -1,6 +1,0 @@
-// RUN: eightc --emit-hir --emit-query hir.fn.must_return_i32_ptr
-fn must_return_i32_ptr() -> i32 {
-  return 123;
-}
-// CHECK-ERROR: sema::type_mismatch
-// CHECK_NEXT
