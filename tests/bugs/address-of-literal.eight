@@ -1,0 +1,8 @@
+// RUN: true
+
+fn test() {
+  let x = &123;
+}
+
+// This is an expression value, so it probably doesn't make sense to take the
+// address of it.

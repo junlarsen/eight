@@ -1,0 +1,12 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+intrinsic_fn malloc<T>(size: i32) -> *T;
+
+fn test() -> i32 {
+  let infer: i32 = *malloc;
+  return infer;
+}
+
+// It should be illegal to deref a function type.
+
+// CHECK-LABEL: sema::type_mismatch

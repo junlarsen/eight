@@ -1,0 +1,10 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test(in: i32) {
+  let infer = *in;
+}
+
+// It seems like we're not able to detect that this is an error.
+
+// CHECK-LABEL: test
+// CHECK: the expression has type *[[TYPE_VAR:\$[0-9]+@[0-9]+]]

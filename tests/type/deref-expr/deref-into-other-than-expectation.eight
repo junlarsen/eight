@@ -1,0 +1,10 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test(in: *i32) -> i32 {
+  let infer: bool = *in;
+  return infer;
+}
+
+// CHECK-LABEL: sema::type_mismatch
+// CHECK: the expression has type bool
+// CHECK: expected type i32

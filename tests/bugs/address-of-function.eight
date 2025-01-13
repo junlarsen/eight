@@ -1,0 +1,12 @@
+// RUN: true
+
+intrinsic_fn malloc<T>(size: i32) -> *T;
+
+fn test() {
+  let x = &malloc;
+}
+
+// It is currently illegal to take address of a function. It might be useful
+// to support this in the future
+
+// CHECK-LABEL: sema::type_mismatch

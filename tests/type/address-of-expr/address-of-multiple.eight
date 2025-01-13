@@ -1,0 +1,17 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test_multi --emit-query hir.fn.test_climb %s | %fc %s
+
+fn test_multi() {
+// CHECK-LABEL: test_multi
+  let infer = & &123;
+// CHECK-NEXT: let infer: **i32
+}
+
+fn test_climb() {
+// CHECK-LABEL: test_climb
+  let infer = &(&123);
+// CHECK-NEXT: let infer: **i32
+  let self = &*infer;
+// CHECK-NEXT: let self: **i32
+  let z = &*&*&*&*&*&*&*&*&*&*&*&*&*&*&*&*&*&self;
+// CHECK-NEXT: let z: ***i32
+}

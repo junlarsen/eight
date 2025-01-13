@@ -1,0 +1,9 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test() {
+  let x = *123;
+}
+
+// This should be illegal, even when `deref-below-floor` is fixed
+
+// CHECK-LABEL: sema::type_mismatch

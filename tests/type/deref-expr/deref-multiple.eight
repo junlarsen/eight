@@ -1,0 +1,7 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+fn test(in: **i32) {
+// CHECK-LABEL: test
+  let infer = **in;
+// CHECK-NEXT: let infer: i32
+}
