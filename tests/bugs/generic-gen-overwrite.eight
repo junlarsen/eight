@@ -1,0 +1,13 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s 2>&1 | %fc %s
+
+intrinsic_fn spawn<T>() -> T;
+intrinsic_fn generic_with_gen<T, U>(x: T, y: U) -> U;
+
+fn test<T, U>(x: T) -> T {
+// CHECK-LABEL: test<
+  let z = generic_with_gen(1, true);
+  let v: T = x;
+// bug! this type should not have been substituted for the T in the generic_with_gen call
+// CHECK: let v: i32
+  let z: U = spawn();
+}
