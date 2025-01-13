@@ -83,7 +83,6 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
 }
 
 /// A single type in the HIR representation.
-#[must_use]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum HirTy<'hir> {
     /// The builtin type `i32`.
