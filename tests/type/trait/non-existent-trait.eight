@@ -1,0 +1,9 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+// There is no trait named Add in scope here
+fn test(a: i32, b: i32) -> i32 {
+  return a + b;
+}
+
+// CHECK-LABEL: sema::trait_does_not_exist
+// CHECK: trait Add does not exist

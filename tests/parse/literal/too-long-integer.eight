@@ -1,0 +1,8 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test() {
+  let k = 1234773457276345671237572345;
+}
+
+// CHECK-LABEL: syntax::invalid_integer_literal
+// CHECK: found illegal i32 literal

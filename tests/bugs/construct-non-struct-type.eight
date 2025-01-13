@@ -1,0 +1,8 @@
+// RUN: %not %eightc --emit-hir %s 2>&1 | %fc %s
+
+fn test() {
+  let p = new i32 {};
+}
+
+// CHECK-LABEL: internal compiler error
+// CHECK: called infer_construct_expr on a type that doesn't exist

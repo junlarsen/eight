@@ -1,0 +1,8 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test(q: i32) {
+  let k = q.z;
+}
+
+// CHECK-LABEL: sema::invalid_field_reference_of_non_struct
+// CHECK: unknown field z

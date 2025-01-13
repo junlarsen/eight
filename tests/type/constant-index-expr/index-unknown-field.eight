@@ -1,0 +1,14 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+struct Point {
+  x: i32,
+  y: i32,
+}
+
+fn test(point: Point) -> i32 {
+  let x = point.z;
+  return x;
+}
+
+// CHECK-LABEL: sema::invalid_struct_field_reference
+// CHECK: invalid field reference to z in type Point

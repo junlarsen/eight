@@ -1,5 +1,0 @@
-fn test() {
-  if (false) {
-    continue;
-  }
-}

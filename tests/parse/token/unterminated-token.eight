@@ -1,0 +1,6 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+|
+
+// CHECK-LABEL: syntax::unexpected_character
+// CHECK: does not parse into any tokens

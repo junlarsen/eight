@@ -1,3 +1,0 @@
-fn test(v: bool) {
-  let k: i32 = v;
-}

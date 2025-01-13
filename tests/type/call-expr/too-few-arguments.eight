@@ -1,0 +1,10 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+intrinsic_fn zero() -> i32;
+
+fn test() -> i32 {
+  return zero(1, 2, 3);
+}
+
+// CHECK-LABEL: sema::function_type_mismatch
+// CHECK: function types do not take the same number of arguments

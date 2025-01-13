@@ -1,0 +1,20 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+struct Point {
+  x: i32,
+  y: i32,
+}
+
+fn test() -> Point {
+  let p = new Point {
+    x: 1,
+    y: 2,
+    z: 3,
+  };
+  return p;
+}
+
+// CHECK-LABEL: sema::unknown_field
+// CHECK: this field does not exist
+
+// TODO: This error message should be more specific with field and type name

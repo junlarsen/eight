@@ -1,0 +1,11 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test() {
+  if (123) {
+    let z = 123;
+  }
+}
+
+// CHECK-LABEL: sema::type_mismatch
+// CHECK: expected type bool
+// CHECK: the expression has type i32

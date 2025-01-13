@@ -1,0 +1,8 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test() {
+  continue;
+}
+
+// CHECK-LABEL: sema::continue_outside_loop
+// CHECK: there is no enclosing loop

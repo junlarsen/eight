@@ -1,11 +1,11 @@
-//! A port of LLVM `eight-not` written for the Eight compiler in Rust.
+//! A port of LLVM `not` written for the Eight compiler in Rust.
 //!
-//! Because we're using LLVM out-of-tree, we cannot just use `eight-not` like the Lit tests in the LLVM
+//! Because we're using LLVM out-of-tree, we cannot just use `not` like the Lit tests in the LLVM
 //! test suite.
 //!
 //! https://github.com/llvm/llvm-project/blob/main/llvm/utils/not/not.cpp
 //!
-//! This implementation is eight-not fully compatible with LLVM `eight-not`, as we don't support the `--crash`
+//! This implementation is not fully compatible with LLVM `not`, as we don't support the `--crash`
 //! flag.
 
 use std::collections::VecDeque;

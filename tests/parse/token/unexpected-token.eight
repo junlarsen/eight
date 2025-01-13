@@ -1,0 +1,6 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test() unexpected_token {
+
+// CHECK-LABEL: syntax::unexpected_token
+// CHECK: found unexpected token during parsing

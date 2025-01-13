@@ -1,0 +1,20 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+intrinsic_fn garbage<T>(a: T) -> T;
+
+trait Neg<A, R> {
+  fn neg(a: A) -> R;
+}
+
+instance Neg<i32, i32> {
+  fn neg(a: i32) -> i32 {
+    return garbage(a);
+  }
+}
+
+fn test(a: i32) -> i32 {
+// CHECK-LABEL: test
+  let k = -a;
+// CHECK-NEXT: let k: i32
+  return k;
+}

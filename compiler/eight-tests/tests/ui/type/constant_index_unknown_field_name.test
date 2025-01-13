@@ -1,8 +1,0 @@
-struct Shape {
-  x: i32,
-  y: i32,
-}
-
-fn get_shape_size(shape: Shape) -> i32 {
-  let size = shape.z;
-}

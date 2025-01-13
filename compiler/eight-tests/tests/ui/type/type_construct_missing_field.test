@@ -1,7 +1,0 @@
-struct Box {
-  p: *i32,
-}
-
-fn box_new(p: *i32) -> Box {
-  let b = new Box {};
-}

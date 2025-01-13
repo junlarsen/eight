@@ -6,7 +6,7 @@ macro_rules! ice {
         let line = line!();
         let column = column!();
         panic!(
-            "internal compiler error({}:{}:{}): {}",
+            "internal compiler error ({}:{}:{}):\n{}",
             file, line, column, message
         )
     }};

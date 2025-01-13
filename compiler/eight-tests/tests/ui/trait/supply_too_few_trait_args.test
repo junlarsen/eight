@@ -1,9 +1,0 @@
-trait Add<A, B, R> {
-  fn add(a: A, b: B) -> R;
-}
-
-instance Add<i32, i32> {
-  fn add(a: i32, b: i32) -> i32 {
-    return a;
-  }
-}

@@ -1,0 +1,15 @@
+// RUN: %not %eightc --emit-hir %s 2>&1 | %fc %s
+
+struct Point {
+  x: i32,
+  y: i32,
+}
+
+fn test() {
+  let p = new Point {
+    x: 1,
+  };
+}
+
+// CHECK-LABEL: sema::missing_field
+// CHECK: the field y is missing in construction of Point

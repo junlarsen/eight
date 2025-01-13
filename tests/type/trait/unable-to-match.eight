@@ -1,0 +1,12 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+trait Add<A, B, R> {
+  fn add(a: A, b: B) -> R;
+}
+
+fn test(a: bool, b: bool) -> bool {
+  return a + b;
+}
+
+// CHECK-LABEL: sema::trait_missing_instance
+// CHECK: required instance Add<bool, bool, _> for trait Add
