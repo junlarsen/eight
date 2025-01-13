@@ -1,0 +1,22 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+intrinsic_fn garbage<T>(a: T) -> T;
+
+trait Not<A, R> {
+  fn not(a: A) -> R;
+}
+
+instance Not<bool, bool> {
+  fn not(a: bool) -> bool {
+    return garbage(a);
+  }
+}
+
+fn test(a: i32) -> bool {
+  let k = !a;
+
+  return true;
+}
+
+// CHECK-LABEL: sema::trait_missing_instance
+// CHECK: trait Not does not have instance Not<i32, _>

@@ -1,0 +1,19 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+// In this test, we modify Neg to give us a bool
+trait Neg<A, R> {
+  fn neg(a: A) -> R;
+}
+
+instance Neg<i32, bool> {
+  fn neg(a: i32) -> bool {
+    return true;
+  }
+}
+
+fn test(a: i32) -> bool {
+// CHECK-LABEL: test
+  let k = -a;
+// CHECK-NEXT: let k: bool
+  return k;
+}

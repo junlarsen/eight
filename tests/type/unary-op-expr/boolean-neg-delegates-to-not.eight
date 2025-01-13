@@ -1,0 +1,19 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+// In this test, we modify Not to give us an i32
+trait Not<A, R> {
+  fn not(a: A) -> R;
+}
+
+instance Not<bool, i32> {
+  fn not(a: bool) -> i32 {
+    return 1;
+  }
+}
+
+fn test(a: bool) -> i32 {
+// CHECK-LABEL: test
+  let k = !a;
+// CHECK-NEXT: let k: i32
+  return k;
+}

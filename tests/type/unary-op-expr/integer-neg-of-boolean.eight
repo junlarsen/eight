@@ -1,0 +1,22 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+intrinsic_fn garbage<T>(a: T) -> T;
+
+trait Neg<A, R> {
+  fn neg(a: A) -> R;
+}
+
+instance Neg<i32, i32> {
+  fn neg(a: i32) -> i32 {
+    return garbage(a);
+  }
+}
+
+fn test(a: bool) -> i32 {
+  let k = -a;
+
+  return 1;
+}
+
+// CHECK-LABEL: sema::trait_missing_instance
+// CHECK: trait Neg does not have instance Neg<bool, _>

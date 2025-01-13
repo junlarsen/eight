@@ -1,0 +1,20 @@
+// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+
+intrinsic_fn gimme_i32(a: i32) -> i32;
+
+trait Neg<A, R> {
+  fn neg(a: A) -> R;
+}
+
+instance Neg<i32, i32> {
+  fn neg(a: i32) -> i32 {
+    return a;
+  }
+}
+
+fn test(a: i32) -> i32 {
+// CHECK-LABEL: test
+  let k = -gimme_i32(a);
+// CHECK-NEXT: let k: i32
+  return 0;
+}
