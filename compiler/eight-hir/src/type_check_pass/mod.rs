@@ -338,7 +338,7 @@ impl HirModuleTypeCheckerPass {
             t @ HirTy::Nominal(_) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
             HirTy::Pointer(t) => Self::visit_pointer_ty(cx, t),
-            HirTy::Variable(_) | HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) => {
+            HirTy::Variable(_) | HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) | HirTy::Meta(_) => {
                 Ok(node)
             }
             // If the type was uninitialized by the lowering pass, we need to replace it with a

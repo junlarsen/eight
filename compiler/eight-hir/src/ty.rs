@@ -57,6 +57,12 @@ impl HirTyId {
         0x50.hash(&mut hasher);
         Self(hasher.finish())
     }
+    
+    pub fn compute_meta_ty_id() -> Self {
+        let mut hasher = DefaultHasher::new();
+        0x60.hash(&mut hasher);
+        Self(hasher.finish())
+    }
 }
 
 impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
@@ -78,6 +84,7 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
             HirTy::Unit(_) => HirTyId::compute_unit_ty_id(),
             HirTy::Variable(v) => HirTyId::compute_variable_ty_id(v.depth, v.index),
             HirTy::Uninitialized(_) => HirTyId::compute_uninitialized_ty_id(),
+            HirTy::Meta(_) => HirTyId::compute_meta_ty_id(),
         }
     }
 }
@@ -101,6 +108,8 @@ pub enum HirTy<'hir> {
     /// The first number represents the depth of the type variable, and the second number represents
     /// the index of the variable in the scope.
     Variable(HirVariableTy),
+    /// A meta variable to be resolved during inference-time.
+    Meta(HirMetaTy),
     /// A function constructor type.
     ///
     /// This represents a function type with zero or more parameters and a return type. We do not
@@ -192,6 +201,14 @@ impl<'hir> HirTy<'hir> {
             _ => false,
         }
     }
+    
+    /// Is this type equal to a meta variable of the same index?
+    pub fn is_equal_to_meta(&self, m: &HirMetaTy) -> bool {
+        match self {
+            HirTy::Meta(v) => std::ptr::eq(v, m),
+            _ => false,
+        }
+    }
 
     /// Format a type that may contain substitution variables.
     ///
@@ -240,6 +257,7 @@ impl<'hir> HirTy<'hir> {
             HirTy::Nominal(n) => n.name.to_owned(),
             HirTy::Pointer(p) => format!("*{}", p.inner.format_substitutable_type()),
             HirTy::Uninitialized(_) => ice!("attempted to format uninitialized type"),
+            HirTy::Meta(_) => ice!("attempted to format meta type"),
         }
     }
 
@@ -277,6 +295,7 @@ impl Display for HirTy<'_> {
             HirTy::Uninitialized(t) => write!(f, "{}", t),
             HirTy::Pointer(t) => write!(f, "{}", t),
             HirTy::Nominal(t) => write!(f, "{}", t),
+            HirTy::Meta(t) => write!(f, "{}", t),
         }
     }
 }
@@ -405,5 +424,17 @@ pub struct HirUninitializedTy {}
 impl Display for HirUninitializedTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "_")
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct HirMetaTy {
+    pub index: u32,
+}
+
+impl Display for HirMetaTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "?{}", self.index)
     }
 }

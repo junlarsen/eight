@@ -22,7 +22,7 @@ use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirFunctionTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy};
+use crate::ty::{HirFunctionTy, HirMetaTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy};
 use crate::{HirModule, LinkageType};
 use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
@@ -756,6 +756,7 @@ impl<'a> HirModuleTextualPass<'a> {
             HirTy::Nominal(t) => self.visit_nominal_ty(t),
             HirTy::Pointer(t) => self.visit_pointer_ty(t),
             HirTy::Uninitialized(_) => self.visit_uninitialized_ty(ty),
+            HirTy::Meta(t) => self.visit_meta_ty(t),
         }
     }
 
@@ -795,5 +796,9 @@ impl<'a> HirModuleTextualPass<'a> {
 
     pub fn visit_uninitialized_ty<'hir: 'a>(&'a self, _: &HirTy) -> DocBuilder<Arena<'a>> {
         self.arena.text("_")
+    }
+    
+    pub fn visit_meta_ty<'hir: 'a>(&'a self, ty: &'hir HirMetaTy) -> DocBuilder<Arena<'a>> {
+        self.arena.text("?").append(self.arena.text(ty.index.to_string()))
     }
 }
