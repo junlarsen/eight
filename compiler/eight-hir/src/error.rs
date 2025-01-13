@@ -26,6 +26,8 @@ declare_error_type! {
         WrongTraitTypeArgumentCount(WrongTraitTypeArgumentCount),
         TypeParameterShadowsExisting(TypeParameterShadowsExisting),
         BindingReDeclaresName(BindingReDeclaresName),
+        ConstructingNonStructType(ConstructingNonStructTypeError),
+        ConstructingPointerType(ConstructingPointerTypeError),
     }
 }
 
@@ -228,5 +230,26 @@ pub struct TypeParameterShadowsExisting {
 pub struct BindingReDeclaresName {
     pub name: String,
     #[label = "the binding {name} shadows an existing binding with the same name"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::constructing_non_struct_type))]
+#[error("cannot construct a non-struct type")]
+pub struct ConstructingNonStructTypeError {
+    pub name: String,
+    #[label = "the type {name} is not a struct type"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(sema::constructing_pointer_type),
+    help("did you mean to construct the inner type?")
+)]
+#[error("cannot construct a pointer type")]
+pub struct ConstructingPointerTypeError {
+    pub name: String,
+    #[label = "type {name} is a pointer type and cannot be constructed"]
     pub span: Span,
 }

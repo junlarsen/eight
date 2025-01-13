@@ -1,10 +1,11 @@
 use crate::arena::HirArena;
 use crate::context::LocalContext;
 use crate::error::{
-    BindingReDeclaresName, FunctionTypeMismatchError, HirError, HirResult,
-    InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
-    SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
-    TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
+    BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
+    FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
+    InvalidStructFieldReferenceError, MissingFieldError, SelfReferentialTypeError,
+    TraitDoesNotExistError, TraitInstanceMissingFnError, TraitMissingInstanceError,
+    TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
 };
 use crate::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
@@ -377,19 +378,39 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirConstructExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        let HirTy::Nominal(n) = expr.callee else {
-            ice!("called infer_construct_expr on a type that doesn't exist");
+        let struct_type = match expr.callee {
+            HirTy::Nominal(n) => n,
+            HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) => {
+                return Err(HirError::ConstructingNonStructType(
+                    ConstructingNonStructTypeError {
+                        name: expr.callee.format(),
+                        span: expr.span,
+                    },
+                ));
+            }
+            HirTy::Pointer(_) => {
+                return Err(HirError::ConstructingPointerType(
+                    ConstructingPointerTypeError {
+                        name: expr.callee.format(),
+                        span: expr.span,
+                    },
+                ));
+            }
+            // Function types are not first-class members at the moment.
+            HirTy::Uninitialized(_) | HirTy::Variable(_) | HirTy::Function(_) => {
+                ice!("called infer_construct_expr on a type that doesn't exist")
+            }
         };
         let ty = self
             .module_query_db
-            .query_struct_by_name(n.name)
+            .query_struct_by_name(struct_type.name)
             .unwrap_or_else(|| ice!("struct type not found"));
         let mut visited_fields = HashSet::new();
         for provided_field in expr.arguments.iter() {
             let Some(field_definition) = ty.fields.get(&provided_field.field) else {
                 return Err(HirError::UnknownField(UnknownFieldError {
                     field_name: provided_field.field.to_owned(),
-                    type_name: n.name.to_owned(),
+                    type_name: struct_type.name.to_owned(),
                     span: provided_field.field_span,
                 }));
             };
@@ -405,7 +426,7 @@ impl<'hir> TypingContext<'hir> {
         for field in ty.fields.values() {
             if !visited_fields.contains(field.name) {
                 return Err(HirError::MissingField(MissingFieldError {
-                    type_name: n.name.to_owned(),
+                    type_name: struct_type.name.to_owned(),
                     field_name: field.name.to_owned(),
                     span: expr.span,
                     defined_at: field.span,

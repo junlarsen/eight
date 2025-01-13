@@ -1,0 +1,9 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test() {
+  let p = new *i32 {};
+}
+
+// CHECK-LABEL: sema::constructing_pointer_type
+// CHECK: type *i32 is a pointer type and cannot be constructed
+// CHECK: did you mean to construct the inner type?
