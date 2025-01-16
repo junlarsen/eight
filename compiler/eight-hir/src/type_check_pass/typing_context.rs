@@ -20,7 +20,7 @@ use crate::type_check_pass::{
 };
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashSet, VecDeque};
 use std::fmt::Debug;
 
 /// A context object for the type checker.
@@ -43,11 +43,9 @@ pub struct TypingContext<'hir> {
     ///
     /// We currently don't support nested functions or lambdas, so this does not necessarily have to
     /// be a VecDeque, but it's here for future use.
-    type_binding_context: LocalContext<&'hir HirTy<'hir>>,
-    let_binding_context: LocalContext<&'hir HirTy<'hir>>,
-
-    pub type_parameter_instantiations: HashMap<(u32, u32), &'hir HirTy<'hir>>,
-
+    type_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
+    let_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
+    pub type_parameter_instantiations: LocalContext<(u32, u32), &'hir HirTy<'hir>>,
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
 }
@@ -76,9 +74,9 @@ impl<'hir> TypingContext<'hir> {
             module_query_db,
             constraints: Vec::new(),
             substitutions: Vec::new(),
-            let_binding_context: LocalContext::new(),
-            type_binding_context: LocalContext::new(),
-            type_parameter_instantiations: HashMap::new(),
+            let_binding_context: LocalContext::default(),
+            type_binding_context: LocalContext::default(),
+            type_parameter_instantiations: LocalContext::default(),
             current_function: VecDeque::new(),
         }
     }
@@ -103,12 +101,12 @@ impl<'hir> TypingContext<'hir> {
     /// Substitute the type binding with the given name with the given type.
     pub fn record_type_binding(
         &mut self,
-        name: &str,
+        name: &'hir str,
         span: Span,
         ty: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         let current_depth = self.type_binding_context.depth();
-        if let Some((depth, _)) = self.type_binding_context.find_with_depth(name) {
+        if let Some((depth, _)) = self.type_binding_context.find_with_depth(&name) {
             if depth >= current_depth {
                 return Err(HirError::TypeParameterShadowsExisting(
                     TypeParameterShadowsExisting {
@@ -128,12 +126,12 @@ impl<'hir> TypingContext<'hir> {
     /// is a parent of the current scope.
     pub fn record_let_binding(
         &mut self,
-        name: &str,
+        name: &'hir str,
         span: Span,
         ty: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         let current_depth = self.let_binding_context.depth();
-        if let Some((depth, _)) = self.let_binding_context.find_with_depth(name) {
+        if let Some((depth, _)) = self.let_binding_context.find_with_depth(&name) {
             if depth >= current_depth {
                 return Err(HirError::BindingReDeclaresName(BindingReDeclaresName {
                     name: name.to_owned(),
@@ -146,13 +144,13 @@ impl<'hir> TypingContext<'hir> {
     }
 
     /// Find the type of a let binding.
-    pub fn find_let_binding(&self, name: &str) -> Option<&'hir HirTy<'hir>> {
-        self.let_binding_context.find(name).copied()
+    pub fn find_let_binding(&self, name: &'hir str) -> Option<&'hir HirTy<'hir>> {
+        self.let_binding_context.find(&name).copied()
     }
 
     /// Find the type of a type binding.
-    pub fn find_type_binding(&self, name: &str) -> Option<&'hir HirTy<'hir>> {
-        self.type_binding_context.find(name).copied()
+    pub fn find_type_binding(&self, name: &'hir str) -> Option<&'hir HirTy<'hir>> {
+        self.type_binding_context.find(&name).copied()
     }
 
     /// Enter a new let binding scope.
@@ -848,8 +846,6 @@ impl<'hir> TypingContext<'hir> {
             actual_loc,
         }: EqualityConstraint<'hir>,
     ) -> HirResult<()> {
-        dbg!(&actual, &expectation);
-
         match (&expectation, &actual) {
             (HirTy::Meta(lhs), HirTy::Meta(rhs)) if lhs.index == rhs.index => Ok(()),
             (HirTy::Nominal(a), HirTy::Nominal(b)) if std::ptr::eq(a.name, b.name) => Ok(()),

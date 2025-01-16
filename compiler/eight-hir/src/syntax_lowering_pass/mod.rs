@@ -51,7 +51,7 @@ pub struct AstSyntaxLoweringPass<'ast, 'hir> {
     /// variables.
     ///
     /// These differ from the meta variables used in unification.
-    type_binding_context: LocalContext<&'hir HirTy<'hir>>,
+    type_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
     type_binding_depth: u32,
     type_binding_index: u32,
 }
@@ -61,7 +61,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         Self {
             arena,
             loop_depth: VecDeque::new(),
-            type_binding_context: LocalContext::new(),
+            type_binding_context: LocalContext::default(),
             type_binding_depth: 0,
             type_binding_index: 0,
         }
@@ -84,13 +84,13 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         self.type_binding_index = 0;
     }
 
-    pub fn record_typ_binding(&mut self, name: &str, ty: &'hir HirTy<'hir>) -> HirResult<()> {
+    pub fn record_typ_binding(&mut self, name: &'hir str, ty: &'hir HirTy<'hir>) -> HirResult<()> {
         self.type_binding_context.add(name, ty);
         Ok(())
     }
 
-    pub fn find_type_binding(&self, name: &str) -> Option<&'hir HirTy<'hir>> {
-        self.type_binding_context.find(name).copied()
+    pub fn find_type_binding(&self, name: &'hir str) -> Option<&'hir HirTy<'hir>> {
+        self.type_binding_context.find(&name).copied()
     }
 
     pub fn fresh_type_variable(&mut self) -> &'hir HirTy<'hir> {
@@ -105,7 +105,8 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     pub fn drain_type_parameters(&mut self, tys: &[&AstTypeParameterItem]) {
         for ty in tys {
             let type_variable = self.fresh_type_variable();
-            self.type_binding_context.add(&ty.name.name, type_variable);
+            let key = self.arena.names().get(&ty.name.name);
+            self.type_binding_context.add(key, type_variable);
         }
     }
 }
@@ -510,8 +511,9 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         node: &'ast AstTypeParameterItem,
     ) -> HirResult<&'hir HirTypeParameterApiSignature<'hir>> {
         let name = self.arena.names().get(&node.name.name);
+        let key = self.arena.names().get(&node.name.name);
         let ty = self
-            .find_type_binding(&node.name.name)
+            .find_type_binding(key)
             .unwrap_or_else(|| ice!("failed to find allocated type"));
         let hir = self.arena.intern(HirTypeParameterApiSignature {
             span: node.span,
@@ -904,13 +906,16 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             AstType::Unit(_) => self.arena.types().get_unit_ty(),
             AstType::Integer32(_) => self.arena.types().get_integer32_ty(),
             AstType::Boolean(_) => self.arena.types().get_boolean_ty(),
-            AstType::Named(t) => match self.find_type_binding(&t.name.name) {
-                Some(ty) => ty,
-                _ => self
-                    .arena
-                    .types()
-                    .get_nominal_ty(self.arena.names().get(&t.name.name), t.name.span),
-            },
+            AstType::Named(t) => {
+                let key = self.arena.names().get(&t.name.name);
+                match self.find_type_binding(key) {
+                    Some(ty) => ty,
+                    _ => self
+                        .arena
+                        .types()
+                        .get_nominal_ty(self.arena.names().get(&t.name.name), t.name.span),
+                }
+            }
             AstType::Pointer(t) => self.arena.types().get_pointer_ty(self.visit_type(t.inner)?),
         };
         Ok(ty)

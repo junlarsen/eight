@@ -125,6 +125,7 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirFunction<'hir>,
     ) -> HirResult<()> {
         cx.enter_type_binding_scope();
+        cx.type_parameter_instantiations.enter_scope();
         for type_parameter in node.signature.type_parameters.iter() {
             let HirTy::Variable(type_variable) = type_parameter.ty else {
                 ice!("type parameter was not lowered into a variable by the lowering pass")
@@ -132,7 +133,7 @@ impl HirModuleTypeCheckerPass {
             let substitution = cx.fresh_meta_variable();
             cx.substitutions.push(substitution);
             cx.type_parameter_instantiations
-                .insert((type_variable.depth, type_variable.index), substitution);
+                .add((type_variable.depth, type_variable.index), substitution);
             node.type_parameter_substitutions
                 .insert(type_parameter.name, substitution);
         }
@@ -181,7 +182,7 @@ impl HirModuleTypeCheckerPass {
         cx.record_function_context_exit();
         cx.leave_type_binding_scope();
         cx.reset_substitutions();
-        cx.type_parameter_instantiations.clear();
+        cx.type_parameter_instantiations.leave_scope();
         Ok(())
     }
 
@@ -336,7 +337,7 @@ impl HirModuleTypeCheckerPass {
             t @ HirTy::Nominal(_) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
             HirTy::Pointer(t) => Self::visit_pointer_ty(cx, t),
-            HirTy::Variable(v) => match cx.type_parameter_instantiations.get(&(v.depth, v.index)) {
+            HirTy::Variable(v) => match cx.type_parameter_instantiations.find(&(v.depth, v.index)) {
                 Some(ty) => Ok(ty),
                 None => ice!("referenced type variable was never instantiated"),
             },
@@ -816,8 +817,6 @@ impl HirModuleTypeCheckerPass {
         // Propagate the type of the expression to the type of the let-binding
         node.ty = node.value.ty();
         cx.record_let_binding(node.name, node.span, node.ty)?;
-
-        dbg!(&node.ty);
         Ok(())
     }
 

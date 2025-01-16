@@ -2,23 +2,23 @@ use eight_diagnostics::ice;
 use std::collections::{BTreeMap, VecDeque};
 
 #[derive(Debug)]
-pub struct LocalContext<T> {
-    scopes: VecDeque<BTreeMap<String, T>>,
+pub struct LocalContext<K, V> {
+    scopes: VecDeque<BTreeMap<K, V>>,
 }
 
-impl<T> Default for LocalContext<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T> LocalContext<T> {
-    pub fn new() -> Self {
-        LocalContext {
+impl<K: Ord, V> Default for LocalContext<K, V> {      
+    fn default() -> Self {        
+        Self {
             scopes: VecDeque::new(),
         }
     }
+}
 
+impl<K: Ord, V> LocalContext<K, V> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
     /// Push a new scope onto the deque.
     pub fn enter_scope(&mut self) {
         let scope = BTreeMap::new();
@@ -36,7 +36,7 @@ impl<T> LocalContext<T> {
     }
 
     /// Find an item in the context.
-    pub fn find(&self, name: &str) -> Option<&T> {
+    pub fn find(&self, name: &K) -> Option<&V> {
         for scope in &self.scopes {
             if let Some(item) = scope.get(name) {
                 return Some(item);
@@ -46,7 +46,7 @@ impl<T> LocalContext<T> {
     }
 
     /// Find an item in the context, and return the distance from the root scope.
-    pub fn find_with_depth(&self, name: &str) -> Option<(usize, &T)> {
+    pub fn find_with_depth(&self, name: &K) -> Option<(usize, &V)> {
         for (depth, scope) in self.scopes.iter().enumerate() {
             if let Some(item) = scope.get(name) {
                 return Some((depth, item));
@@ -55,15 +55,15 @@ impl<T> LocalContext<T> {
         None
     }
 
-    pub fn add(&mut self, name: &str, id: T) {
+    pub fn add(&mut self, name: K, id: V) {
         let scope = self
             .scopes
             .front_mut()
             .unwrap_or_else(|| ice!("local context has no scope"));
-        scope.insert(name.to_string(), id);
+        scope.insert(name, id);
     }
 
-    pub fn remove(&mut self, name: &str) {
+    pub fn remove(&mut self, name: &K) {
         let scope = self
             .scopes
             .front_mut()
@@ -75,7 +75,7 @@ impl<T> LocalContext<T> {
         self.scopes.front().map(|s| s.len()).unwrap_or(0)
     }
 
-    pub fn find_local(&self, name: &str) -> Option<&T> {
+    pub fn find_local(&self, name: &K) -> Option<&V> {
         self.scopes.front().and_then(|s| s.get(name))
     }
 }
@@ -87,28 +87,28 @@ mod tests {
 
     #[test]
     fn test_local_context_interleaving() {
-        let mut resolver = LocalContext::<i32>::new();
+        let mut resolver = LocalContext::<&'static str, i32>::new();
         assert_eq!(resolver.depth(), 0);
         resolver.enter_scope();
         resolver.add("a", 1);
         assert_eq!(resolver.depth(), 1);
         resolver.enter_scope();
-        assert_eq!(Some(&1), resolver.find("a"));
+        assert_eq!(Some(&1), resolver.find(&"a"));
         resolver.add("a", 2);
-        assert_eq!(Some(&2), resolver.find("a"));
+        assert_eq!(Some(&2), resolver.find(&"a"));
         resolver.leave_scope();
-        assert_eq!(Some(&1), resolver.find("a"));
+        assert_eq!(Some(&1), resolver.find(&"a"));
         resolver.leave_scope();
         assert_eq!(resolver.depth(), 0);
     }
 
     #[test]
     fn test_local_context_removal() {
-        let mut resolver = LocalContext::<i32>::new();
+        let mut resolver = LocalContext::<&'static str, i32>::new();
         resolver.enter_scope();
         resolver.add("a", 1);
-        assert_eq!(Some(&1), resolver.find("a"));
-        resolver.remove("a");
-        assert_none!(resolver.find("a"));
+        assert_eq!(Some(&1), resolver.find(&"a"));
+        resolver.remove(&"a");
+        assert_none!(resolver.find(&"a"));
     }
 }
