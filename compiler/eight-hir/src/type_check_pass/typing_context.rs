@@ -15,7 +15,7 @@ use crate::expr::{
 use crate::query::HirSignatureQueryDatabase;
 use crate::ty::{HirFunctionTy, HirMetaTy, HirTy};
 use crate::type_check_pass::{
-    Constraint, EqualityConstraint, FieldProjectionConstraint, HirModuleTypeCheckerPass,
+    Constraint, EqualityConstraint, FieldProjectionConstraint,
     InstanceConstraint,
 };
 use eight_diagnostics::ice;
@@ -35,7 +35,8 @@ pub struct TypingContext<'hir> {
 
     /// Collected constraints during inference, to be solved during unification.
     constraints: Vec<Constraint<'hir>>,
-    pub substitutions: Vec<&'hir HirTy<'hir>>,
+    substitutions: Vec<&'hir HirTy<'hir>>,
+
     /// Type parameters that are currently being substituted in the current function.
     ///
     /// This is required when traversing function bodies, as we need to substitute `let x: T = 1;`
@@ -45,7 +46,7 @@ pub struct TypingContext<'hir> {
     /// be a VecDeque, but it's here for future use.
     type_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
     let_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
-    pub type_parameter_instantiations: LocalContext<(u32, u32), &'hir HirTy<'hir>>,
+    pub(crate) type_parameter_instantiations: LocalContext<(u32, u32), &'hir HirTy<'hir>>,
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
 }
@@ -87,15 +88,27 @@ impl<'hir> TypingContext<'hir> {
     /// with generic type parameters, or the body of a trait.
     pub fn enter_type_binding_scope(&mut self) {
         self.type_binding_context.enter_scope();
+        self.type_parameter_instantiations.enter_scope();
     }
 
     /// Leave the current type binding scope.
     pub fn leave_type_binding_scope(&mut self) {
+        self.type_parameter_instantiations.leave_scope();
         self.type_binding_context.leave_scope();
     }
 
     pub fn reset_substitutions(&mut self) {
         self.substitutions.clear();
+    }
+
+    pub fn instantiate_type_parameter(&mut self, ty: &'hir HirTy<'hir>) -> &'hir HirTy<'hir> {
+        let HirTy::Variable(type_variable) = ty else {
+            ice!("type parameter was not lowered into a variable by the lowering pass")
+        };
+        let substitution = self.fresh_meta_variable();
+        self.type_parameter_instantiations
+            .add((type_variable.depth, type_variable.index), substitution);
+        substitution
     }
 
     /// Substitute the type binding with the given name with the given type.
@@ -255,24 +268,26 @@ impl<'hir> TypingContext<'hir> {
             self.constrain_eq(expectation, ty, expr.span, expr.name_span);
             return Ok(());
         }
+        panic!("cannot call generic functions at this time");
 
-        // Otherwise, we need to instantiate the generic parameters of the function, and
-        // substitute the parameters and return types if they refer to one of the generic
-        // type parameters.
-        for type_parameter in signature.type_parameters.iter() {
-            let ty = self.fresh_meta_variable();
-            self.record_type_binding(type_parameter.name, type_parameter.span, ty)?;
-        }
-        // The types of the signature can refer to the type parameters at arbitrary depths,
-        // e.g. `**T`, so we just recurse down to substitute.
-        let parameters = signature
-            .parameters
-            .iter()
-            .map(|p| HirModuleTypeCheckerPass::visit_type(self, p.ty))
-            .collect::<HirResult<Vec<_>>>()?;
-        let return_type = HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
-        let ty = self.arena.types().get_function_ty(return_type, parameters);
-        self.constrain_eq(expectation, ty, expr.span, expr.name_span);
+        //
+        // // Otherwise, we need to instantiate the generic parameters of the function, and
+        // // substitute the parameters and return types if they refer to one of the generic
+        // // type parameters.
+        // for type_parameter in signature.type_parameters.iter() {
+        //     let ty = self.fresh_meta_variable();
+        //     self.record_type_binding(type_parameter.name, type_parameter.span, ty)?;
+        // }
+        // // The types of the signature can refer to the type parameters at arbitrary depths,
+        // // e.g. `**T`, so we just recurse down to substitute.
+        // let parameters = signature
+        //     .parameters
+        //     .iter()
+        //     .map(|p| HirModuleTypeCheckerPass::visit_type(self, p.ty))
+        //     .collect::<HirResult<Vec<_>>>()?;
+        // let return_type = HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
+        // let ty = self.arena.types().get_function_ty(return_type, parameters);
+        // self.constrain_eq(expectation, ty, expr.span, expr.name_span);
         Ok(())
     }
 
@@ -635,7 +650,7 @@ impl<'hir> TypingContext<'hir> {
     pub fn occurs_in(&self, v: &HirMetaTy, ty: &'hir HirTy<'hir>) -> bool {
         match ty {
             // If the variable points to a substitution of itself, it occurs in itself
-            HirTy::Meta(o) if self.is_substitution_equal_to_self(o) => true,
+            HirTy::Meta(o) if !self.is_substitution_equal_to_self(o) => true,
             HirTy::Meta(o) => o.index == v.index,
             HirTy::Function(t) => {
                 self.occurs_in(v, t.return_type)
@@ -946,8 +961,8 @@ impl<'hir> TypingContext<'hir> {
 
     /// Create a fresh meta variable.
     pub fn fresh_meta_variable(&mut self) -> &'hir HirTy<'hir> {
-        let len = self.substitutions.len();
-        let ty = self.arena.types().get_meta_ty(len as u32);
+        let index = self.substitutions.len() as u32;
+        let ty = self.arena.types().get_meta_ty(index);
         self.substitutions.push(ty);
         ty
     }

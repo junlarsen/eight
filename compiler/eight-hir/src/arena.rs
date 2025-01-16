@@ -184,7 +184,7 @@ impl<'arena> TypeArena<'arena> {
     }
 
     pub fn get_meta_ty(&'arena self, index: u32) -> &'arena HirTy<'arena> {
-        let id = HirTyId::compute_meta_ty_id();
+        let id = HirTyId::compute_meta_ty_id(index);
         self.intern
             .borrow_mut()
             .entry(id)

@@ -43,7 +43,8 @@ pub struct HirFunction<'hir> {
     /// When a function is instantiated, if its type was a type parameter, we need to substitute it
     /// for a meta variable in the type checker.
     ///
-    /// If the function is not a type parameter, then this field is left as None.
+    /// This field is never None after type checking.
+    /// 
     /// TODO: Replace with OnceCell
     pub instantiated_return_type: Option<&'hir HirTy<'hir>>,
     /// The same as `instantiated_return_type`, but for the function parameters.
@@ -92,4 +93,9 @@ pub struct HirInstance<'hir> {
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
     pub members: Vec<HirFunction<'hir>>,
     pub signature: &'hir HirInstanceApiSignature<'hir>,
+    /// See [`HirFunction::type_parameter_substitutions`] for explanation.
+    /// 
+    /// These are instantiations from the trait itself. Separate ones will be created for each
+    /// member.
+    pub type_parameter_substitutions: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
 }

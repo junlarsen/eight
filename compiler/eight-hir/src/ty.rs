@@ -34,6 +34,12 @@ impl HirTyId {
         Self(hasher.finish())
     }
 
+    pub fn compute_meta_ty_id(index: u32) -> Self {
+        let mut hasher = DefaultHasher::new();
+        (0x11, index).hash(&mut hasher);
+        Self(hasher.finish())
+    }
+
     pub fn compute_function_ty_id(return_type: &HirTyId, parameters: &[HirTyId]) -> Self {
         let mut hasher = DefaultHasher::new();
         (0x20, return_type, parameters).hash(&mut hasher);
@@ -57,12 +63,6 @@ impl HirTyId {
         0x50.hash(&mut hasher);
         Self(hasher.finish())
     }
-
-    pub fn compute_meta_ty_id() -> Self {
-        let mut hasher = DefaultHasher::new();
-        0x60.hash(&mut hasher);
-        Self(hasher.finish())
-    }
 }
 
 impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
@@ -83,8 +83,8 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
             HirTy::Boolean(_) => HirTyId::compute_boolean_ty_id(),
             HirTy::Unit(_) => HirTyId::compute_unit_ty_id(),
             HirTy::Variable(v) => HirTyId::compute_variable_ty_id(v.depth, v.index),
+            HirTy::Meta(v) => HirTyId::compute_meta_ty_id(v.index),
             HirTy::Uninitialized(_) => HirTyId::compute_uninitialized_ty_id(),
-            HirTy::Meta(_) => HirTyId::compute_meta_ty_id(),
         }
     }
 }
@@ -229,7 +229,7 @@ impl<'hir> HirTy<'hir> {
     /// ```
     pub fn format_substitutable_type(&self) -> String {
         match self {
-            HirTy::Variable(_) => "_".to_owned(),
+            HirTy::Meta(_) => "_".to_owned(),
             HirTy::Function(f) => {
                 let parameters = f
                     .parameters
@@ -249,7 +249,7 @@ impl<'hir> HirTy<'hir> {
             HirTy::Nominal(n) => n.name.to_owned(),
             HirTy::Pointer(p) => format!("*{}", p.inner.format_substitutable_type()),
             HirTy::Uninitialized(_) => ice!("attempted to format uninitialized type"),
-            HirTy::Meta(_) => ice!("attempted to format meta type"),
+            HirTy::Variable(_) => ice!("attempted to format variable type"),
         }
     }
 

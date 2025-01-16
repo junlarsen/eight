@@ -125,20 +125,15 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirFunction<'hir>,
     ) -> HirResult<()> {
         cx.enter_type_binding_scope();
-        cx.type_parameter_instantiations.enter_scope();
+        // Instantiate all the HirTy::Variable types from the function's type variables
         for type_parameter in node.signature.type_parameters.iter() {
-            let HirTy::Variable(type_variable) = type_parameter.ty else {
-                ice!("type parameter was not lowered into a variable by the lowering pass")
-            };
-            let substitution = cx.fresh_meta_variable();
-            cx.substitutions.push(substitution);
-            cx.type_parameter_instantiations
-                .add((type_variable.depth, type_variable.index), substitution);
+            let ty = cx.instantiate_type_parameter(type_parameter.ty);
             node.type_parameter_substitutions
-                .insert(type_parameter.name, substitution);
+                .insert(type_parameter.name, ty);
         }
 
-        // Instantiate the types of the function parameters and return type.
+        // Propagate the parameter and return types. If any of these are HirTy::Variable, they are
+        // replaced with their HirTy::Meta substitution.
         node.instantiated_return_type = Some(Self::visit_type(cx, node.signature.return_type)?);
         for p in node.signature.parameters.iter() {
             let ty = Self::visit_type(cx, p.ty)?;
@@ -157,7 +152,6 @@ impl HirModuleTypeCheckerPass {
         // NOTE: This function call cannot be moved further up, because the return type and args of
         // this function must have been visited first.
         cx.record_function_context_entry(self_ty);
-
         cx.enter_let_binding_scope();
         // Push all the function parameters into the local context.
         for (p, (name, ty)) in node
@@ -182,7 +176,6 @@ impl HirModuleTypeCheckerPass {
         cx.record_function_context_exit();
         cx.leave_type_binding_scope();
         cx.reset_substitutions();
-        cx.type_parameter_instantiations.leave_scope();
         Ok(())
     }
 
@@ -238,8 +231,7 @@ impl HirModuleTypeCheckerPass {
         // this makes the `T` in `trait Foo<T> {}` visible to the trait body. While there are no let
         // bindings in traits because they are ambient, methods can still use these types.
         for type_parameter in node.signature.type_parameters.iter() {
-            let substitution = cx.fresh_meta_variable();
-            cx.record_type_binding(type_parameter.name, type_parameter.span, substitution)?;
+            cx.instantiate_type_parameter(type_parameter.ty);
         }
 
         // Iterate through the ambient method declarations
@@ -248,8 +240,7 @@ impl HirModuleTypeCheckerPass {
             // Push all the type arguments of the method onto the substitution stack, allowing the
             // parameters and return type to refer to them.
             for type_parameter in method.type_parameters.iter() {
-                let substitution = cx.fresh_meta_variable();
-                cx.record_type_binding(type_parameter.name, type_parameter.span, substitution)?;
+                cx.instantiate_type_parameter(type_parameter.ty);
             }
             // It is impossible that these types are uninitialized.
             Self::visit_type(cx, method.return_type)?;
@@ -268,6 +259,9 @@ impl HirModuleTypeCheckerPass {
     /// An instance essentially only acts as a type scope for its methods. That means we can simply
     /// call `visit_function` on each method once we've taken care of the prep-work for the trait
     /// itself.
+    ///
+    /// TODO: When traits become generic, we need to instantiate all parameter types from the traits
+    ///   in this function.
     pub fn visit_instance<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirInstance<'hir>,

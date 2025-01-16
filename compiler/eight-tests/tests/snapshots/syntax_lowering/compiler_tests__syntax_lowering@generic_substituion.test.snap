@@ -21,7 +21,7 @@ hir_module {
     
     
     // module functions
-    fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V;
+    fn substitute<$1'0, $1'1, $1'2>(a: i32, b: $1'0, c: $1'1, d: $1'2) -> $1'2;
     
     // module traits
     
@@ -32,8 +32,8 @@ hir_module {
   
   defining {
     // module functions
-    fn substitute<$1@0, $1@1, $1@2>(a: i32, b: T, c: U, d: V) -> $1@2 {
-      return (d as $1@2);
+    fn substitute<?0, ?1, ?2>(a: i32, b: ?0, c: ?1, d: ?2) -> ?2 {
+      return (d as ?2);
     }
     // module intrinsic functions
     

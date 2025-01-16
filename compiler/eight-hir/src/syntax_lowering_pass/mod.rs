@@ -653,6 +653,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             type_arguments,
             members,
             signature,
+            type_parameter_substitutions: BTreeMap::new(),
         };
         Ok(instance)
     }
