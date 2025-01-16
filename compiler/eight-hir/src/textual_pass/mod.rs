@@ -194,7 +194,10 @@ impl<'a> HirModuleTextualPass<'a> {
                         .text(p.name)
                         .append(self.arena.text(":"))
                         .append(self.arena.space())
-                        .append(self.visit_ty(p.ty))
+                        .append(match function.instantiated_parameters.get(p.name) {
+                            Some(t) => self.visit_ty(t),
+                            None => self.visit_ty(p.ty),
+                        })
                 }),
                 self.arena.text(", "),
             ))

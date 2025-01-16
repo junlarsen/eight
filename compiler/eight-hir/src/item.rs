@@ -38,8 +38,15 @@ pub struct HirFunction<'hir> {
     pub signature: &'hir HirFunctionApiSignature<'hir>,
     pub body: Vec<HirStmt<'hir>>,
 
-    // TODO: Replace with OnceCell
+    /// The type that was substituted for the function return type.
+    ///
+    /// When a function is instantiated, if its type was a type parameter, we need to substitute it
+    /// for a meta variable in the type checker.
+    ///
+    /// If the function is not a type parameter, then this field is left as None.
+    /// TODO: Replace with OnceCell
     pub instantiated_return_type: Option<&'hir HirTy<'hir>>,
+    /// The same as `instantiated_return_type`, but for the function parameters.
     pub instantiated_parameters: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
     /// The type that was substituted in the current function.
     ///
@@ -56,13 +63,6 @@ pub struct HirFunction<'hir> {
     /// ```
     pub type_parameter_substitutions: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
     pub linkage_type: LinkageType,
-}
-
-impl<'hir> HirFunction<'hir> {
-    /// Records that the type parameter named `name` is now substituted with `ty`.
-    pub fn record_substitution(&mut self, name: &'hir str, ty: &'hir HirTy<'hir>) {
-        self.type_parameter_substitutions.insert(name, ty);
-    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

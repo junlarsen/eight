@@ -13,7 +13,7 @@ use crate::expr::{
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
 use crate::query::HirSignatureQueryDatabase;
-use crate::ty::{HirFunctionTy, HirTy, HirVariableTy};
+use crate::ty::{HirFunctionTy, HirMetaTy, HirTy};
 use crate::type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, HirModuleTypeCheckerPass,
     InstanceConstraint,
@@ -35,16 +35,7 @@ pub struct TypingContext<'hir> {
 
     /// Collected constraints during inference, to be solved during unification.
     constraints: Vec<Constraint<'hir>>,
-    /// Indexed by De Bruijn indexing with (depth, index)
-    substitutions: HashMap<(u32, u32), &'hir HirTy<'hir>>,
-    /// The depth of the current type binding context.
-    ///
-    /// Used to generate the depth term of a fresh type variable. Whenever the type checker enters
-    /// a new typing scope, it *must* increment this value, and reduce it when leaving the scope.
-    type_binding_depth: u32,
-    /// The index of the current type binding context.
-    type_binding_index: u32,
-
+    pub substitutions: Vec<&'hir HirTy<'hir>>,
     /// Type parameters that are currently being substituted in the current function.
     ///
     /// This is required when traversing function bodies, as we need to substitute `let x: T = 1;`
@@ -54,6 +45,8 @@ pub struct TypingContext<'hir> {
     /// be a VecDeque, but it's here for future use.
     type_binding_context: LocalContext<&'hir HirTy<'hir>>,
     let_binding_context: LocalContext<&'hir HirTy<'hir>>,
+
+    pub type_parameter_instantiations: HashMap<(u32, u32), &'hir HirTy<'hir>>,
 
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
@@ -82,11 +75,10 @@ impl<'hir> TypingContext<'hir> {
             arena,
             module_query_db,
             constraints: Vec::new(),
-            substitutions: HashMap::new(),
-            type_binding_depth: 0,
-            type_binding_index: 0,
+            substitutions: Vec::new(),
             let_binding_context: LocalContext::new(),
             type_binding_context: LocalContext::new(),
+            type_parameter_instantiations: HashMap::new(),
             current_function: VecDeque::new(),
         }
     }
@@ -96,16 +88,16 @@ impl<'hir> TypingContext<'hir> {
     /// This is only to be used for generic type parameter boundaries, such as entering a function
     /// with generic type parameters, or the body of a trait.
     pub fn enter_type_binding_scope(&mut self) {
-        self.type_binding_depth += 1;
-        self.type_binding_index = 0;
         self.type_binding_context.enter_scope();
     }
 
     /// Leave the current type binding scope.
     pub fn leave_type_binding_scope(&mut self) {
         self.type_binding_context.leave_scope();
-        self.type_binding_depth -= 1;
-        self.type_binding_index = 0;
+    }
+
+    pub fn reset_substitutions(&mut self) {
+        self.substitutions.clear();
     }
 
     /// Substitute the type binding with the given name with the given type.
@@ -115,7 +107,7 @@ impl<'hir> TypingContext<'hir> {
         span: Span,
         ty: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        let current_depth = self.let_binding_context.depth();
+        let current_depth = self.type_binding_context.depth();
         if let Some((depth, _)) = self.type_binding_context.find_with_depth(name) {
             if depth >= current_depth {
                 return Err(HirError::TypeParameterShadowsExisting(
@@ -171,27 +163,6 @@ impl<'hir> TypingContext<'hir> {
     /// Leave the current let binding scope.
     pub fn leave_let_binding_scope(&mut self) {
         self.let_binding_context.leave_scope();
-    }
-
-    /// Get a reference to the current type binding depth.
-    ///
-    /// This is used in conjunction with [`drain_substitutions_by_depth`] to remove all the
-    /// substitutions that no longer apply, because we're leaving a function body.
-    pub fn get_type_binding_depth_bookmark(&self) -> u32 {
-        self.type_binding_depth
-    }
-
-    /// Removes all the substitutions that applied to the provided depth bookmark, or deeper.
-    ///
-    /// This ensures that no substitutions that were made in a function body are carried over to a
-    /// adjacent function body.
-    ///
-    /// This only makes sense in context of trait instances, where we track the arguments passed to
-    /// the trait's type parameters, while also allowing for generic type parameters on the trait
-    /// methods themselves.
-    pub fn drain_substitutions_by_depth_bookmark(&mut self, bookmark: u32) {
-        self.substitutions
-            .retain(|(depth, _), _| *depth >= bookmark);
     }
 
     /// Record the entry of a function.
@@ -291,7 +262,7 @@ impl<'hir> TypingContext<'hir> {
         // substitute the parameters and return types if they refer to one of the generic
         // type parameters.
         for type_parameter in signature.type_parameters.iter() {
-            let ty = self.fresh_type_variable();
+            let ty = self.fresh_meta_variable();
             self.record_type_binding(type_parameter.name, type_parameter.span, ty)?;
         }
         // The types of the signature can refer to the type parameters at arbitrary depths,
@@ -607,10 +578,10 @@ impl<'hir> TypingContext<'hir> {
     pub fn substitute(&mut self, ty: &'hir HirTy<'hir>) -> HirResult<&'hir HirTy<'hir>> {
         match ty {
             // We substitute type variables as long as they don't point to $T
-            HirTy::Variable(v)
+            HirTy::Meta(v)
                 if !self
                     .substitution(v)
-                    .map(|t| t.is_equal_to_variable(v))
+                    .map(|t| t.is_equal_to_meta(v))
                     .unwrap_or(false) =>
             {
                 // We have to recurse down here, because $T could point to another type variable
@@ -639,23 +610,23 @@ impl<'hir> TypingContext<'hir> {
             // be done here.
             HirTy::Uninitialized(_) => ice!("uninitialized type should not be substituted"),
             HirTy::Integer32(_)
+            | HirTy::Variable(_)
             | HirTy::Boolean(_)
             | HirTy::Unit(_)
-            | HirTy::Variable(_)
+            | HirTy::Meta(_)
             | HirTy::Nominal(_) => Ok(ty),
-            HirTy::Meta(_) => todo!("how to handle?"),
         }
     }
 
     /// Get the substitution for the given type variable.
-    pub fn substitution(&self, v: &HirVariableTy) -> Option<&'hir HirTy<'hir>> {
-        self.substitutions.get(&(v.depth, v.index)).copied()
+    pub fn substitution(&self, v: &HirMetaTy) -> Option<&'hir HirTy<'hir>> {
+        self.substitutions.get(v.index as usize).copied()
     }
 
     /// Determine if the substitution at the given index is equal to its own type variable.
-    pub fn is_substitution_equal_to_self(&self, v: &HirVariableTy) -> bool {
+    pub fn is_substitution_equal_to_self(&self, v: &HirMetaTy) -> bool {
         self.substitution(v)
-            .map(|t| t.is_equal_to_variable(v))
+            .map(|t| t.is_equal_to_meta(v))
             .unwrap_or(false)
     }
 
@@ -663,11 +634,11 @@ impl<'hir> TypingContext<'hir> {
     ///
     /// This is required for HM type inference, as we need to determine if a type variable points to
     /// itself. An example is a constraint like `$0 = fn() -> $0`, which cannot be satisfied ever.
-    pub fn occurs_in(&self, v: &HirVariableTy, ty: &'hir HirTy<'hir>) -> bool {
+    pub fn occurs_in(&self, v: &HirMetaTy, ty: &'hir HirTy<'hir>) -> bool {
         match ty {
             // If the variable points to a substitution of itself, it occurs in itself
-            HirTy::Variable(o) if !self.is_substitution_equal_to_self(o) => true,
-            HirTy::Variable(o) => o.depth == v.depth && o.index == v.index,
+            HirTy::Meta(o) if self.is_substitution_equal_to_self(o) => true,
+            HirTy::Meta(o) => o.index == v.index,
             HirTy::Function(t) => {
                 self.occurs_in(v, t.return_type)
                     || t.parameters.iter().any(|p| self.occurs_in(v, p))
@@ -678,8 +649,8 @@ impl<'hir> TypingContext<'hir> {
             | HirTy::Boolean(_)
             | HirTy::Unit(_)
             | HirTy::Nominal(_)
+            | HirTy::Variable(_)
             | HirTy::Pointer(_) => false,
-            HirTy::Meta(_) => todo!("how to handle?"),
         }
     }
 }
@@ -763,7 +734,7 @@ impl<'hir> TypingContext<'hir> {
         constraint: FieldProjectionConstraint<'hir>,
     ) -> HirResult<()> {
         match constraint.origin {
-            HirTy::Variable(v) if !self.is_substitution_equal_to_self(v) => {
+            HirTy::Meta(v) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = FieldProjectionConstraint {
                     origin: self.substitute(constraint.origin)?,
                     field: constraint.field,
@@ -877,14 +848,12 @@ impl<'hir> TypingContext<'hir> {
             actual_loc,
         }: EqualityConstraint<'hir>,
     ) -> HirResult<()> {
+        dbg!(&actual, &expectation);
+
         match (&expectation, &actual) {
-            (HirTy::Variable(lhs), HirTy::Variable(rhs))
-                if lhs.depth == rhs.depth && lhs.index == rhs.index =>
-            {
-                Ok(())
-            }
+            (HirTy::Meta(lhs), HirTy::Meta(rhs)) if lhs.index == rhs.index => Ok(()),
             (HirTy::Nominal(a), HirTy::Nominal(b)) if std::ptr::eq(a.name, b.name) => Ok(()),
-            (HirTy::Variable(v), _) if !self.is_substitution_equal_to_self(v) => {
+            (HirTy::Meta(v), _) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
                     expectation: self
                         .substitution(v)
@@ -895,7 +864,7 @@ impl<'hir> TypingContext<'hir> {
                 };
                 self.unify_eq(constraint)
             }
-            (_, HirTy::Variable(v)) if !self.is_substitution_equal_to_self(v) => {
+            (_, HirTy::Meta(v)) if !self.is_substitution_equal_to_self(v) => {
                 let constraint = EqualityConstraint {
                     expectation,
                     actual: self
@@ -906,24 +875,24 @@ impl<'hir> TypingContext<'hir> {
                 };
                 self.unify_eq(constraint)
             }
-            (HirTy::Variable(v), _) => {
+            (HirTy::Meta(v), _) => {
                 if self.occurs_in(v, actual) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: actual_loc,
                         right: expectation_loc,
                     }));
                 }
-                self.substitutions.insert((v.depth, v.index), actual);
+                self.substitutions[v.index as usize] = actual;
                 Ok(())
             }
-            (_, HirTy::Variable(v)) => {
+            (_, HirTy::Meta(v)) => {
                 if self.occurs_in(v, expectation) {
                     return Err(HirError::SelfReferentialType(SelfReferentialTypeError {
                         left: expectation_loc,
                         right: actual_loc,
                     }));
                 }
-                self.substitutions.insert((v.depth, v.index), expectation);
+                self.substitutions[v.index as usize] = expectation;
                 Ok(())
             }
             (HirTy::Pointer(a), HirTy::Pointer(b)) => {
@@ -979,13 +948,11 @@ impl<'hir> TypingContext<'hir> {
         }
     }
 
-    /// Create a fresh type variable.
-    pub fn fresh_type_variable(&mut self) -> &'hir HirTy<'hir> {
-        let depth = self.type_binding_depth;
-        let index = self.type_binding_index;
-        let ty = self.arena.types().get_variable_ty(depth, index);
-        self.type_binding_index += 1;
-        self.substitutions.insert((depth, index), ty);
+    /// Create a fresh meta variable.
+    pub fn fresh_meta_variable(&mut self) -> &'hir HirTy<'hir> {
+        let len = self.substitutions.len();
+        let ty = self.arena.types().get_meta_ty(len as u32);
+        self.substitutions.push(ty);
         ty
     }
 }

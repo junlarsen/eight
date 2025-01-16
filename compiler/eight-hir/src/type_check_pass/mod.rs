@@ -35,7 +35,7 @@ pub struct EqualityConstraint<'hir> {
     /// The type that was expected, generally the left-hand side
     pub expectation: &'hir HirTy<'hir>,
     pub expectation_loc: Span,
-    /// The type that was actually found, generally the right-hand side
+    /// The type that wa mut  actually found, generally the right-hand side
     pub actual: &'hir HirTy<'hir>,
     pub actual_loc: Span,
 }
@@ -124,16 +124,19 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirFunction<'hir>,
     ) -> HirResult<()> {
-        let bookmark = cx.get_type_binding_depth_bookmark();
         cx.enter_type_binding_scope();
-
-        // Insert all type parameters into the local context. Effectively making `T` visible to the
-        // function body, in case of `let x: T = ...`
         for type_parameter in node.signature.type_parameters.iter() {
-            let substitution = cx.fresh_type_variable();
-            node.record_substitution(type_parameter.name, substitution);
-            cx.record_type_binding(type_parameter.name, type_parameter.span, substitution)?;
+            let HirTy::Variable(type_variable) = type_parameter.ty else {
+                ice!("type parameter was not lowered into a variable by the lowering pass")
+            };
+            let substitution = cx.fresh_meta_variable();
+            cx.substitutions.push(substitution);
+            cx.type_parameter_instantiations
+                .insert((type_variable.depth, type_variable.index), substitution);
+            node.type_parameter_substitutions
+                .insert(type_parameter.name, substitution);
         }
+
         // Instantiate the types of the function parameters and return type.
         node.instantiated_return_type = Some(Self::visit_type(cx, node.signature.return_type)?);
         for p in node.signature.parameters.iter() {
@@ -177,7 +180,8 @@ impl HirModuleTypeCheckerPass {
         cx.leave_let_binding_scope();
         cx.record_function_context_exit();
         cx.leave_type_binding_scope();
-        cx.drain_substitutions_by_depth_bookmark(bookmark);
+        cx.reset_substitutions();
+        cx.type_parameter_instantiations.clear();
         Ok(())
     }
 
@@ -228,24 +232,22 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirTrait<'hir>,
     ) -> HirResult<()> {
-        let bookmark = cx.get_type_binding_depth_bookmark();
         cx.enter_type_binding_scope();
         // Push the trait type parameters onto the substitution stack. As with `visit_function`,
         // this makes the `T` in `trait Foo<T> {}` visible to the trait body. While there are no let
         // bindings in traits because they are ambient, methods can still use these types.
         for type_parameter in node.signature.type_parameters.iter() {
-            let substitution = cx.fresh_type_variable();
+            let substitution = cx.fresh_meta_variable();
             cx.record_type_binding(type_parameter.name, type_parameter.span, substitution)?;
         }
 
         // Iterate through the ambient method declarations
         for method in node.signature.methods.values() {
-            let bookmark = cx.get_type_binding_depth_bookmark();
             cx.enter_type_binding_scope();
             // Push all the type arguments of the method onto the substitution stack, allowing the
             // parameters and return type to refer to them.
             for type_parameter in method.type_parameters.iter() {
-                let substitution = cx.fresh_type_variable();
+                let substitution = cx.fresh_meta_variable();
                 cx.record_type_binding(type_parameter.name, type_parameter.span, substitution)?;
             }
             // It is impossible that these types are uninitialized.
@@ -255,10 +257,8 @@ impl HirModuleTypeCheckerPass {
                 Self::visit_type(cx, parameter.ty)?;
             }
             cx.leave_type_binding_scope();
-            cx.drain_substitutions_by_depth_bookmark(bookmark);
         }
         cx.leave_type_binding_scope();
-        cx.drain_substitutions_by_depth_bookmark(bookmark);
         Ok(())
     }
 
@@ -273,7 +273,6 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         // We acquire the trait's type parameters, and match the substitutions to the type arguments
         // the current instance instantiates them with.
-        let bookmark = cx.get_type_binding_depth_bookmark();
         cx.enter_type_binding_scope();
 
         // Ensure and substitute all the trait type parameters with the instantiated type arguments
@@ -310,7 +309,7 @@ impl HirModuleTypeCheckerPass {
             let name = cx.arena.names().get(type_parameter.name);
             let span = type_parameter.span;
             debug_assert!(std::ptr::eq(type_parameter.name, name));
-            let substitution = cx.fresh_type_variable();
+            let substitution = cx.fresh_meta_variable();
             cx.record_type_binding(name, span, substitution)?;
         }
 
@@ -320,7 +319,6 @@ impl HirModuleTypeCheckerPass {
         }
 
         cx.leave_type_binding_scope();
-        cx.drain_substitutions_by_depth_bookmark(bookmark);
         Ok(())
     }
 
@@ -338,15 +336,15 @@ impl HirModuleTypeCheckerPass {
             t @ HirTy::Nominal(_) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
             HirTy::Pointer(t) => Self::visit_pointer_ty(cx, t),
-            HirTy::Variable(_)
-            | HirTy::Integer32(_)
-            | HirTy::Boolean(_)
-            | HirTy::Unit(_)
-            | HirTy::Meta(_) => Ok(node),
+            HirTy::Variable(v) => match cx.type_parameter_instantiations.get(&(v.depth, v.index)) {
+                Some(ty) => Ok(ty),
+                None => ice!("referenced type variable was never instantiated"),
+            },
+            HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) | HirTy::Meta(_) => Ok(node),
             // If the type was uninitialized by the lowering pass, we need to replace it with a
             // fresh type variable here.
             HirTy::Uninitialized(_) => {
-                let v = cx.fresh_type_variable();
+                let v = cx.fresh_meta_variable();
                 Ok(v)
             }
         }
@@ -818,6 +816,8 @@ impl HirModuleTypeCheckerPass {
         // Propagate the type of the expression to the type of the let-binding
         node.ty = node.value.ty();
         cx.record_let_binding(node.name, node.span, node.ty)?;
+
+        dbg!(&node.ty);
         Ok(())
     }
 

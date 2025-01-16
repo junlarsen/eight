@@ -194,14 +194,6 @@ impl<'hir> HirTy<'hir> {
         }
     }
 
-    /// Is this type equal to a type variable of the same depth and index?
-    pub fn is_equal_to_variable(&self, m: &HirVariableTy) -> bool {
-        match self {
-            HirTy::Variable(v) => std::ptr::eq(v, m),
-            _ => false,
-        }
-    }
-
     /// Is this type equal to a meta variable of the same index?
     pub fn is_equal_to_meta(&self, m: &HirMetaTy) -> bool {
         match self {
