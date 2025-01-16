@@ -57,7 +57,7 @@ impl HirTyId {
         0x50.hash(&mut hasher);
         Self(hasher.finish())
     }
-    
+
     pub fn compute_meta_ty_id() -> Self {
         let mut hasher = DefaultHasher::new();
         0x60.hash(&mut hasher);
@@ -201,7 +201,7 @@ impl<'hir> HirTy<'hir> {
             _ => false,
         }
     }
-    
+
     /// Is this type equal to a meta variable of the same index?
     pub fn is_equal_to_meta(&self, m: &HirMetaTy) -> bool {
         match self {
@@ -369,7 +369,7 @@ pub struct HirVariableTy {
 
 impl Display for HirVariableTy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "${}@{}", self.depth, self.index)
+        write!(f, "${}'{}", self.depth, self.index)
     }
 }
 

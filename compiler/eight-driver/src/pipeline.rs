@@ -2,7 +2,6 @@ use crate::operations::emit_ast::AstEmitOperation;
 use crate::operations::emit_hir::HirEmitOperation;
 use crate::operations::parse::ParseOperation;
 use crate::operations::syntax_lower::SyntaxLowerOperation;
-use crate::operations::type_check::TypeCheckOperation;
 use crate::query::EmitQuery;
 use eight_diagnostics::ice;
 use eight_hir::arena::HirArena;
@@ -24,7 +23,7 @@ pub fn execute_compilation_pipeline(
     let tu = ParseOperation::execute(&pipeline, input)?;
     let tu = AstEmitOperation::execute(&pipeline, tu)?;
     let module = SyntaxLowerOperation::execute(&pipeline, tu)?;
-    let module = TypeCheckOperation::execute(&pipeline, module)?;
+    // let module = TypeCheckOperation::execute(&pipeline, module)?;
     let _ = HirEmitOperation::execute(&pipeline, module)?;
     Ok(())
 }

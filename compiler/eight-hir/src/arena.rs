@@ -1,4 +1,7 @@
-use crate::ty::{HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirMetaTy, HirNominalTy, HirPointerTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy};
+use crate::ty::{
+    HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirMetaTy, HirNominalTy, HirPointerTy, HirTy,
+    HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy,
+};
 use bumpalo::Bump;
 use eight_span::Span;
 use std::cell::RefCell;
@@ -179,11 +182,12 @@ impl<'arena> TypeArena<'arena> {
             }))
         })
     }
-    
+
     pub fn get_meta_ty(&'arena self, index: u32) -> &'arena HirTy<'arena> {
         let id = HirTyId::compute_meta_ty_id();
-        self.intern.borrow_mut().entry(id).or_insert_with(|| {
-            self.allocator.alloc(HirTy::Meta(HirMetaTy { index }))
-        })
+        self.intern
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| self.allocator.alloc(HirTy::Meta(HirMetaTy { index })))
     }
 }

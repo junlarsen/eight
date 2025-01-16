@@ -12,7 +12,7 @@ impl<'hir> PipelineOperation<'hir, AstTranslationUnit<'hir>, HirModule<'hir>>
         pipeline: &'hir Pipeline<'hir>,
         input: AstTranslationUnit<'hir>,
     ) -> Result<HirModule<'hir>, PipelineError> {
-        let lowering_pass = AstSyntaxLoweringPass::new(&pipeline.hir_arena);
+        let mut lowering_pass = AstSyntaxLoweringPass::new(&pipeline.hir_arena);
         let module = lowering_pass.visit_translation_unit(&input)?;
         Ok(module)
     }

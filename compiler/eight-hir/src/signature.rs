@@ -137,6 +137,8 @@ pub struct HirTypeParameterApiSignature<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
+    /// The type-variable that this type parameter was assigned to.
+    pub ty: &'hir HirTy<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

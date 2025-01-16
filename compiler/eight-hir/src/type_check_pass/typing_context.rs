@@ -400,7 +400,7 @@ impl<'hir> TypingContext<'hir> {
             HirTy::Uninitialized(_) | HirTy::Variable(_) | HirTy::Function(_) => {
                 ice!("called infer_construct_expr on a type that doesn't exist")
             }
-            HirTy::Meta(_) => todo!("how to handle?")
+            HirTy::Meta(_) => todo!("how to handle?"),
         };
         let ty = self
             .module_query_db
@@ -643,7 +643,7 @@ impl<'hir> TypingContext<'hir> {
             | HirTy::Unit(_)
             | HirTy::Variable(_)
             | HirTy::Nominal(_) => Ok(ty),
-            HirTy::Meta(_) => todo!("how to handle?")
+            HirTy::Meta(_) => todo!("how to handle?"),
         }
     }
 
@@ -679,7 +679,7 @@ impl<'hir> TypingContext<'hir> {
             | HirTy::Unit(_)
             | HirTy::Nominal(_)
             | HirTy::Pointer(_) => false,
-            HirTy::Meta(_) => todo!("how to handle?")
+            HirTy::Meta(_) => todo!("how to handle?"),
         }
     }
 }
