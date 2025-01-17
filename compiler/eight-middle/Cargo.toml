@@ -1,0 +1,9 @@
+[package]
+name = "eight-middle"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eight-macros = { path = "../eight-macros" }
+bumpalo = { workspace = true }
+serde = { workspace = true, optional = true }

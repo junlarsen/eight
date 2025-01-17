@@ -24,6 +24,7 @@ use crate::stmt::{
     HirReturnStmt, HirStmt,
 };
 use crate::ty::HirTy;
+use eight_middle::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
 
@@ -39,16 +40,6 @@ pub mod syntax_lowering_pass;
 pub mod textual_pass;
 pub mod ty;
 pub mod type_check_pass;
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, PartialEq, Eq)]
-pub enum LinkageType {
-    /// The symbol is to be resolved at link-time. Typically used for symbols that are marked as
-    /// intrinsic.
-    External,
-    /// The symbol is defined in Eight code visible to the linker.
-    Eight,
-}
 
 /// A module containing all the types and functions defined in a program.
 ///

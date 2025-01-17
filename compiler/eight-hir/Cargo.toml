@@ -5,11 +5,12 @@ edition = "2021"
 
 [features]
 default = ["serde"]
-serde = ["dep:serde"]
+serde = ["dep:serde", "eight-middle/serde"]
 
 [dependencies]
 eight-diagnostics = { path = "../eight-diagnostics" }
 eight-macros = { path = "../eight-macros" }
+eight-middle = { path = "../eight-middle" }
 eight-span = { path = "../eight-span" }
 eight-syntax = { path = "../eight-syntax" }
 

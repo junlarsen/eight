@@ -23,8 +23,9 @@ use crate::stmt::{
     HirReturnStmt, HirStmt,
 };
 use crate::ty::{HirFunctionTy, HirMetaTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy};
-use crate::{HirModule, LinkageType};
+use crate::HirModule;
 use eight_diagnostics::ice;
+use eight_middle::LinkageType;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 #[derive(Default)]

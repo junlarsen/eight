@@ -251,6 +251,7 @@ dependencies = [
  "bumpalo",
  "eight-diagnostics",
  "eight-macros",
+ "eight-middle",
  "eight-span",
  "eight-syntax",
  "miette",
@@ -265,6 +266,15 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "thiserror 2.0.11",
+]
+
+[[package]]
+name = "eight-middle"
+version = "0.1.0"
+dependencies = [
+ "bumpalo",
+ "eight-macros",
+ "serde",
 ]
 
 [[package]]

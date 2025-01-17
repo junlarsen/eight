@@ -3,9 +3,10 @@ use crate::ty::{
     HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy,
 };
 use bumpalo::Bump;
+use eight_middle::arena::StringInterner;
 use eight_span::Span;
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -17,7 +18,7 @@ use std::rc::Rc;
 pub struct HirArena<'arena> {
     allocator: Rc<Bump>,
     type_arena: TypeArena<'arena>,
-    name_arena: HirNameArena<'arena>,
+    name_arena: StringInterner<'arena>,
     phantom: PhantomData<&'arena ()>,
 }
 
@@ -32,7 +33,7 @@ impl<'arena> HirArena<'arena> {
         let allocator = Rc::new(Bump::new());
         Self {
             type_arena: TypeArena::new(allocator.clone()),
-            name_arena: HirNameArena::new(allocator.clone()),
+            name_arena: StringInterner::new(allocator.clone()),
             allocator: allocator.clone(),
             phantom: PhantomData,
         }
@@ -49,34 +50,8 @@ impl<'arena> HirArena<'arena> {
     }
 
     /// Get a reference to the name interning arena.
-    pub fn names(&'arena self) -> &'arena HirNameArena<'arena> {
+    pub fn names(&'arena self) -> &'arena StringInterner<'arena> {
         &self.name_arena
-    }
-}
-
-/// An arena for interning HIR names.
-///
-/// This is a general purpose string interning arena.
-pub struct HirNameArena<'arena> {
-    allocator: Rc<Bump>,
-    intern: RefCell<HashSet<&'arena str>>,
-}
-
-impl<'arena> HirNameArena<'arena> {
-    pub fn new(allocator: Rc<Bump>) -> Self {
-        Self {
-            allocator,
-            intern: RefCell::new(HashSet::new()),
-        }
-    }
-
-    pub fn get(&'arena self, name: &str) -> &'arena str {
-        if let Some(interned) = self.intern.borrow().get(name) {
-            return interned;
-        }
-        let id = self.allocator.alloc_str(name);
-        self.intern.borrow_mut().insert(id);
-        id
     }
 }
 

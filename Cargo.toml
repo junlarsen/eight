@@ -9,7 +9,7 @@ members = [
     "compiler/eight-span",
     "compiler/eight-syntax",
     "compiler/eight-tests",
-    "tools/eight-not", "tools/eight-xtask",
+    "tools/eight-not", "tools/eight-xtask", "compiler/eight-middle",
 ]
 
 [profile.dev.package]

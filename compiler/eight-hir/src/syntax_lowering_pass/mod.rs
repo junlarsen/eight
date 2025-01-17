@@ -3,22 +3,18 @@ use crate::context::LocalContext;
 use crate::error::{
     BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
 };
-use crate::expr::{
-    HirBinaryOp, HirConstructExprArgument,
-    HirExpr, HirUnaryOp,
-};
+use crate::expr::{HirBinaryOp, HirConstructExprArgument, HirExpr, HirUnaryOp};
 use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirStruct, HirTrait};
 use crate::signature::{
     HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirModuleSignature,
     HirStructFieldSignature, HirStructSignature, HirTraitSignature, HirTypeParameterSignature,
     HirTypeSignature,
 };
-use crate::stmt::{
-    HirExprStmt, HirLetStmt, HirStmt,
-};
+use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use crate::ty::HirTy;
-use crate::{HirBuilder, HirModule, HirModuleBody, LinkageType};
+use crate::{HirBuilder, HirModule, HirModuleBody};
 use eight_diagnostics::ice;
+use eight_middle::LinkageType;
 use eight_span::Span;
 use eight_syntax::ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBracketIndexExpr,
