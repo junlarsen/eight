@@ -272,49 +272,13 @@ impl<'hir> TypingContext<'hir> {
         // substitute the parameters and return types if they refer to one of the generic
         // type parameters.
         let mut instantiations = HashMap::new();
-        fn eliminate_type_variable<'hir>(
-            cx: &mut HashMap<(u32, u32), &'hir HirTy<'hir>>,
-            arena: &'hir HirArena<'hir>,
-            fresh: impl FnOnce() -> &'hir HirTy<'hir>,
-            ty: &'hir HirTy<'hir>,
-        ) -> &'hir HirTy<'hir> {
-            match ty {
-                HirTy::Variable(v) => cx.entry((v.depth, v.index)).or_insert_with(fresh),
-                HirTy::Pointer(p) => {
-                    let inner = eliminate_type_variable(cx, arena, fresh, p.inner);
-                    arena.types().get_pointer_ty(inner)
-                }
-                HirTy::Meta(_)
-                | HirTy::Boolean(_)
-                | HirTy::Unit(_)
-                | HirTy::Integer32(_)
-                | HirTy::Nominal(_) => ty,
-                HirTy::Function(_) => {
-                    ice!("should not be possible to pass functions as arguments")
-                }
-                HirTy::Uninitialized(_) => {
-                    ice!("uninitialized type made it to the type checker")
-                }
-            }
-        }
         let parameters = signature
             .parameters
             .iter()
-            .map(|p| {
-                eliminate_type_variable(
-                    &mut instantiations,
-                    self.arena,
-                    || self.fresh_meta_variable(),
-                    p.ty,
-                )
-            })
+            .map(|p| self.eliminate_type_variables_within_ty(&mut instantiations, p.ty))
             .collect::<Vec<_>>();
-        let return_type = eliminate_type_variable(
-            &mut instantiations,
-            self.arena,
-            || self.fresh_meta_variable(),
-            signature.return_type,
-        );
+        let return_type =
+            self.eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
         let ty = self.arena.types().get_function_ty(return_type, parameters);
         self.constrain_eq(expectation, ty, expr.span, expr.name_span);
         Ok(())
@@ -994,5 +958,37 @@ impl<'hir> TypingContext<'hir> {
         let ty = self.arena.types().get_meta_ty(index);
         self.substitutions.push(ty);
         ty
+    }
+
+    /// Eliminates all type variables from within the given type with the substitutions that are
+    /// provided in `instantiations`.
+    ///
+    /// We cannot use the recursive `HirModuleTypeCheckerPass::visit_ty` here, because we need to
+    /// completely isolate the instantiated variables from the rest of the type environment.
+    fn eliminate_type_variables_within_ty(
+        &mut self,
+        instantiations: &mut HashMap<(u32, u32), &'hir HirTy<'hir>>,
+        ty: &'hir HirTy<'hir>,
+    ) -> &'hir HirTy<'hir> {
+        match ty {
+            HirTy::Variable(v) => instantiations
+                .entry((v.depth, v.index))
+                .or_insert_with(|| self.fresh_meta_variable()),
+            HirTy::Pointer(p) => {
+                let inner = self.eliminate_type_variables_within_ty(instantiations, p.inner);
+                self.arena.types().get_pointer_ty(inner)
+            }
+            HirTy::Meta(_)
+            | HirTy::Boolean(_)
+            | HirTy::Unit(_)
+            | HirTy::Integer32(_)
+            | HirTy::Nominal(_) => ty,
+            HirTy::Function(_) => {
+                ice!("should not be possible to pass functions as arguments")
+            }
+            HirTy::Uninitialized(_) => {
+                ice!("uninitialized type made it to the type checker")
+            }
+        }
     }
 }
