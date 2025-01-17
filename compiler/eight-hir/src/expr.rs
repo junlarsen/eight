@@ -20,21 +20,21 @@ pub enum HirExpr<'hir> {
 }
 
 impl<'hir> HirExpr<'hir> {
-    pub fn span(&self) -> &Span {
+    pub fn span(&self) -> Span {
         match self {
-            HirExpr::IntegerLiteral(e) => &e.span,
-            HirExpr::BooleanLiteral(e) => &e.span,
-            HirExpr::Assign(e) => &e.span,
-            HirExpr::UnaryOp(e) => &e.span,
-            HirExpr::BinaryOp(e) => &e.span,
-            HirExpr::ConstantIndex(e) => &e.span,
-            HirExpr::OffsetIndex(e) => &e.span,
-            HirExpr::Call(e) => &e.span,
-            HirExpr::Construct(e) => &e.span,
-            HirExpr::Group(e) => &e.span,
-            HirExpr::Reference(e) => &e.span,
-            HirExpr::AddressOf(e) => &e.span,
-            HirExpr::Deref(e) => &e.span,
+            HirExpr::IntegerLiteral(e) => e.span,
+            HirExpr::BooleanLiteral(e) => e.span,
+            HirExpr::Assign(e) => e.span,
+            HirExpr::UnaryOp(e) => e.span,
+            HirExpr::BinaryOp(e) => e.span,
+            HirExpr::ConstantIndex(e) => e.span,
+            HirExpr::OffsetIndex(e) => e.span,
+            HirExpr::Call(e) => e.span,
+            HirExpr::Construct(e) => e.span,
+            HirExpr::Group(e) => e.span,
+            HirExpr::Reference(e) => e.span,
+            HirExpr::AddressOf(e) => e.span,
+            HirExpr::Deref(e) => e.span,
         }
     }
 

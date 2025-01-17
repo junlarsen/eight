@@ -16,16 +16,16 @@ pub enum HirStmt<'hir> {
 }
 
 impl HirStmt<'_> {
-    pub fn span(&self) -> &Span {
+    pub fn span(&self) -> Span {
         match self {
-            HirStmt::Let(s) => &s.span,
-            HirStmt::Loop(s) => &s.span,
-            HirStmt::Expr(s) => &s.span,
-            HirStmt::Return(s) => &s.span,
-            HirStmt::If(s) => &s.span,
-            HirStmt::Break(s) => &s.span,
-            HirStmt::Continue(s) => &s.span,
-            HirStmt::Block(s) => &s.span,
+            HirStmt::Let(s) => s.span,
+            HirStmt::Loop(s) => s.span,
+            HirStmt::Expr(s) => s.span,
+            HirStmt::Return(s) => s.span,
+            HirStmt::If(s) => s.span,
+            HirStmt::Break(s) => s.span,
+            HirStmt::Continue(s) => s.span,
+            HirStmt::Block(s) => s.span,
         }
     }
 }

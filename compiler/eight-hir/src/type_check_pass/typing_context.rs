@@ -230,7 +230,7 @@ impl<'hir> TypingContext<'hir> {
             expectation,
             self.arena.types().get_unit_ty(),
             expr.span,
-            *expr.lhs.span(),
+            expr.lhs.span(),
         );
         Ok(())
     }
@@ -295,7 +295,7 @@ impl<'hir> TypingContext<'hir> {
             self.arena.types().get_integer32_ty(),
             expr.index.ty(),
             expr.span,
-            *expr.index.span(),
+            expr.index.span(),
         );
         // The origin must be a pointer of the element type
         let elem_ptr_ty = self.arena.types().get_pointer_ty(expectation);
@@ -303,10 +303,10 @@ impl<'hir> TypingContext<'hir> {
             elem_ptr_ty,
             expr.origin.ty(),
             expr.span,
-            *expr.origin.span(),
+            expr.origin.span(),
         );
         // The resulting type must be the element type
-        self.constrain_eq(expectation, expr.ty, expr.span, *expr.origin.span());
+        self.constrain_eq(expectation, expr.ty, expr.span, expr.origin.span());
         Ok(())
     }
 
@@ -316,7 +316,7 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirConstantIndexExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        self.constrain_eq(expectation, expr.ty, expr.span, *expr.origin.span());
+        self.constrain_eq(expectation, expr.ty, expr.span, expr.origin.span());
         self.constrain_field_projection(expr.origin.ty(), expr.index, expr.index_span, expectation);
         Ok(())
     }
@@ -336,7 +336,7 @@ impl<'hir> TypingContext<'hir> {
             expectation: expected_signature,
             actual: expr.callee.ty(),
             expectation_loc: expr.span,
-            actual_loc: *expr.callee.span(),
+            actual_loc: expr.callee.span(),
         })?;
 
         // Constrain the return type of the expression to the wanted type
@@ -344,7 +344,7 @@ impl<'hir> TypingContext<'hir> {
             expectation,
             actual: expr.ty,
             expectation_loc: expr.span,
-            actual_loc: *expr.callee.span(),
+            actual_loc: expr.callee.span(),
         })?;
         Ok(())
     }
@@ -395,7 +395,7 @@ impl<'hir> TypingContext<'hir> {
             visited_fields.insert(provided_field.field);
             self.unify_eq(EqualityConstraint {
                 actual: provided_field.expr.ty(),
-                actual_loc: *provided_field.expr.span(),
+                actual_loc: provided_field.expr.span(),
                 expectation: field_definition.ty,
                 expectation_loc: field_definition.span,
             })?;
@@ -436,8 +436,8 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         // &a means that e is *inner, and expectation is *inner
         let result_ty = self.arena.types().get_pointer_ty(expr.inner.ty());
-        self.constrain_eq(expectation, result_ty, expr.span, *expr.inner.span());
-        self.constrain_eq(expr.ty, result_ty, expr.span, *expr.inner.span());
+        self.constrain_eq(expectation, result_ty, expr.span, expr.inner.span());
+        self.constrain_eq(expr.ty, result_ty, expr.span, expr.inner.span());
         Ok(())
     }
 
@@ -449,8 +449,8 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         // *a means inner is a pointer type, and expected and e are unbox inner
         let inner_ptr = self.arena.types().get_pointer_ty(expectation);
-        self.constrain_eq(expr.inner.ty(), inner_ptr, expr.span, *expr.inner.span());
-        self.constrain_eq(expr.ty, expectation, expr.span, *expr.inner.span());
+        self.constrain_eq(expr.inner.ty(), inner_ptr, expr.span, expr.inner.span());
+        self.constrain_eq(expr.ty, expectation, expr.span, expr.inner.span());
         Ok(())
     }
 
@@ -461,7 +461,7 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         self.infer(&mut expr.inner, expectation)?;
-        self.constrain_eq(expectation, expr.ty, expr.span, *expr.inner.span());
+        self.constrain_eq(expectation, expr.ty, expr.span, expr.inner.span());
         Ok(())
     }
 
@@ -478,7 +478,7 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirUnaryOpExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        self.constrain_eq(expr.ty, expectation, expr.span, *expr.operand.span());
+        self.constrain_eq(expr.ty, expectation, expr.span, expr.operand.span());
         let (trait_name, method_name) = match &expr.op {
             HirUnaryOp::Not => (self.arena.names().get("Not"), self.arena.names().get("not")),
             HirUnaryOp::Neg => (self.arena.names().get("Neg"), self.arena.names().get("neg")),

@@ -25,14 +25,14 @@ pub enum AstItem<'ast> {
 }
 
 impl<'ast> AstItem<'ast> {
-    pub fn span(&self) -> &Span {
+    pub fn span(&self) -> Span {
         match self {
-            AstItem::Function(f) => &f.span,
-            AstItem::IntrinsicFunction(f) => &f.span,
-            AstItem::IntrinsicType(f) => &f.span,
-            AstItem::Struct(f) => &f.span,
-            AstItem::Trait(f) => &f.span,
-            AstItem::Instance(f) => &f.span,
+            AstItem::Function(f) => f.span,
+            AstItem::IntrinsicFunction(f) => f.span,
+            AstItem::IntrinsicType(f) => f.span,
+            AstItem::Struct(f) => f.span,
+            AstItem::Trait(f) => f.span,
+            AstItem::Instance(f) => f.span,
         }
     }
 }
@@ -139,15 +139,15 @@ pub enum AstStmt<'ast> {
 
 impl<'ast> AstStmt<'ast> {
     /// Get the span of the inner statement.
-    pub fn span(&self) -> &Span {
+    pub fn span(&self) -> Span {
         match self {
-            AstStmt::Let(s) => &s.span,
-            AstStmt::Return(s) => &s.span,
-            AstStmt::For(s) => &s.span,
-            AstStmt::Break(s) => &s.span,
-            AstStmt::Continue(s) => &s.span,
-            AstStmt::If(s) => &s.span,
-            AstStmt::Expr(s) => &s.span,
+            AstStmt::Let(s) => s.span,
+            AstStmt::Return(s) => s.span,
+            AstStmt::For(s) => s.span,
+            AstStmt::Break(s) => s.span,
+            AstStmt::Continue(s) => s.span,
+            AstStmt::If(s) => s.span,
+            AstStmt::Expr(s) => s.span,
         }
     }
 }
@@ -232,19 +232,19 @@ pub enum AstExpr<'ast> {
 
 impl<'ast> AstExpr<'ast> {
     /// Get the span of the inner expression.
-    pub fn span(&self) -> &Span {
+    pub fn span(&self) -> Span {
         match self {
-            AstExpr::Assign(e) => &e.span,
-            AstExpr::BinaryOp(e) => &e.span,
-            AstExpr::UnaryOp(e) => &e.span,
-            AstExpr::IntegerLiteral(e) => &e.span,
-            AstExpr::BooleanLiteral(e) => &e.span,
-            AstExpr::DotIndex(e) => &e.span,
-            AstExpr::BracketIndex(e) => &e.span,
-            AstExpr::Reference(e) => &e.span,
-            AstExpr::Call(e) => &e.span,
-            AstExpr::Construct(e) => &e.span,
-            AstExpr::Group(e) => &e.span,
+            AstExpr::Assign(e) => e.span,
+            AstExpr::BinaryOp(e) => e.span,
+            AstExpr::UnaryOp(e) => e.span,
+            AstExpr::IntegerLiteral(e) => e.span,
+            AstExpr::BooleanLiteral(e) => e.span,
+            AstExpr::DotIndex(e) => e.span,
+            AstExpr::BracketIndex(e) => e.span,
+            AstExpr::Reference(e) => e.span,
+            AstExpr::Call(e) => e.span,
+            AstExpr::Construct(e) => e.span,
+            AstExpr::Group(e) => e.span,
         }
     }
 }
@@ -368,13 +368,13 @@ pub enum AstType<'ast> {
 
 impl<'ast> AstType<'ast> {
     /// Get the span of the inner type.
-    pub fn span(&self) -> &Span {
+    pub fn span(&self) -> Span {
         match self {
-            AstType::Unit(t) => &t.span,
-            AstType::Integer32(t) => &t.span,
-            AstType::Pointer(t) => &t.span,
-            AstType::Named(t) => &t.span,
-            AstType::Boolean(t) => &t.span,
+            AstType::Unit(t) => t.span,
+            AstType::Integer32(t) => t.span,
+            AstType::Pointer(t) => t.span,
+            AstType::Named(t) => t.span,
+            AstType::Boolean(t) => t.span,
         }
     }
 }

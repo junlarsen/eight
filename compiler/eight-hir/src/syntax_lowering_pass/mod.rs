@@ -410,7 +410,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             .iter()
             .map(|p| self.visit_type_parameter_item(p))
             .collect::<HirResult<Vec<_>>>()?;
-        let return_type_annotation = node.return_type.as_ref().map(|t| *t.span());
+        let return_type_annotation = node.return_type.as_ref().map(|t| t.span());
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
             None => self.arena.types().get_unit_ty(),
@@ -460,7 +460,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             .iter()
             .map(|p| self.visit_type_parameter_item(p))
             .collect::<HirResult<Vec<_>>>()?;
-        let return_type_annotation = *node.return_type.span();
+        let return_type_annotation = node.return_type.span();
         let return_type = self.visit_type(node.return_type)?;
         let parameters = node
             .parameters
@@ -501,7 +501,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             name,
             name_span: node.name.span,
             ty,
-            ty_annotation: *node.ty.span(),
+            ty_annotation: node.ty.span(),
         });
         Ok(hir)
     }
@@ -609,7 +609,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             Some(t) => self.visit_type(t)?,
             None => self.arena.types().get_unit_ty(),
         };
-        let return_type_annotation = node.return_type.as_ref().map(|t| *t.span());
+        let return_type_annotation = node.return_type.as_ref().map(|t| t.span());
         let signature = self.arena.intern(HirFunctionApiSignature {
             span: node.span,
             parameters,
@@ -681,7 +681,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 name: self.arena.names().get(&member.name.name),
                 name_span: member.name.span,
                 ty,
-                ty_annotation: *member.ty.span(),
+                ty_annotation: member.ty.span(),
             });
             let field_name = self.arena.names().get(&member.name.name);
             fields.insert(field_name, &*field);
@@ -726,7 +726,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             name,
             name_span: node.name.span,
             ty,
-            type_annotation: node.ty.as_ref().map(|t| *t.span()),
+            type_annotation: node.ty.as_ref().map(|t| t.span()),
             value,
         });
         Ok(hir)
@@ -823,7 +823,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                         let mut stmts = body;
                         if let Some(i) = increment {
                             stmts.push(HirStmt::Expr(HirExprStmt {
-                                span: *i.span(),
+                                span: i.span(),
                                 expr: i,
                             }));
                         }

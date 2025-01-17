@@ -45,8 +45,8 @@ impl Span {
     }
 
     /// Create a new span from two positions.
-    pub fn from_pair(low: &Span, high: &Span) -> Self {
-        low.merge(high)
+    pub fn from_pair(low: Span, high: Span) -> Self {
+        low.merge(&high)
     }
 
     pub fn empty() -> Self {

@@ -294,7 +294,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let body = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = AstFunctionItem {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             parameters: self.arena.alloc_ref_vec(parameters),
             type_parameters: self.arena.alloc_ref_vec(type_parameters),
@@ -314,7 +314,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         self.check(&TokenType::Colon)?;
         let ty = self.parse_type()?;
         let node = AstFunctionParameterItem {
-            span: Span::from_pair(&id.span, ty.span()),
+            span: Span::from_pair(id.span, ty.span()),
             name: self.arena.alloc(id),
             ty: self.arena.alloc(ty),
         };
@@ -348,7 +348,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_type_member_item())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = AstStructItem {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             members: self.arena.alloc_vec(members),
         };
@@ -366,7 +366,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let ty = self.parse_type()?;
         let end = self.check(&TokenType::Comma)?;
         let node = AstStructMemberItem {
-            span: Span::from_pair(&id.span, &end.span),
+            span: Span::from_pair(id.span, end.span),
             name: self.arena.alloc(id),
             ty: self.arena.alloc(ty),
         };
@@ -411,7 +411,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let return_type = self.parse_type()?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstIntrinsicFunctionItem {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             parameters: self.arena.alloc_ref_vec(parameters),
             type_parameters: self.arena.alloc_ref_vec(type_parameters),
@@ -430,7 +430,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let id = self.parse_identifier()?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstIntrinsicTypeItem {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
         };
         Ok(node)
@@ -471,7 +471,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_trait_function_item())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = AstTraitItem {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             type_parameters: self.arena.alloc_ref_vec(type_parameters),
             members: self.arena.alloc_vec(members),
@@ -519,7 +519,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         )?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstTraitFunctionItem {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             type_parameters: self.arena.alloc_ref_vec(type_parameters),
             parameters: self.arena.alloc_ref_vec(parameters),
@@ -557,7 +557,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let members = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_fn_item())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = AstInstanceItem {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             instantiation_type_parameters: self.arena.alloc_vec(instantiation_type_parameters),
             members: self.arena.alloc_vec(members),
@@ -609,7 +609,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let expr = self.parse_expr()?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstLetStmt {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             ty: ty.map(|t| &*self.arena.alloc(t)),
             value: self.arena.alloc(expr),
@@ -628,7 +628,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             self.parser_combinator_take_if(|t| t.ty != TokenType::Semicolon, |p| p.parse_expr())?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstReturnStmt {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             value: value.map(|v| &*self.arena.alloc(v)),
         };
         Ok(node)
@@ -657,7 +657,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let body = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_stmt())?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = AstForStmt {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             initializer: initializer.map(|i| &*self.arena.alloc(i)),
             condition: condition.map(|c| &*self.arena.alloc(c)),
             increment: increment.map(|i| &*self.arena.alloc(i)),
@@ -677,7 +677,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         self.check(&TokenType::Equal)?;
         let initializer = self.parse_expr()?;
         let node = AstForStmtInitializer {
-            span: Span::from_pair(&start.span, initializer.span()),
+            span: Span::from_pair(start.span, initializer.span()),
             name: self.arena.alloc(name),
             initializer: self.arena.alloc(initializer),
         };
@@ -693,7 +693,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let start = self.check(&TokenType::KeywordBreak)?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstBreakStmt {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
         };
         Ok(node)
     }
@@ -707,7 +707,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let start = self.check(&TokenType::KeywordContinue)?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstContinueStmt {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
         };
         Ok(node)
     }
@@ -738,7 +738,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             },
         )?;
         let node = AstIfStmt {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             condition: self.arena.alloc(condition),
             happy_path: self.arena.alloc_vec(body),
             unhappy_path: r#else.map(|e| self.arena.alloc_vec(e)),
@@ -754,7 +754,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let expr = self.parse_expr()?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstExprStmt {
-            span: Span::from_pair(expr.span(), &end.span),
+            span: Span::from_pair(expr.span(), end.span),
             expr: self.arena.alloc(expr),
         };
         Ok(node)
@@ -980,7 +980,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                 let op = self.check(&TokenType::Minus)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = AstUnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
+                    span: Span::from_pair(op.span, rhs.span()),
                     operand: self.arena.alloc(rhs),
                     op: AstUnaryOp::Neg,
                     op_span: op.span,
@@ -991,7 +991,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                 let op = self.check(&TokenType::Bang)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = AstUnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
+                    span: Span::from_pair(op.span, rhs.span()),
                     operand: self.arena.alloc(rhs),
                     op: AstUnaryOp::Not,
                     op_span: op.span,
@@ -1002,7 +1002,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                 let op = self.check(&TokenType::Star)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = AstUnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
+                    span: Span::from_pair(op.span, rhs.span()),
                     operand: self.arena.alloc(rhs),
                     op: AstUnaryOp::Deref,
                     op_span: op.span,
@@ -1013,7 +1013,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                 let op = self.check(&TokenType::AddressOf)?;
                 let rhs = self.parse_unary_expr()?;
                 let node = AstUnaryOpExpr {
-                    span: Span::from_pair(&op.span, rhs.span()),
+                    span: Span::from_pair(op.span, rhs.span()),
                     operand: self.arena.alloc(rhs),
                     op: AstUnaryOp::AddressOf,
                     op_span: op.span,
@@ -1046,7 +1046,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                     let index = self.parse_expr()?;
                     let end = self.check(&TokenType::CloseBracket)?;
                     let node = AstBracketIndexExpr {
-                        span: Span::from_pair(callee.span(), &end.span),
+                        span: Span::from_pair(callee.span(), end.span),
                         origin: self.arena.alloc(callee),
                         index: self.arena.alloc(index),
                     };
@@ -1056,7 +1056,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                     self.check(&TokenType::Dot)?;
                     let index = self.parse_identifier()?;
                     let node = AstDotIndexExpr {
-                        span: Span::from_pair(callee.span(), &index.span),
+                        span: Span::from_pair(callee.span(), index.span),
                         origin: self.arena.alloc(callee),
                         index: self.arena.alloc(index),
                     };
@@ -1087,7 +1087,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                     )?;
                     let end = self.check(&TokenType::CloseParen)?;
                     let node = AstCallExpr {
-                        span: Span::from_pair(callee.span(), &end.span),
+                        span: Span::from_pair(callee.span(), end.span),
                         callee: self.arena.alloc(callee),
                         arguments: self.arena.alloc_vec(arguments),
                         type_arguments: self.arena.alloc_vec(type_arguments),
@@ -1121,7 +1121,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             })?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = AstConstructExpr {
-            span: Span::from_pair(&start.span, &end.span),
+            span: Span::from_pair(start.span, end.span),
             callee: self.arena.alloc(callee),
             arguments: self.arena.alloc_vec(arguments),
         };
@@ -1139,7 +1139,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         self.check(&TokenType::Colon)?;
         let expr = self.parse_expr()?;
         let node = AstConstructorExprArgument {
-            span: Span::from_pair(&id.span, expr.span()),
+            span: Span::from_pair(id.span, expr.span()),
             field: self.arena.alloc(id),
             expr: self.arena.alloc(expr),
         };
@@ -1215,7 +1215,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             let inner = self.parse_expr()?;
             let end = self.check(&TokenType::CloseParen)?;
             let node = AstGroupExpr {
-                span: Span::from_pair(&start.span, &end.span),
+                span: Span::from_pair(start.span, end.span),
                 inner: self.arena.alloc(inner),
             };
             return Ok(AstExpr::Group(node));
@@ -1313,7 +1313,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let indirection = self.check(&TokenType::Star)?;
         let inner = self.parse_type()?;
         let node = AstPointerType {
-            span: Span::from_pair(&indirection.span, inner.span()),
+            span: Span::from_pair(indirection.span, inner.span()),
             inner: self.arena.alloc(inner),
         };
         Ok(node)
@@ -1372,7 +1372,7 @@ mod tests {
         assert_parse!("Matrix", |p: &mut Parser| {
             let production = p.parse_type();
             let production = assert_ok!(production);
-            assert_eq!(production.span(), &Span::new(0..6));
+            assert_eq!(production.span(), Span::new(0..6));
             assert!(matches!(production, AstType::Named(inner) if inner.name.name == "Matrix"));
         });
     }
@@ -1734,7 +1734,7 @@ mod tests {
         assert_parse!("  x  ", |p: &mut Parser| {
             let production = p.parse_expr();
             let production = assert_ok!(production);
-            assert_eq!(production.span(), &Span::new(2..3));
+            assert_eq!(production.span(), Span::new(2..3));
         });
     }
 
@@ -1806,7 +1806,7 @@ mod tests {
         assert_parse!("x()", |p: &mut Parser| {
             let production = p.parse_expr();
             let production = assert_ok!(production);
-            assert_eq!(production.span(), &Span::new(0..3));
+            assert_eq!(production.span(), Span::new(0..3));
             assert!(matches!(&production, AstExpr::Call(_)));
             let inner = assert_matches!(production, AstExpr::Call(inner) => inner);
             let origin = inner.callee;
@@ -1827,7 +1827,7 @@ mod tests {
         assert_parse!("x(z, foo(bar, baz()))", |p: &mut Parser| {
             let production = p.parse_expr();
             let production = assert_ok!(production);
-            assert_eq!(production.span(), &Span::new(0..21));
+            assert_eq!(production.span(), Span::new(0..21));
             assert!(matches!(&production, AstExpr::Call(_)));
             let inner = assert_matches!(production, AstExpr::Call(inner) => inner);
             assert_eq!(inner.arguments.len(), 2);
