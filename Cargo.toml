@@ -22,6 +22,7 @@ bumpalo = { version = "3.11.1", features = ["collections"] }
 miette = { version = "7.4.0", features = ["derive"] }
 insta = { version = "1.41.1", features = ["serde", "ron", "glob"] }
 insta-cmd = { version = "0.6.0" }
+pretty = "0.12.3"
 serde = { version = "1.0.216", features = ["derive"] }
 ron = { version = "0.8.1" }
 thiserror = "2.0.6"

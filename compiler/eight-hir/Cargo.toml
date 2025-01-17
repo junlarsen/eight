@@ -16,7 +16,7 @@ eight-syntax = { path = "../eight-syntax" }
 
 bumpalo = { workspace = true }
 miette = { workspace = true }
-pretty = "0.12.3"
+pretty = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }
 

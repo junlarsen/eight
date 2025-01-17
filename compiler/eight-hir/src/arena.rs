@@ -7,7 +7,6 @@ use eight_middle::arena::StringInterner;
 use eight_span::Span;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::rc::Rc;
 
 /// An arena allocator for Hir nodes.
@@ -19,7 +18,6 @@ pub struct HirArena<'arena> {
     allocator: Rc<Bump>,
     type_arena: TypeArena<'arena>,
     name_arena: StringInterner<'arena>,
-    phantom: PhantomData<&'arena ()>,
 }
 
 impl<'arena> Default for HirArena<'arena> {
@@ -35,7 +33,6 @@ impl<'arena> HirArena<'arena> {
             type_arena: TypeArena::new(allocator.clone()),
             name_arena: StringInterner::new(allocator.clone()),
             allocator: allocator.clone(),
-            phantom: PhantomData,
         }
     }
 
