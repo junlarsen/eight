@@ -15,8 +15,7 @@ use crate::expr::{
 use crate::query::HirSignatureQueryDatabase;
 use crate::ty::{HirFunctionTy, HirMetaTy, HirTy};
 use crate::type_check_pass::{
-    Constraint, EqualityConstraint, FieldProjectionConstraint,
-    InstanceConstraint,
+    Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
 use eight_diagnostics::ice;
 use eight_span::Span;

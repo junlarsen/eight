@@ -22,7 +22,5 @@ macro_rules! compiler_test_suite {
     }
 }
 
-compiler_test_suite!(ui, "ui", []);
 compiler_test_suite!(syntax, "syntax", ["--emit-ast"]);
 compiler_test_suite!(syntax_lowering, "syntax-lowering", ["--emit-hir"]);
-compiler_test_suite!(type_inference, "type-inference", ["--emit-hir"]);

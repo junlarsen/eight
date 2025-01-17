@@ -42,46 +42,46 @@ hir_module {
     fn __builtin_i32_rem(a: i32, b: i32) -> i32;
     fn __builtin_i32_sub(a: i32, b: i32) -> i32;
     fn exit() -> unit;
-    fn free<T>(ptr: *T) -> unit;
-    fn malloc<T>(size: i32) -> *T;
+    fn free<$1'0>(ptr: *$1'0) -> unit;
+    fn malloc<$1'0>(size: i32) -> *$1'0;
     
     // module traits
-    trait Add<A, B, R> {
-      fn add(a: A, b: B) -> R;
+    trait Add<$1'0, $1'1, $1'2> {
+      fn add(a: $1'0, b: $1'1) -> $1'2;
     }
-    trait And<A, B> {
-      fn and(a: A, b: B) -> bool;
+    trait And<$1'0, $1'1> {
+      fn and(a: $1'0, b: $1'1) -> bool;
     }
-    trait Div<A, B, R> {
-      fn div(a: A, b: B) -> R;
+    trait Div<$1'0, $1'1, $1'2> {
+      fn div(a: $1'0, b: $1'1) -> $1'2;
     }
-    trait Eq<A, B> {
-      fn eq(a: A, b: B) -> bool;
-      fn neq(a: A, b: B) -> bool;
+    trait Eq<$1'0, $1'1> {
+      fn eq(a: $1'0, b: $1'1) -> bool;
+      fn neq(a: $1'0, b: $1'1) -> bool;
     }
-    trait Mul<A, B, R> {
-      fn mul(a: A, b: B) -> R;
+    trait Mul<$1'0, $1'1, $1'2> {
+      fn mul(a: $1'0, b: $1'1) -> $1'2;
     }
-    trait Neg<A, R> {
-      fn neg(a: A) -> R;
+    trait Neg<$1'0, $1'1> {
+      fn neg(a: $1'0) -> $1'1;
     }
-    trait Not<A, R> {
-      fn not(a: A) -> R;
+    trait Not<$1'0, $1'1> {
+      fn not(a: $1'0) -> $1'1;
     }
-    trait Or<A, B> {
-      fn or(a: A, b: B) -> bool;
+    trait Or<$1'0, $1'1> {
+      fn or(a: $1'0, b: $1'1) -> bool;
     }
-    trait Ord<A, B> {
-      fn ge(a: A, b: B) -> i32;
-      fn gt(a: A, b: B) -> i32;
-      fn le(a: A, b: B) -> i32;
-      fn lt(a: A, b: B) -> i32;
+    trait Ord<$1'0, $1'1> {
+      fn ge(a: $1'0, b: $1'1) -> i32;
+      fn gt(a: $1'0, b: $1'1) -> i32;
+      fn le(a: $1'0, b: $1'1) -> i32;
+      fn lt(a: $1'0, b: $1'1) -> i32;
     }
-    trait Rem<A, B, R> {
-      fn rem(a: A, b: B) -> R;
+    trait Rem<$1'0, $1'1, $1'2> {
+      fn rem(a: $1'0, b: $1'1) -> $1'2;
     }
-    trait Sub<A, B, R> {
-      fn sub(a: A, b: B) -> R;
+    trait Sub<$1'0, $1'1, $1'2> {
+      fn sub(a: $1'0, b: $1'1) -> $1'2;
     }
     
     // module instances

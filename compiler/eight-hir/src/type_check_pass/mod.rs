@@ -331,10 +331,12 @@ impl HirModuleTypeCheckerPass {
             t @ HirTy::Nominal(_) => Self::visit_nominal_ty(cx, t),
             HirTy::Function(t) => Self::visit_function_ty(cx, t),
             HirTy::Pointer(t) => Self::visit_pointer_ty(cx, t),
-            HirTy::Variable(v) => match cx.type_parameter_instantiations.find(&(v.depth, v.index)) {
-                Some(ty) => Ok(ty),
-                None => ice!("referenced type variable was never instantiated"),
-            },
+            HirTy::Variable(v) => {
+                match cx.type_parameter_instantiations.find(&(v.depth, v.index)) {
+                    Some(ty) => Ok(ty),
+                    None => ice!("referenced type variable was never instantiated"),
+                }
+            }
             HirTy::Integer32(_) | HirTy::Boolean(_) | HirTy::Unit(_) | HirTy::Meta(_) => Ok(node),
             // If the type was uninitialized by the lowering pass, we need to replace it with a
             // fresh type variable here.

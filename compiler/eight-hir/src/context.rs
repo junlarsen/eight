@@ -6,8 +6,8 @@ pub struct LocalContext<K, V> {
     scopes: VecDeque<BTreeMap<K, V>>,
 }
 
-impl<K: Ord, V> Default for LocalContext<K, V> {      
-    fn default() -> Self {        
+impl<K: Ord, V> Default for LocalContext<K, V> {
+    fn default() -> Self {
         Self {
             scopes: VecDeque::new(),
         }
@@ -18,7 +18,7 @@ impl<K: Ord, V> LocalContext<K, V> {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Push a new scope onto the deque.
     pub fn enter_scope(&mut self) {
         let scope = BTreeMap::new();

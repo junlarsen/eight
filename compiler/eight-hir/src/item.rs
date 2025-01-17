@@ -44,7 +44,7 @@ pub struct HirFunction<'hir> {
     /// for a meta variable in the type checker.
     ///
     /// This field is never None after type checking.
-    /// 
+    ///
     /// TODO: Replace with OnceCell
     pub instantiated_return_type: Option<&'hir HirTy<'hir>>,
     /// The same as `instantiated_return_type`, but for the function parameters.
@@ -94,7 +94,7 @@ pub struct HirInstance<'hir> {
     pub members: Vec<HirFunction<'hir>>,
     pub signature: &'hir HirInstanceApiSignature<'hir>,
     /// See [`HirFunction::type_parameter_substitutions`] for explanation.
-    /// 
+    ///
     /// These are instantiations from the trait itself. Separate ones will be created for each
     /// member.
     pub type_parameter_substitutions: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
