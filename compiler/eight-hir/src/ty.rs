@@ -320,6 +320,10 @@ impl HirTy<'_> {
     pub fn is_variable(&self) -> bool {
         matches!(self, HirTy::Variable(_))
     }
+
+    pub fn is_meta(&self) -> bool {
+        matches!(self, HirTy::Meta(_))
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

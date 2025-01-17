@@ -19,7 +19,7 @@ use crate::type_check_pass::{
 };
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 
 /// A context object for the type checker.
@@ -267,26 +267,56 @@ impl<'hir> TypingContext<'hir> {
             self.constrain_eq(expectation, ty, expr.span, expr.name_span);
             return Ok(());
         }
-        panic!("cannot call generic functions at this time");
 
-        //
-        // // Otherwise, we need to instantiate the generic parameters of the function, and
-        // // substitute the parameters and return types if they refer to one of the generic
-        // // type parameters.
-        // for type_parameter in signature.type_parameters.iter() {
-        //     let ty = self.fresh_meta_variable();
-        //     self.record_type_binding(type_parameter.name, type_parameter.span, ty)?;
-        // }
-        // // The types of the signature can refer to the type parameters at arbitrary depths,
-        // // e.g. `**T`, so we just recurse down to substitute.
-        // let parameters = signature
-        //     .parameters
-        //     .iter()
-        //     .map(|p| HirModuleTypeCheckerPass::visit_type(self, p.ty))
-        //     .collect::<HirResult<Vec<_>>>()?;
-        // let return_type = HirModuleTypeCheckerPass::visit_type(self, signature.return_type)?;
-        // let ty = self.arena.types().get_function_ty(return_type, parameters);
-        // self.constrain_eq(expectation, ty, expr.span, expr.name_span);
+        // Otherwise, we need to instantiate the generic parameters of the function, and
+        // substitute the parameters and return types if they refer to one of the generic
+        // type parameters.
+        let mut instantiations = HashMap::new();
+        fn eliminate_type_variable<'hir>(
+            cx: &mut HashMap<(u32, u32), &'hir HirTy<'hir>>,
+            arena: &'hir HirArena<'hir>,
+            fresh: impl FnOnce() -> &'hir HirTy<'hir>,
+            ty: &'hir HirTy<'hir>,
+        ) -> &'hir HirTy<'hir> {
+            match ty {
+                HirTy::Variable(v) => cx.entry((v.depth, v.index)).or_insert_with(fresh),
+                HirTy::Pointer(p) => {
+                    let inner = eliminate_type_variable(cx, arena, fresh, p.inner);
+                    arena.types().get_pointer_ty(inner)
+                }
+                HirTy::Meta(_)
+                | HirTy::Boolean(_)
+                | HirTy::Unit(_)
+                | HirTy::Integer32(_)
+                | HirTy::Nominal(_) => ty,
+                HirTy::Function(_) => {
+                    ice!("should not be possible to pass functions as arguments")
+                }
+                HirTy::Uninitialized(_) => {
+                    ice!("uninitialized type made it to the type checker")
+                }
+            }
+        }
+        let parameters = signature
+            .parameters
+            .iter()
+            .map(|p| {
+                eliminate_type_variable(
+                    &mut instantiations,
+                    self.arena,
+                    || self.fresh_meta_variable(),
+                    p.ty,
+                )
+            })
+            .collect::<Vec<_>>();
+        let return_type = eliminate_type_variable(
+            &mut instantiations,
+            self.arena,
+            || self.fresh_meta_variable(),
+            signature.return_type,
+        );
+        let ty = self.arena.types().get_function_ty(return_type, parameters);
+        self.constrain_eq(expectation, ty, expr.span, expr.name_span);
         Ok(())
     }
 

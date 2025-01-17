@@ -86,7 +86,7 @@ impl<'hir> HirSignatureQueryDatabase<'hir> {
                     .type_arguments
                     .iter()
                     .zip(arguments)
-                    .all(|(a, b)| a.is_trivially_equal(b) || b.is_variable());
+                    .all(|(a, b)| a.is_trivially_equal(b) || b.is_meta());
             if is_suitable_match {
                 return Some(instance);
             }
