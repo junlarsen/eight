@@ -299,12 +299,7 @@ impl<'hir> TypingContext<'hir> {
         );
         // The origin must be a pointer of the element type
         let elem_ptr_ty = self.arena.types().get_pointer_ty(expectation);
-        self.constrain_eq(
-            elem_ptr_ty,
-            expr.origin.ty(),
-            expr.span,
-            expr.origin.span(),
-        );
+        self.constrain_eq(elem_ptr_ty, expr.origin.ty(), expr.span, expr.origin.span());
         // The resulting type must be the element type
         self.constrain_eq(expectation, expr.ty, expr.span, expr.origin.span());
         Ok(())

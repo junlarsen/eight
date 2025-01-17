@@ -15,8 +15,8 @@ use crate::expr::{
 };
 use crate::item::{HirFunction, HirInstance};
 use crate::signature::{
-    HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
-    HirStructApiSignature, HirTraitApiSignature, HirTypeApiSignature, HirTypeParameterApiSignature,
+    HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirStructSignature,
+    HirTraitSignature, HirTypeParameterSignature, HirTypeSignature,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -267,7 +267,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_function_signature<'hir: 'a>(
         &'a self,
         name: &'hir str,
-        signature: &'hir HirFunctionApiSignature<'hir>,
+        signature: &'hir HirFunctionSignature<'hir>,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("fn")
@@ -285,7 +285,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_type_signature<'hir: 'a>(
         &'a self,
         name: &'hir str,
-        _: &'hir HirTypeApiSignature<'hir>,
+        _: &'hir HirTypeSignature<'hir>,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("type")
@@ -297,7 +297,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_struct_signature<'hir: 'a>(
         &'a self,
         name: &'hir str,
-        ty: &'hir HirStructApiSignature,
+        ty: &'hir HirStructSignature,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("struct")
@@ -331,7 +331,7 @@ impl<'a> HirModuleTextualPass<'a> {
 
     pub fn visit_function_parameter_list<'hir: 'a>(
         &'a self,
-        parameters: &'hir [&'hir HirFunctionParameterApiSignature],
+        parameters: &'hir [&'hir HirFunctionParameterSignature],
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("(")
@@ -352,7 +352,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_instance_signature<'hir: 'a>(
         &'a self,
         name: &'hir str,
-        sig: &'hir HirInstanceApiSignature,
+        sig: &'hir HirInstanceSignature,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("instance")
@@ -387,7 +387,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_trait_signature<'hir: 'a>(
         &'a self,
         name: &'hir str,
-        sig: &'hir HirTraitApiSignature,
+        sig: &'hir HirTraitSignature,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("trait")
@@ -416,7 +416,7 @@ impl<'a> HirModuleTextualPass<'a> {
 
     pub fn visit_type_parameter_signature<'hir: 'a>(
         &'a self,
-        parameters: &[&'hir HirTypeParameterApiSignature],
+        parameters: &[&'hir HirTypeParameterSignature],
     ) -> DocBuilder<Arena<'a>> {
         if parameters.is_empty() {
             return self.arena.nil();

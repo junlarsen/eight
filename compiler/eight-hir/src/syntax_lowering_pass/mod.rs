@@ -11,9 +11,9 @@ use crate::expr::{
 };
 use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirStruct, HirTrait};
 use crate::signature::{
-    HirFunctionApiSignature, HirFunctionParameterApiSignature, HirInstanceApiSignature,
-    HirModuleSignature, HirStructApiSignature, HirStructFieldApiSignature, HirTraitApiSignature,
-    HirTypeApiSignature, HirTypeParameterApiSignature,
+    HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirModuleSignature,
+    HirStructFieldSignature, HirStructSignature, HirTraitSignature, HirTypeParameterSignature,
+    HirTypeSignature,
 };
 use crate::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
@@ -425,7 +425,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             .iter()
             .map(|stmt| self.visit_stmt(stmt))
             .collect::<HirResult<Vec<_>>>()?;
-        let signature = self.arena.intern(HirFunctionApiSignature {
+        let signature = self.arena.intern(HirFunctionSignature {
             span: node.span,
             parameters,
             type_parameters,
@@ -467,7 +467,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             .iter()
             .map(|p| self.visit_function_parameter(p))
             .collect::<HirResult<Vec<_>>>()?;
-        let signature = self.arena.intern(HirFunctionApiSignature {
+        let signature = self.arena.intern(HirFunctionSignature {
             span: node.span,
             parameters,
             type_parameters,
@@ -493,10 +493,10 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     pub fn visit_function_parameter(
         &mut self,
         node: &'ast AstFunctionParameterItem,
-    ) -> HirResult<&'hir HirFunctionParameterApiSignature<'hir>> {
+    ) -> HirResult<&'hir HirFunctionParameterSignature<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let ty = self.visit_type(node.ty)?;
-        let hir = self.arena.intern(HirFunctionParameterApiSignature {
+        let hir = self.arena.intern(HirFunctionParameterSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -509,13 +509,13 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     pub fn visit_type_parameter_item(
         &mut self,
         node: &'ast AstTypeParameterItem,
-    ) -> HirResult<&'hir HirTypeParameterApiSignature<'hir>> {
+    ) -> HirResult<&'hir HirTypeParameterSignature<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let key = self.arena.names().get(&node.name.name);
         let ty = self
             .find_type_binding(key)
             .unwrap_or_else(|| ice!("failed to find allocated type"));
-        let hir = self.arena.intern(HirTypeParameterApiSignature {
+        let hir = self.arena.intern(HirTypeParameterSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -529,7 +529,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         node: &'ast AstIntrinsicTypeItem,
     ) -> HirResult<HirIntrinsicType<'hir>> {
         let name = self.arena.names().get(&node.name.name);
-        let signature = self.arena.intern(HirTypeApiSignature {
+        let signature = self.arena.intern(HirTypeSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -570,7 +570,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             let name = self.arena.names().get(&member.name.name);
             members.insert(name, signature);
         }
-        let signature = self.arena.intern(HirTraitApiSignature {
+        let signature = self.arena.intern(HirTraitSignature {
             span: node.span,
             type_parameters,
             name,
@@ -591,7 +591,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     pub fn visit_trait_function_item(
         &mut self,
         node: &'ast AstTraitFunctionItem,
-    ) -> HirResult<&'hir HirFunctionApiSignature<'hir>> {
+    ) -> HirResult<&'hir HirFunctionSignature<'hir>> {
         self.enter_type_binding_scope();
         self.drain_type_parameters(node.type_parameters.iter().as_slice());
 
@@ -610,7 +610,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             None => self.arena.types().get_unit_ty(),
         };
         let return_type_annotation = node.return_type.as_ref().map(|t| t.span());
-        let signature = self.arena.intern(HirFunctionApiSignature {
+        let signature = self.arena.intern(HirFunctionSignature {
             span: node.span,
             parameters,
             type_parameters,
@@ -637,7 +637,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             .iter()
             .map(|m| self.visit_function_item(m))
             .collect::<HirResult<Vec<_>>>()?;
-        let signature = self.arena.intern(HirInstanceApiSignature {
+        let signature = self.arena.intern(HirInstanceSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -676,7 +676,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {
             let ty = self.visit_type(member.ty)?;
-            let field = self.arena.intern(HirStructFieldApiSignature {
+            let field = self.arena.intern(HirStructFieldSignature {
                 span: member.span,
                 name: self.arena.names().get(&member.name.name),
                 name_span: member.name.span,
@@ -686,7 +686,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             let field_name = self.arena.names().get(&member.name.name);
             fields.insert(field_name, &*field);
         }
-        let signature = self.arena.intern(HirStructApiSignature {
+        let signature = self.arena.intern(HirStructSignature {
             span: node.span,
             name,
             name_span: node.name.span,

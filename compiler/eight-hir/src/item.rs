@@ -1,6 +1,6 @@
 use crate::signature::{
-    HirFunctionApiSignature, HirInstanceApiSignature, HirStructApiSignature, HirTraitApiSignature,
-    HirTypeApiSignature,
+    HirFunctionSignature, HirInstanceSignature, HirStructSignature, HirTraitSignature,
+    HirTypeSignature,
 };
 use crate::stmt::HirStmt;
 use crate::ty::HirTy;
@@ -14,7 +14,7 @@ pub struct HirIntrinsicType<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'hir HirTypeApiSignature<'hir>,
+    pub signature: &'hir HirTypeSignature<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -24,7 +24,7 @@ pub struct HirStruct<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'hir HirStructApiSignature<'hir>,
+    pub signature: &'hir HirStructSignature<'hir>,
     pub instantiated_fields: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
 }
 
@@ -35,7 +35,7 @@ pub struct HirFunction<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'hir HirFunctionApiSignature<'hir>,
+    pub signature: &'hir HirFunctionSignature<'hir>,
     pub body: Vec<HirStmt<'hir>>,
 
     /// The type that was substituted for the function return type.
@@ -72,7 +72,7 @@ pub struct HirTrait<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'hir HirTraitApiSignature<'hir>,
+    pub signature: &'hir HirTraitSignature<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -81,7 +81,7 @@ pub struct HirTraitFunctionItem<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,
-    pub signature: &'hir HirFunctionApiSignature<'hir>,
+    pub signature: &'hir HirFunctionSignature<'hir>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -92,7 +92,7 @@ pub struct HirInstance<'hir> {
     pub name_span: Span,
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
     pub members: Vec<HirFunction<'hir>>,
-    pub signature: &'hir HirInstanceApiSignature<'hir>,
+    pub signature: &'hir HirInstanceSignature<'hir>,
     /// See [`HirFunction::type_parameter_substitutions`] for explanation.
     ///
     /// These are instantiations from the trait itself. Separate ones will be created for each

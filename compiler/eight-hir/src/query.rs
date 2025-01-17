@@ -1,6 +1,6 @@
 use crate::signature::{
-    HirFunctionApiSignature, HirInstanceApiSignature, HirModuleSignature, HirStructApiSignature,
-    HirTraitApiSignature, HirTypeApiSignature,
+    HirFunctionSignature, HirInstanceSignature, HirModuleSignature, HirStructSignature,
+    HirTraitSignature, HirTypeSignature,
 };
 use crate::ty::HirTy;
 use eight_diagnostics::ice;
@@ -37,7 +37,7 @@ impl<'a, T: ?Sized> Eq for StableRef<'a, T> {}
 /// memory, we use a pointer identity map as the inner hashmap.
 pub type TraitInstanceQueryCache<'hir> = HashMap<
     &'hir str,
-    HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceApiSignature<'hir>>>,
+    HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceSignature<'hir>>>,
 >;
 
 /// A query database over a Hir module.
@@ -75,7 +75,7 @@ impl<'hir> HirSignatureQueryDatabase<'hir> {
         &self,
         trait_name: &str,
         arguments: &[&'hir HirTy<'hir>],
-    ) -> Option<&'hir HirInstanceApiSignature<'hir>> {
+    ) -> Option<&'hir HirInstanceSignature<'hir>> {
         let trait_index = self.trait_instance_cache.get(trait_name)?;
         let stable_ref = StableRef(*arguments.first()?);
         let instance_index = trait_index.get(&stable_ref)?;
@@ -95,22 +95,22 @@ impl<'hir> HirSignatureQueryDatabase<'hir> {
     }
 
     /// Query the database for a trait by its name.
-    pub fn query_trait_by_name(&self, name: &str) -> Option<&HirTraitApiSignature> {
+    pub fn query_trait_by_name(&self, name: &str) -> Option<&HirTraitSignature> {
         self.sig.traits.get(name).copied()
     }
 
     /// Query the database for a struct by its name.
-    pub fn query_struct_by_name(&self, name: &str) -> Option<&HirStructApiSignature> {
+    pub fn query_struct_by_name(&self, name: &str) -> Option<&HirStructSignature> {
         self.sig.structs.get(name).copied()
     }
 
     /// Query the database for a function by its name.
-    pub fn query_function_by_name(&self, name: &str) -> Option<&HirFunctionApiSignature> {
+    pub fn query_function_by_name(&self, name: &str) -> Option<&HirFunctionSignature> {
         self.sig.functions.get(name).copied()
     }
 
     /// Query the database for a type by its name.
-    pub fn query_type_by_name(&self, name: &str) -> Option<&HirTypeApiSignature> {
+    pub fn query_type_by_name(&self, name: &str) -> Option<&HirTypeSignature> {
         self.sig.types.get(name).copied()
     }
 }
