@@ -155,7 +155,7 @@ pub struct HirConstantIndexExpr<'hir> {
 pub struct HirCallExpr<'hir> {
     pub span: Span,
     pub callee: Box<HirExpr<'hir>>,
-    pub arguments: Vec<Box<HirExpr<'hir>>>,
+    pub arguments: Vec<HirExpr<'hir>>,
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
     /// The type of the result of the call expression.
     pub ty: &'hir HirTy<'hir>,

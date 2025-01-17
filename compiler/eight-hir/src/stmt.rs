@@ -91,5 +91,5 @@ pub struct HirReturnStmt<'hir> {
 #[derive(Debug)]
 pub struct HirBlockStmt<'hir> {
     pub span: Span,
-    pub body: Vec<Box<HirStmt<'hir>>>,
+    pub body: Vec<HirStmt<'hir>>,
 }
