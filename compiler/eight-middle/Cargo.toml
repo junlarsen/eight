@@ -5,5 +5,7 @@ edition = "2021"
 
 [dependencies]
 eight-macros = { path = "../eight-macros" }
+eight-diagnostics = { path = "../eight-diagnostics" }
+
 bumpalo = { workspace = true }
 serde = { workspace = true, optional = true }

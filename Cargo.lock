@@ -274,6 +274,7 @@ name = "eight-middle"
 version = "0.1.0"
 dependencies = [
  "bumpalo",
+ "eight-diagnostics",
  "eight-macros",
  "serde",
 ]

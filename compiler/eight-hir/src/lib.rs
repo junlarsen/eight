@@ -29,7 +29,6 @@ use eight_span::Span;
 use std::collections::BTreeMap;
 
 pub mod arena;
-pub mod context;
 pub mod error;
 pub mod expr;
 pub mod item;

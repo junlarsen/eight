@@ -1,5 +1,5 @@
 use crate::arena::HirArena;
-use crate::context::LocalContext;
+use eight_middle::context::LocalContext;
 use crate::error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
     FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
