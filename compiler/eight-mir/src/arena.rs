@@ -83,12 +83,13 @@ impl<'arena> MirTypeArena<'arena> {
     }
 
     /// Get the MIR opaque pointer type.
-    pub fn get_pointer_type(&'arena self) -> &'arena MirType {
-        let id = MirTypeId::compute_pointer_type_id();
-        self.intern
-            .borrow_mut()
-            .entry(id)
-            .or_insert_with(|| self.allocator.alloc(MirType::Pointer(MirPointerType)))
+    pub fn get_pointer_type(&'arena self, inner: &'arena MirType<'arena>) -> &'arena MirType {
+        let inner_id = MirTypeId::from(inner);
+        let id = MirTypeId::compute_pointer_type_id(&inner_id);
+        self.intern.borrow_mut().entry(id).or_insert_with(|| {
+            self.allocator
+                .alloc(MirType::Pointer(MirPointerType { inner }))
+        })
     }
 
     /// Get a MIR function type.

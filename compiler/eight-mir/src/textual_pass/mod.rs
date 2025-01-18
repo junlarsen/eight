@@ -1,4 +1,7 @@
-use crate::instruction::{MirAllocaInstruction, MirInstruction, MirStoreInstruction};
+use crate::instruction::{
+    MirAllocaInstruction, MirCallInstruction, MirInstruction, MirLoadInstruction,
+    MirStoreInstruction,
+};
 use crate::ty::MirType;
 use crate::value::{MirConstantInteger, MirValue};
 use crate::{MirBasicBlock, MirFunction, MirModule};
@@ -159,9 +162,8 @@ impl<'a> MirModuleTextualPass<'a> {
         match instruction {
             MirInstruction::Alloca(i) => self.visit_alloca_instruction(i, owner),
             MirInstruction::Store(i) => self.visit_store_instruction(i, owner),
-            MirInstruction::Load(_) | MirInstruction::Call(_) => {
-                unimplemented!()
-            }
+            MirInstruction::Call(i) => self.visit_call_instruction(i, owner),
+            MirInstruction::Load(i) => self.visit_load_instruction(i, owner),
         }
     }
 
@@ -197,19 +199,74 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.text(" = "))
             .append(self.arena.text("mem.store"))
             .append(self.arena.space())
-            .append(self.visit_value(value))
+            .append(self.visit_value(value, owner))
             .append(self.arena.text(","))
             .append(self.arena.space())
             .append(self.visit_type(instruction.dest_ty))
             .append(self.arena.space())
-            .append(self.visit_value(dest))
+            .append(self.visit_value(dest, owner))
     }
 
-    pub fn visit_value<'mir: 'a>(&'a self, value: &'mir MirValue<'mir>) -> DocBuilder<Arena<'a>> {
+    pub fn visit_call_instruction<'mir: 'a>(
+        &'a self,
+        instruction: &'mir MirCallInstruction<'mir>,
+        owner: &'mir MirFunction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("%")
+            .append(self.arena.text(instruction.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("fn.call"))
+            .append(self.arena.space())
+            .append(self.visit_type(instruction.ty))
+            .append(self.arena.space())
+            .append(self.visit_value(
+                owner.get_value(instruction.callee).expect("missing callee"),
+                owner,
+            ))
+            .append(self.arena.text("("))
+            .append(self.arena.intersperse(
+                instruction.arguments.iter().map(|a| {
+                    self.visit_value(owner.get_value(*a).expect("missing argument"), owner)
+                }),
+                self.arena.text(","),
+            ))
+            .append(self.arena.text(")"))
+    }
+
+    pub fn visit_load_instruction<'mir: 'a>(
+        &'a self,
+        instruction: &'mir MirLoadInstruction<'mir>,
+        owner: &'mir MirFunction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("%")
+            .append(self.arena.text(instruction.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("mem.load"))
+            .append(self.arena.space())
+            .append(self.visit_type(instruction.ty))
+            .append(self.arena.space())
+            .append(self.visit_value(
+                owner.get_value(instruction.src).expect("missing src"),
+                owner,
+            ))
+    }
+
+    pub fn visit_value<'mir: 'a>(
+        &'a self,
+        value: &'mir MirValue<'mir>,
+        owner: &'mir MirFunction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
         match value {
             MirValue::ConstantInteger(v) => self.visit_constant_integer_value(v),
-            MirValue::Instruction(v) => self.arena.text("%").append(self.arena.as_string(v.0)),
-            MirValue::Argument(_) | MirValue::Label(_) | MirValue::Function(_) => unimplemented!(),
+            MirValue::Instruction(v) => self
+                .visit_type(owner.get_instruction(*v).expect("missing instruction").ty())
+                .append(self.arena.space())
+                .append(self.arena.text("%"))
+                .append(self.arena.as_string(v.0)),
+            MirValue::Function(v) => self.arena.as_string(v.0),
+            MirValue::Argument(_) | MirValue::Label(_) => unimplemented!(),
         }
     }
 

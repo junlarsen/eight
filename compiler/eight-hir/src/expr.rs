@@ -127,6 +127,7 @@ pub struct HirReferenceExpr<'hir> {
     pub name_span: Span,
     /// The type of `name` in the current scope.
     pub ty: &'hir HirTy<'hir>,
+    pub is_reference_to_function: bool,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

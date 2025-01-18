@@ -22,15 +22,15 @@ impl MirTypeId {
         Self(hasher.finish())
     }
 
-    pub fn compute_pointer_type_id() -> Self {
-        let mut hasher = DefaultHasher::new();
-        0x03.hash(&mut hasher);
-        Self(hasher.finish())
-    }
-
     pub fn compute_function_type_id(return_type: &MirTypeId, parameters: &[MirTypeId]) -> Self {
         let mut hasher = DefaultHasher::new();
         (0x10, return_type, parameters).hash(&mut hasher);
+        Self(hasher.finish())
+    }
+
+    pub fn compute_pointer_type_id(inner: &MirTypeId) -> Self {
+        let mut hasher = DefaultHasher::new();
+        (0x20, inner).hash(&mut hasher);
         Self(hasher.finish())
     }
 }
@@ -41,7 +41,7 @@ impl<'mir> From<&'mir MirType<'mir>> for MirTypeId {
             MirType::Integer32(_) => MirTypeId::compute_i32_type_id(),
             MirType::Bool(_) => MirTypeId::compute_bool_type_id(),
             MirType::Void(_) => MirTypeId::compute_void_type_id(),
-            MirType::Pointer(_) => MirTypeId::compute_pointer_type_id(),
+            MirType::Pointer(ty) => MirTypeId::compute_pointer_type_id(&MirTypeId::from(ty.inner)),
             MirType::Function(ty) => {
                 let parameters = ty
                     .parameters
@@ -62,11 +62,7 @@ pub enum MirType<'mir> {
     Integer32(MirInteger32Type),
     Bool(MirBoolType),
     Void(MirVoidType),
-    /// A opaque pointer type.
-    ///
-    /// TODO: Is opaque pointers a good idea? LLVM does it, but maybe we can do better guided
-    ///   optimizations if we know the inner type?
-    Pointer(MirPointerType),
+    Pointer(MirPointerType<'mir>),
     Function(MirFunctionType<'mir>),
 }
 
@@ -96,7 +92,9 @@ pub struct MirBoolType;
 pub struct MirVoidType;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-pub struct MirPointerType;
+pub struct MirPointerType<'mir> {
+    pub inner: &'mir MirType<'mir>,
+}
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub struct MirFunctionType<'mir> {

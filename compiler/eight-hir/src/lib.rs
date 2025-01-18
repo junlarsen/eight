@@ -413,6 +413,7 @@ impl<'hir> HirBuilder {
             name,
             name_span,
             ty,
+            is_reference_to_function: false,
         }
     }
 }

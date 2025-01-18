@@ -21,6 +21,17 @@ pub enum MirInstruction<'mir> {
     Call(MirCallInstruction<'mir>),
 }
 
+impl<'mir> MirInstruction<'mir> {
+    pub fn ty(&self) -> &'mir MirType<'mir> {
+        match self {
+            MirInstruction::Alloca(i) => i.ty,
+            MirInstruction::Load(i) => i.ty,
+            MirInstruction::Store(i) => i.ty,
+            MirInstruction::Call(i) => i.ty,
+        }
+    }
+}
+
 /// The `mem.alloca` instruction.
 #[derive(Debug)]
 pub struct MirAllocaInstruction<'mir> {
@@ -36,6 +47,7 @@ pub struct MirAllocaInstruction<'mir> {
 #[derive(Debug)]
 pub struct MirLoadInstruction<'mir> {
     pub name: &'mir str,
+    /// The type being loaded
     pub ty: &'mir MirType<'mir>,
     pub src: MirValueId,
 }
@@ -45,6 +57,8 @@ pub struct MirLoadInstruction<'mir> {
 pub struct MirStoreInstruction<'mir> {
     pub name: &'mir str,
     pub value: MirValueId,
+    /// The result of a store is always void
+    pub ty: &'mir MirType<'mir>,
     pub dest: MirValueId,
     pub dest_ty: &'mir MirType<'mir>,
 }
@@ -53,7 +67,8 @@ pub struct MirStoreInstruction<'mir> {
 #[derive(Debug)]
 pub struct MirCallInstruction<'mir> {
     pub name: &'mir str,
-    pub callee: &'mir str,
+    pub callee: MirValueId,
     pub arguments: Vec<MirValueId>,
-    pub return_ty: &'mir MirType<'mir>,
+    /// The return type of the function.
+    pub ty: &'mir MirType<'mir>,
 }

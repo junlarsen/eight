@@ -1,31 +1,36 @@
 use crate::arena::MirArena;
-use crate::builder::{MirFunctionBuilder, HirModuleContext};
+use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::error::MirResult;
 use crate::ty::MirType;
 use crate::value::MirValueId;
 use crate::MirModule;
 use eight_diagnostics::ice;
-use eight_hir::expr::{HirExpr, HirIntegerLiteralExpr};
+use eight_hir::expr::{HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr};
 use eight_hir::item::HirFunction;
 use eight_hir::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use eight_hir::ty::HirTy;
 use eight_hir::HirModule;
+use eight_middle::context::LocalContext;
 use eight_middle::LinkageType;
 
 pub struct MirModuleLoweringPass<'mir> {
     arena: &'mir MirArena<'mir>,
+    /// Mapping between local names and their MIR value ids.
+    locals: LocalContext<&'mir str, MirValueId>,
 }
 
 impl<'mir> MirModuleLoweringPass<'mir> {
     pub fn new(arena: &'mir MirArena<'mir>) -> Self {
-        Self { arena,
+        Self {
+            arena,
+            locals: LocalContext::default(),
         }
     }
 }
 
 impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_module(&mut self, module: &'hir HirModule<'hir>) -> MirResult<MirModule<'mir>> {
-        let mut module_builder = HirModuleContext::new(self.arena);
+        let mut module_builder = MirModuleContext::new(self.arena, module);
         // Forward declare all functions contained in the module
         for function in module.body.functions.values() {
             let return_type = self.visit_ty(function.signature.return_type)?;
@@ -35,31 +40,41 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 .iter()
                 .map(|p| self.visit_ty(p.ty))
                 .collect::<MirResult<Vec<_>>>()?;
-            let MirType::Function(ty) = self.arena.types().get_function_type(return_type, parameters) else {
+            let MirType::Function(ty) = self
+                .arena
+                .types()
+                .get_function_type(return_type, parameters)
+            else {
                 ice!("didnt get function type from arena");
             };
             let name = self.arena.names().get(function.name);
             module_builder.forward_declare_function(name, ty);
         }
         // Generate the MIR code for all functions
-        let mut functions = Vec::new();
         for function in module.body.functions.values() {
             let name = self.arena.names().get(function.name);
             let Some(id) = module_builder.get_function_id(name) else {
                 ice!(format!("failed to find function id for {}", function.name));
             };
             let Some(ty) = module_builder.get_function_type(id) else {
-                ice!(format!("failed to find function type for {}", function.name));
+                ice!(format!(
+                    "failed to find function type for {}",
+                    function.name
+                ));
             };
             let mut builder = MirFunctionBuilder::new(self.arena, name, ty, id);
             self.visit_function(function, &module_builder, &mut builder)?;
-            let f = builder.build();
-            functions.push((id, f))
+            module_builder.implement_function(id, builder.build());
         }
         Ok(module_builder.build())
     }
 
-    pub fn visit_function(&self, node: &'hir HirFunction<'hir>, cx: &HirModuleContext<'mir>, b: &mut MirFunctionBuilder<'mir>) -> MirResult<()> {
+    pub fn visit_function(
+        &mut self,
+        node: &'hir HirFunction<'hir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        b: &mut MirFunctionBuilder<'mir>,
+    ) -> MirResult<()> {
         assert!(
             !node.signature.is_generic(),
             "cannot lower generic functions at this time"
@@ -69,23 +84,33 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         if node.linkage_type == LinkageType::External {
             return Ok(());
         }
+        self.locals.enter_scope();
+
         let entry = b.build_basic_block(Some("entry"));
         b.move_insertion_point(entry);
-        for stmt in node.body.iter() {
-            self.visit_stmt(b, stmt)?;
+        for parameter in node.signature.parameters.iter() {
+            let ty = self.visit_ty(parameter.ty)?;
+            let name = self.arena.names().get(parameter.name);
+            let argument = b.build_argument(name, ty);
+            self.locals.add(name, argument);
         }
+        for stmt in node.body.iter() {
+            self.visit_stmt(b, cx, stmt)?;
+        }
+        self.locals.leave_scope();
         Ok(())
     }
 
     /// Translate a statement into MIR.
     pub fn visit_stmt(
-        &self,
+        &mut self,
         builder: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
         stmt: &'hir HirStmt<'hir>,
     ) -> MirResult<()> {
         match stmt {
-            HirStmt::Let(s) => self.visit_let_stmt(builder, s),
-            HirStmt::Expr(s) => self.visit_expr_stmt(builder, s),
+            HirStmt::Let(s) => self.visit_let_stmt(builder, cx, s),
+            HirStmt::Expr(s) => self.visit_expr_stmt(builder, cx, s),
             HirStmt::Loop(_)
             | HirStmt::Return(_)
             | HirStmt::If(_)
@@ -114,34 +139,42 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ///   store %1, %2
     /// ```
     pub fn visit_let_stmt(
-        &self,
+        &mut self,
         builder: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
         stmt: &'hir HirLetStmt<'hir>,
     ) -> MirResult<()> {
-        let value = self.visit_expr(builder, &stmt.value)?;
-        let ptr = builder.build_alloca(self.arena.types().get_i32_type(), None);
-        let store = builder.build_store(value, ptr, None);
+        let value = self.visit_expr(builder, cx, &stmt.value)?;
+        let ptr = builder.build_alloca(cx, self.arena.types().get_i32_type(), None);
+        // TODO: Should this be discarded?
+        builder.build_store(cx, value, ptr, None);
+        let name = self.arena.names().get(stmt.name);
+        self.locals.add(name, ptr);
         Ok(())
     }
 
     pub fn visit_expr_stmt(
-        &self,
+        &mut self,
         builder: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
         stmt: &'hir HirExprStmt<'hir>,
     ) -> MirResult<()> {
-        todo!()
+        let _ = self.visit_expr(builder, cx, &stmt.expr)?;
+        Ok(())
     }
 
     /// Translate an expression into MIR.
     pub fn visit_expr(
-        &self,
+        &mut self,
         builder: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirExpr<'hir>,
     ) -> MirResult<MirValueId> {
         match expr {
-            HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(builder, e),
+            HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(builder, cx, e),
+            HirExpr::Reference(e) => self.visit_reference_expr(builder, cx, e),
+            HirExpr::Call(e) => self.visit_call_expr(builder, cx, e),
             HirExpr::BooleanLiteral(_)
-            | HirExpr::Reference(_)
             | HirExpr::Group(_)
             | HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
@@ -149,15 +182,15 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             | HirExpr::BinaryOp(_)
             | HirExpr::ConstantIndex(_)
             | HirExpr::OffsetIndex(_)
-            | HirExpr::Call(_)
             | HirExpr::Construct(_)
             | HirExpr::Assign(_) => unimplemented!("cannot lower this expression"),
         }
     }
 
     pub fn visit_integer_literal_expr(
-        &self,
+        &mut self,
         builder: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirIntegerLiteralExpr<'hir>,
     ) -> MirResult<MirValueId> {
         let inst =
@@ -165,16 +198,67 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         Ok(inst)
     }
 
+    pub fn visit_reference_expr(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirReferenceExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        // We need to see if this is the name of a function, and if so, we need to lower it to a
+        // function value.
+        if expr.is_reference_to_function {
+            let name = self.arena.names().get(expr.name);
+            let id = cx.get_function_id(name).unwrap_or_else(|| {
+                ice!(format!(
+                    "failed to find function id for {} despite passing type checker",
+                    expr.name
+                ));
+            });
+            return Ok(b.build_function_ref(id));
+        };
+        // Arguments can be used directly, but locals need to be loaded.
+        let id = self.locals.find(&expr.name).unwrap_or_else(|| {
+            ice!(format!("failed to find local value for {}", expr.name));
+        });
+        let value = b.get_value(*id).unwrap_or_else(|| {
+            ice!(format!("failed to find local value for {}", expr.name));
+        });
+        let ty = value.ty(b, cx);
+        // If it is a pointer type, we automatically dereference it.
+        if let MirType::Pointer(v) = ty {
+            let load = b.build_load(cx, *id, v.inner, None);
+            return Ok(load);
+        }
+        Ok(*id)
+    }
+
+    pub fn visit_call_expr(
+        &mut self,
+        builder: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirCallExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        let callee = self.visit_expr(builder, cx, &expr.callee)?;
+        let arguments = expr
+            .arguments
+            .iter()
+            .map(|a| self.visit_expr(builder, cx, a))
+            .collect::<MirResult<Vec<_>>>()?;
+        let return_ty = self.arena.types().get_i32_type();
+        let call = builder.build_call(cx, callee, arguments, return_ty, None);
+        Ok(call)
+    }
+
     /// Translate a type into MIR.
     ///
     /// The type system in MIR is substantially smaller and simpler than the language and HIR. This
     /// means we can do a lot of shortcutting here.
-    pub fn visit_ty(&self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirType<'mir>> {
+    pub fn visit_ty(&mut self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirType<'mir>> {
         match node {
             HirTy::Integer32(_) => Ok(self.arena.types().get_i32_type()),
             HirTy::Boolean(_) => Ok(self.arena.types().get_bool_type()),
             HirTy::Unit(_) => Ok(self.arena.types().get_void_type()),
-            HirTy::Pointer(_) => Ok(self.arena.types().get_pointer_type()),
+            HirTy::Pointer(i) => Ok(self.arena.types().get_pointer_type(self.visit_ty(i.inner)?)),
             HirTy::Function(_)
             | HirTy::Nominal(_)
             | HirTy::Variable(_)

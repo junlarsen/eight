@@ -522,12 +522,18 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
         // See if the name resolves to a local let-binding or a function name.
-        if cx.find_let_binding(node.name).is_none()
-            && cx
-                .module_query_db
-                .query_function_by_name(node.name)
-                .is_none()
-        {
+        let is_local_reference = cx.find_let_binding(node.name).is_some();
+        let is_function_reference = cx
+            .module_query_db
+            .query_function_by_name(node.name)
+            .is_some();
+
+        // If this surely points to a function (remember let-bindings take priority because they
+        // may shadow a function), we can add metadata to the expression.
+        node.is_reference_to_function = is_function_reference && !is_local_reference;
+
+        // If we don't know where this name comes from, we have a type error.
+        if !is_local_reference && !is_function_reference {
             return Err(HirError::InvalidReference(InvalidReferenceError {
                 name: node.name.to_owned(),
                 span: node.name_span,
