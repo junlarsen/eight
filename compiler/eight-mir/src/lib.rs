@@ -2,6 +2,7 @@ use crate::instruction::{MirInstruction, MirInstructionId};
 use crate::ty::MirFunctionType;
 use crate::value::{MirValue, MirValueId};
 use std::collections::BTreeMap;
+use std::ops::Deref;
 
 pub mod arena;
 pub mod builder;
@@ -14,12 +15,23 @@ pub mod value;
 
 #[derive(Debug, Default)]
 pub struct MirModule<'mir> {
-    pub functions: BTreeMap<&'mir str, MirFunction<'mir>>,
+    pub functions: Vec<MirFunction<'mir>>,
 }
 
 impl<'mir> MirModule<'mir> {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct MirFunctionId(pub usize);
+
+impl Deref for MirFunctionId {
+    type Target = usize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -42,10 +54,33 @@ impl<'mir> MirFunction<'mir> {
     pub fn is_external(&self) -> bool {
         self.blocks.is_empty()
     }
+
+    /// Get the instruction with the given id.
+    pub fn get_instruction(&self, id: MirInstructionId) -> Option<&MirInstruction<'mir>> {
+        self.instructions.get(&id)
+    }
+
+    /// Get the basic block with the given id.
+    pub fn get_basic_block(&self, id: MirBasicBlockId) -> Option<&MirBasicBlock<'mir>> {
+        self.blocks.get(&id)
+    }
+
+    /// Get the value with the given id.
+    pub fn get_value(&self, id: MirValueId) -> Option<&MirValue<'mir>> {
+        self.values.get(&id)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct MirBasicBlockId(pub usize);
+
+impl Deref for MirBasicBlockId {
+    type Target = usize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Debug)]
 pub struct MirBasicBlock<'mir> {

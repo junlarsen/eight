@@ -1,9 +1,9 @@
 use crate::arena::MirArena;
-use crate::builder::MirFunctionBuilder;
+use crate::builder::{MirFunctionBuilder, HirModuleContext};
 use crate::error::MirResult;
 use crate::ty::MirType;
 use crate::value::MirValueId;
-use crate::{MirFunction, MirModule};
+use crate::MirModule;
 use eight_diagnostics::ice;
 use eight_hir::expr::{HirExpr, HirIntegerLiteralExpr};
 use eight_hir::item::HirFunction;
@@ -18,53 +18,63 @@ pub struct MirModuleLoweringPass<'mir> {
 
 impl<'mir> MirModuleLoweringPass<'mir> {
     pub fn new(arena: &'mir MirArena<'mir>) -> Self {
-        Self { arena }
+        Self { arena,
+        }
     }
 }
 
 impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
-    pub fn visit_module(&self, module: &'hir HirModule<'hir>) -> MirResult<MirModule<'mir>> {
-        let mut mir = MirModule::new();
+    pub fn visit_module(&mut self, module: &'hir HirModule<'hir>) -> MirResult<MirModule<'mir>> {
+        let mut module_builder = HirModuleContext::new(self.arena);
+        // Forward declare all functions contained in the module
         for function in module.body.functions.values() {
-            let mir_function = self.visit_function(function)?;
+            let return_type = self.visit_ty(function.signature.return_type)?;
+            let parameters = function
+                .signature
+                .parameters
+                .iter()
+                .map(|p| self.visit_ty(p.ty))
+                .collect::<MirResult<Vec<_>>>()?;
+            let MirType::Function(ty) = self.arena.types().get_function_type(return_type, parameters) else {
+                ice!("didnt get function type from arena");
+            };
             let name = self.arena.names().get(function.name);
-            mir.functions.insert(name, mir_function);
+            module_builder.forward_declare_function(name, ty);
         }
-        Ok(mir)
+        // Generate the MIR code for all functions
+        let mut functions = Vec::new();
+        for function in module.body.functions.values() {
+            let name = self.arena.names().get(function.name);
+            let Some(id) = module_builder.get_function_id(name) else {
+                ice!(format!("failed to find function id for {}", function.name));
+            };
+            let Some(ty) = module_builder.get_function_type(id) else {
+                ice!(format!("failed to find function type for {}", function.name));
+            };
+            let mut builder = MirFunctionBuilder::new(self.arena, name, ty, id);
+            self.visit_function(function, &module_builder, &mut builder)?;
+            let f = builder.build();
+            functions.push((id, f))
+        }
+        Ok(module_builder.build())
     }
 
-    pub fn visit_function(&self, node: &'hir HirFunction<'hir>) -> MirResult<MirFunction<'mir>> {
+    pub fn visit_function(&self, node: &'hir HirFunction<'hir>, cx: &HirModuleContext<'mir>, b: &mut MirFunctionBuilder<'mir>) -> MirResult<()> {
         assert!(
             !node.signature.is_generic(),
             "cannot lower generic functions at this time"
         );
-        let parameters = node
-            .signature
-            .parameters
-            .iter()
-            .map(|p| self.visit_ty(p.ty))
-            .collect::<MirResult<Vec<_>>>()?;
-        let MirType::Function(ty) = self
-            .arena
-            .types()
-            .get_function_type(self.visit_ty(node.signature.return_type)?, parameters)
-        else {
-            ice!("didnt get function type from arena");
-        };
-
-        let name = self.arena.names().get(node.name);
-        let mut builder = MirFunctionBuilder::new(self.arena, ty, name);
         // If the function is external, it doesn't get any code, and the code generator will assume
         // that it must be externally defined and resolved at link time.
         if node.linkage_type == LinkageType::External {
-            return Ok(builder.build());
+            return Ok(());
         }
-        let entry = builder.build_basic_block(Some("entry"));
-        builder.move_insertion_point(entry);
+        let entry = b.build_basic_block(Some("entry"));
+        b.move_insertion_point(entry);
         for stmt in node.body.iter() {
-            self.visit_stmt(&mut builder, stmt)?;
+            self.visit_stmt(b, stmt)?;
         }
-        Ok(builder.build())
+        Ok(())
     }
 
     /// Translate a statement into MIR.
@@ -109,8 +119,8 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         stmt: &'hir HirLetStmt<'hir>,
     ) -> MirResult<()> {
         let value = self.visit_expr(builder, &stmt.value)?;
-        let inst = builder.build_alloca(self.arena.types().get_i32_type(), None);
-
+        let ptr = builder.build_alloca(self.arena.types().get_i32_type(), None);
+        let store = builder.build_store(value, ptr, None);
         Ok(())
     }
 

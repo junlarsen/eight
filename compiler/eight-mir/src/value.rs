@@ -1,6 +1,6 @@
 use crate::instruction::MirInstructionId;
 use crate::ty::MirType;
-use crate::MirBasicBlockId;
+use crate::{MirBasicBlockId, MirFunctionId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct MirValueId(pub usize);
@@ -18,6 +18,8 @@ pub enum MirValue<'mir> {
     Instruction(MirInstructionId),
     /// This refers to the label of a basic block.
     Label(MirBasicBlockId),
+    /// This refers to a named function
+    Function(MirFunctionId),
 }
 
 #[derive(Debug)]

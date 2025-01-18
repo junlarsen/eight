@@ -1,5 +1,4 @@
 use crate::arena::HirArena;
-use eight_middle::context::LocalContext;
 use crate::error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
     FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
@@ -18,6 +17,7 @@ use crate::type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
 use eight_diagnostics::ice;
+use eight_middle::context::LocalContext;
 use eight_span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;

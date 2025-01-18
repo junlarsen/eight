@@ -1,8 +1,17 @@
 use crate::ty::MirType;
 use crate::value::MirValueId;
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct MirInstructionId(pub usize);
+
+impl Deref for MirInstructionId {
+    type Target = usize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Debug)]
 pub enum MirInstruction<'mir> {
@@ -15,7 +24,7 @@ pub enum MirInstruction<'mir> {
 /// The `mem.alloca` instruction.
 #[derive(Debug)]
 pub struct MirAllocaInstruction<'mir> {
-    pub name: Option<&'mir str>,
+    pub name: &'mir str,
     /// The type of the instruction itself. This is always the opaque pointer type for `mem.alloca`.
     pub ty: &'mir MirType<'mir>,
     /// The number (in bits) to allocate.
@@ -26,7 +35,7 @@ pub struct MirAllocaInstruction<'mir> {
 /// The `mem.load` instruction.
 #[derive(Debug)]
 pub struct MirLoadInstruction<'mir> {
-    pub name: Option<&'mir str>,
+    pub name: &'mir str,
     pub ty: &'mir MirType<'mir>,
     pub src: MirValueId,
 }
@@ -34,16 +43,17 @@ pub struct MirLoadInstruction<'mir> {
 /// The `mem.store` instruction.
 #[derive(Debug)]
 pub struct MirStoreInstruction<'mir> {
-    pub name: Option<&'mir str>,
-    pub ty: &'mir MirType<'mir>,
+    pub name: &'mir str,
     pub value: MirValueId,
     pub dest: MirValueId,
+    pub dest_ty: &'mir MirType<'mir>,
 }
 
 /// The `fn.call` instruction.
 #[derive(Debug)]
 pub struct MirCallInstruction<'mir> {
-    pub name: Option<&'mir str>,
+    pub name: &'mir str,
     pub callee: &'mir str,
-    pub arguments: MirValueId,
+    pub arguments: Vec<MirValueId>,
+    pub return_ty: &'mir MirType<'mir>,
 }

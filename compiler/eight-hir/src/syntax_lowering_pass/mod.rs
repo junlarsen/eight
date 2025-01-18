@@ -1,5 +1,4 @@
 use crate::arena::HirArena;
-use eight_middle::context::LocalContext;
 use crate::error::{
     BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
 };
@@ -14,6 +13,7 @@ use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use crate::ty::HirTy;
 use crate::{HirBuilder, HirModule, HirModuleBody};
 use eight_diagnostics::ice;
+use eight_middle::context::LocalContext;
 use eight_middle::LinkageType;
 use eight_span::Span;
 use eight_syntax::ast::{

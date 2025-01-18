@@ -1,4 +1,6 @@
+use crate::instruction::{MirAllocaInstruction, MirInstruction, MirStoreInstruction};
 use crate::ty::MirType;
+use crate::value::{MirConstantInteger, MirValue};
 use crate::{MirBasicBlock, MirFunction, MirModule};
 use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
@@ -30,13 +32,11 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(
                 self.arena
                     .hardline()
-                    .append("// module functions")
-                    .append(self.arena.hardline())
                     .append(
                         self.arena.intersperse(
                             module
                                 .functions
-                                .values()
+                                .iter()
                                 .filter(|f| !f.is_external())
                                 .map(|f| self.visit_function(f)),
                             self.arena.hardline(),
@@ -44,13 +44,11 @@ impl<'a> MirModuleTextualPass<'a> {
                     )
                     .append(self.arena.hardline())
                     .append(self.arena.hardline())
-                    .append("// module extern functions")
-                    .append(self.arena.hardline())
                     .append(
                         self.arena.intersperse(
                             module
                                 .functions
-                                .values()
+                                .iter()
                                 .filter(|f| f.is_external())
                                 .map(|f| self.visit_extern_function(f)),
                             self.arena.hardline(),
@@ -70,7 +68,6 @@ impl<'a> MirModuleTextualPass<'a> {
         self.arena
             .text("mir_extern_function")
             .append(self.arena.space())
-            .append(self.arena.text("@"))
             .append(self.arena.text(function.name))
             .append(self.arena.text("("))
             .append(self.arena.intersperse(
@@ -97,7 +94,6 @@ impl<'a> MirModuleTextualPass<'a> {
         self.arena
             .text("mir_function")
             .append(self.arena.space())
-            .append(self.arena.text("@"))
             .append(self.arena.text(function.name))
             .append(self.arena.text("("))
             .append(self.arena.intersperse(
@@ -117,10 +113,15 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.arena.text("{"))
             .append(self.arena.hardline())
-            .append(self.arena.intersperse(
-                function.blocks.values().map(|b| self.visit_basic_block(b)),
-                self.arena.hardline(),
-            ))
+            .append(
+                self.arena.intersperse(
+                    function
+                        .blocks
+                        .values()
+                        .map(|b| self.visit_basic_block(b, function)),
+                    self.arena.hardline(),
+                ),
+            )
             .append(self.arena.hardline())
             .append(self.arena.text("}"))
     }
@@ -128,6 +129,7 @@ impl<'a> MirModuleTextualPass<'a> {
     pub fn visit_basic_block<'mir: 'a>(
         &'a self,
         block: &'mir MirBasicBlock<'mir>,
+        owner: &'mir MirFunction<'mir>,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text(block.name)
@@ -135,10 +137,89 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(
                 self.arena
                     .hardline()
-                    .append(self.arena.text("mov a b"))
+                    .append(self.arena.intersperse(
+                        block.instructions.iter().map(|i| {
+                            let inst = owner
+                                .get_instruction(*i)
+                                .expect("malformed mir: missing instruction reference");
+                            self.visit_instruction(inst, owner)
+                        }),
+                        self.arena.hardline(),
+                    ))
                     .nest(2)
                     .group(),
             )
+    }
+
+    pub fn visit_instruction<'mir: 'a>(
+        &'a self,
+        instruction: &'mir MirInstruction<'mir>,
+        owner: &'mir MirFunction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        match instruction {
+            MirInstruction::Alloca(i) => self.visit_alloca_instruction(i, owner),
+            MirInstruction::Store(i) => self.visit_store_instruction(i, owner),
+            MirInstruction::Load(_) | MirInstruction::Call(_) => {
+                unimplemented!()
+            }
+        }
+    }
+
+    pub fn visit_alloca_instruction<'mir: 'a>(
+        &'a self,
+        instruction: &'mir MirAllocaInstruction<'mir>,
+        owner: &'mir MirFunction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("%")
+            .append(self.arena.text(instruction.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("mem.alloca"))
+            .append(self.arena.space())
+            .append(self.visit_type(instruction.alloc_ty))
+    }
+
+    pub fn visit_store_instruction<'mir: 'a>(
+        &'a self,
+        instruction: &'mir MirStoreInstruction<'mir>,
+        owner: &'mir MirFunction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        let value = owner
+            .get_value(instruction.value)
+            .expect("malformed mir: missing value reference");
+        let dest = owner
+            .get_value(instruction.dest)
+            .expect("malformed mir: missing value reference");
+
+        self.arena
+            .text("%")
+            .append(self.arena.text(instruction.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("mem.store"))
+            .append(self.arena.space())
+            .append(self.visit_value(value))
+            .append(self.arena.text(","))
+            .append(self.arena.space())
+            .append(self.visit_type(instruction.dest_ty))
+            .append(self.arena.space())
+            .append(self.visit_value(dest))
+    }
+
+    pub fn visit_value<'mir: 'a>(&'a self, value: &'mir MirValue<'mir>) -> DocBuilder<Arena<'a>> {
+        match value {
+            MirValue::ConstantInteger(v) => self.visit_constant_integer_value(v),
+            MirValue::Instruction(v) => self.arena.text("%").append(self.arena.as_string(v.0)),
+            MirValue::Argument(_) | MirValue::Label(_) | MirValue::Function(_) => unimplemented!(),
+        }
+    }
+
+    pub fn visit_constant_integer_value<'mir: 'a>(
+        &'a self,
+        value: &'mir MirConstantInteger<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.visit_type(value.ty)
+            .append(self.arena.text(" "))
+            .append(self.arena.text(value.value.to_string()))
     }
 
     pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirType) -> DocBuilder<Arena<'a>> {

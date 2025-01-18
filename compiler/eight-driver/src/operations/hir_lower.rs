@@ -15,7 +15,7 @@ impl<'c> PipelineOperation<'c, HirModule<'c>, MirModule<'c>> for HirLowerOperati
             return Err(PipelineError::StopToken("--syntax-only".to_owned()));
         }
 
-        let lowering_pass = MirModuleLoweringPass::new(&pipeline.mir_arena);
+        let mut lowering_pass = MirModuleLoweringPass::new(&pipeline.mir_arena);
         let module = lowering_pass.visit_module(&input)?;
         Ok(module)
     }
