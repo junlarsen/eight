@@ -1,14 +1,15 @@
 # Eight
 
-Eight is a toy programming language I'm building to learn about compiler optimization. The main research areas of the
-project are:
+Eight is a toy programming language for learning about compiler optimization and code generation. It is an imperative
+programming language with a static type system.
 
-1. Standard compiler optimizations such as constant folding, dead code elimination, and common subexpression
-   elimination.
-2. High-performance code generation using ISA-specific vector instructions. (x86 SSE/AVX is the primary target).
-3. A generic type system with a simple type inference algorithm.
+The compiler is written in Rust and will use LLVM as the primary backend, with plans for an x86-64 backend. The type
+system is based on the Hindley-Damas-Milner type system with extensions for type classes and struct types. Its semantics
+highly resembles C. The following is a naive matrix-matrix multiplication example.
 
-```
+**Current project status**: The frontend is mostly complete, and current work is on the mid-level IR and LLVM codegen.
+
+```rust
 struct Matrix {
   r: i32,
   c: i32,
@@ -26,7 +27,7 @@ fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
     for (let j = 0; j < b.c; j = j + 1) {
       let sum = 0;
       for (let k = 0; k < a.c; k = k + 1) {
-        sum += + a.buf[i * a.c + k] * b.buf[k * b.c + j];
+        sum = sum + a.buf[i * a.c + k] * b.buf[k * b.c + j];
       }
       c.buf[i * b.c + j] = sum;
     }
@@ -34,6 +35,45 @@ fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
   return c;
 }
 ```
+
+## Development
+
+The compiler is written in Rust, and requires the LLVM Integrated Tester to run its test suite. The easiest way to get
+started is to install both Rust and Poetry (to download Lit).
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Run unit tests and snapshot tests
+cargo test
+
+# Install Lit, and run the integration test suite
+poetry install
+cargo xtask lit
+```
+
+Running the compiler is done through `cargo run --bin eightc`, or using the build output if you compile the project.
+
+```bash
+Usage: eightc [OPTIONS] <INPUT>
+
+Arguments:
+  <INPUT>  The input source. If this is `-`, the input is read from stdin
+
+Options:
+      --emit-ast                 Should the plain AST be emitted?
+      --emit-hir                 Should the fully-typed, lowered HIR be emitted?
+      --emit-mir                 Should the MIR be emitted?
+      --emit-query <EMIT_QUERY>  Emission queries to specify which nodes should be emitted
+      --syntax-only              Disable the backend, and only execute the frontend
+  -h, --help                     Print help
+  -V, --version                  Print version
+```
+
+## Contact
+
+If you have any questions, feel free to reach me by email at mats at jun dot codes.
 
 ## License
 
