@@ -776,15 +776,10 @@ impl<'a> HirModuleTextualPass<'a> {
         self.arena
             .text("fn")
             .append(self.arena.text("("))
-            .append(
-                self.arena
-                    .text("(")
-                    .append(self.arena.intersperse(
-                        ty.parameters.iter().map(|p| self.visit_ty(p)),
-                        self.arena.text(", "),
-                    ))
-                    .append(self.arena.text(")")),
-            )
+            .append(self.arena.intersperse(
+                ty.parameters.iter().map(|p| self.visit_ty(p)),
+                self.arena.text(", "),
+            ))
             .append(self.arena.text(")"))
             .append(self.arena.text("->"))
             .append(self.visit_ty(ty.return_type))
