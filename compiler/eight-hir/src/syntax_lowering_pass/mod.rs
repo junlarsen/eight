@@ -4,7 +4,7 @@ use crate::error::{
     BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
 };
 use crate::expr::{HirBinaryOp, HirConstructExprArgument, HirExpr, HirUnaryOp};
-use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirStruct, HirTrait};
+use crate::item::{HirFunction, HirInstance, HirType, HirStruct, HirTrait};
 use crate::signature::{
     HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirModuleSignature,
     HirStructFieldSignature, HirStructSignature, HirTraitSignature, HirTypeParameterSignature,
@@ -20,8 +20,8 @@ use eight_syntax::ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBracketIndexExpr,
     AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument, AstContinueStmt,
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,
-    AstGroupExpr, AstIfStmt, AstInstanceItem, AstIntegerLiteralExpr, AstIntrinsicFunctionItem,
-    AstIntrinsicTypeItem, AstItem, AstLetStmt, AstReferenceExpr, AstReturnStmt, AstStmt,
+    AstGroupExpr, AstIfStmt, AstInstanceItem, AstIntegerLiteralExpr,
+    AstTypeItem, AstItem, AstLetStmt, AstReferenceExpr, AstReturnStmt, AstStmt,
     AstStructItem, AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType,
     AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
@@ -345,20 +345,14 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 module_signature.add_function(name, fun.signature);
                 module_body.functions.insert(name, fun);
             }
-            AstItem::IntrinsicFunction(f) => {
-                let fun = self.visit_intrinsic_function_item(f)?;
-                let name = self.arena.names().get(&f.name.name);
-                module_signature.add_function(name, fun.signature);
-                module_body.functions.insert(name, fun);
-            }
             AstItem::Struct(t) => {
-                let r#struct = self.visit_type_item(t)?;
+                let r#struct = self.visit_struct_item(t)?;
                 let name = self.arena.names().get(&t.name.name);
                 module_signature.add_struct(name, r#struct.signature);
                 module_body.structs.insert(name, r#struct);
             }
-            AstItem::IntrinsicType(s) => {
-                let r#type = self.visit_intrinsic_type_item(s)?;
+            AstItem::Type(s) => {
+                let r#type = self.visit_type_item(s)?;
                 let name = self.arena.names().get(&s.name.name);
                 module_signature.add_type(name, r#type.signature);
                 module_body.types.insert(name, r#type);
@@ -403,6 +397,11 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             return_type,
             return_type_annotation,
         });
+        let linkage_type = if node.is_intrinsic {
+            LinkageType::External
+        } else {
+            LinkageType::Eight
+        };
         self.leave_type_binding_scope();
         Ok(HirBuilder::build_function(
             node.span,
@@ -410,39 +409,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             node.name.span,
             signature,
             body,
-            LinkageType::Eight,
-        ))
-    }
-
-    pub fn visit_intrinsic_function_item(
-        &mut self,
-        node: &'ast AstIntrinsicFunctionItem,
-    ) -> HirResult<HirFunction<'hir>> {
-        self.enter_type_binding_scope();
-        self.drain_type_parameters(node.type_parameters.iter().as_slice());
-
-        let type_parameters = HirBuilder::build_vec(node.type_parameters.iter(), |p| {
-            self.visit_type_parameter_item(p)
-        })?;
-        let return_type_annotation = node.return_type.span();
-        let return_type = self.visit_type(node.return_type)?;
-        let parameters =
-            HirBuilder::build_vec(node.parameters.iter(), |p| self.visit_function_parameter(p))?;
-        let signature = self.arena.intern(HirFunctionSignature {
-            span: node.span,
-            parameters,
-            type_parameters,
-            return_type,
-            return_type_annotation: Some(return_type_annotation),
-        });
-        self.leave_type_binding_scope();
-        Ok(HirBuilder::build_function(
-            node.span,
-            self.arena.names().get(&node.name.name),
-            node.name.span,
-            signature,
-            Vec::new(),
-            LinkageType::External,
+            linkage_type,
         ))
     }
 
@@ -480,10 +447,10 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         Ok(hir)
     }
 
-    pub fn visit_intrinsic_type_item(
+    pub fn visit_type_item(
         &mut self,
-        node: &'ast AstIntrinsicTypeItem,
-    ) -> HirResult<HirIntrinsicType<'hir>> {
+        node: &'ast AstTypeItem,
+    ) -> HirResult<HirType<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let signature = self.arena.intern(HirTypeSignature {
             span: node.span,
@@ -501,7 +468,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                 }
             },
         });
-        let r#type = HirIntrinsicType {
+        let r#type = HirType {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -611,7 +578,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     /// ```text
     /// type Node = { value: i32, left: *Node, right: *Node, }
     /// ```
-    pub fn visit_type_item(&mut self, node: &'ast AstStructItem) -> HirResult<HirStruct<'hir>> {
+    pub fn visit_struct_item(&mut self, node: &'ast AstStructItem) -> HirResult<HirStruct<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {

@@ -8,9 +8,12 @@ use crate::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
 
+/// A scalar type in the HIR.
+/// 
+/// Not to be confused with [`HirTy`], which is a type that can be used in HIR.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct HirIntrinsicType<'hir> {
+pub struct HirType<'hir> {
     pub span: Span,
     pub name: &'hir str,
     pub name_span: Span,

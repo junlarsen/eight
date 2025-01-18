@@ -14,7 +14,7 @@ exit_code: 0
 ----- stdout -----
 (
     items: [
-        IntrinsicType((
+        Type((
             span: (
                 low: 0,
                 high: 19,
@@ -26,8 +26,9 @@ exit_code: 0
                     high: 18,
                 ),
             ),
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 21,
                 high: 65,
@@ -80,14 +81,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Integer32((
+            return_type: Some(Integer32((
                 span: (
                     low: 61,
                     high: 64,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 66,
                 high: 110,
@@ -140,14 +143,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Integer32((
+            return_type: Some(Integer32((
                 span: (
                     low: 106,
                     high: 109,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 111,
                 high: 155,
@@ -200,14 +205,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Integer32((
+            return_type: Some(Integer32((
                 span: (
                     low: 151,
                     high: 154,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 156,
                 high: 200,
@@ -260,14 +267,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Integer32((
+            return_type: Some(Integer32((
                 span: (
                     low: 196,
                     high: 199,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 201,
                 high: 245,
@@ -320,14 +329,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Integer32((
+            return_type: Some(Integer32((
                 span: (
                     low: 241,
                     high: 244,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 247,
                 high: 291,
@@ -380,14 +391,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 286,
                     high: 290,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 292,
                 high: 337,
@@ -440,14 +453,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 332,
                     high: 336,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 338,
                 high: 382,
@@ -500,14 +515,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 377,
                     high: 381,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 383,
                 high: 427,
@@ -560,14 +577,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 422,
                     high: 426,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 428,
                 high: 472,
@@ -620,14 +639,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 467,
                     high: 471,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 473,
                 high: 517,
@@ -680,14 +701,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 512,
                     high: 516,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 518,
                 high: 563,
@@ -740,14 +763,16 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 558,
                     high: 562,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 564,
                 high: 609,
@@ -800,12 +825,14 @@ exit_code: 0
                 ),
             ],
             type_parameters: [],
-            return_type: Boolean((
+            return_type: Some(Boolean((
                 span: (
                     low: 604,
                     high: 608,
                 ),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
         Trait((
             span: (
@@ -2164,6 +2191,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
                 (
                     span: (
@@ -2280,6 +2308,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
                 (
                     span: (
@@ -2396,6 +2425,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
                 (
                     span: (
@@ -2512,6 +2542,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
             ],
         )),
@@ -2663,6 +2694,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
             ],
         )),
@@ -2814,6 +2846,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
             ],
         )),
@@ -2965,6 +2998,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
             ],
         )),
@@ -3116,6 +3150,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
             ],
         )),
@@ -3267,6 +3302,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
             ],
         )),
@@ -3412,6 +3448,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
                 (
                     span: (
@@ -3528,6 +3565,7 @@ exit_code: 0
                             ))),
                         )),
                     ],
+                    is_intrinsic: false,
                 ),
             ],
         )),

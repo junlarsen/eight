@@ -4,10 +4,10 @@ use crate::ast::{
     AstBracketIndexExpr, AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument,
     AstContinueStmt, AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstForStmtInitializer,
     AstFunctionItem, AstFunctionParameterItem, AstGroupExpr, AstIdentifier, AstIfStmt,
-    AstInstanceItem, AstInteger32Type, AstIntegerLiteralExpr, AstIntrinsicFunctionItem,
-    AstIntrinsicTypeItem, AstItem, AstLetStmt, AstNamedType, AstPointerType, AstReferenceExpr,
-    AstReturnStmt, AstStmt, AstStructItem, AstStructMemberItem, AstTraitFunctionItem, AstTraitItem,
-    AstTranslationUnit, AstType, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
+    AstInstanceItem, AstInteger32Type, AstIntegerLiteralExpr, AstItem, AstLetStmt, AstNamedType,
+    AstPointerType, AstReferenceExpr, AstReturnStmt, AstStmt, AstStructItem, AstStructMemberItem,
+    AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType, AstTypeItem,
+    AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
 };
 use crate::error::{ParseError, ParseResult, UnexpectedEndOfFileError, UnexpectedTokenError};
 use crate::lexer::Lexer;
@@ -229,12 +229,8 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         let node = match token.ty {
             TokenType::KeywordFn => AstItem::Function(self.parse_fn_item()?),
             TokenType::KeywordStruct => AstItem::Struct(self.parse_struct_item()?),
-            TokenType::KeywordIntrinsicFn => {
-                AstItem::IntrinsicFunction(self.parse_intrinsic_fn_item()?)
-            }
-            TokenType::KeywordIntrinsicType => {
-                AstItem::IntrinsicType(self.parse_intrinsic_type_item()?)
-            }
+            TokenType::KeywordIntrinsicFn => AstItem::Function(self.parse_intrinsic_fn_item()?),
+            TokenType::KeywordIntrinsicType => AstItem::Type(self.parse_intrinsic_type_item()?),
             TokenType::KeywordTrait => AstItem::Trait(self.parse_trait_item()?),
             TokenType::KeywordInstance => AstItem::Instance(self.parse_instance_item()?),
             _ => {
@@ -300,6 +296,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             type_parameters: self.arena.alloc_ref_vec(type_parameters),
             return_type: return_type.map(|t| &*self.arena.alloc(t)),
             body: self.arena.alloc_vec(body),
+            is_intrinsic: false,
         };
         Ok(node)
     }
@@ -383,7 +380,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     ///                       OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
     ///                       ARROW type SEMICOLON
     /// ```
-    pub fn parse_intrinsic_fn_item(&mut self) -> ParseResult<AstIntrinsicFunctionItem<'ast>> {
+    pub fn parse_intrinsic_fn_item(&mut self) -> ParseResult<AstFunctionItem<'ast>> {
         let start = self.check(&TokenType::KeywordIntrinsicFn)?;
         let id = self.parse_identifier()?;
         let type_parameters = self
@@ -410,12 +407,14 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         self.check(&TokenType::Arrow)?;
         let return_type = self.parse_type()?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstIntrinsicFunctionItem {
+        let node = AstFunctionItem {
             span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
             parameters: self.arena.alloc_ref_vec(parameters),
             type_parameters: self.arena.alloc_ref_vec(type_parameters),
-            return_type: self.arena.alloc(return_type),
+            return_type: Some(self.arena.alloc(return_type)),
+            body: self.arena.alloc_vec(vec![]),
+            is_intrinsic: true,
         };
         Ok(node)
     }
@@ -425,13 +424,14 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     /// ```text
     /// intrinsic_type_item ::= KEYWORD_INTRINSIC_FN IDENTIFIER SEMICOLON
     /// ```
-    pub fn parse_intrinsic_type_item(&mut self) -> ParseResult<AstIntrinsicTypeItem<'ast>> {
+    pub fn parse_intrinsic_type_item(&mut self) -> ParseResult<AstTypeItem<'ast>> {
         let start = self.check(&TokenType::KeywordIntrinsicType)?;
         let id = self.parse_identifier()?;
         let end = self.check(&TokenType::Semicolon)?;
-        let node = AstIntrinsicTypeItem {
+        let node = AstTypeItem {
             span: Span::from_pair(start.span, end.span),
             name: self.arena.alloc(id),
+            is_intrinsic: true,
         };
         Ok(node)
     }
@@ -554,7 +554,17 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             )?
             .unwrap_or(vec![]);
         self.check(&TokenType::OpenBrace)?;
-        let members = self.parser_combinator_many(&TokenType::CloseBrace, |p| p.parse_fn_item())?;
+        let members = self.parser_combinator_many(&TokenType::CloseBrace, |p| {
+            let token = p.lookahead_or_err()?;
+            match token.ty {
+                TokenType::KeywordFn => Ok(p.parse_fn_item()?),
+                TokenType::KeywordIntrinsicFn => Ok(p.parse_intrinsic_fn_item()?),
+                _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+                    span: token.span,
+                    token: token.clone(),
+                })),
+            }
+        })?;
         let end = self.check(&TokenType::CloseBrace)?;
         let node = AstInstanceItem {
             span: Span::from_pair(start.span, end.span),
@@ -1538,7 +1548,7 @@ mod tests {
             let return_type = production.return_type;
             assert_eq!(name.name, "foo");
             assert_eq!(parameters.len(), 1);
-            assert!(matches!(return_type, AstType::Integer32(_)));
+            assert!(matches!(return_type, Some(AstType::Integer32(_))));
         });
     }
 

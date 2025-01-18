@@ -386,6 +386,7 @@ exit_code: 1
                     unhappy_path: None,
                 )),
             ],
+            is_intrinsic: false,
         )),
         Function((
             span: (
@@ -1089,6 +1090,7 @@ exit_code: 1
                     ))),
                 )),
             ],
+            is_intrinsic: false,
         )),
         Function((
             span: (
@@ -1305,6 +1307,7 @@ exit_code: 1
                     )),
                 )),
             ],
+            is_intrinsic: false,
         )),
     ],
 )

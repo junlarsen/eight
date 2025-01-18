@@ -15,7 +15,7 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirInstance, HirIntrinsicType, HirStruct, HirTrait};
+use crate::item::{HirFunction, HirInstance, HirType, HirStruct, HirTrait};
 use crate::signature::{
     HirFunctionSignature, HirInstanceSignature, HirModuleSignature, HirTraitSignature,
 };
@@ -58,7 +58,7 @@ pub struct HirModuleBody<'hir> {
     pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
     pub structs: BTreeMap<&'hir str, HirStruct<'hir>>,
     pub traits: BTreeMap<&'hir str, HirTrait<'hir>>,
-    pub types: BTreeMap<&'hir str, HirIntrinsicType<'hir>>,
+    pub types: BTreeMap<&'hir str, HirType<'hir>>,
     pub instances: Vec<HirInstance<'hir>>,
 }
 

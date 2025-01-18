@@ -17,8 +17,7 @@ pub struct AstTranslationUnit<'ast> {
 #[derive(Debug)]
 pub enum AstItem<'ast> {
     Function(AstFunctionItem<'ast>),
-    IntrinsicFunction(AstIntrinsicFunctionItem<'ast>),
-    IntrinsicType(AstIntrinsicTypeItem<'ast>),
+    Type(AstTypeItem<'ast>),
     Struct(AstStructItem<'ast>),
     Trait(AstTraitItem<'ast>),
     Instance(AstInstanceItem<'ast>),
@@ -28,8 +27,7 @@ impl<'ast> AstItem<'ast> {
     pub fn span(&self) -> Span {
         match self {
             AstItem::Function(f) => f.span,
-            AstItem::IntrinsicFunction(f) => f.span,
-            AstItem::IntrinsicType(f) => f.span,
+            AstItem::Type(f) => f.span,
             AstItem::Struct(f) => f.span,
             AstItem::Trait(f) => f.span,
             AstItem::Instance(f) => f.span,
@@ -46,16 +44,7 @@ pub struct AstFunctionItem<'ast> {
     pub type_parameters: &'ast [&'ast AstTypeParameterItem<'ast>],
     pub return_type: Option<&'ast AstType<'ast>>,
     pub body: &'ast [&'ast AstStmt<'ast>],
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-pub struct AstIntrinsicFunctionItem<'ast> {
-    pub span: Span,
-    pub name: &'ast AstIdentifier,
-    pub parameters: &'ast [&'ast AstFunctionParameterItem<'ast>],
-    pub type_parameters: &'ast [&'ast AstTypeParameterItem<'ast>],
-    pub return_type: &'ast AstType<'ast>,
+    pub is_intrinsic: bool,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -75,9 +64,10 @@ pub struct AstFunctionParameterItem<'ast> {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct AstIntrinsicTypeItem<'ast> {
+pub struct AstTypeItem<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier,
+    pub is_intrinsic: bool,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
