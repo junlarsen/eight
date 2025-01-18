@@ -18,6 +18,10 @@ struct AppArgs {
     #[arg(long, default_value = "false")]
     emit_hir: bool,
 
+    /// Should the MIR be emitted?
+    #[arg(long, default_value = "false")]
+    emit_mir: bool,
+
     /// Emission queries to specify which nodes should be emitted.
     #[arg(long)]
     emit_query: Option<Vec<String>>,
@@ -37,6 +41,7 @@ impl TryInto<PipelineOptions> for AppArgs {
         Ok(PipelineOptions {
             emit_ast: self.emit_ast,
             emit_hir: self.emit_hir,
+            emit_mir: self.emit_mir,
             queries,
         })
     }

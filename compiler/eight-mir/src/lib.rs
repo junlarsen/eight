@@ -2,17 +2,24 @@ use eight_middle::LinkageType;
 use instruction::MirInstruction;
 use std::collections::BTreeMap;
 
-mod arena;
+pub mod arena;
+pub mod error;
 pub mod hir_lowering_pass;
 pub mod instruction;
 pub mod textual_pass;
-mod value;
+pub mod value;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MirModule<'mir> {
     pub structs: BTreeMap<&'mir str, MirStruct<'mir>>,
     pub functions: BTreeMap<&'mir str, MirFunction<'mir>>,
+}
+
+impl<'mir> MirModule<'mir> {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -36,7 +43,7 @@ pub struct MirStruct<'mir> {
 #[derive(Debug)]
 pub struct MirBlock<'mir> {
     pub name: &'mir str,
-    pub instructions: Vec<MirInstruction>,
+    pub instructions: Vec<MirInstruction<'mir>>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -44,7 +51,7 @@ pub struct MirBlock<'mir> {
 pub enum MirType {
     Integer32,
     Bool,
-    Unit,
+    Void,
     Pointer,
     Struct { fields: Vec<MirType> },
 }

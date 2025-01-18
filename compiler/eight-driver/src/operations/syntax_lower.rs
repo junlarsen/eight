@@ -5,13 +5,11 @@ use eight_syntax::ast::AstTranslationUnit;
 
 /// Operation for lowering the AST to HIR.
 pub struct SyntaxLowerOperation {}
-impl<'hir> PipelineOperation<'hir, AstTranslationUnit<'hir>, HirModule<'hir>>
-    for SyntaxLowerOperation
-{
+impl<'c> PipelineOperation<'c, AstTranslationUnit<'c>, HirModule<'c>> for SyntaxLowerOperation {
     fn execute(
-        pipeline: &'hir Pipeline<'hir>,
-        input: AstTranslationUnit<'hir>,
-    ) -> Result<HirModule<'hir>, PipelineError> {
+        pipeline: &'c Pipeline<'c>,
+        input: AstTranslationUnit<'c>,
+    ) -> Result<HirModule<'c>, PipelineError> {
         let mut lowering_pass = AstSyntaxLoweringPass::new(&pipeline.hir_arena);
         let module = lowering_pass.visit_translation_unit(&input)?;
         Ok(module)

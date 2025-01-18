@@ -6,11 +6,11 @@ use eight_hir::HirModule;
 
 /// Operation for type checking the HIR.
 pub struct TypeCheckOperation {}
-impl<'hir> PipelineOperation<'hir, HirModule<'hir>, HirModule<'hir>> for TypeCheckOperation {
+impl<'c> PipelineOperation<'c, HirModule<'c>, HirModule<'c>> for TypeCheckOperation {
     fn execute(
-        pipeline: &'hir Pipeline<'hir>,
-        mut input: HirModule<'hir>,
-    ) -> Result<HirModule<'hir>, PipelineError> {
+        pipeline: &'c Pipeline<'c>,
+        mut input: HirModule<'c>,
+    ) -> Result<HirModule<'c>, PipelineError> {
         let query_database = HirSignatureQueryDatabase::new(input.signature);
         pipeline
             .hir_query_database

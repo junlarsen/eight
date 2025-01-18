@@ -1,5 +1,6 @@
+use crate::MirModule;
 use eight_diagnostics::ice;
-use pretty::{Arena, DocBuilder};
+use pretty::{Arena, DocAllocator, DocBuilder};
 
 #[derive(Default)]
 pub struct MirModuleTextualPass<'a> {
@@ -15,5 +16,13 @@ impl<'a> MirModuleTextualPass<'a> {
         doc.render(80, &mut w)
             .unwrap_or_else(|_| ice!("failed to render hir module"));
         String::from_utf8(w).unwrap()
+    }
+
+    pub fn visit_module<'hir: 'a>(&'a self, _: &'hir MirModule<'hir>) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("mir_module")
+            .append(self.arena.space())
+            .append(self.arena.text("{"))
+            .append(self.arena.text("}"))
     }
 }

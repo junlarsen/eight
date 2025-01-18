@@ -8,12 +8,12 @@ use eight_hir::HirModule;
 pub struct HirEmitOperation;
 
 impl HirEmitOperation {
-    pub fn decode<'hir: 'a, 'a>(
-        pipeline: &'hir Pipeline<'hir>,
+    pub fn decode<'c: 'p, 'p>(
+        pipeline: &'c Pipeline<'c>,
         query: &HirEmitQuery,
-        module: &'a HirModule<'hir>,
-        textual_pass: &'a HirModuleTextualPass<'a>,
-    ) -> Result<Document<'a>, PipelineError> {
+        module: &'p HirModule<'c>,
+        textual_pass: &'p HirModuleTextualPass<'p>,
+    ) -> Result<Document<'p>, PipelineError> {
         match query {
             HirEmitQuery::Function(name) => {
                 // TODO: This shouldn't really happen...

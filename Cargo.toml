@@ -6,10 +6,12 @@ members = [
     "compiler/eight-hir",
     "compiler/eight-mir",
     "compiler/eight-macros",
+    "compiler/eight-middle",
     "compiler/eight-span",
     "compiler/eight-syntax",
     "compiler/eight-tests",
-    "tools/eight-not", "tools/eight-xtask", "compiler/eight-middle",
+    "tools/eight-not",
+    "tools/eight-xtask",
 ]
 
 [profile.dev.package]

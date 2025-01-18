@@ -1,5 +1,7 @@
 use crate::operations::emit_ast::AstEmitOperation;
 use crate::operations::emit_hir::HirEmitOperation;
+use crate::operations::emit_mir::EmitMirOperation;
+use crate::operations::hir_lower::HirLowerOperation;
 use crate::operations::parse::ParseOperation;
 use crate::operations::syntax_lower::SyntaxLowerOperation;
 use crate::operations::type_check::TypeCheckOperation;
@@ -8,6 +10,8 @@ use eight_diagnostics::ice;
 use eight_hir::arena::HirArena;
 use eight_hir::error::HirError;
 use eight_hir::query::HirSignatureQueryDatabase;
+use eight_mir::arena::MirArena;
+use eight_mir::error::MirError;
 use eight_syntax::arena::AstArena;
 use eight_syntax::error::ParseError;
 use miette::Diagnostic;
@@ -25,7 +29,9 @@ pub fn execute_compilation_pipeline(
     let tu = AstEmitOperation::execute(&pipeline, tu)?;
     let module = SyntaxLowerOperation::execute(&pipeline, tu)?;
     let module = TypeCheckOperation::execute(&pipeline, module)?;
-    let _ = HirEmitOperation::execute(&pipeline, module)?;
+    let module = HirEmitOperation::execute(&pipeline, module)?;
+    let module = HirLowerOperation::execute(&pipeline, module)?;
+    let _ = EmitMirOperation::execute(&pipeline, module)?;
     Ok(())
 }
 
@@ -37,6 +43,9 @@ pub enum PipelineError {
     #[diagnostic(transparent)]
     #[error(transparent)]
     HirError(#[from] HirError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    MirError(#[from] MirError),
 }
 
 /// Options for the compilation pipeline.
@@ -45,6 +54,7 @@ pub enum PipelineError {
 pub struct PipelineOptions {
     pub emit_ast: bool,
     pub emit_hir: bool,
+    pub emit_mir: bool,
     pub queries: Vec<EmitQuery>,
 }
 
@@ -53,6 +63,7 @@ pub struct Pipeline<'c> {
     pub(crate) opts: PipelineOptions,
     pub(crate) ast_arena: ManuallyDrop<AstArena<'c>>,
     pub(crate) hir_arena: ManuallyDrop<HirArena<'c>>,
+    pub(crate) mir_arena: ManuallyDrop<MirArena<'c>>,
     pub(crate) hir_query_database: OnceCell<HirSignatureQueryDatabase<'c>>,
 }
 
@@ -62,6 +73,7 @@ impl<'c> Pipeline<'c> {
             opts,
             ast_arena: ManuallyDrop::new(AstArena::default()),
             hir_arena: ManuallyDrop::new(HirArena::default()),
+            mir_arena: ManuallyDrop::new(MirArena::default()),
             hir_query_database: OnceCell::new(),
         }
     }

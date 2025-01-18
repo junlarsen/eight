@@ -3,13 +3,13 @@ use eight_syntax::ast::AstTranslationUnit;
 
 /// Operation for emitting the AST.
 pub struct AstEmitOperation {}
-impl<'ast> PipelineOperation<'ast, AstTranslationUnit<'ast>, AstTranslationUnit<'ast>>
+impl<'c> PipelineOperation<'c, AstTranslationUnit<'c>, AstTranslationUnit<'c>>
     for AstEmitOperation
 {
     fn execute(
-        pipeline: &'ast Pipeline<'ast>,
-        input: AstTranslationUnit<'ast>,
-    ) -> Result<AstTranslationUnit<'ast>, PipelineError> {
+        pipeline: &'c Pipeline<'c>,
+        input: AstTranslationUnit<'c>,
+    ) -> Result<AstTranslationUnit<'c>, PipelineError> {
         if !pipeline.opts.emit_ast {
             return Ok(input);
         }

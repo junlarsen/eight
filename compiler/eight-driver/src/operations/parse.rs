@@ -5,11 +5,11 @@ use eight_syntax::parser::Parser;
 
 /// Operation for parsing the input source into an AST.
 pub struct ParseOperation {}
-impl<'ast, T: AsRef<str>> PipelineOperation<'ast, T, AstTranslationUnit<'ast>> for ParseOperation {
+impl<'c, T: AsRef<str>> PipelineOperation<'c, T, AstTranslationUnit<'c>> for ParseOperation {
     fn execute(
-        pipeline: &'ast Pipeline<'ast>,
+        pipeline: &'c Pipeline<'c>,
         input: T,
-    ) -> Result<AstTranslationUnit<'ast>, PipelineError> {
+    ) -> Result<AstTranslationUnit<'c>, PipelineError> {
         let mut lexer = Lexer::new(input.as_ref());
         let mut parser = Parser::new(&mut lexer, &pipeline.ast_arena);
         let translation_unit = parser.parse()?;
