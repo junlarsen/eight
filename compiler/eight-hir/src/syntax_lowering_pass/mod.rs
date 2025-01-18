@@ -442,7 +442,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             node.name.span,
             signature,
             Vec::new(),
-            LinkageType::Eight,
+            LinkageType::External,
         ))
     }
 
