@@ -1,36 +1,29 @@
-use crate::instruction::{MirCallInstruction, MirLoadInstruction, MirStoreInstruction};
+use crate::instruction::MirInstructionId;
 use crate::ty::MirType;
+use crate::MirBasicBlockId;
 
-/// Anything that can be referenced as a value in the MIR.
-#[derive(Debug)]
-pub struct MirValue<'mir> {
-    pub ty: &'mir MirType<'mir>,
-    pub val: MirValueKind<'mir>,
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct MirValueId(pub usize);
 
 /// The kind of value that is being referenced.
 ///
 /// This is loosely modeled after the LLVM IR Value class.
 #[derive(Debug)]
-pub enum MirValueKind<'mir> {
+pub enum MirValue<'mir> {
+    /// This is a constant integer value
     ConstantInteger(MirConstantInteger<'mir>),
-    LoadInstruction(MirLoadInstruction<'mir>),
-    StoreInstruction(MirStoreInstruction<'mir>),
-    CallInstruction(MirCallInstruction<'mir>),
-    Local(MirLocal<'mir>),
+    /// This is a function argument that was passed to the function.
     Argument(MirArgument<'mir>),
+    /// This refers to an instruction.
+    Instruction(MirInstructionId),
+    /// This refers to the label of a basic block.
+    Label(MirBasicBlockId),
 }
 
 #[derive(Debug)]
 pub struct MirConstantInteger<'mir> {
     pub ty: &'mir MirType<'mir>,
     pub value: i64,
-}
-
-#[derive(Debug)]
-pub struct MirLocal<'mir> {
-    pub name: &'mir str,
-    pub ty: &'mir MirType<'mir>,
 }
 
 #[derive(Debug)]

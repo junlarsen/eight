@@ -1,5 +1,5 @@
 use crate::ty::MirType;
-use crate::{MirFunction, MirModule};
+use crate::{MirBasicBlock, MirFunction, MirModule};
 use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
@@ -11,17 +11,17 @@ pub struct MirModuleTextualPass<'a> {
 pub type Document<'a> = DocBuilder<'a, Arena<'a>>;
 
 impl<'a> MirModuleTextualPass<'a> {
-    // TODO: Consider moving/deduplicating this from the HIR Module pass
+    // TODO: Consider moving/deduplicating this from the mir Module pass
     pub fn format_doc_to_string(doc: DocBuilder<'a, Arena<'a>>) -> String {
         let mut w = Vec::new();
         doc.render(80, &mut w)
-            .unwrap_or_else(|_| ice!("failed to render hir module"));
+            .unwrap_or_else(|_| ice!("failed to render mir module"));
         String::from_utf8(w).unwrap()
     }
 
-    pub fn visit_module<'hir: 'a>(
+    pub fn visit_module<'mir: 'a>(
         &'a self,
-        module: &'hir MirModule<'hir>,
+        module: &'mir MirModule<'mir>,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("mir_module")
@@ -31,6 +31,7 @@ impl<'a> MirModuleTextualPass<'a> {
                 self.arena
                     .hardline()
                     .append("// module functions")
+                    .append(self.arena.hardline())
                     .append(
                         self.arena.intersperse(
                             module
@@ -62,9 +63,9 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.text("}"))
     }
 
-    pub fn visit_extern_function<'hir: 'a>(
+    pub fn visit_extern_function<'mir: 'a>(
         &'a self,
-        function: &'hir MirFunction<'hir>,
+        function: &'mir MirFunction<'mir>,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("mir_extern_function")
@@ -89,9 +90,9 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.text(";"))
     }
 
-    pub fn visit_function<'hir: 'a>(
+    pub fn visit_function<'mir: 'a>(
         &'a self,
-        function: &'hir MirFunction<'hir>,
+        function: &'mir MirFunction<'mir>,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
             .text("mir_function")
@@ -115,18 +116,32 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.visit_type(function.ty.return_type))
             .append(self.arena.space())
             .append(self.arena.text("{"))
-            .append(
-                self.arena
-                    .hardline()
-                    .append(self.arena.text("body"))
-                    .nest(2)
-                    .group(),
-            )
+            .append(self.arena.hardline())
+            .append(self.arena.intersperse(
+                function.blocks.values().map(|b| self.visit_basic_block(b)),
+                self.arena.hardline(),
+            ))
             .append(self.arena.hardline())
             .append(self.arena.text("}"))
     }
 
-    pub fn visit_type<'hir: 'a>(&'a self, ty: &'hir MirType) -> DocBuilder<Arena<'a>> {
+    pub fn visit_basic_block<'mir: 'a>(
+        &'a self,
+        block: &'mir MirBasicBlock<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text(block.name)
+            .append(self.arena.text(":"))
+            .append(
+                self.arena
+                    .hardline()
+                    .append(self.arena.text("mov a b"))
+                    .nest(2)
+                    .group(),
+            )
+    }
+
+    pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirType) -> DocBuilder<Arena<'a>> {
         match ty {
             MirType::Integer32(_) => self.arena.text("i32"),
             MirType::Bool(_) => self.arena.text("bool"),

@@ -70,6 +70,22 @@ pub enum MirType<'mir> {
     Function(MirFunctionType<'mir>),
 }
 
+impl<'mir> MirType<'mir> {
+    /// Get the size of the type in bytes.
+    ///
+    /// This is currently hard-coded for x86-64 and will need to be populated with target info once
+    /// that has been added.
+    pub fn get_size(&self) -> usize {
+        match self {
+            MirType::Integer32(_) => 32,
+            MirType::Bool(_) => 1,
+            MirType::Void(_) => 0,
+            MirType::Pointer(_) => 64,
+            MirType::Function(_) => unimplemented!(),
+        }
+    }
+}
+
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub struct MirInteger32Type;
 
