@@ -112,6 +112,12 @@ pub struct HirFunctionSignature<'hir> {
     pub return_type_annotation: Option<Span>,
 }
 
+impl<'hir> HirFunctionSignature<'hir> {
+    pub fn is_generic(&self) -> bool {
+        !self.type_parameters.is_empty()
+    }
+}
+
 /// A signature for a single parameter of a function.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]

@@ -287,11 +287,8 @@ dependencies = [
  "eight-hir",
  "eight-macros",
  "eight-middle",
- "insta",
  "miette",
  "pretty",
- "ron 0.8.1",
- "serde",
  "thiserror 2.0.11",
 ]
 

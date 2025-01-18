@@ -17,6 +17,7 @@ impl<'arena> StringInterner<'arena> {
         }
     }
 
+    /// Intern the given name into the interner.
     pub fn get(&'arena self, name: &str) -> &'arena str {
         if let Some(interned) = self.intern.borrow().get(name) {
             return interned;
@@ -24,5 +25,10 @@ impl<'arena> StringInterner<'arena> {
         let id = self.allocator.alloc_str(name);
         self.intern.borrow_mut().insert(id);
         id
+    }
+
+    /// Shorthand for getting the name of usize as a &str.
+    pub fn get_usize(&'arena self, id: usize) -> &'arena str {
+        self.get(&id.to_string())
     }
 }

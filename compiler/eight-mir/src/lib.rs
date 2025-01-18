@@ -1,18 +1,18 @@
-use eight_middle::LinkageType;
+use crate::ty::MirFunctionType;
 use instruction::MirInstruction;
 use std::collections::BTreeMap;
 
 pub mod arena;
+pub mod builder;
 pub mod error;
 pub mod hir_lowering_pass;
 pub mod instruction;
 pub mod textual_pass;
+pub mod ty;
 pub mod value;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
 pub struct MirModule<'mir> {
-    pub structs: BTreeMap<&'mir str, MirStruct<'mir>>,
     pub functions: BTreeMap<&'mir str, MirFunction<'mir>>,
 }
 
@@ -22,36 +22,21 @@ impl<'mir> MirModule<'mir> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct MirFunction<'mir> {
     pub name: &'mir str,
-    pub arguments: Vec<(&'mir str, MirType)>,
-    pub return_type: MirType,
+    pub ty: &'mir MirFunctionType<'mir>,
     pub basic_blocks: Vec<MirBlock<'mir>>,
-    pub linkage_type: LinkageType,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-pub struct MirStruct<'mir> {
-    pub name: &'mir str,
-    pub fields: Vec<(&'mir str, MirType)>,
+impl<'mir> MirFunction<'mir> {
+    pub fn is_external(&self) -> bool {
+        self.basic_blocks.is_empty()
+    }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct MirBlock<'mir> {
     pub name: &'mir str,
     pub instructions: Vec<MirInstruction<'mir>>,
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-pub enum MirType {
-    Integer32,
-    Bool,
-    Void,
-    Pointer,
-    Struct { fields: Vec<MirType> },
 }

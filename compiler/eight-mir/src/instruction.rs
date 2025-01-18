@@ -1,42 +1,37 @@
+use crate::ty::MirType;
 use crate::value::{MirLocal, MirValue};
-use crate::MirType;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum MirInstruction<'mir> {
-    Alloca(MirAllocaInstruction),
+    Alloca(MirAllocaInstruction<'mir>),
     Load(MirLoadInstruction<'mir>),
     Store(MirStoreInstruction<'mir>),
     Call(MirCallInstruction<'mir>),
 }
 
 /// The `mem.alloca` instruction.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub struct MirAllocaInstruction {
-    pub ty: MirType,
+pub struct MirAllocaInstruction<'mir> {
+    pub ty: &'mir MirType<'mir>,
     pub size: i32,
 }
 
 /// The `mem.load` instruction.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct MirLoadInstruction<'mir> {
-    pub ty: MirType,
+    pub ty: &'mir MirType<'mir>,
     pub src: MirLocal<'mir>,
 }
 
 /// The `mem.store` instruction.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct MirStoreInstruction<'mir> {
-    pub ty: MirType,
+    pub ty: &'mir MirType<'mir>,
     pub value: Box<MirValue<'mir>>,
     pub dest: MirLocal<'mir>,
 }
 
 /// The `fn.call` instruction.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct MirCallInstruction<'mir> {
     pub callee: &'mir str,
