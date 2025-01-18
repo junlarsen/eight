@@ -15,7 +15,7 @@ use crate::expr::{
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirInstance, HirType, HirStruct, HirTrait};
+use crate::item::{HirFunction, HirInstance, HirStruct, HirTrait, HirType};
 use crate::signature::{
     HirFunctionSignature, HirInstanceSignature, HirModuleSignature, HirTraitSignature,
 };

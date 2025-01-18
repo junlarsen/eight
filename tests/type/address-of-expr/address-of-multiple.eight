@@ -1,4 +1,4 @@
-// RUN: %eightc --emit-hir --emit-query hir.fn.test_multi --emit-query hir.fn.test_climb %s | %fc %s
+// RUN: %eightc --emit-hir --syntax-only --emit-query hir.fn.test_multi --emit-query hir.fn.test_climb %s | %fc %s
 
 fn test_multi() {
 // CHECK-LABEL: test_multi

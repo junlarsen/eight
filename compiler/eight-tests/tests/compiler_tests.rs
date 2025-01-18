@@ -22,5 +22,5 @@ macro_rules! compiler_test_suite {
     }
 }
 
-compiler_test_suite!(syntax, "syntax", ["--emit-ast"]);
-compiler_test_suite!(syntax_lowering, "syntax-lowering", ["--emit-hir"]);
+compiler_test_suite!(syntax, "syntax", ["--emit-ast", "--syntax-only"]);
+compiler_test_suite!(syntax_lowering, "syntax-lowering", ["--emit-hir", "--syntax-only"]);

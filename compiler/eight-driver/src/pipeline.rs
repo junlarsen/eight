@@ -37,15 +37,24 @@ pub fn execute_compilation_pipeline(
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum PipelineError {
+    /// Error propagated from the parser.
     #[error(transparent)]
     #[diagnostic(transparent)]
-    LexerError(#[from] ParseError),
+    ParseError(#[from] ParseError),
+
+    /// Error propagated from the HIR passes.
     #[diagnostic(transparent)]
     #[error(transparent)]
     HirError(#[from] HirError),
+
+    /// Error propagated from the MIR passes.
     #[error(transparent)]
     #[diagnostic(transparent)]
     MirError(#[from] MirError),
+
+    /// Stop token to abort the compilation pipeline.
+    #[error("compilation flags caused early termination: {0}")]
+    StopToken(String),
 }
 
 /// Options for the compilation pipeline.
@@ -55,6 +64,7 @@ pub struct PipelineOptions {
     pub emit_ast: bool,
     pub emit_hir: bool,
     pub emit_mir: bool,
+    pub syntax_only: bool,
     pub queries: Vec<EmitQuery>,
 }
 
@@ -84,12 +94,6 @@ impl<'c> Pipeline<'c> {
             ice!("failed to get query database, are you sure the hir lowering has been executed?")
         })
     }
-}
-
-/// Enum describing how crucial a pass in the pipeline is.
-pub enum PipelineRequirement {
-    Required,
-    Optional,
 }
 
 /// Trait for executing an operation in the pipeline.

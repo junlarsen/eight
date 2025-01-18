@@ -5,6 +5,7 @@ info:
   program: eightc
   args:
     - "--emit-ast"
+    - "--syntax-only"
     - tests/syntax/intrinsic_declaration.test
 input_file: compiler/eight-tests/tests/syntax/intrinsic_declaration.test
 snapshot_kind: text
@@ -14,7 +15,7 @@ exit_code: 0
 ----- stdout -----
 (
     items: [
-        IntrinsicFunction((
+        Function((
             span: (
                 low: 0,
                 high: 40,
@@ -62,7 +63,7 @@ exit_code: 0
                     ),
                 ),
             ],
-            return_type: Pointer((
+            return_type: Some(Pointer((
                 span: (
                     low: 37,
                     high: 39,
@@ -80,9 +81,12 @@ exit_code: 0
                         ),
                     ),
                 )),
-            )),
+            ))),
+            body: [],
+            is_intrinsic: true,
         )),
     ],
 )
 
 ----- stderr -----
+eightc: early termination due to: --syntax-only

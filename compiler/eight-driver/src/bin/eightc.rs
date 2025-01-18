@@ -1,5 +1,5 @@
 use clap::Parser;
-use eight_driver::pipeline::{execute_compilation_pipeline, PipelineOptions};
+use eight_driver::pipeline::{execute_compilation_pipeline, PipelineError, PipelineOptions};
 use eight_driver::query::{EmitQuery, QueryError};
 use miette::NamedSource;
 use std::io::BufRead;
@@ -25,6 +25,10 @@ struct AppArgs {
     /// Emission queries to specify which nodes should be emitted.
     #[arg(long)]
     emit_query: Option<Vec<String>>,
+
+    /// Disable the backend, and only execute the frontend.
+    #[arg(long, default_value = "false")]
+    syntax_only: bool,
 }
 
 // NOTE: We don't care to use From here, because the PipelineOptions should be completely
@@ -42,6 +46,7 @@ impl TryInto<PipelineOptions> for AppArgs {
             emit_ast: self.emit_ast,
             emit_hir: self.emit_hir,
             emit_mir: self.emit_mir,
+            syntax_only: self.syntax_only,
             queries,
         })
     }
@@ -62,7 +67,14 @@ fn main() -> miette::Result<()> {
 
     let result = || -> miette::Result<()> {
         let options = args.try_into()?;
-        execute_compilation_pipeline(options, &source)?;
+        match execute_compilation_pipeline(options, &source) {
+            Ok(_) => Ok(()),
+            Err(PipelineError::StopToken(msg)) => {
+                eprintln!("eightc: early termination due to: {}", msg);
+                std::process::exit(0);
+            }
+            Err(e) => Err(e),
+        }?;
         Ok(())
     }();
     result.map_err(|e| e.with_source_code(source_code))?;

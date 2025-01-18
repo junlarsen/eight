@@ -4,7 +4,7 @@ use crate::error::{
     BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
 };
 use crate::expr::{HirBinaryOp, HirConstructExprArgument, HirExpr, HirUnaryOp};
-use crate::item::{HirFunction, HirInstance, HirType, HirStruct, HirTrait};
+use crate::item::{HirFunction, HirInstance, HirStruct, HirTrait, HirType};
 use crate::signature::{
     HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirModuleSignature,
     HirStructFieldSignature, HirStructSignature, HirTraitSignature, HirTypeParameterSignature,
@@ -20,10 +20,9 @@ use eight_syntax::ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBracketIndexExpr,
     AstBreakStmt, AstCallExpr, AstConstructExpr, AstConstructorExprArgument, AstContinueStmt,
     AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstFunctionItem, AstFunctionParameterItem,
-    AstGroupExpr, AstIfStmt, AstInstanceItem, AstIntegerLiteralExpr,
-    AstTypeItem, AstItem, AstLetStmt, AstReferenceExpr, AstReturnStmt, AstStmt,
-    AstStructItem, AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType,
-    AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
+    AstGroupExpr, AstIfStmt, AstInstanceItem, AstIntegerLiteralExpr, AstItem, AstLetStmt,
+    AstReferenceExpr, AstReturnStmt, AstStmt, AstStructItem, AstTraitFunctionItem, AstTraitItem,
+    AstTranslationUnit, AstType, AstTypeItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
 use std::collections::{BTreeMap, VecDeque};
 
@@ -447,10 +446,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         Ok(hir)
     }
 
-    pub fn visit_type_item(
-        &mut self,
-        node: &'ast AstTypeItem,
-    ) -> HirResult<HirType<'hir>> {
+    pub fn visit_type_item(&mut self, node: &'ast AstTypeItem) -> HirResult<HirType<'hir>> {
         let name = self.arena.names().get(&node.name.name);
         let signature = self.arena.intern(HirTypeSignature {
             span: node.span,

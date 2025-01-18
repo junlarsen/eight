@@ -1,4 +1,4 @@
-// RUN: %eightc --emit-hir --emit-query hir.fn.test %s | %fc %s
+// RUN: %eightc --emit-hir --syntax-only --emit-query hir.fn.test %s | %fc %s
 
 intrinsic_fn garbage<T>(a: T) -> T;
 
