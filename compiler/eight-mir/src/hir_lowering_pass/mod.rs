@@ -244,7 +244,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             .iter()
             .map(|a| self.visit_expr(builder, cx, a))
             .collect::<MirResult<Vec<_>>>()?;
-        let return_ty = self.arena.types().get_i32_type();
+        let return_ty = self.visit_ty(expr.ty)?;
         let call = builder.build_call(cx, callee, arguments, return_ty, None);
         Ok(call)
     }

@@ -202,8 +202,6 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.visit_value(value, owner))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_type(instruction.dest_ty))
-            .append(self.arena.space())
             .append(self.visit_value(dest, owner))
     }
 

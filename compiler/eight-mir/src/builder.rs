@@ -269,7 +269,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
             name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
             ty: self.arena.types().get_void_type(),
             // Stores are always into pointer types
-            dest_ty: self.arena.types().get_pointer_type(v.ty(self, cx)),
+            dest_ty: v.ty(self, cx),
             value,
             dest,
         });
