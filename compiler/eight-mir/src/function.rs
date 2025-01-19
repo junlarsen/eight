@@ -18,16 +18,15 @@ impl<'mir> MirFunctionData<'mir> {
     }
 
     /// Get the instruction with the given id.
-    pub fn get_instruction(&self, id: MirInstructionId) -> Option<&MirInstruction<'mir>> {
-        self.instructions.get(&id)
+    pub fn get_instruction(&self, id: MirInstructionId) -> &MirInstruction<'mir> {
+        self.instructions
+            .get(&id)
+            .unwrap_or_else(|| ice!(format!("missing instruction {}", id.0)))
     }
 
     /// Get the type the instruction evaluates to.
     pub fn get_instruction_type(&self, id: MirInstructionId) -> &'mir MirType<'mir> {
-        match self
-            .get_instruction(id)
-            .unwrap_or_else(|| ice!("missing instruction"))
-        {
+        match self.get_instruction(id) {
             MirInstruction::Alloca(i) => i.ty,
             MirInstruction::Store(i) => i.ty,
             MirInstruction::Call(i) => i.ty,
@@ -40,8 +39,10 @@ impl<'mir> MirFunctionData<'mir> {
     }
 
     /// Get the basic block with the given id.
-    pub fn get_basic_block(&self, id: MirBasicBlockId) -> Option<&MirBasicBlock<'mir>> {
-        self.blocks.get(&id)
+    pub fn get_basic_block(&self, id: MirBasicBlockId) -> &MirBasicBlock<'mir> {
+        self.blocks
+            .get(&id)
+            .unwrap_or_else(|| ice!(format!("missing block {}", id.0)))
     }
 
     pub fn values(&self) -> impl Iterator<Item = &MirValue<'mir>> {
@@ -49,15 +50,17 @@ impl<'mir> MirFunctionData<'mir> {
     }
 
     /// Get the value with the given id.
-    pub fn get_value(&self, id: MirValueId) -> Option<&MirValue<'mir>> {
-        self.values.get(&id)
+    pub fn get_value(&self, id: MirValueId) -> &MirValue<'mir> {
+        self.values
+            .get(&id)
+            .unwrap_or_else(|| ice!(format!("missing value {}", id.0)))
     }
 
     /// Get the type of the value with the given id.
     ///
     /// This function panics if the value does not exist.
     pub fn get_value_type(&self, id: MirValueId) -> &'mir MirType<'mir> {
-        match self.get_value(id).unwrap_or_else(|| ice!("missing value")) {
+        match self.get_value(id) {
             MirValue::ConstantInteger32(i) => i.ty,
             MirValue::ConstantBool(i) => i.ty,
             MirValue::Argument(a) => a.ty,

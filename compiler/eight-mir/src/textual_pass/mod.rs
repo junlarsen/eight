@@ -135,10 +135,8 @@ impl<'a> MirModuleTextualPass<'a> {
                     .hardline()
                     .append(self.arena.intersperse(
                         node.instructions.iter().map(|i| {
-                            let inst = fcx
-                                .get_instruction(*i)
-                                .expect("malformed mir: missing instruction reference");
-                            self.visit_instruction(mcx, fcx, inst)
+                            self.visit_instruction(mcx, fcx, fcx
+                                .get_instruction(*i))
                         }),
                         self.arena.hardline(),
                     ))
@@ -182,23 +180,16 @@ impl<'a> MirModuleTextualPass<'a> {
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirStoreInstruction<'mir>,
     ) -> DocBuilder<Arena<'a>> {
-        let value = fcx
-            .get_value(node.value)
-            .expect("malformed mir: missing value reference");
-        let dest = fcx
-            .get_value(node.dest)
-            .expect("malformed mir: missing value reference");
-
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
             .append(self.arena.text(" = "))
             .append(self.arena.text("mem.store"))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, value))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.value)))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, dest))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.dest)))
     }
 
     pub fn visit_call_instruction<'mir: 'a>(
@@ -218,12 +209,12 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.visit_value(
                 mcx,
                 fcx,
-                fcx.get_value(node.callee).expect("missing callee"),
+                fcx.get_value(node.callee),
             ))
             .append(self.arena.text("("))
             .append(self.arena.intersperse(
                 node.arguments.iter().map(|a| {
-                    self.visit_value(mcx, fcx, fcx.get_value(*a).expect("missing argument"))
+                    self.visit_value(mcx, fcx, fcx.get_value(*a))
                 }),
                 self.arena.text(","),
             ))
@@ -244,7 +235,7 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_type(node.ty))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.src).expect("missing src")))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.src)))
     }
 
     pub fn visit_value<'mir: 'a>(
@@ -291,9 +282,7 @@ impl<'a> MirModuleTextualPass<'a> {
         node: &'mir MirInstructionId,
     ) -> DocBuilder<Arena<'a>> {
         self.visit_type(
-            fcx.get_instruction(*node)
-                .expect("missing instruction")
-                .ty(),
+            fcx.get_instruction(*node).ty(),
         )
         .append(self.arena.space())
         .append(self.arena.text("%"))
