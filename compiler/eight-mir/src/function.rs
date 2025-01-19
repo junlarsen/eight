@@ -1,9 +1,10 @@
+use crate::bb::{MirBasicBlock, MirBasicBlockId};
 use crate::instruction::{MirInstruction, MirInstructionId};
 use crate::ty::{MirFunctionType, MirType};
 use crate::value::{MirValue, MirValueId};
-use crate::{MirBasicBlock, MirBasicBlockId};
 use eight_diagnostics::ice;
 use std::collections::BTreeMap;
+use std::ops::Deref;
 
 #[derive(Debug, Default)]
 pub struct MirFunctionData<'mir> {
@@ -103,5 +104,16 @@ impl<'mir> MirFunction<'mir> {
 
     pub fn ty(&self) -> &MirFunctionType<'mir> {
         self.ty
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct MirFunctionId(pub usize);
+
+impl Deref for MirFunctionId {
+    type Target = usize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

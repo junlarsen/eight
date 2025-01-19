@@ -1,7 +1,7 @@
 use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
 use eight_hir::HirModule;
 use eight_mir::hir_lowering_pass::MirModuleLoweringPass;
-use eight_mir::MirModule;
+use eight_mir::module::MirModule;
 
 /// Operation for lowering the HIR to MIR.
 pub struct HirLowerOperation {}

@@ -1,9 +1,9 @@
 use crate::arena::MirArena;
 use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::error::MirResult;
+use crate::module::MirModule;
 use crate::ty::MirType;
 use crate::value::MirValueId;
-use crate::MirModule;
 use eight_diagnostics::ice;
 use eight_hir::expr::{
     HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,

@@ -1,8 +1,8 @@
 use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
 use crate::query::{EmitQuery, MirEmitQuery};
 use eight_diagnostics::ice;
+use eight_mir::module::MirModule;
 use eight_mir::textual_pass::{Document, MirModuleTextualPass};
-use eight_mir::MirModule;
 
 pub struct EmitMirOperation {}
 

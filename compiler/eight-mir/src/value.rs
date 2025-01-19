@@ -1,6 +1,7 @@
+use crate::bb::MirBasicBlockId;
+use crate::function::MirFunctionId;
 use crate::instruction::MirInstructionId;
 use crate::ty::MirType;
-use crate::{MirBasicBlockId, MirFunctionId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct MirValueId(pub usize);

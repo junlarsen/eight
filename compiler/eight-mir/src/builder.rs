@@ -1,12 +1,13 @@
 use crate::arena::MirArena;
-use crate::function::{MirFunction, MirFunctionData};
+use crate::bb::{MirBasicBlock, MirBasicBlockId};
+use crate::function::{MirFunction, MirFunctionData, MirFunctionId};
 use crate::instruction::{
     MirAllocaInstruction, MirCallInstruction, MirInstruction, MirInstructionId, MirLoadInstruction,
     MirStoreInstruction,
 };
+use crate::module::{MirModule, MirModuleData};
 use crate::ty::{MirFunctionType, MirType};
 use crate::value::{MirArgument, MirConstantBool, MirConstantInteger32, MirValue, MirValueId};
-use crate::{MirBasicBlock, MirBasicBlockId, MirFunctionId, MirModule, MirModuleData};
 use eight_diagnostics::ice;
 use eight_hir::HirModule;
 
@@ -28,7 +29,7 @@ impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
     }
 
     pub fn build(self) -> MirModule<'mir> {
-        MirModule { data: self.data }
+        MirModule::new(self.data)
     }
 
     /// Reserve the next function id.
