@@ -9,15 +9,11 @@ use crate::value::{MirArgument, MirConstantBool, MirConstantInteger32, MirValue,
 use crate::{MirBasicBlock, MirBasicBlockId, MirFunctionId, MirModule, MirModuleData};
 use eight_diagnostics::ice;
 use eight_hir::HirModule;
-use std::collections::BTreeMap;
 
 pub struct MirModuleContext<'mir, 'hir> {
     arena: &'mir MirArena<'mir>,
     hir_module: &'hir HirModule<'hir>,
-    functions: BTreeMap<MirFunctionId, MirFunction<'mir>>,
-    function_types: BTreeMap<MirFunctionId, &'mir MirFunctionType<'mir>>,
-    function_names: BTreeMap<MirFunctionId, &'mir str>,
-    function_names_reverse: BTreeMap<&'mir str, MirFunctionId>,
+    data: MirModuleData<'mir>,
     function_id: usize,
 }
 
@@ -26,19 +22,13 @@ impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
         Self {
             arena,
             hir_module,
-            functions: BTreeMap::new(),
-            function_types: BTreeMap::new(),
-            function_names: BTreeMap::new(),
-            function_names_reverse: BTreeMap::new(),
             function_id: 0,
+            data: MirModuleData::default(),
         }
     }
 
     pub fn build(self) -> MirModule<'mir> {
-        let data = MirModuleData {
-            functions: self.functions,
-        };
-        MirModule { data }
+        MirModule { data: self.data }
     }
 
     /// Reserve the next function id.
@@ -50,33 +40,22 @@ impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
         let name = self.arena.names().get(name);
         let id = MirFunctionId(self.function_id);
         self.function_id += 1;
-        self.function_names.insert(id, name);
-        self.function_types.insert(id, ty);
-        self.function_names_reverse.insert(name, id);
+        self.data.function_names.insert(id, name);
+        self.data.function_types.insert(id, ty);
+        self.data.function_names_reverse.insert(name, id);
         id
     }
 
-    /// Get the function id for the given name.
-    pub fn get_function_id(&self, name: &'mir str) -> Option<MirFunctionId> {
-        self.function_names_reverse.get(name).copied()
-    }
-
-    /// Get the function name for the given id.
-    pub fn get_function_name(&self, id: MirFunctionId) -> Option<&'mir str> {
-        self.function_names.get(&id).copied()
-    }
-
-    /// Get the function type for the given id.
-    pub fn get_function_type(&self, id: MirFunctionId) -> Option<&'mir MirFunctionType<'mir>> {
-        self.function_types.get(&id).copied()
+    pub fn data(&self) -> &MirModuleData<'mir> {
+        &self.data
     }
 
     /// Provide the completed MIR function.
     pub fn implement_function(&mut self, id: MirFunctionId, fun: MirFunction<'mir>) {
-        if self.functions.contains_key(&id) {
+        if self.data.functions.contains_key(&id) {
             ice!("function already implemented");
         }
-        self.functions.insert(id, fun);
+        self.data.functions.insert(id, fun);
     }
 }
 

@@ -55,10 +55,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         // Generate the MIR code for all functions
         for function in module.body.functions.values() {
             let name = self.arena.names().get(function.name);
-            let Some(id) = module_builder.get_function_id(name) else {
+            let Some(id) = module_builder.data().get_function_id(name) else {
                 ice!(format!("failed to find function id for {}", function.name));
             };
-            let Some(ty) = module_builder.get_function_type(id) else {
+            let Some(ty) = module_builder.data().get_function_type(id) else {
                 ice!(format!(
                     "failed to find function type for {}",
                     function.name
@@ -218,7 +218,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         // function value.
         if expr.is_reference_to_function {
             let name = self.arena.names().get(expr.name);
-            let id = cx.get_function_id(name).unwrap_or_else(|| {
+            let id = cx.data().get_function_id(name).unwrap_or_else(|| {
                 ice!(format!(
                     "failed to find function id for {} despite passing type checker",
                     expr.name

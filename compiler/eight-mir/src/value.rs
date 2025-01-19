@@ -31,7 +31,7 @@ impl<'mir> MirValue<'mir> {
             MirValue::Argument(a) => a.ty,
             MirValue::Instruction(i) => b.get_instruction(*i).expect("missing instruction").ty(),
             MirValue::Function(f) => {
-                cx.get_function_type(*f)
+                cx.data().get_function_type(*f)
                     .expect("missing function type")
                     .return_type
             }

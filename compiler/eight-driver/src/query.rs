@@ -39,6 +39,7 @@ pub enum QueryError {
 #[derive(Debug)]
 pub enum EmitQuery {
     Hir(HirEmitQuery),
+    Mir(MirEmitQuery),
 }
 
 impl EmitQuery {
@@ -60,6 +61,10 @@ impl EmitQuery {
             "hir" => {
                 let (_, query) = complete(HirEmitQuery::parse)(input)?;
                 Ok((input, Self::Hir(query)))
+            }
+            "mir" => {
+                let (_, query) = complete(MirEmitQuery::parse)(input)?;
+                Ok((input, Self::Mir(query)))
             }
             _ => unreachable!(),
         }
@@ -88,6 +93,32 @@ impl HirEmitQuery {
 
     /// Parse a `hir.fn` category query.
     fn parse_function_query(input: &str) -> IResult<&str, Self> {
+        let (input, name) = rest(input)?;
+        Ok((input, Self::Function(name.to_owned())))
+    }
+}
+
+#[derive(Debug)]
+pub enum MirEmitQuery {
+    /// Emit the MIR for this function
+    Function(String),
+}
+
+impl MirEmitQuery {
+    /// Parse a `mir.fn` category query.
+    pub fn parse(input: &str) -> IResult<&str, Self> {
+        let (input, category) = take_while(|c: char| c != '.')(input)?;
+        let (input, _) = char('.')(input)?;
+        match category {
+            "fn" => {
+                let (input, query) = Self::parse_function_query(input)?;
+                Ok((input, query))
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn parse_function_query(input: &str) -> IResult<&str, Self> {
         let (input, name) = rest(input)?;
         Ok((input, Self::Function(name.to_owned())))
     }

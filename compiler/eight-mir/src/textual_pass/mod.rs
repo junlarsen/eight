@@ -306,8 +306,11 @@ impl<'a> MirModuleTextualPass<'a> {
         _: &'mir MirFunctionData<'mir>,
         node: &'mir MirFunctionId,
     ) -> DocBuilder<Arena<'a>> {
-        self.arena
-            .text(mcx.get_function(*node).expect("missing function").name())
+        self.arena.text(
+            mcx.get_function_by_id(*node)
+                .expect("missing function")
+                .name(),
+        )
     }
 
     pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirType) -> DocBuilder<Arena<'a>> {
