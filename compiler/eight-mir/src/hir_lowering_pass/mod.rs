@@ -63,7 +63,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 ));
             };
             let mut builder = MirFunctionBuilder::new(self.arena, name, ty, id);
-            self.visit_function(function, &module_builder, &mut builder)?;
+            self.visit_function(function, &mut builder, &module_builder)?;
             module_builder.implement_function(id, builder.build());
         }
         Ok(module_builder.build())
@@ -72,8 +72,8 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_function(
         &mut self,
         node: &'hir HirFunction<'hir>,
-        cx: &MirModuleContext<'mir, 'hir>,
         b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
     ) -> MirResult<()> {
         assert!(
             !node.signature.is_generic(),
@@ -104,13 +104,13 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     /// Translate a statement into MIR.
     pub fn visit_stmt(
         &mut self,
-        builder: &mut MirFunctionBuilder<'mir>,
+        b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         stmt: &'hir HirStmt<'hir>,
     ) -> MirResult<()> {
         match stmt {
-            HirStmt::Let(s) => self.visit_let_stmt(builder, cx, s),
-            HirStmt::Expr(s) => self.visit_expr_stmt(builder, cx, s),
+            HirStmt::Let(s) => self.visit_let_stmt(b, cx, s),
+            HirStmt::Expr(s) => self.visit_expr_stmt(b, cx, s),
             HirStmt::Loop(_)
             | HirStmt::Return(_)
             | HirStmt::If(_)
@@ -140,13 +140,13 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     /// ```
     pub fn visit_let_stmt(
         &mut self,
-        builder: &mut MirFunctionBuilder<'mir>,
+        b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         stmt: &'hir HirLetStmt<'hir>,
     ) -> MirResult<()> {
-        let value = self.visit_expr(builder, cx, &stmt.value)?;
-        let ptr = builder.build_alloca(cx, self.arena.types().get_i32_type(), None);
-        builder.build_store(cx, value, ptr, None);
+        let value = self.visit_expr(b, cx, &stmt.value)?;
+        let ptr = b.build_alloca(cx, self.arena.types().get_i32_type(), None);
+        b.build_store(cx, value, ptr, None);
         let name = self.arena.names().get(stmt.name);
         self.locals.add(name, ptr);
         Ok(())
@@ -165,14 +165,14 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     /// Translate an expression into MIR.
     pub fn visit_expr(
         &mut self,
-        builder: &mut MirFunctionBuilder<'mir>,
+        b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirExpr<'hir>,
     ) -> MirResult<MirValueId> {
         match expr {
-            HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(builder, cx, e),
-            HirExpr::Reference(e) => self.visit_reference_expr(builder, cx, e),
-            HirExpr::Call(e) => self.visit_call_expr(builder, cx, e),
+            HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(b, cx, e),
+            HirExpr::Reference(e) => self.visit_reference_expr(b, cx, e),
+            HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
             HirExpr::BooleanLiteral(_)
             | HirExpr::Group(_)
             | HirExpr::AddressOf(_)
@@ -188,12 +188,11 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
 
     pub fn visit_integer_literal_expr(
         &mut self,
-        builder: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        b: &mut MirFunctionBuilder<'mir>,
+        _: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirIntegerLiteralExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        let inst =
-            builder.build_constant_integer(expr.value as i64, self.arena.types().get_i32_type());
+        let inst = b.build_constant_integer(expr.value as i64, self.arena.types().get_i32_type());
         Ok(inst)
     }
 
@@ -233,18 +232,18 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
 
     pub fn visit_call_expr(
         &mut self,
-        builder: &mut MirFunctionBuilder<'mir>,
+        b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirCallExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        let callee = self.visit_expr(builder, cx, &expr.callee)?;
+        let callee = self.visit_expr(b, cx, &expr.callee)?;
         let arguments = expr
             .arguments
             .iter()
-            .map(|a| self.visit_expr(builder, cx, a))
+            .map(|a| self.visit_expr(b, cx, a))
             .collect::<MirResult<Vec<_>>>()?;
         let return_ty = self.visit_ty(expr.ty)?;
-        let call = builder.build_call(cx, callee, arguments, return_ty, None);
+        let call = b.build_call(cx, callee, arguments, return_ty, None);
         Ok(call)
     }
 
