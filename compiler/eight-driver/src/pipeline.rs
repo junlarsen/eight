@@ -1,3 +1,4 @@
+use crate::operations::codegen_llvm::CodegenLLVMOperation;
 use crate::operations::emit_ast::AstEmitOperation;
 use crate::operations::emit_hir::HirEmitOperation;
 use crate::operations::emit_mir::EmitMirOperation;
@@ -31,7 +32,8 @@ pub fn execute_compilation_pipeline(
     let module = TypeCheckOperation::execute(&pipeline, module)?;
     let module = HirEmitOperation::execute(&pipeline, module)?;
     let module = HirLowerOperation::execute(&pipeline, module)?;
-    let _ = EmitMirOperation::execute(&pipeline, module)?;
+    let module = EmitMirOperation::execute(&pipeline, module)?;
+    let _: () = CodegenLLVMOperation::execute(&pipeline, module)?;
     Ok(())
 }
 

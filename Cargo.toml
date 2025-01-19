@@ -11,7 +11,7 @@ members = [
     "compiler/eight-syntax",
     "compiler/eight-tests",
     "tools/eight-not",
-    "tools/eight-xtask", "compiler/eight-std",
+    "tools/eight-xtask", "compiler/eight-std", "compiler/eight-codegen-llvm",
 ]
 
 [profile.dev.package]

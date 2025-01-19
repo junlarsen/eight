@@ -1,3 +1,4 @@
+pub mod codegen_llvm;
 pub mod emit_ast;
 pub mod emit_hir;
 pub mod emit_mir;
