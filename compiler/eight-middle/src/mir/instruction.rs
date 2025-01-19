@@ -43,17 +43,20 @@ impl<'mir> MirInstruction<'mir> {
 /// The `mem.alloca` instruction.
 #[derive(Debug)]
 pub struct MirAllocaInstruction<'mir> {
+    pub inst_id: MirInstructionId,
+    pub value_id: MirValueId,
     pub name: &'mir str,
     /// The type of the instruction itself. This is always the opaque pointer type for `mem.alloca`.
     pub ty: &'mir MirType<'mir>,
     /// The number (in bits) to allocate.
-    pub alloc_size: usize,
     pub alloc_ty: &'mir MirType<'mir>,
 }
 
 /// The `mem.load` instruction.
 #[derive(Debug)]
 pub struct MirLoadInstruction<'mir> {
+    pub value_id: MirValueId,
+    pub inst_id: MirInstructionId,
     pub name: &'mir str,
     /// The type being loaded
     pub ty: &'mir MirType<'mir>,
@@ -63,6 +66,7 @@ pub struct MirLoadInstruction<'mir> {
 /// The `mem.store` instruction.
 #[derive(Debug)]
 pub struct MirStoreInstruction<'mir> {
+    pub inst_id: MirInstructionId,
     pub name: &'mir str,
     pub value: MirValueId,
     /// The result of a store is always void
@@ -74,6 +78,8 @@ pub struct MirStoreInstruction<'mir> {
 /// The `fn.call` instruction.
 #[derive(Debug)]
 pub struct MirCallInstruction<'mir> {
+    pub inst_id: MirInstructionId,
+    pub value_id: MirValueId,
     pub name: &'mir str,
     pub callee: MirValueId,
     pub arguments: Vec<MirValueId>,
@@ -90,6 +96,8 @@ pub struct MirCallInstruction<'mir> {
 /// intrinsic.
 #[derive(Debug)]
 pub struct MirAddInstruction<'mir> {
+    pub inst_id: MirInstructionId,
+    pub value_id: MirValueId,
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,
@@ -101,6 +109,8 @@ pub struct MirAddInstruction<'mir> {
 /// Same lowering rules as `MirAddInstruction`.
 #[derive(Debug)]
 pub struct MirSubInstruction<'mir> {
+    pub inst_id: MirInstructionId,
+    pub value_id: MirValueId,
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,
@@ -112,6 +122,8 @@ pub struct MirSubInstruction<'mir> {
 /// Same lowering rules as `MirAddInstruction`.
 #[derive(Debug)]
 pub struct MirMulInstruction<'mir> {
+    pub inst_id: MirInstructionId,
+    pub value_id: MirValueId,
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,
@@ -123,6 +135,8 @@ pub struct MirMulInstruction<'mir> {
 /// Same lowering rules as `MirAddInstruction`.
 #[derive(Debug)]
 pub struct MirDivInstruction<'mir> {
+    pub inst_id: MirInstructionId,
+    pub value_id: MirValueId,
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,

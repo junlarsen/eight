@@ -21,18 +21,21 @@ pub enum MirValue<'mir> {
 
 #[derive(Debug)]
 pub struct MirConstantInteger32<'mir> {
+    pub value_id: MirValueId,
     pub ty: &'mir MirType<'mir>,
     pub value: i32,
 }
 
 #[derive(Debug)]
 pub struct MirConstantBool<'mir> {
+    pub value_id: MirValueId,
     pub ty: &'mir MirType<'mir>,
     pub value: bool,
 }
 
 #[derive(Debug)]
 pub struct MirArgument<'mir> {
+    pub value_id: MirValueId,
     pub name: &'mir str,
     pub ty: &'mir MirType<'mir>,
 }

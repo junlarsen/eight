@@ -155,13 +155,16 @@ impl<'mir> MirFunctionBuilder<'mir> {
         self.data.instructions.get(&id)
     }
 
+    /// Get the next value id.
+    pub fn get_next_value_id(&self) -> MirValueId {
+        MirValueId(self.value_id)
+    }
+
     /// Build a value.
     ///
     /// This function doesn't actually build the value, but it moves ownership of the value into the
     /// builder, and returns the value id.
-    fn build_value(&mut self, kind: MirValue<'mir>) -> MirValueId {
-        let id = self.value_id;
-        let id = MirValueId(id);
+    fn build_value(&mut self, id: MirValueId, kind: MirValue<'mir>) -> MirValueId {
         self.data.values.insert(id, kind);
         self.value_id += 1;
         id
@@ -193,25 +196,37 @@ impl<'mir> MirFunctionBuilder<'mir> {
 impl<'mir> MirFunctionBuilder<'mir> {
     /// Build a constant integer value.
     pub fn build_constant_integer32(&mut self, value: i32, ty: &'mir MirType<'mir>) -> MirValueId {
-        let inst = MirValue::ConstantInteger32(MirConstantInteger32 { value, ty });
-        self.build_value(inst)
+        let value_id = self.get_next_value_id();
+        let inst = MirValue::ConstantInteger32(MirConstantInteger32 {
+            value_id,
+            value,
+            ty,
+        });
+        self.build_value(value_id, inst)
     }
 
     pub fn build_constant_bool(&mut self, value: bool, ty: &'mir MirType<'mir>) -> MirValueId {
-        let inst = MirValue::ConstantBool(MirConstantBool { value, ty });
-        self.build_value(inst)
+        let value_id = self.get_next_value_id();
+        let inst = MirValue::ConstantBool(MirConstantBool {
+            value_id,
+            value,
+            ty,
+        });
+        self.build_value(value_id, inst)
     }
 
     /// Build an argument value
     pub fn build_argument(&mut self, name: &'mir str, ty: &'mir MirType<'mir>) -> MirValueId {
-        let inst = MirValue::Argument(MirArgument { name, ty });
-        self.build_value(inst)
+        let value_id = self.get_next_value_id();
+        let inst = MirValue::Argument(MirArgument { value_id, name, ty });
+        self.build_value(value_id, inst)
     }
 
     /// Build a reference to a function value.
     pub fn build_function_ref(&mut self, id: MirFunctionId) -> MirValueId {
+        let value_id = self.get_next_value_id();
         let inst = MirValue::Function(id);
-        self.build_value(inst)
+        self.build_value(value_id, inst)
     }
 
     /// Build a `mem.alloca` instruction.
@@ -221,17 +236,19 @@ impl<'mir> MirFunctionBuilder<'mir> {
         ty: &'mir MirType<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
         let inst = MirInstruction::Alloca(MirAllocaInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             // `mem.alloca` always yields a pointer type.
             ty: self.arena.types().get_pointer_type(ty),
-            alloc_size: ty.get_size(),
             alloc_ty: ty,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        self.build_value(value_id, MirValue::Instruction(inst))
     }
 
     /// Build a `mem.store` instruction.
@@ -241,19 +258,20 @@ impl<'mir> MirFunctionBuilder<'mir> {
         value: MirValueId,
         dest: MirValueId,
         name: Option<&'mir str>,
-    ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+    ) -> MirInstructionId {
+        let inst_id = self.get_next_instruction_id();
         let inst = MirInstruction::Store(MirStoreInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             ty: self.arena.types().get_void_type(),
             // Stores are always into pointer types
             dest_ty: self.data.get_value_type(value),
             value,
             dest,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        inst_id
     }
 
     /// Build a `mem.load` instruction.
@@ -264,15 +282,18 @@ impl<'mir> MirFunctionBuilder<'mir> {
         ty: &'mir MirType<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
         let inst = MirInstruction::Load(MirLoadInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             ty,
             src,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        self.build_value(value_id, MirValue::Instruction(inst))
     }
 
     /// Build a `fn.call` instruction.
@@ -284,16 +305,19 @@ impl<'mir> MirFunctionBuilder<'mir> {
         return_ty: &'mir MirType<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
         let inst = MirInstruction::Call(MirCallInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             callee,
             arguments,
             ty: return_ty,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        self.build_value(value_id, MirValue::Instruction(inst))
     }
 
     /// Build an `arith.add` instruction.
@@ -305,16 +329,19 @@ impl<'mir> MirFunctionBuilder<'mir> {
         ty: &'mir MirType<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
         let inst = MirInstruction::Add(MirAddInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             lhs,
             rhs,
             ty,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        self.build_value(value_id, MirValue::Instruction(inst))
     }
 
     /// Build an `arith.sub` instruction.
@@ -326,16 +353,19 @@ impl<'mir> MirFunctionBuilder<'mir> {
         ty: &'mir MirType<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
         let inst = MirInstruction::Sub(MirSubInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             lhs,
             rhs,
             ty,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        self.build_value(value_id, MirValue::Instruction(inst))
     }
 
     /// Build an `arith.mul` instruction.
@@ -347,16 +377,19 @@ impl<'mir> MirFunctionBuilder<'mir> {
         ty: &'mir MirType<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
         let inst = MirInstruction::Mul(MirMulInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             lhs,
             rhs,
             ty,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        self.build_value(value_id, MirValue::Instruction(inst))
     }
 
     /// Build an `arith.div` instruction.
@@ -368,15 +401,18 @@ impl<'mir> MirFunctionBuilder<'mir> {
         ty: &'mir MirType<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
-        let id = self.get_next_instruction_id();
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
         let inst = MirInstruction::Div(MirDivInstruction {
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
             lhs,
             rhs,
             ty,
         });
-        let inst = self.build_instruction(id, inst);
+        let inst = self.build_instruction(inst_id, inst);
         self.insertion_point_mut().insert(inst);
-        self.build_value(MirValue::Instruction(inst))
+        self.build_value(value_id, MirValue::Instruction(inst))
     }
 }

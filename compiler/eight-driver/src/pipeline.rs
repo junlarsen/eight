@@ -7,6 +7,7 @@ use crate::operations::parse::ParseOperation;
 use crate::operations::syntax_lower::SyntaxLowerOperation;
 use crate::operations::type_check::TypeCheckOperation;
 use crate::query::EmitQuery;
+use eight_codegen_llvm::error::LLVMBackendError;
 use eight_diagnostics::ice;
 use eight_hir::arena::HirArena;
 use eight_hir::error::HirError;
@@ -53,6 +54,11 @@ pub enum PipelineError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     MirError(#[from] MirError),
+
+    /// Error propagated from the LLVM backend.
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    LLVMBackendError(#[from] LLVMBackendError),
 
     /// Stop token to abort the compilation pipeline.
     #[error("compilation flags caused early termination: {0}")]
