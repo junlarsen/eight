@@ -5,7 +5,7 @@ use crate::instruction::{
     MirStoreInstruction,
 };
 use crate::ty::{MirFunctionType, MirType};
-use crate::value::{MirArgument, MirConstantInteger, MirValue, MirValueId};
+use crate::value::{MirArgument, MirConstantBool, MirConstantInteger32, MirValue, MirValueId};
 use crate::{MirBasicBlock, MirBasicBlockId, MirFunctionId, MirModule, MirModuleData};
 use eight_diagnostics::ice;
 use eight_hir::HirModule;
@@ -205,8 +205,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
 
 impl<'mir> MirFunctionBuilder<'mir> {
     /// Build a constant integer value.
-    pub fn build_constant_integer(&mut self, value: i64, ty: &'mir MirType<'mir>) -> MirValueId {
-        let inst = MirValue::ConstantInteger(MirConstantInteger { value, ty });
+    pub fn build_constant_integer32(&mut self, value: i32, ty: &'mir MirType<'mir>) -> MirValueId {
+        let inst = MirValue::ConstantInteger32(MirConstantInteger32 { value, ty });
+        self.build_value(inst)
+    }
+
+    pub fn build_constant_bool(&mut self, value: bool, ty: &'mir MirType<'mir>) -> MirValueId {
+        let inst = MirValue::ConstantBool(MirConstantBool { value, ty });
         self.build_value(inst)
     }
 

@@ -11,15 +11,11 @@ pub struct MirValueId(pub usize);
 /// This is loosely modeled after the LLVM IR Value class.
 #[derive(Debug)]
 pub enum MirValue<'mir> {
-    /// This is a constant integer value
-    ConstantInteger(MirConstantInteger<'mir>),
-    /// This is a function argument that was passed to the function.
+    ConstantInteger32(MirConstantInteger32<'mir>),
+    ConstantBool(MirConstantBool<'mir>),
     Argument(MirArgument<'mir>),
-    /// This refers to an instruction.
     Instruction(MirInstructionId),
-    /// This refers to the label of a basic block.
     Label(MirBasicBlockId),
-    /// This refers to a named function
     Function(MirFunctionId),
 }
 
@@ -30,7 +26,8 @@ impl<'mir> MirValue<'mir> {
         cx: &MirModuleContext<'mir, '_>,
     ) -> &'mir MirType<'mir> {
         match self {
-            MirValue::ConstantInteger(i) => i.ty,
+            MirValue::ConstantInteger32(i) => i.ty,
+            MirValue::ConstantBool(i) => i.ty,
             MirValue::Argument(a) => a.ty,
             MirValue::Instruction(i) => b.get_instruction(*i).expect("missing instruction").ty(),
             MirValue::Function(f) => {
@@ -44,9 +41,15 @@ impl<'mir> MirValue<'mir> {
 }
 
 #[derive(Debug)]
-pub struct MirConstantInteger<'mir> {
+pub struct MirConstantInteger32<'mir> {
     pub ty: &'mir MirType<'mir>,
-    pub value: i64,
+    pub value: i32,
+}
+
+#[derive(Debug)]
+pub struct MirConstantBool<'mir> {
+    pub ty: &'mir MirType<'mir>,
+    pub value: bool,
 }
 
 #[derive(Debug)]

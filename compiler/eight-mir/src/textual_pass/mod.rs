@@ -1,11 +1,11 @@
 use crate::function::{MirFunction, MirFunctionData};
 use crate::instruction::{
-    MirAllocaInstruction, MirCallInstruction, MirInstruction, MirLoadInstruction,
+    MirAllocaInstruction, MirCallInstruction, MirInstruction, MirInstructionId, MirLoadInstruction,
     MirStoreInstruction,
 };
 use crate::ty::MirType;
-use crate::value::{MirConstantInteger, MirValue};
-use crate::{MirBasicBlock, MirModule, MirModuleData};
+use crate::value::{MirConstantBool, MirConstantInteger32, MirValue};
+use crate::{MirBasicBlock, MirFunctionId, MirModule, MirModuleData};
 use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
@@ -254,15 +254,10 @@ impl<'a> MirModuleTextualPass<'a> {
         node: &'mir MirValue<'mir>,
     ) -> DocBuilder<Arena<'a>> {
         match node {
-            MirValue::ConstantInteger(v) => self.visit_constant_integer_value(mcx, fcx, v),
-            MirValue::Instruction(v) => self
-                .visit_type(fcx.get_instruction(*v).expect("missing instruction").ty())
-                .append(self.arena.space())
-                .append(self.arena.text("%"))
-                .append(self.arena.as_string(v.0)),
-            MirValue::Function(v) => self
-                .arena
-                .text(mcx.get_function(*v).expect("missing function").name()),
+            MirValue::ConstantInteger32(v) => self.visit_constant_integer_value(mcx, fcx, v),
+            MirValue::ConstantBool(v) => self.visit_constant_bool_value(mcx, fcx, v),
+            MirValue::Instruction(v) => self.visit_instruction_value(mcx, fcx, v),
+            MirValue::Function(v) => self.visit_function_value(mcx, fcx, v),
             MirValue::Argument(_) | MirValue::Label(_) => unimplemented!(),
         }
     }
@@ -271,11 +266,48 @@ impl<'a> MirModuleTextualPass<'a> {
         &'a self,
         _: &'mir MirModuleData<'mir>,
         _: &'mir MirFunctionData<'mir>,
-        node: &'mir MirConstantInteger<'mir>,
+        node: &'mir MirConstantInteger32<'mir>,
     ) -> DocBuilder<Arena<'a>> {
         self.visit_type(node.ty)
             .append(self.arena.text(" "))
             .append(self.arena.text(node.value.to_string()))
+    }
+
+    pub fn visit_constant_bool_value<'mir: 'a>(
+        &'a self,
+        _: &'mir MirModuleData<'mir>,
+        _: &'mir MirFunctionData<'mir>,
+        node: &'mir MirConstantBool<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.visit_type(node.ty)
+            .append(self.arena.text(" "))
+            .append(self.arena.text(node.value.to_string()))
+    }
+
+    pub fn visit_instruction_value<'mir: 'a>(
+        &'a self,
+        _: &'mir MirModuleData<'mir>,
+        fcx: &'mir MirFunctionData<'mir>,
+        node: &'mir MirInstructionId,
+    ) -> DocBuilder<Arena<'a>> {
+        self.visit_type(
+            fcx.get_instruction(*node)
+                .expect("missing instruction")
+                .ty(),
+        )
+        .append(self.arena.space())
+        .append(self.arena.text("%"))
+        .append(self.arena.as_string(node.0))
+    }
+
+    pub fn visit_function_value<'mir: 'a>(
+        &'a self,
+        mcx: &'mir MirModuleData<'mir>,
+        _: &'mir MirFunctionData<'mir>,
+        node: &'mir MirFunctionId,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text(mcx.get_function(*node).expect("missing function").name())
     }
 
     pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirType) -> DocBuilder<Arena<'a>> {

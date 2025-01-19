@@ -5,7 +5,9 @@ use crate::ty::MirType;
 use crate::value::MirValueId;
 use crate::MirModule;
 use eight_diagnostics::ice;
-use eight_hir::expr::{HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr};
+use eight_hir::expr::{
+    HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
+};
 use eight_hir::item::HirFunction;
 use eight_hir::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use eight_hir::ty::HirTy;
@@ -173,8 +175,8 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(b, cx, e),
             HirExpr::Reference(e) => self.visit_reference_expr(b, cx, e),
             HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
-            HirExpr::BooleanLiteral(_)
-            | HirExpr::Group(_)
+            HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
+            HirExpr::Group(_)
             | HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
             | HirExpr::UnaryOp(_)
@@ -192,7 +194,17 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirIntegerLiteralExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        let inst = b.build_constant_integer(expr.value as i64, self.arena.types().get_i32_type());
+        let inst = b.build_constant_integer32(expr.value, self.arena.types().get_i32_type());
+        Ok(inst)
+    }
+
+    pub fn visit_boolean_literal_expr(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        _: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirBooleanLiteralExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        let inst = b.build_constant_bool(expr.value, self.arena.types().get_bool_type());
         Ok(inst)
     }
 
