@@ -96,6 +96,10 @@ impl<'mir> MirFunctionBuilder<'mir> {
         }
     }
 
+    pub fn data(&self) -> &MirFunctionData<'mir> {
+        &self.data
+    }
+
     /// Complete the function and consume the builder.
     pub fn build<'o>(self) -> MirFunction<'o>
     where
@@ -229,21 +233,17 @@ impl<'mir> MirFunctionBuilder<'mir> {
     /// Build a `mem.store` instruction.
     pub fn build_store<'hir>(
         &mut self,
-        cx: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir, 'hir>,
         value: MirValueId,
         dest: MirValueId,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let id = self.get_next_instruction_id();
-        let v = self.get_value(value).unwrap_or_else(|| {
-            ice!("failed to find value for store");
-        });
-
         let inst = MirInstruction::Store(MirStoreInstruction {
             name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
             ty: self.arena.types().get_void_type(),
             // Stores are always into pointer types
-            dest_ty: v.ty(self, cx),
+            dest_ty: self.data.get_value_type(value),
             value,
             dest,
         });

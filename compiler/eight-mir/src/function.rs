@@ -1,7 +1,8 @@
 use crate::instruction::{MirInstruction, MirInstructionId};
-use crate::ty::MirFunctionType;
+use crate::ty::{MirFunctionType, MirType};
 use crate::value::{MirValue, MirValueId};
 use crate::{MirBasicBlock, MirBasicBlockId};
+use eight_diagnostics::ice;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Default)]
@@ -21,6 +22,19 @@ impl<'mir> MirFunctionData<'mir> {
         self.instructions.get(&id)
     }
 
+    /// Get the type the instruction evaluates to.
+    pub fn get_instruction_type(&self, id: MirInstructionId) -> &'mir MirType<'mir> {
+        match self
+            .get_instruction(id)
+            .unwrap_or_else(|| ice!("missing instruction"))
+        {
+            MirInstruction::Alloca(i) => i.ty,
+            MirInstruction::Store(i) => i.ty,
+            MirInstruction::Call(i) => i.ty,
+            MirInstruction::Load(i) => i.ty,
+        }
+    }
+
     pub fn blocks(&self) -> impl Iterator<Item = &MirBasicBlock<'mir>> {
         self.blocks.values()
     }
@@ -37,6 +51,19 @@ impl<'mir> MirFunctionData<'mir> {
     /// Get the value with the given id.
     pub fn get_value(&self, id: MirValueId) -> Option<&MirValue<'mir>> {
         self.values.get(&id)
+    }
+
+    /// Get the type of the value with the given id.
+    ///
+    /// This function panics if the value does not exist.
+    pub fn get_value_type(&self, id: MirValueId) -> &'mir MirType<'mir> {
+        match self.get_value(id).unwrap_or_else(|| ice!("missing value")) {
+            MirValue::ConstantInteger32(i) => i.ty,
+            MirValue::ConstantBool(i) => i.ty,
+            MirValue::Argument(a) => a.ty,
+            MirValue::Instruction(i) => self.get_instruction_type(*i),
+            MirValue::Function(_) | MirValue::Label(_) => unimplemented!(),
+        }
     }
 }
 

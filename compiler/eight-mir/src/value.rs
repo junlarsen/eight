@@ -1,4 +1,3 @@
-use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::instruction::MirInstructionId;
 use crate::ty::MirType;
 use crate::{MirBasicBlockId, MirFunctionId};
@@ -17,27 +16,6 @@ pub enum MirValue<'mir> {
     Instruction(MirInstructionId),
     Label(MirBasicBlockId),
     Function(MirFunctionId),
-}
-
-impl<'mir> MirValue<'mir> {
-    pub fn ty(
-        &self,
-        b: &MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, '_>,
-    ) -> &'mir MirType<'mir> {
-        match self {
-            MirValue::ConstantInteger32(i) => i.ty,
-            MirValue::ConstantBool(i) => i.ty,
-            MirValue::Argument(a) => a.ty,
-            MirValue::Instruction(i) => b.get_instruction(*i).expect("missing instruction").ty(),
-            MirValue::Function(f) => {
-                cx.data().get_function_type(*f)
-                    .expect("missing function type")
-                    .return_type
-            }
-            MirValue::Label(_) => unimplemented!(),
-        }
-    }
 }
 
 #[derive(Debug)]

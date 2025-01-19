@@ -147,7 +147,8 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         stmt: &'hir HirLetStmt<'hir>,
     ) -> MirResult<()> {
         let value = self.visit_expr(b, cx, &stmt.value)?;
-        let ptr = b.build_alloca(cx, self.arena.types().get_i32_type(), None);
+        let value_ty = b.data().get_value_type(value);
+        let ptr = b.build_alloca(cx, value_ty, None);
         b.build_store(cx, value, ptr, None);
         let name = self.arena.names().get(stmt.name);
         self.locals.add(name, ptr);
@@ -230,12 +231,9 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let id = self.locals.find(&expr.name).unwrap_or_else(|| {
             ice!(format!("failed to find local value for {}", expr.name));
         });
-        let value = b.get_value(*id).unwrap_or_else(|| {
-            ice!(format!("failed to find local value for {}", expr.name));
-        });
-        let ty = value.ty(b, cx);
+        let value_ty = b.data().get_value_type(*id);
         // If it is a pointer type, we automatically dereference it.
-        if let MirType::Pointer(v) = ty {
+        if let MirType::Pointer(v) = value_ty {
             let load = b.build_load(cx, *id, v.inner, None);
             return Ok(load);
         }
