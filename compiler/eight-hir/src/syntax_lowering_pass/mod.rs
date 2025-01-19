@@ -2,18 +2,19 @@ use crate::arena::HirArena;
 use crate::error::{
     BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
 };
-use crate::expr::{HirBinaryOp, HirConstructExprArgument, HirExpr, HirUnaryOp};
-use crate::item::{HirFunction, HirInstance, HirStruct, HirTrait, HirType};
-use crate::signature::{
+use crate::HirBuilder;
+use eight_diagnostics::ice;
+use eight_middle::context::LocalContext;
+use eight_middle::hir::expr::{HirBinaryOp, HirConstructExprArgument, HirExpr, HirUnaryOp};
+use eight_middle::hir::item::{HirFunction, HirInstance, HirStruct, HirTrait, HirType};
+use eight_middle::hir::module::{HirModule, HirModuleBody};
+use eight_middle::hir::signature::{
     HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirModuleSignature,
     HirStructFieldSignature, HirStructSignature, HirTraitSignature, HirTypeParameterSignature,
     HirTypeSignature,
 };
-use crate::stmt::{HirExprStmt, HirLetStmt, HirStmt};
-use crate::ty::HirTy;
-use crate::{HirBuilder, HirModule, HirModuleBody};
-use eight_diagnostics::ice;
-use eight_middle::context::LocalContext;
+use eight_middle::hir::stmt::{HirExprStmt, HirLetStmt, HirStmt};
+use eight_middle::hir::ty::HirTy;
 use eight_middle::LinkageType;
 use eight_span::Span;
 use eight_syntax::ast::{

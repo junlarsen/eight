@@ -9,63 +9,29 @@
 //! program than the AST.
 
 use crate::error::HirError;
-use crate::expr::{
+use eight_middle::hir::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirInstance, HirStruct, HirTrait, HirType};
-use crate::signature::{
-    HirFunctionSignature, HirInstanceSignature, HirModuleSignature, HirTraitSignature,
-};
-use crate::stmt::{
+use eight_middle::hir::item::{HirFunction, HirInstance, HirTrait};
+use eight_middle::hir::signature::{HirFunctionSignature, HirInstanceSignature, HirTraitSignature};
+use eight_middle::hir::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
-use crate::ty::HirTy;
+use eight_middle::hir::ty::HirTy;
 use eight_middle::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
 
 pub mod arena;
 pub mod error;
-pub mod expr;
-pub mod item;
 pub mod query;
-pub mod signature;
-pub mod stmt;
 pub mod syntax_lowering_pass;
 pub mod textual_pass;
-pub mod ty;
 pub mod type_check_pass;
-
-/// A module containing all the types and functions defined in a program.
-///
-/// We use a BTreeMap here instead of a HashMap to preserve the order of the types for when we're
-/// emitting code.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug)]
-pub struct HirModule<'hir> {
-    pub signature: &'hir HirModuleSignature<'hir>,
-    pub body: HirModuleBody<'hir>,
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Debug, Default)]
-pub struct HirModuleBody<'hir> {
-    pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
-    pub structs: BTreeMap<&'hir str, HirStruct<'hir>>,
-    pub traits: BTreeMap<&'hir str, HirTrait<'hir>>,
-    pub types: BTreeMap<&'hir str, HirType<'hir>>,
-    pub instances: Vec<HirInstance<'hir>>,
-}
-
-impl<'hir> HirModule<'hir> {
-    pub fn new(signature: &'hir HirModuleSignature<'hir>, body: HirModuleBody<'hir>) -> Self {
-        Self { signature, body }
-    }
-}
 
 /// A HIR node builder.
 ///

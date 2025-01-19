@@ -237,6 +237,7 @@ dependencies = [
  "eight-diagnostics",
  "eight-hir",
  "eight-macros",
+ "eight-middle",
  "eight-mir",
  "eight-syntax",
  "miette",
@@ -276,6 +277,7 @@ dependencies = [
  "bumpalo",
  "eight-diagnostics",
  "eight-macros",
+ "eight-span",
  "serde",
 ]
 

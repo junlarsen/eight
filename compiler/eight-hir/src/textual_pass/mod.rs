@@ -7,24 +7,26 @@
 //! It is provided on a best-effort basis, and holds no backwards compatibility guarantees. It also
 //! invents syntax not found in the base language, such as statement blocks and while loops.
 
-use crate::expr::{
+use eight_diagnostics::ice;
+use eight_middle::hir::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
     HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirInstance};
-use crate::signature::{
+use eight_middle::hir::item::{HirFunction, HirInstance};
+use eight_middle::hir::module::HirModule;
+use eight_middle::hir::signature::{
     HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirStructSignature,
     HirTraitSignature, HirTypeParameterSignature, HirTypeSignature,
 };
-use crate::stmt::{
+use eight_middle::hir::stmt::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
     HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirFunctionTy, HirMetaTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy};
-use crate::HirModule;
-use eight_diagnostics::ice;
+use eight_middle::hir::ty::{
+    HirFunctionTy, HirMetaTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy,
+};
 use eight_middle::LinkageType;
 use pretty::{Arena, DocAllocator, DocBuilder};
 

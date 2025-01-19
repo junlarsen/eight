@@ -4,18 +4,18 @@ use crate::error::{
     HirError, HirResult, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
     WrongTraitTypeArgumentCount,
 };
-use crate::expr::{
+use eight_diagnostics::ice;
+use eight_middle::hir::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
     HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOpExpr,
 };
-use crate::item::{HirFunction, HirInstance, HirStruct, HirTrait};
-use crate::stmt::{
+use eight_middle::hir::item::{HirFunction, HirInstance, HirStruct, HirTrait};
+use eight_middle::hir::module::HirModule;
+use eight_middle::hir::stmt::{
     HirBlockStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt, HirReturnStmt, HirStmt,
 };
-use crate::ty::{HirFunctionTy, HirPointerTy, HirTy};
-use crate::HirModule;
-use eight_diagnostics::ice;
+use eight_middle::hir::ty::{HirFunctionTy, HirPointerTy, HirTy};
 use eight_span::Span;
 use std::collections::BTreeMap;
 use std::fmt::Debug;

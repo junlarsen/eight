@@ -10,7 +10,7 @@ use crate::module::{MirModule, MirModuleData};
 use crate::ty::{MirFunctionType, MirType};
 use crate::value::{MirArgument, MirConstantBool, MirConstantInteger32, MirValue, MirValueId};
 use eight_diagnostics::ice;
-use eight_hir::HirModule;
+use eight_middle::hir::module::HirModule;
 
 pub struct MirModuleContext<'mir, 'hir> {
     arena: &'mir MirArena<'mir>,

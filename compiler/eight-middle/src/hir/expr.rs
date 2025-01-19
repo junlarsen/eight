@@ -1,4 +1,4 @@
-use crate::ty::HirTy;
+use crate::hir::ty::HirTy;
 use eight_span::Span;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

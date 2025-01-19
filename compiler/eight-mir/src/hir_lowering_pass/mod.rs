@@ -5,14 +5,14 @@ use crate::module::MirModule;
 use crate::ty::MirType;
 use crate::value::MirValueId;
 use eight_diagnostics::ice;
-use eight_hir::expr::{
+use eight_middle::hir::expr::{
     HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
 };
-use eight_hir::item::HirFunction;
-use eight_hir::stmt::{HirExprStmt, HirLetStmt, HirStmt};
-use eight_hir::ty::HirTy;
-use eight_hir::HirModule;
+use eight_middle::hir::item::HirFunction;
+use eight_middle::hir::stmt::{HirExprStmt, HirLetStmt, HirStmt};
+use eight_middle::hir::ty::HirTy;
 use eight_middle::context::LocalContext;
+use eight_middle::hir::module::HirModule;
 use eight_middle::LinkageType;
 
 pub struct MirModuleLoweringPass<'mir> {

@@ -6,18 +6,18 @@ use crate::error::{
     TraitDoesNotExistError, TraitInstanceMissingFnError, TraitMissingInstanceError,
     TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
 };
-use crate::expr::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
-    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
-};
 use crate::query::HirSignatureQueryDatabase;
-use crate::ty::{HirFunctionTy, HirMetaTy, HirTy};
 use crate::type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
 use eight_diagnostics::ice;
 use eight_middle::context::LocalContext;
+use eight_middle::hir::expr::{
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
+    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
+    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
+};
+use eight_middle::hir::ty::{HirFunctionTy, HirMetaTy, HirTy};
 use eight_span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;

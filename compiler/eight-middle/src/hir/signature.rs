@@ -3,7 +3,7 @@
 //! The types are spanned so that consumers of a module provide contextual information for
 //! diagnostic handling or debugging purposes.
 
-use crate::ty::HirTy;
+use crate::hir::ty::HirTy;
 use eight_span::Span;
 use std::collections::BTreeMap;
 

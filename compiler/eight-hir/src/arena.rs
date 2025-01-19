@@ -1,4 +1,4 @@
-use crate::ty::{
+use eight_middle::hir::ty::{
     HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirMetaTy, HirNominalTy, HirPointerTy, HirTy,
     HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy,
 };

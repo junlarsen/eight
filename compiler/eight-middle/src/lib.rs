@@ -2,6 +2,7 @@
 
 pub mod arena;
 pub mod context;
+pub mod hir;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Eq)]

@@ -1,9 +1,9 @@
-use crate::signature::{
+use crate::hir::signature::{
     HirFunctionSignature, HirInstanceSignature, HirStructSignature, HirTraitSignature,
     HirTypeSignature,
 };
-use crate::stmt::HirStmt;
-use crate::ty::HirTy;
+use crate::hir::stmt::HirStmt;
+use crate::hir::ty::HirTy;
 use crate::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
