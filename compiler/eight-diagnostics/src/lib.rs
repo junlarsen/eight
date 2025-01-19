@@ -11,3 +11,12 @@ macro_rules! ice {
         )
     }};
 }
+
+#[macro_export]
+macro_rules! sanity_check {
+    ($condition:expr, $message:expr) => {{
+        if !($condition) {
+            ice!($message);
+        }
+    }};
+}

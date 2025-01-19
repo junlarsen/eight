@@ -1,15 +1,17 @@
 use crate::arena::MirArena;
 use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::error::MirResult;
-use eight_diagnostics::ice;
+use eight_diagnostics::{ice, sanity_check};
 use eight_middle::context::LocalContext;
 use eight_middle::hir::expr::{
-    HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
+    HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
+    HirReferenceExpr, HirUnaryOpExpr,
 };
 use eight_middle::hir::item::HirFunction;
 use eight_middle::hir::module::HirModule;
 use eight_middle::hir::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use eight_middle::hir::ty::HirTy;
+use eight_middle::intrinsic::{BinaryIntrinsicCandidate, UnaryIntrinsicCandidate};
 use eight_middle::mir::module::MirModule;
 use eight_middle::mir::ty::MirType;
 use eight_middle::mir::value::MirValueId;
@@ -177,6 +179,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             HirExpr::Reference(e) => self.visit_reference_expr(b, cx, e),
             HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
+            HirExpr::BinaryOp(e) => self.visit_binary_op_expr(b, cx, e),
             HirExpr::Group(_)
             | HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
@@ -255,6 +258,95 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let return_ty = self.visit_ty(expr.ty)?;
         let call = b.build_call(cx, callee, arguments, return_ty, None);
         Ok(call)
+    }
+
+    /// Translate a binary operator expression into MIR.
+    ///
+    /// Binary operators are special, because they can be overloaded by the user by adding an
+    /// instance of the trait the operator corresponds to.
+    ///
+    /// If the trait is not overloaded in user land, but instead defined through the compiler
+    /// intrinsics in the standard library, we can lower the operator into the corresponding MIR
+    /// instructions.
+    ///
+    /// When this is not the case, we need to construct a function call to the trait instance
+    /// function that matches the expression's types.
+    pub fn visit_binary_op_expr(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirBinaryOpExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        if let Some(candidate) = HirBinaryOpExpr::is_implemented_as_intrinsic(expr) {
+            return self.visit_binary_intrinsic_candidate(b, cx, candidate, expr);
+        }
+        unimplemented!("userland instance binary operator calling is not yet implemented")
+    }
+
+    /// Translate a unary operator expression into MIR.
+    ///
+    /// Unary operators are special, because they can be overloaded by the user by adding an
+    /// instance of the trait the operator corresponds to.
+    ///
+    /// If the trait is not overloaded in user land, but instead defined through the compiler
+    /// intrinsics in the standard library, we can lower the operator into the corresponding MIR
+    /// instructions.
+    ///
+    /// When this is not the case, we need to construct a function call to the trait instance
+    /// function that matches the expression's types.
+    pub fn visit_unary_op_expr(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirUnaryOpExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        if let Some(candidate) = HirUnaryOpExpr::is_implemented_as_intrinsic(expr) {
+            return self.visit_unary_intrinsic_candidate(b, cx, candidate, expr);
+        }
+        unimplemented!("userland instance unary operator calling is not yet implemented")
+    }
+
+    /// Translate a binary operator that is guaranteed to be implemented as an intrinsic.
+    ///
+    /// The standard library only defines operators on equal types, so we can safely assume that
+    /// both LHS and RHS are of the same type, and that the resulting type of this operator is the
+    /// same as the LHS (and consequently RHS) type.
+    pub fn visit_binary_intrinsic_candidate(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        candidate: BinaryIntrinsicCandidate,
+        expr: &'hir HirBinaryOpExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        let lhs = self.visit_expr(b, cx, &expr.lhs)?;
+        let rhs = self.visit_expr(b, cx, &expr.rhs)?;
+        let lhs_ty = b.data().get_value_type(lhs);
+        let rhs_ty = b.data().get_value_type(rhs);
+        sanity_check!(lhs_ty == rhs_ty, "lhs and rhs types must be equal");
+        let inst = match candidate {
+            BinaryIntrinsicCandidate::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
+            BinaryIntrinsicCandidate::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
+            BinaryIntrinsicCandidate::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
+            BinaryIntrinsicCandidate::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
+            _ => unimplemented!("binary operator {candidate:?} is not yet implemented"),
+        };
+        Ok(inst)
+    }
+
+    /// Translate a unary operator that is guaranteed to be implemented as an intrinsic.
+    ///
+    /// The standard library only defines unary operators on types that result in the same type.
+    pub fn visit_unary_intrinsic_candidate(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        candidate: UnaryIntrinsicCandidate,
+        expr: &'hir HirUnaryOpExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        let operand = self.visit_expr(b, cx, &expr.operand)?;
+        let ty = b.data().get_value_type(operand);
+        let inst = unimplemented!("unary operator {candidate:?} is not yet implemented");
+        Ok(inst)
     }
 
     /// Translate a type into MIR.

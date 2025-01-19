@@ -3,6 +3,7 @@
 pub mod arena;
 pub mod context;
 pub mod hir;
+pub mod intrinsic;
 pub mod mir;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]

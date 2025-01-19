@@ -1,0 +1,15 @@
+// RUN: %eightc --emit-mir --emit-query mir.fn.test %s | %fc %s
+
+trait Sub<A, B, R> {
+  fn sub(a: A, b: B) -> R;
+}
+
+instance Sub<i32, i32, i32> {
+  intrinsic_fn sub(a: i32, b: i32) -> i32;
+}
+
+fn test() {
+// CHECK-LABEL: mir_function test
+  let k = 123 - 456;
+// CHECK: arith.sub i32 i32 123, i32 456
+}
