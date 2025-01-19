@@ -6,7 +6,7 @@ use crate::instruction::{
 };
 use crate::ty::{MirFunctionType, MirType};
 use crate::value::{MirArgument, MirConstantInteger, MirValue, MirValueId};
-use crate::{MirBasicBlock, MirBasicBlockId, MirFunctionId, MirModule};
+use crate::{MirBasicBlock, MirBasicBlockId, MirFunctionId, MirModule, MirModuleData};
 use eight_diagnostics::ice;
 use eight_hir::HirModule;
 use std::collections::BTreeMap;
@@ -35,9 +35,10 @@ impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
     }
 
     pub fn build(self) -> MirModule<'mir> {
-        MirModule {
-            functions: self.functions.into_values().collect(),
-        }
+        let data = MirModuleData {
+            functions: self.functions,
+        };
+        MirModule { data }
     }
 
     /// Reserve the next function id.
@@ -121,11 +122,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
     where
         'mir: 'o,
     {
-        MirFunction {
-            ty: self.ty,
-            name: self.name,
-            data: self.data,
-        }
+        MirFunction::new(self.name, self.ty, self.data)
     }
 }
 

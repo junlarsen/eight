@@ -42,12 +42,20 @@ impl<'mir> MirFunctionData<'mir> {
 
 #[derive(Debug)]
 pub struct MirFunction<'mir> {
-    pub name: &'mir str,
-    pub ty: &'mir MirFunctionType<'mir>,
-    pub data: MirFunctionData<'mir>,
+    name: &'mir str,
+    ty: &'mir MirFunctionType<'mir>,
+    data: MirFunctionData<'mir>,
 }
 
 impl<'mir> MirFunction<'mir> {
+    pub fn new(
+        name: &'mir str,
+        ty: &'mir MirFunctionType<'mir>,
+        data: MirFunctionData<'mir>,
+    ) -> Self {
+        Self { name, ty, data }
+    }
+
     /// Is the function expected to be resolved at link time?
     ///
     /// Functions with empty bodies are considered external.
@@ -57,5 +65,13 @@ impl<'mir> MirFunction<'mir> {
 
     pub fn data(&self) -> &MirFunctionData<'mir> {
         &self.data
+    }
+
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    pub fn ty(&self) -> &MirFunctionType<'mir> {
+        self.ty
     }
 }
