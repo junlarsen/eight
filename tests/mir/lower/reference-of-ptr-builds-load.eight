@@ -1,0 +1,15 @@
+// RUN: %eightc --emit-mir --emit-query mir.fn.test %s | %fc %s
+
+// Whenever we have a reference to something that is built to an alloca,
+// we need to load it first.
+fn test() -> i32 {
+// CHECK-LABEL: mir_function test
+// CHECK-NEXT: entry:
+  let z = 100;
+// CHECK-NEXT: %0 = mem.alloca i32
+// CHECK-NEXT: mem.store i32 100, ptr %0
+  let k = z;
+// CHECK-NEXT: %2 = mem.load i32, ptr %0
+// CHECK-NEXT: %3 = mem.alloca i32
+// CHECK-NEXT: mem.store i32 %2, ptr %3
+}
