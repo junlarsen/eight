@@ -308,6 +308,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "eight-std"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "eight-syntax"
 version = "0.1.0"
 dependencies = [
