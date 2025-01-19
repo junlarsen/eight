@@ -19,6 +19,10 @@ pub enum MirInstruction<'mir> {
     Load(MirLoadInstruction<'mir>),
     Store(MirStoreInstruction<'mir>),
     Call(MirCallInstruction<'mir>),
+    Add(MirAddInstruction<'mir>),
+    Sub(MirSubInstruction<'mir>),
+    Mul(MirMulInstruction<'mir>),
+    Div(MirDivInstruction<'mir>),
 }
 
 impl<'mir> MirInstruction<'mir> {
@@ -28,6 +32,10 @@ impl<'mir> MirInstruction<'mir> {
             MirInstruction::Load(i) => i.ty,
             MirInstruction::Store(i) => i.ty,
             MirInstruction::Call(i) => i.ty,
+            MirInstruction::Add(i) => i.ty,
+            MirInstruction::Sub(i) => i.ty,
+            MirInstruction::Mul(i) => i.ty,
+            MirInstruction::Div(i) => i.ty,
         }
     }
 }
@@ -70,5 +78,53 @@ pub struct MirCallInstruction<'mir> {
     pub callee: MirValueId,
     pub arguments: Vec<MirValueId>,
     /// The return type of the function.
+    pub ty: &'mir MirType<'mir>,
+}
+
+/// The `arith.add` instruction.
+///
+/// # Lowering rules
+///
+/// This function only works on compiler intrinsic additions. In practice, it means that trait
+/// instances of `Add` are lowered into a call instruction unless they are implemented as a compiler
+/// intrinsic.
+#[derive(Debug)]
+pub struct MirAddInstruction<'mir> {
+    pub name: &'mir str,
+    pub lhs: MirValueId,
+    pub rhs: MirValueId,
+    pub ty: &'mir MirType<'mir>,
+}
+
+/// The `arith.sub` instruction.
+///
+/// Same lowering rules as `MirAddInstruction`.
+#[derive(Debug)]
+pub struct MirSubInstruction<'mir> {
+    pub name: &'mir str,
+    pub lhs: MirValueId,
+    pub rhs: MirValueId,
+    pub ty: &'mir MirType<'mir>,
+}
+
+/// The `arith.mul` instruction.
+///
+/// Same lowering rules as `MirAddInstruction`.
+#[derive(Debug)]
+pub struct MirMulInstruction<'mir> {
+    pub name: &'mir str,
+    pub lhs: MirValueId,
+    pub rhs: MirValueId,
+    pub ty: &'mir MirType<'mir>,
+}
+
+/// The `arith.div` instruction.
+///
+/// Same lowering rules as `MirAddInstruction`.
+#[derive(Debug)]
+pub struct MirDivInstruction<'mir> {
+    pub name: &'mir str,
+    pub lhs: MirValueId,
+    pub rhs: MirValueId,
     pub ty: &'mir MirType<'mir>,
 }

@@ -27,12 +27,7 @@ impl<'mir> MirFunctionData<'mir> {
 
     /// Get the type the instruction evaluates to.
     pub fn get_instruction_type(&self, id: MirInstructionId) -> &'mir MirType<'mir> {
-        match self.get_instruction(id) {
-            MirInstruction::Alloca(i) => i.ty,
-            MirInstruction::Store(i) => i.ty,
-            MirInstruction::Call(i) => i.ty,
-            MirInstruction::Load(i) => i.ty,
-        }
+        self.get_instruction(id).ty()
     }
 
     pub fn blocks(&self) -> impl Iterator<Item = &MirBasicBlock<'mir>> {

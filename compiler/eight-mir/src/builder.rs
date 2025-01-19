@@ -2,8 +2,9 @@ use crate::arena::MirArena;
 use crate::bb::{MirBasicBlock, MirBasicBlockId};
 use crate::function::{MirFunction, MirFunctionData, MirFunctionId};
 use crate::instruction::{
-    MirAllocaInstruction, MirCallInstruction, MirInstruction, MirInstructionId, MirLoadInstruction,
-    MirStoreInstruction,
+    MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirDivInstruction, MirInstruction,
+    MirInstructionId, MirLoadInstruction, MirMulInstruction, MirStoreInstruction,
+    MirSubInstruction,
 };
 use crate::module::{MirModule, MirModuleData};
 use crate::ty::{MirFunctionType, MirType};
@@ -287,6 +288,90 @@ impl<'mir> MirFunctionBuilder<'mir> {
             callee,
             arguments,
             ty: return_ty,
+        });
+        let inst = self.build_instruction(id, inst);
+        self.insertion_point_mut().insert(inst);
+        self.build_value(MirValue::Instruction(inst))
+    }
+
+    /// Build an `arith.add` instruction.
+    pub fn build_add<'hir>(
+        &mut self,
+        _: &MirModuleContext<'mir, 'hir>,
+        lhs: MirValueId,
+        rhs: MirValueId,
+        ty: &'mir MirType<'mir>,
+        name: Option<&'mir str>,
+    ) -> MirValueId {
+        let id = self.get_next_instruction_id();
+        let inst = MirInstruction::Add(MirAddInstruction {
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            lhs,
+            rhs,
+            ty,
+        });
+        let inst = self.build_instruction(id, inst);
+        self.insertion_point_mut().insert(inst);
+        self.build_value(MirValue::Instruction(inst))
+    }
+
+    /// Build an `arith.sub` instruction.
+    pub fn build_sub<'hir>(
+        &mut self,
+        _: &MirModuleContext<'mir, 'hir>,
+        lhs: MirValueId,
+        rhs: MirValueId,
+        ty: &'mir MirType<'mir>,
+        name: Option<&'mir str>,
+    ) -> MirValueId {
+        let id = self.get_next_instruction_id();
+        let inst = MirInstruction::Sub(MirSubInstruction {
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            lhs,
+            rhs,
+            ty,
+        });
+        let inst = self.build_instruction(id, inst);
+        self.insertion_point_mut().insert(inst);
+        self.build_value(MirValue::Instruction(inst))
+    }
+
+    /// Build an `arith.mul` instruction.
+    pub fn build_mul<'hir>(
+        &mut self,
+        _: &MirModuleContext<'mir, 'hir>,
+        lhs: MirValueId,
+        rhs: MirValueId,
+        ty: &'mir MirType<'mir>,
+        name: Option<&'mir str>,
+    ) -> MirValueId {
+        let id = self.get_next_instruction_id();
+        let inst = MirInstruction::Mul(MirMulInstruction {
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            lhs,
+            rhs,
+            ty,
+        });
+        let inst = self.build_instruction(id, inst);
+        self.insertion_point_mut().insert(inst);
+        self.build_value(MirValue::Instruction(inst))
+    }
+
+    /// Build an `arith.div` instruction.
+    pub fn build_div<'hir>(
+        &mut self,
+        _: &MirModuleContext<'mir, 'hir>,
+        lhs: MirValueId,
+        rhs: MirValueId,
+        ty: &'mir MirType<'mir>,
+        name: Option<&'mir str>,
+    ) -> MirValueId {
+        let id = self.get_next_instruction_id();
+        let inst = MirInstruction::Div(MirDivInstruction {
+            name: name.unwrap_or_else(|| self.arena.names().get_usize(*id)),
+            lhs,
+            rhs,
+            ty,
         });
         let inst = self.build_instruction(id, inst);
         self.insertion_point_mut().insert(inst);

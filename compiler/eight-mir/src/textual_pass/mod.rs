@@ -1,8 +1,9 @@
 use crate::bb::MirBasicBlock;
 use crate::function::{MirFunction, MirFunctionData, MirFunctionId};
 use crate::instruction::{
-    MirAllocaInstruction, MirCallInstruction, MirInstruction, MirInstructionId, MirLoadInstruction,
-    MirStoreInstruction,
+    MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirDivInstruction, MirInstruction,
+    MirInstructionId, MirLoadInstruction, MirMulInstruction, MirStoreInstruction,
+    MirSubInstruction,
 };
 use crate::module::{MirModule, MirModuleData};
 use crate::ty::MirType;
@@ -158,6 +159,10 @@ impl<'a> MirModuleTextualPass<'a> {
             MirInstruction::Store(i) => self.visit_store_instruction(mcx, fcx, i),
             MirInstruction::Call(i) => self.visit_call_instruction(mcx, fcx, i),
             MirInstruction::Load(i) => self.visit_load_instruction(mcx, fcx, i),
+            MirInstruction::Add(i) => self.visit_add_instruction(mcx, fcx, i),
+            MirInstruction::Sub(i) => self.visit_sub_instruction(mcx, fcx, i),
+            MirInstruction::Mul(i) => self.visit_mul_instruction(mcx, fcx, i),
+            MirInstruction::Div(i) => self.visit_div_instruction(mcx, fcx, i),
         }
     }
 
@@ -234,6 +239,86 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.text(","))
             .append(self.arena.space())
             .append(self.visit_value(mcx, fcx, fcx.get_value(node.src)))
+    }
+
+    pub fn visit_add_instruction<'mir: 'a>(
+        &'a self,
+        mcx: &'mir MirModuleData<'mir>,
+        fcx: &'mir MirFunctionData<'mir>,
+        node: &'mir MirAddInstruction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("%")
+            .append(self.arena.text(node.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("arith.add"))
+            .append(self.arena.space())
+            .append(self.visit_type(node.ty))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.arena.text(","))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+    }
+
+    pub fn visit_sub_instruction<'mir: 'a>(
+        &'a self,
+        mcx: &'mir MirModuleData<'mir>,
+        fcx: &'mir MirFunctionData<'mir>,
+        node: &'mir MirSubInstruction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("%")
+            .append(self.arena.text(node.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("arith.sub"))
+            .append(self.arena.space())
+            .append(self.visit_type(node.ty))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.arena.text(","))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+    }
+
+    pub fn visit_mul_instruction<'mir: 'a>(
+        &'a self,
+        mcx: &'mir MirModuleData<'mir>,
+        fcx: &'mir MirFunctionData<'mir>,
+        node: &'mir MirMulInstruction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("%")
+            .append(self.arena.text(node.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("arith.mul"))
+            .append(self.arena.space())
+            .append(self.visit_type(node.ty))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.arena.text(","))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+    }
+
+    pub fn visit_div_instruction<'mir: 'a>(
+        &'a self,
+        mcx: &'mir MirModuleData<'mir>,
+        fcx: &'mir MirFunctionData<'mir>,
+        node: &'mir MirDivInstruction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("%")
+            .append(self.arena.text(node.name))
+            .append(self.arena.text(" = "))
+            .append(self.arena.text("arith.div"))
+            .append(self.arena.space())
+            .append(self.visit_type(node.ty))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.arena.text(","))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
     }
 
     pub fn visit_value<'mir: 'a>(
