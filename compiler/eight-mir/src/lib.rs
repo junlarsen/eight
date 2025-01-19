@@ -1,11 +1,5 @@
 pub mod arena;
-pub mod bb;
 pub mod builder;
 pub mod error;
-pub mod function;
 pub mod hir_lowering_pass;
-pub mod instruction;
-pub mod module;
 pub mod textual_pass;
-pub mod ty;
-pub mod value;

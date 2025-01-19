@@ -1,7 +1,7 @@
-use crate::bb::{MirBasicBlock, MirBasicBlockId};
-use crate::instruction::{MirInstruction, MirInstructionId};
-use crate::ty::{MirFunctionType, MirType};
-use crate::value::{MirValue, MirValueId};
+use crate::mir::bb::{MirBasicBlock, MirBasicBlockId};
+use crate::mir::instruction::{MirInstruction, MirInstructionId};
+use crate::mir::ty::{MirFunctionType, MirType};
+use crate::mir::value::{MirValue, MirValueId};
 use eight_diagnostics::ice;
 use std::collections::BTreeMap;
 use std::ops::Deref;

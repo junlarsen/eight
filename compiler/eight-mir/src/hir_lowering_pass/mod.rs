@@ -1,18 +1,18 @@
 use crate::arena::MirArena;
 use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::error::MirResult;
-use crate::module::MirModule;
-use crate::ty::MirType;
-use crate::value::MirValueId;
 use eight_diagnostics::ice;
+use eight_middle::context::LocalContext;
 use eight_middle::hir::expr::{
     HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
 };
 use eight_middle::hir::item::HirFunction;
+use eight_middle::hir::module::HirModule;
 use eight_middle::hir::stmt::{HirExprStmt, HirLetStmt, HirStmt};
 use eight_middle::hir::ty::HirTy;
-use eight_middle::context::LocalContext;
-use eight_middle::hir::module::HirModule;
+use eight_middle::mir::module::MirModule;
+use eight_middle::mir::ty::MirType;
+use eight_middle::mir::value::MirValueId;
 use eight_middle::LinkageType;
 
 pub struct MirModuleLoweringPass<'mir> {

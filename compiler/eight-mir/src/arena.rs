@@ -1,8 +1,8 @@
-use crate::ty::{
-    MirBoolType, MirFunctionType, MirInteger32Type, MirPointerType, MirType, MirTypeId, MirVoidType,
-};
 use bumpalo::Bump;
 use eight_middle::arena::StringInterner;
+use eight_middle::mir::ty::{
+    MirBoolType, MirFunctionType, MirInteger32Type, MirPointerType, MirType, MirTypeId, MirVoidType,
+};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;

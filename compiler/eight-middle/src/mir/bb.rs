@@ -1,4 +1,4 @@
-use crate::instruction::MirInstructionId;
+use crate::mir::instruction::MirInstructionId;
 use std::ops::Deref;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]

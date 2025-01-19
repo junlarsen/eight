@@ -1,5 +1,5 @@
-use crate::function::{MirFunction, MirFunctionId};
-use crate::ty::MirFunctionType;
+use crate::mir::function::{MirFunction, MirFunctionId};
+use crate::mir::ty::MirFunctionType;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Default)]

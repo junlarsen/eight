@@ -1,9 +1,9 @@
+use bumpalo::Bump;
+use eight_middle::arena::StringInterner;
 use eight_middle::hir::ty::{
     HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirMetaTy, HirNominalTy, HirPointerTy, HirTy,
     HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy,
 };
-use bumpalo::Bump;
-use eight_middle::arena::StringInterner;
 use eight_span::Span;
 use std::cell::RefCell;
 use std::collections::HashMap;

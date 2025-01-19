@@ -1,5 +1,5 @@
-use crate::ty::MirType;
-use crate::value::MirValueId;
+use crate::mir::ty::MirType;
+use crate::mir::value::MirValueId;
 use std::ops::Deref;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]

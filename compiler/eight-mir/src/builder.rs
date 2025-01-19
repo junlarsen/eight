@@ -1,16 +1,18 @@
 use crate::arena::MirArena;
-use crate::bb::{MirBasicBlock, MirBasicBlockId};
-use crate::function::{MirFunction, MirFunctionData, MirFunctionId};
-use crate::instruction::{
+use eight_diagnostics::ice;
+use eight_middle::hir::module::HirModule;
+use eight_middle::mir::bb::{MirBasicBlock, MirBasicBlockId};
+use eight_middle::mir::function::{MirFunction, MirFunctionData, MirFunctionId};
+use eight_middle::mir::instruction::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirDivInstruction, MirInstruction,
     MirInstructionId, MirLoadInstruction, MirMulInstruction, MirStoreInstruction,
     MirSubInstruction,
 };
-use crate::module::{MirModule, MirModuleData};
-use crate::ty::{MirFunctionType, MirType};
-use crate::value::{MirArgument, MirConstantBool, MirConstantInteger32, MirValue, MirValueId};
-use eight_diagnostics::ice;
-use eight_middle::hir::module::HirModule;
+use eight_middle::mir::module::{MirModule, MirModuleData};
+use eight_middle::mir::ty::{MirFunctionType, MirType};
+use eight_middle::mir::value::{
+    MirArgument, MirConstantBool, MirConstantInteger32, MirValue, MirValueId,
+};
 
 pub struct MirModuleContext<'mir, 'hir> {
     arena: &'mir MirArena<'mir>,
