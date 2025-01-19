@@ -3,15 +3,11 @@
 fn test_i32() {
 // CHECK-LABEL: mir_function test_i32
   let k = 123;
-// CHECK-NEXT: entry:
-// CHECK-NEXT: %0 = mem.alloca i32
-// CHECK-NEXT: mem.store i32 123, ptr %0
+// CHECK: mem.store i32 123, ptr %0
 }
 
 fn test_bool() {
 // CHECK-LABEL: mir_function test_bool
   let k = true;
-// CHECK-NEXT: entry:
-// CHECK-NEXT: %0 = mem.alloca bool
-// CHECK-NEXT: mem.store bool true, ptr %0
+// CHECK: mem.store bool true, ptr %0
 }

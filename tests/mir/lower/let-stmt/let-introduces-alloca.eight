@@ -1,0 +1,9 @@
+// RUN: %eightc --emit-mir --emit-query mir.fn.test %s | %fc %s
+
+fn test() {
+// CHECK-LABEL: mir_function test
+  let x = 123;
+// CHECK-NEXT: entry:
+// CHECK-NEXT: %0 = mem.alloca i32
+// CHECK-NEXT: mem.store i32 123, ptr %0
+}
