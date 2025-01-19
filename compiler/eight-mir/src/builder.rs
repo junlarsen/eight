@@ -1,11 +1,12 @@
 use crate::arena::MirArena;
+use crate::function::{MirFunction, MirFunctionData};
 use crate::instruction::{
     MirAllocaInstruction, MirCallInstruction, MirInstruction, MirInstructionId, MirLoadInstruction,
     MirStoreInstruction,
 };
 use crate::ty::{MirFunctionType, MirType};
 use crate::value::{MirArgument, MirConstantInteger, MirValue, MirValueId};
-use crate::{MirBasicBlock, MirBasicBlockId, MirFunction, MirFunctionId, MirModule};
+use crate::{MirBasicBlock, MirBasicBlockId, MirFunctionId, MirModule};
 use eight_diagnostics::ice;
 use eight_hir::HirModule;
 use std::collections::BTreeMap;
@@ -86,16 +87,9 @@ pub struct MirFunctionBuilder<'mir> {
     arena: &'mir MirArena<'mir>,
     ty: &'mir MirFunctionType<'mir>,
     name: &'mir str,
-    /// List of basic blocks built for the function.
-    blocks: BTreeMap<MirBasicBlockId, MirBasicBlock<'mir>>,
+    data: MirFunctionData<'mir>,
     block_id: usize,
-
-    /// List of values built for the function.
-    values: BTreeMap<MirValueId, MirValue<'mir>>,
     value_id: usize,
-
-    /// List of instructions built for the function.
-    instructions: BTreeMap<MirInstructionId, MirInstruction<'mir>>,
     instruction_id: usize,
     /// The insertion point for the next instruction.
     insertion_point: Option<MirBasicBlockId>,
@@ -114,11 +108,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
             ty,
             name,
             arena,
-            blocks: BTreeMap::new(),
+            data: MirFunctionData::default(),
             block_id: 0,
-            values: BTreeMap::new(),
             value_id: 0,
-            instructions: BTreeMap::new(),
             instruction_id: 0,
             insertion_point: None,
         }
@@ -132,9 +124,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         MirFunction {
             ty: self.ty,
             name: self.name,
-            blocks: self.blocks,
-            values: self.values,
-            instructions: self.instructions,
+            data: self.data,
         }
     }
 }
@@ -149,13 +139,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
             name,
             instructions: Vec::new(),
         };
-        self.blocks.insert(id, block);
+        self.data.blocks.insert(id, block);
         self.block_id += 1;
         id
     }
 
     pub fn get_basic_block(&self, id: MirBasicBlockId) -> Option<&MirBasicBlock<'mir>> {
-        self.blocks.get(&id)
+        self.data.blocks.get(&id)
     }
 
     /// Get the next instruction id.
@@ -172,13 +162,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         id: MirInstructionId,
         instruction: MirInstruction<'mir>,
     ) -> MirInstructionId {
-        self.instructions.insert(id, instruction);
+        self.data.instructions.insert(id, instruction);
         self.instruction_id += 1;
         id
     }
 
     pub fn get_instruction(&self, id: MirInstructionId) -> Option<&MirInstruction<'mir>> {
-        self.instructions.get(&id)
+        self.data.instructions.get(&id)
     }
 
     /// Build a value.
@@ -188,13 +178,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
     fn build_value(&mut self, kind: MirValue<'mir>) -> MirValueId {
         let id = self.value_id;
         let id = MirValueId(id);
-        self.values.insert(id, kind);
+        self.data.values.insert(id, kind);
         self.value_id += 1;
         id
     }
 
     pub fn get_value(&self, id: MirValueId) -> Option<&MirValue<'mir>> {
-        self.values.get(&id)
+        self.data.values.get(&id)
     }
 
     /// Get a mutable reference to the insertion point.
@@ -202,9 +192,12 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let insertion_point = self.insertion_point.unwrap_or_else(|| {
             ice!("cannot get insertion point without a selected block");
         });
-        self.blocks.get_mut(&insertion_point).unwrap_or_else(|| {
-            ice!("insertion point is out of bounds");
-        })
+        self.data
+            .blocks
+            .get_mut(&insertion_point)
+            .unwrap_or_else(|| {
+                ice!("insertion point is out of bounds");
+            })
     }
 
     /// Set the insertion point to the given basic block id.

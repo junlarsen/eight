@@ -146,7 +146,6 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ) -> MirResult<()> {
         let value = self.visit_expr(builder, cx, &stmt.value)?;
         let ptr = builder.build_alloca(cx, self.arena.types().get_i32_type(), None);
-        // TODO: Should this be discarded?
         builder.build_store(cx, value, ptr, None);
         let name = self.arena.names().get(stmt.name);
         self.locals.add(name, ptr);

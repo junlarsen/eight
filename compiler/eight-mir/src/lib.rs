@@ -1,12 +1,11 @@
-use crate::instruction::{MirInstruction, MirInstructionId};
-use crate::ty::MirFunctionType;
-use crate::value::{MirValue, MirValueId};
-use std::collections::BTreeMap;
+use crate::instruction::MirInstructionId;
+use function::MirFunction;
 use std::ops::Deref;
 
 pub mod arena;
 pub mod builder;
 pub mod error;
+mod function;
 pub mod hir_lowering_pass;
 pub mod instruction;
 pub mod textual_pass;
@@ -32,42 +31,6 @@ impl Deref for MirFunctionId {
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-#[derive(Debug)]
-pub struct MirFunction<'mir> {
-    pub name: &'mir str,
-    pub ty: &'mir MirFunctionType<'mir>,
-    /// List of basic blocks built for the function.
-    blocks: BTreeMap<MirBasicBlockId, MirBasicBlock<'mir>>,
-    /// List of values built for the function.
-    values: BTreeMap<MirValueId, MirValue<'mir>>,
-    /// List of instructions built for the function.
-    instructions: BTreeMap<MirInstructionId, MirInstruction<'mir>>,
-}
-
-impl<'mir> MirFunction<'mir> {
-    /// Is the function expected to be resolved at link time?
-    ///
-    /// Functions with empty bodies are considered external.
-    pub fn is_external(&self) -> bool {
-        self.blocks.is_empty()
-    }
-
-    /// Get the instruction with the given id.
-    pub fn get_instruction(&self, id: MirInstructionId) -> Option<&MirInstruction<'mir>> {
-        self.instructions.get(&id)
-    }
-
-    /// Get the basic block with the given id.
-    pub fn get_basic_block(&self, id: MirBasicBlockId) -> Option<&MirBasicBlock<'mir>> {
-        self.blocks.get(&id)
-    }
-
-    /// Get the value with the given id.
-    pub fn get_value(&self, id: MirValueId) -> Option<&MirValue<'mir>> {
-        self.values.get(&id)
     }
 }
 

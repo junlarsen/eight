@@ -1,10 +1,11 @@
+use crate::function::MirFunction;
 use crate::instruction::{
     MirAllocaInstruction, MirCallInstruction, MirInstruction, MirLoadInstruction,
     MirStoreInstruction,
 };
 use crate::ty::MirType;
 use crate::value::{MirConstantInteger, MirValue};
-use crate::{MirBasicBlock, MirFunction, MirModule};
+use crate::{MirBasicBlock, MirModule};
 use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
@@ -119,8 +120,7 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(
                 self.arena.intersperse(
                     function
-                        .blocks
-                        .values()
+                        .blocks()
                         .map(|b| self.visit_basic_block(b, function)),
                     self.arena.hardline(),
                 ),
