@@ -1,7 +1,7 @@
 //! Common types and functions for the middle-end of the compiler.
 
 pub mod arena;
-pub mod context;
+pub mod scope;
 pub mod hir;
 pub mod intrinsic;
 pub mod mir;

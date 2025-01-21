@@ -2,7 +2,7 @@ use crate::arena::MirArena;
 use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::error::MirResult;
 use eight_diagnostics::{ice, sanity_check};
-use eight_middle::context::LocalContext;
+use eight_middle::scope::Scope;
 use eight_middle::hir::expr::{
     HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
     HirReferenceExpr, HirUnaryOpExpr,
@@ -20,14 +20,14 @@ use eight_middle::LinkageType;
 pub struct MirModuleLoweringPass<'mir> {
     arena: &'mir MirArena<'mir>,
     /// Mapping between local names and their MIR value ids.
-    locals: LocalContext<&'mir str, MirValueId>,
+    locals: Scope<&'mir str, MirValueId>,
 }
 
 impl<'mir> MirModuleLoweringPass<'mir> {
     pub fn new(arena: &'mir MirArena<'mir>) -> Self {
         Self {
             arena,
-            locals: LocalContext::default(),
+            locals: Scope::default(),
         }
     }
 }

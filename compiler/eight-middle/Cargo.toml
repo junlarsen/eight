@@ -10,3 +10,6 @@ eight-span = { path = "../eight-span" }
 
 bumpalo = { workspace = true }
 serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }

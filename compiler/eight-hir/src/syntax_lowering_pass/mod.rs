@@ -4,7 +4,7 @@ use crate::error::{
 };
 use crate::HirBuilder;
 use eight_diagnostics::ice;
-use eight_middle::context::LocalContext;
+use eight_middle::scope::Scope;
 use eight_middle::hir::expr::{HirBinaryOp, HirConstructExprArgument, HirExpr, HirUnaryOp};
 use eight_middle::hir::item::{HirFunction, HirInstance, HirStruct, HirTrait, HirType};
 use eight_middle::hir::module::{HirModule, HirModuleBody};
@@ -44,7 +44,7 @@ pub struct AstSyntaxLoweringPass<'ast, 'hir> {
     /// variables.
     ///
     /// These differ from the meta variables used in unification.
-    type_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
+    type_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
     type_binding_depth: u32,
     type_binding_index: u32,
 }
@@ -54,7 +54,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         Self {
             arena,
             loop_depth: VecDeque::new(),
-            type_binding_context: LocalContext::default(),
+            type_binding_context: Scope::default(),
             type_binding_depth: 0,
             type_binding_index: 0,
         }

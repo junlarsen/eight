@@ -2,11 +2,11 @@ use eight_diagnostics::ice;
 use std::collections::{BTreeMap, VecDeque};
 
 #[derive(Debug)]
-pub struct LocalContext<K, V> {
+pub struct Scope<K, V> {
     scopes: VecDeque<BTreeMap<K, V>>,
 }
 
-impl<K: Ord, V> Default for LocalContext<K, V> {
+impl<K: Ord, V> Default for Scope<K, V> {
     fn default() -> Self {
         Self {
             scopes: VecDeque::new(),
@@ -14,7 +14,7 @@ impl<K: Ord, V> Default for LocalContext<K, V> {
     }
 }
 
-impl<K: Ord, V> LocalContext<K, V> {
+impl<K: Ord, V> Scope<K, V> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -82,12 +82,12 @@ impl<K: Ord, V> LocalContext<K, V> {
 
 #[cfg(test)]
 mod tests {
-    use super::LocalContext;
+    use super::Scope;
     use eight_macros::assert_none;
 
     #[test]
     fn test_local_context_interleaving() {
-        let mut resolver = LocalContext::<&'static str, i32>::new();
+        let mut resolver = Scope::<&'static str, i32>::new();
         assert_eq!(resolver.depth(), 0);
         resolver.enter_scope();
         resolver.add("a", 1);
@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_local_context_removal() {
-        let mut resolver = LocalContext::<&'static str, i32>::new();
+        let mut resolver = Scope::<&'static str, i32>::new();
         resolver.enter_scope();
         resolver.add("a", 1);
         assert_eq!(Some(&1), resolver.find(&"a"));

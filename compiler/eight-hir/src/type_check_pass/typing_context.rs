@@ -11,7 +11,7 @@ use crate::type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
 use eight_diagnostics::ice;
-use eight_middle::context::LocalContext;
+use eight_middle::scope::Scope;
 use eight_middle::hir::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
@@ -43,9 +43,9 @@ pub struct TypingContext<'hir> {
     ///
     /// We currently don't support nested functions or lambdas, so this does not necessarily have to
     /// be a VecDeque, but it's here for future use.
-    type_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
-    let_binding_context: LocalContext<&'hir str, &'hir HirTy<'hir>>,
-    pub(crate) type_parameter_instantiations: LocalContext<(u32, u32), &'hir HirTy<'hir>>,
+    type_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
+    let_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
+    pub(crate) type_parameter_instantiations: Scope<(u32, u32), &'hir HirTy<'hir>>,
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
 }
@@ -74,9 +74,9 @@ impl<'hir> TypingContext<'hir> {
             module_query_db,
             constraints: Vec::new(),
             substitutions: Vec::new(),
-            let_binding_context: LocalContext::default(),
-            type_binding_context: LocalContext::default(),
-            type_parameter_instantiations: LocalContext::default(),
+            let_binding_context: Scope::default(),
+            type_binding_context: Scope::default(),
+            type_parameter_instantiations: Scope::default(),
             current_function: VecDeque::new(),
         }
     }
