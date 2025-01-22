@@ -23,6 +23,7 @@ pub enum MirInstruction<'mir> {
     Sub(MirSubInstruction<'mir>),
     Mul(MirMulInstruction<'mir>),
     Div(MirDivInstruction<'mir>),
+    PtrAdd(MirPtrAddInstruction<'mir>),
 }
 
 impl<'mir> MirInstruction<'mir> {
@@ -36,6 +37,7 @@ impl<'mir> MirInstruction<'mir> {
             MirInstruction::Sub(i) => i.ty,
             MirInstruction::Mul(i) => i.ty,
             MirInstruction::Div(i) => i.ty,
+            MirInstruction::PtrAdd(i) => i.ty,
         }
     }
 }
@@ -141,4 +143,18 @@ pub struct MirDivInstruction<'mir> {
     pub lhs: MirValueId,
     pub rhs: MirValueId,
     pub ty: &'mir MirType<'mir>,
+}
+
+/// The `ptr.add` instruction.
+///
+/// The `ptr.add` instruction adds an offset to a pointer, useful for calculating the address of a
+/// field in a struct or general pointer arithmetic.
+#[derive(Debug)]
+pub struct MirPtrAddInstruction<'mir> {
+    pub inst_id: MirInstructionId,
+    pub value_id: MirValueId,
+    pub name: &'mir str,
+    pub ty: &'mir MirType<'mir>,
+    pub ptr: MirValueId,
+    pub offset: MirValueId,
 }

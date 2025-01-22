@@ -3,8 +3,8 @@ use eight_middle::mir::bb::MirBasicBlock;
 use eight_middle::mir::function::{MirFunction, MirFunctionData, MirFunctionId};
 use eight_middle::mir::instruction::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirDivInstruction, MirInstruction,
-    MirInstructionId, MirLoadInstruction, MirMulInstruction, MirStoreInstruction,
-    MirSubInstruction,
+    MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
+    MirStoreInstruction, MirSubInstruction,
 };
 use eight_middle::mir::module::{MirModule, MirModuleData};
 use eight_middle::mir::ty::MirType;
@@ -163,6 +163,7 @@ impl<'a> MirModuleTextualPass<'a> {
             MirInstruction::Sub(i) => self.visit_sub_instruction(mcx, fcx, i),
             MirInstruction::Mul(i) => self.visit_mul_instruction(mcx, fcx, i),
             MirInstruction::Div(i) => self.visit_div_instruction(mcx, fcx, i),
+            MirInstruction::PtrAdd(i) => self.visit_ptr_add_instruction(mcx, fcx, i),
         }
     }
 
@@ -319,6 +320,23 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.text(","))
             .append(self.arena.space())
             .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+    }
+
+    pub fn visit_ptr_add_instruction<'mir: 'a>(
+        &'a self,
+        mcx: &'mir MirModuleData<'mir>,
+        fcx: &'mir MirFunctionData<'mir>,
+        node: &'mir MirPtrAddInstruction<'mir>,
+    ) -> DocBuilder<Arena<'a>> {
+        self.arena
+            .text("ptr.add")
+            .append(self.arena.space())
+            .append(self.visit_type(node.ty))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.ptr)))
+            .append(self.arena.text(","))
+            .append(self.arena.space())
+            .append(self.visit_value(mcx, fcx, fcx.get_value(node.offset)))
     }
 
     pub fn visit_value<'mir: 'a>(

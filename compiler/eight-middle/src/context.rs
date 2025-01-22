@@ -141,11 +141,10 @@ impl<'be> CompileContext<'be> {
         self.mir_types.get_interned(id, MirType::Void(MirVoidType))
     }
 
-    pub fn mir_pointer_type(&'be self, inner: &'be MirType<'be>) -> &'be MirType {
-        let inner_id = MirTypeId::from(inner);
-        let id = MirTypeId::compute_pointer_type_id(&inner_id);
+    pub fn mir_pointer_type(&'be self) -> &'be MirType {
+        let id = MirTypeId::compute_pointer_type_id();
         self.mir_types
-            .get_interned(id, MirType::Pointer(MirPointerType { inner }))
+            .get_interned(id, MirType::Pointer(MirPointerType {}))
     }
 
     pub fn mir_function_type(

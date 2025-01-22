@@ -5,8 +5,8 @@ use eight_middle::mir::bb::{MirBasicBlock, MirBasicBlockId};
 use eight_middle::mir::function::{MirFunction, MirFunctionData, MirFunctionId};
 use eight_middle::mir::instruction::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirDivInstruction, MirInstruction,
-    MirInstructionId, MirLoadInstruction, MirMulInstruction, MirStoreInstruction,
-    MirSubInstruction,
+    MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
+    MirStoreInstruction, MirSubInstruction,
 };
 use eight_middle::mir::module::{MirModule, MirModuleData};
 use eight_middle::mir::ty::{MirFunctionType, MirType};
@@ -242,8 +242,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
             inst_id,
             value_id,
             name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
-            // `mem.alloca` always yields a pointer type.
-            ty: self.cc.mir_pointer_type(ty),
+            ty: self.cc.mir_pointer_type(),
             alloc_ty: ty,
         });
         let inst = self.build_instruction(inst_id, inst);
@@ -412,6 +411,29 @@ impl<'mir> MirFunctionBuilder<'mir> {
             ty,
         });
         let inst = self.build_instruction(inst_id, inst);
+        self.insertion_point_mut().insert(inst);
+        self.build_value(value_id, MirValue::Instruction(inst))
+    }
+
+    pub fn build_ptr_add_instruction(
+        &mut self,
+        ptr: MirValueId,
+        offset: MirValueId,
+        name: Option<&'mir str>,
+    ) -> MirValueId {
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
+        let inst = self.build_instruction(
+            inst_id,
+            MirInstruction::PtrAdd(MirPtrAddInstruction {
+                inst_id,
+                value_id,
+                name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+                ty: self.cc.mir_pointer_type(),
+                ptr,
+                offset,
+            }),
+        );
         self.insertion_point_mut().insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }

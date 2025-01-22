@@ -28,9 +28,9 @@ impl MirTypeId {
         Self(hasher.finish())
     }
 
-    pub fn compute_pointer_type_id(inner: &MirTypeId) -> Self {
+    pub fn compute_pointer_type_id() -> Self {
         let mut hasher = DefaultHasher::new();
-        (0x20, inner).hash(&mut hasher);
+        (0x20).hash(&mut hasher);
         Self(hasher.finish())
     }
 }
@@ -41,7 +41,7 @@ impl<'mir> From<&'mir MirType<'mir>> for MirTypeId {
             MirType::Integer32(_) => MirTypeId::compute_i32_type_id(),
             MirType::Bool(_) => MirTypeId::compute_bool_type_id(),
             MirType::Void(_) => MirTypeId::compute_void_type_id(),
-            MirType::Pointer(ty) => MirTypeId::compute_pointer_type_id(&MirTypeId::from(ty.inner)),
+            MirType::Pointer(ty) => MirTypeId::compute_pointer_type_id(),
             MirType::Function(ty) => {
                 let parameters = ty
                     .parameters
@@ -62,7 +62,7 @@ pub enum MirType<'mir> {
     Integer32(MirInteger32Type),
     Bool(MirBoolType),
     Void(MirVoidType),
-    Pointer(MirPointerType<'mir>),
+    Pointer(MirPointerType),
     Function(MirFunctionType<'mir>),
 }
 
@@ -92,9 +92,7 @@ pub struct MirBoolType;
 pub struct MirVoidType;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-pub struct MirPointerType<'mir> {
-    pub inner: &'mir MirType<'mir>,
-}
+pub struct MirPointerType;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub struct MirFunctionType<'mir> {

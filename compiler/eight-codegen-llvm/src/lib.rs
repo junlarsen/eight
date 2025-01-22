@@ -176,7 +176,8 @@ impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
             MirInstruction::Add(_)
             | MirInstruction::Sub(_)
             | MirInstruction::Mul(_)
-            | MirInstruction::Div(_) => {
+            | MirInstruction::Div(_)
+            | MirInstruction::PtrAdd(_) => {
                 unimplemented!("cannot lower this instruction")
             }
         };

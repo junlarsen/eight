@@ -230,9 +230,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             ice!(format!("failed to find local value for {}", expr.name));
         });
         let value_ty = b.data().get_value_type(*id);
+        let expected_ty = self.visit_ty(expr.ty)?;
         // If it is a pointer type, we automatically dereference it.
         if let MirType::Pointer(v) = value_ty {
-            let load = b.build_load(cx, *id, v.inner, None);
+            let load = b.build_load(cx, *id, expected_ty, None);
             return Ok(load);
         }
         Ok(*id)
@@ -355,12 +356,12 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ///
     /// The type system in MIR is substantially smaller and simpler than the language and HIR. This
     /// means we can do a lot of shortcutting here.
-    pub fn visit_ty(&mut self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirType<'mir>> {
+    pub fn visit_ty(&self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirType<'mir>> {
         match node {
             HirTy::Integer32(_) => Ok(self.cc.mir_i32_type()),
             HirTy::Boolean(_) => Ok(self.cc.mir_bool_type()),
             HirTy::Unit(_) => Ok(self.cc.mir_void_type()),
-            HirTy::Pointer(i) => Ok(self.cc.mir_pointer_type(self.visit_ty(i.inner)?)),
+            HirTy::Pointer(i) => Ok(self.cc.mir_pointer_type()),
             HirTy::Function(_)
             | HirTy::Nominal(_)
             | HirTy::Variable(_)
