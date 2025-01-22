@@ -20,7 +20,7 @@ impl<'c> PipelineOperation<'c, HirModule<'c>, HirModule<'c>> for TypeCheckOperat
             });
 
         let mut typing_context = TypingContext::new(
-            &pipeline.hir_arena,
+            &pipeline.cc,
             pipeline
                 .hir_query_database
                 .get()

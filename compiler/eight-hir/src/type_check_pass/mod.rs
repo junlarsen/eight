@@ -142,7 +142,7 @@ impl HirModuleTypeCheckerPass {
 
         // Push the function's type onto the current stack, so that return statements can be checked
         // against the expected return type.
-        let HirTy::Function(self_ty) = cx.arena.types().get_function_ty(
+        let HirTy::Function(self_ty) = cx.cc.hir_function_type(
             node.instantiated_return_type
                 .unwrap_or_else(|| ice!("freshly built return type was missing")),
             node.instantiated_parameters.values().copied().collect(),
@@ -301,7 +301,7 @@ impl HirModuleTypeCheckerPass {
             };
             // Hack around the borrow checker. This returns the exact same value, but the lifetime
             // of the reference is not tied to `r#trait` anymore.
-            let name = cx.arena.names().get(type_parameter.name);
+            let name = cx.cc.intern_str(type_parameter.name);
             let span = type_parameter.span;
             debug_assert!(std::ptr::eq(type_parameter.name, name));
             let substitution = cx.fresh_meta_variable();
@@ -389,7 +389,7 @@ impl HirModuleTypeCheckerPass {
             .map(|p| Self::visit_type(cx, p))
             .collect::<HirResult<Vec<_>>>()?;
         let return_type = Self::visit_type(cx, node.return_type)?;
-        Ok(cx.arena.types().get_function_ty(return_type, parameters))
+        Ok(cx.cc.hir_function_type(return_type, parameters))
     }
 
     /// Visit a pointer type.
@@ -398,7 +398,7 @@ impl HirModuleTypeCheckerPass {
         node: &'hir HirPointerTy<'hir>,
     ) -> HirResult<&'hir HirTy<'hir>> {
         let inner = Self::visit_type(cx, node.inner)?;
-        Ok(cx.arena.types().get_pointer_ty(inner))
+        Ok(cx.cc.hir_pointer_type(inner))
     }
 
     /// Collect type constraints for an expression.
@@ -858,7 +858,7 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         Self::enter_expr(cx, &mut node.condition)?;
         // We also impose a new constraint that the condition must be a boolean
-        cx.infer(&mut node.condition, cx.arena.types().get_boolean_ty())?;
+        cx.infer(&mut node.condition, cx.cc.hir_boolean_type())?;
         cx.enter_let_binding_scope();
         for stmt in node.body.iter_mut() {
             Self::enter_stmt(cx, stmt)?;
@@ -938,7 +938,7 @@ impl HirModuleTypeCheckerPass {
     ) -> HirResult<()> {
         Self::enter_expr(cx, &mut node.condition)?;
         // We also impose a new constraint that the condition must be a boolean
-        cx.infer(&mut node.condition, cx.arena.types().get_boolean_ty())?;
+        cx.infer(&mut node.condition, cx.cc.hir_boolean_type())?;
 
         // Traverse down the happy path
         cx.enter_let_binding_scope();

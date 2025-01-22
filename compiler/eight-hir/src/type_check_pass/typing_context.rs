@@ -1,4 +1,3 @@
-use crate::arena::HirArena;
 use crate::error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
     FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
@@ -11,13 +10,14 @@ use crate::type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
 use eight_diagnostics::ice;
-use eight_middle::scope::Scope;
+use eight_middle::context::CompileContext;
 use eight_middle::hir::expr::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirGroupExpr,
     HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
 };
 use eight_middle::hir::ty::{HirFunctionTy, HirMetaTy, HirTy};
+use eight_middle::scope::Scope;
 use eight_span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
@@ -29,7 +29,7 @@ pub struct TypingContext<'hir> {
     /// A reference to the Hir arena for allocating types.
     ///
     /// TODO: Should this be private?
-    pub arena: &'hir HirArena<'hir>,
+    pub cc: &'hir CompileContext<'hir>,
     pub module_query_db: &'hir HirSignatureQueryDatabase<'hir>,
 
     /// Collected constraints during inference, to be solved during unification.
@@ -66,11 +66,11 @@ impl<'hir> Debug for TypingContext<'hir> {
 impl<'hir> TypingContext<'hir> {
     /// Create a new typing context given the HIR arena and module signature derived from the AST.
     pub fn new(
-        arena: &'hir HirArena<'hir>,
+        cc: &'hir CompileContext<'hir>,
         module_query_db: &'hir HirSignatureQueryDatabase<'hir>,
     ) -> Self {
         Self {
-            arena,
+            cc,
             module_query_db,
             constraints: Vec::new(),
             substitutions: Vec::new(),
@@ -198,7 +198,7 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.arena.types().get_integer32_ty(),
+            self.cc.hir_integer32_type(),
             expr.span,
             expr.span,
         );
@@ -213,7 +213,7 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.arena.types().get_boolean_ty(),
+            self.cc.hir_boolean_type(),
             expr.span,
             expr.span,
         );
@@ -228,7 +228,7 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.arena.types().get_unit_ty(),
+            self.cc.hir_unit_type(),
             expr.span,
             expr.lhs.span(),
         );
@@ -260,10 +260,7 @@ impl<'hir> TypingContext<'hir> {
                 .iter()
                 .map(|p| p.ty)
                 .collect::<Vec<_>>();
-            let ty = self
-                .arena
-                .types()
-                .get_function_ty(signature.return_type, parameters);
+            let ty = self.cc.hir_function_type(signature.return_type, parameters);
             self.constrain_eq(expectation, ty, expr.span, expr.name_span);
             return Ok(());
         }
@@ -279,7 +276,7 @@ impl<'hir> TypingContext<'hir> {
             .collect::<Vec<_>>();
         let return_type =
             self.eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
-        let ty = self.arena.types().get_function_ty(return_type, parameters);
+        let ty = self.cc.hir_function_type(return_type, parameters);
         self.constrain_eq(expectation, ty, expr.span, expr.name_span);
         Ok(())
     }
@@ -292,13 +289,13 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         // The index must be an integer type
         self.constrain_eq(
-            self.arena.types().get_integer32_ty(),
+            self.cc.hir_integer32_type(),
             expr.index.ty(),
             expr.span,
             expr.index.span(),
         );
         // The origin must be a pointer of the element type
-        let elem_ptr_ty = self.arena.types().get_pointer_ty(expectation);
+        let elem_ptr_ty = self.cc.hir_pointer_type(expectation);
         self.constrain_eq(elem_ptr_ty, expr.origin.ty(), expr.span, expr.origin.span());
         // The resulting type must be the element type
         self.constrain_eq(expectation, expr.ty, expr.span, expr.origin.span());
@@ -323,10 +320,7 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
-        let expected_signature = self
-            .arena
-            .types()
-            .get_function_ty(expectation, expected_args);
+        let expected_signature = self.cc.hir_function_type(expectation, expected_args);
         self.unify_eq(EqualityConstraint {
             expectation: expected_signature,
             actual: expr.callee.ty(),
@@ -430,7 +424,7 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // &a means that e is *inner, and expectation is *inner
-        let result_ty = self.arena.types().get_pointer_ty(expr.inner.ty());
+        let result_ty = self.cc.hir_pointer_type(expr.inner.ty());
         self.constrain_eq(expectation, result_ty, expr.span, expr.inner.span());
         self.constrain_eq(expr.ty, result_ty, expr.span, expr.inner.span());
         Ok(())
@@ -443,7 +437,7 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // *a means inner is a pointer type, and expected and e are unbox inner
-        let inner_ptr = self.arena.types().get_pointer_ty(expectation);
+        let inner_ptr = self.cc.hir_pointer_type(expectation);
         self.constrain_eq(expr.inner.ty(), inner_ptr, expr.span, expr.inner.span());
         self.constrain_eq(expr.ty, expectation, expr.span, expr.inner.span());
         Ok(())
@@ -475,8 +469,8 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         self.constrain_eq(expr.ty, expectation, expr.span, expr.operand.span());
         let (trait_name, method_name) = match &expr.op {
-            HirUnaryOp::Not => (self.arena.names().get("Not"), self.arena.names().get("not")),
-            HirUnaryOp::Neg => (self.arena.names().get("Neg"), self.arena.names().get("neg")),
+            HirUnaryOp::Not => (self.cc.intern_str("Not"), self.cc.intern_str("not")),
+            HirUnaryOp::Neg => (self.cc.intern_str("Neg"), self.cc.intern_str("neg")),
         };
         self.constrain_instance(
             trait_name,
@@ -502,19 +496,19 @@ impl<'hir> TypingContext<'hir> {
             expr.span,
         );
         let (trait_name, method_name) = match &expr.op {
-            HirBinaryOp::Add => (self.arena.names().get("Add"), self.arena.names().get("add")),
-            HirBinaryOp::Sub => (self.arena.names().get("Sub"), self.arena.names().get("sub")),
-            HirBinaryOp::Mul => (self.arena.names().get("Mul"), self.arena.names().get("mul")),
-            HirBinaryOp::Div => (self.arena.names().get("Div"), self.arena.names().get("div")),
-            HirBinaryOp::Rem => (self.arena.names().get("Rem"), self.arena.names().get("rem")),
-            HirBinaryOp::Eq => (self.arena.names().get("Eq"), self.arena.names().get("eq")),
-            HirBinaryOp::Neq => (self.arena.names().get("Eq"), self.arena.names().get("neq")),
-            HirBinaryOp::Lt => (self.arena.names().get("Ord"), self.arena.names().get("lt")),
-            HirBinaryOp::Gt => (self.arena.names().get("Ord"), self.arena.names().get("gt")),
-            HirBinaryOp::Lte => (self.arena.names().get("Ord"), self.arena.names().get("lte")),
-            HirBinaryOp::Gte => (self.arena.names().get("Ord"), self.arena.names().get("gte")),
-            HirBinaryOp::And => (self.arena.names().get("And"), self.arena.names().get("and")),
-            HirBinaryOp::Or => (self.arena.names().get("Or"), self.arena.names().get("or")),
+            HirBinaryOp::Add => (self.cc.intern_str("Add"), self.cc.intern_str("add")),
+            HirBinaryOp::Sub => (self.cc.intern_str("Sub"), self.cc.intern_str("sub")),
+            HirBinaryOp::Mul => (self.cc.intern_str("Mul"), self.cc.intern_str("mul")),
+            HirBinaryOp::Div => (self.cc.intern_str("Div"), self.cc.intern_str("div")),
+            HirBinaryOp::Rem => (self.cc.intern_str("Rem"), self.cc.intern_str("rem")),
+            HirBinaryOp::Eq => (self.cc.intern_str("Eq"), self.cc.intern_str("eq")),
+            HirBinaryOp::Neq => (self.cc.intern_str("Eq"), self.cc.intern_str("neq")),
+            HirBinaryOp::Lt => (self.cc.intern_str("Ord"), self.cc.intern_str("lt")),
+            HirBinaryOp::Gt => (self.cc.intern_str("Ord"), self.cc.intern_str("gt")),
+            HirBinaryOp::Lte => (self.cc.intern_str("Ord"), self.cc.intern_str("le")),
+            HirBinaryOp::Gte => (self.cc.intern_str("Ord"), self.cc.intern_str("ge")),
+            HirBinaryOp::And => (self.cc.intern_str("And"), self.cc.intern_str("and")),
+            HirBinaryOp::Or => (self.cc.intern_str("Or"), self.cc.intern_str("or")),
         };
         let arguments = match &expr.op {
             HirBinaryOp::And
@@ -600,12 +594,12 @@ impl<'hir> TypingContext<'hir> {
                     .map(|p| self.substitute(p))
                     .collect::<HirResult<Vec<_>>>()?;
                 let return_type = self.substitute(f.return_type)?;
-                Ok(self.arena.types().get_function_ty(return_type, parameters))
+                Ok(self.cc.hir_function_type(return_type, parameters))
             }
             // We substitute pointer types by substituting the inner type
             HirTy::Pointer(p) => {
                 let inner = self.substitute(p.inner)?;
-                Ok(self.arena.types().get_pointer_ty(inner))
+                Ok(self.cc.hir_pointer_type(inner))
             }
             // Anything else is not a type variable or a constructor type, so there is nothing to
             // be done here.
@@ -950,7 +944,7 @@ impl<'hir> TypingContext<'hir> {
     /// Create a fresh meta variable.
     pub fn fresh_meta_variable(&mut self) -> &'hir HirTy<'hir> {
         let index = self.substitutions.len() as u32;
-        let ty = self.arena.types().get_meta_ty(index);
+        let ty = self.cc.hir_meta_type(index);
         self.substitutions.push(ty);
         ty
     }
@@ -971,7 +965,7 @@ impl<'hir> TypingContext<'hir> {
                 .or_insert_with(|| self.fresh_meta_variable()),
             HirTy::Pointer(p) => {
                 let inner = self.eliminate_type_variables_within_ty(instantiations, p.inner);
-                self.arena.types().get_pointer_ty(inner)
+                self.cc.hir_pointer_type(inner)
             }
             HirTy::Meta(_)
             | HirTy::Boolean(_)

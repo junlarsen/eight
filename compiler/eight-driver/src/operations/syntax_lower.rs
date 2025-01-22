@@ -10,7 +10,7 @@ impl<'c> PipelineOperation<'c, AstTranslationUnit<'c>, HirModule<'c>> for Syntax
         pipeline: &'c Pipeline<'c>,
         input: AstTranslationUnit<'c>,
     ) -> Result<HirModule<'c>, PipelineError> {
-        let mut lowering_pass = AstSyntaxLoweringPass::new(&pipeline.hir_arena);
+        let mut lowering_pass = AstSyntaxLoweringPass::new(&pipeline.cc);
         let module = lowering_pass.visit_translation_unit(&input)?;
         Ok(module)
     }

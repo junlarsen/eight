@@ -9,9 +9,9 @@ use crate::operations::type_check::TypeCheckOperation;
 use crate::query::EmitQuery;
 use eight_codegen_llvm::error::LLVMBackendError;
 use eight_diagnostics::ice;
-use eight_hir::arena::HirArena;
 use eight_hir::error::HirError;
 use eight_hir::query::HirSignatureQueryDatabase;
+use eight_middle::context::CompileContext;
 use eight_mir::arena::MirArena;
 use eight_mir::error::MirError;
 use eight_syntax::arena::AstArena;
@@ -79,8 +79,8 @@ pub struct PipelineOptions {
 /// A compilation pipeline for the compiler.
 pub struct Pipeline<'c> {
     pub(crate) opts: PipelineOptions,
+    pub(crate) cc: ManuallyDrop<CompileContext<'c>>,
     pub(crate) ast_arena: ManuallyDrop<AstArena<'c>>,
-    pub(crate) hir_arena: ManuallyDrop<HirArena<'c>>,
     pub(crate) mir_arena: ManuallyDrop<MirArena<'c>>,
     pub(crate) hir_query_database: OnceCell<HirSignatureQueryDatabase<'c>>,
 }
@@ -89,8 +89,8 @@ impl<'c> Pipeline<'c> {
     pub fn new(opts: PipelineOptions) -> Self {
         Self {
             opts,
+            cc: ManuallyDrop::new(CompileContext::new()),
             ast_arena: ManuallyDrop::new(AstArena::default()),
-            hir_arena: ManuallyDrop::new(HirArena::default()),
             mir_arena: ManuallyDrop::new(MirArena::default()),
             hir_query_database: OnceCell::new(),
         }

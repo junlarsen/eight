@@ -1,10 +1,11 @@
 //! Common types and functions for the middle-end of the compiler.
 
-pub mod arena;
-pub mod scope;
+pub mod context;
 pub mod hir;
+pub mod intern;
 pub mod intrinsic;
 pub mod mir;
+pub mod scope;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Eq)]

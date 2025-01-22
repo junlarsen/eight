@@ -26,7 +26,6 @@ use eight_middle::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
 
-pub mod arena;
 pub mod error;
 pub mod query;
 pub mod syntax_lowering_pass;
