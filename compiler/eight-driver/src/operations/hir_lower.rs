@@ -1,4 +1,4 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelineOperation, StopTokenStep};
 use eight_middle::hir::module::HirModule;
 use eight_middle::mir::module::MirModule;
 use eight_mir::hir_lowering_pass::MirModuleLoweringPass;
@@ -11,10 +11,9 @@ impl<'c> PipelineOperation<'c, HirModule<'c>, MirModule<'c>> for HirLowerOperati
         pipeline: &'c Pipeline<'c>,
         input: HirModule<'c>,
     ) -> Result<MirModule<'c>, PipelineError> {
-        if pipeline.opts.syntax_only {
+        if matches!(pipeline.opts.stop_token, Some(StopTokenStep::Frontend)) {
             return Err(PipelineError::StopToken("--syntax-only".to_owned()));
         }
-
         let mut lowering_pass = MirModuleLoweringPass::new(&pipeline.cc);
         let module = lowering_pass.visit_module(&input)?;
         Ok(module)

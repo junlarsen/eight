@@ -1,4 +1,4 @@
-// RUN: %eightc --emit-mir --emit-query mir.fn.test %s | %fc %s
+// RUN: %not %eightc --emit-mir --emit-query mir.fn.test --mir-only %s 2>&1 | %fc %s
 
 trait Sub<A, B, R> {
   fn sub(a: A, b: B) -> R;

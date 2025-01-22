@@ -488,12 +488,7 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirBinaryOpExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        self.constrain_eq(
-            expr.ty,
-            expectation,
-            expr.span,
-            expr.span,
-        );
+        self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
         let (trait_name, method_name) = match &expr.op {
             HirBinaryOp::Add => (self.cc.intern_str("Add"), self.cc.intern_str("add")),
             HirBinaryOp::Sub => (self.cc.intern_str("Sub"), self.cc.intern_str("sub")),

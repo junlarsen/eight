@@ -1,4 +1,4 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelineOperation, StopTokenStep};
 use crate::query::{EmitQuery, MirEmitQuery};
 use eight_diagnostics::ice;
 use eight_middle::mir::module::MirModule;
@@ -31,8 +31,8 @@ impl<'c> PipelineOperation<'c, MirModule<'c>, MirModule<'c>> for EmitMirOperatio
         pipeline: &'c Pipeline<'c>,
         input: MirModule<'c>,
     ) -> Result<MirModule<'c>, PipelineError> {
-        if !pipeline.opts.emit_mir || pipeline.opts.syntax_only {
-            return Ok(input);
+        if matches!(pipeline.opts.stop_token, Some(StopTokenStep::Frontend)) {
+            return Err(PipelineError::StopToken("--syntax-only".to_owned()));
         }
 
         let textual_pass = MirModuleTextualPass::default();

@@ -64,6 +64,13 @@ pub enum PipelineError {
     StopToken(String),
 }
 
+/// Stop token indicating that the pipeline should stop after a certain step.
+#[derive(Eq, PartialEq)]
+pub enum StopTokenStep {
+    Frontend,
+    Middle,
+}
+
 /// Options for the compilation pipeline.
 ///
 /// Most of these are derived from the command line arguments.
@@ -71,7 +78,7 @@ pub struct PipelineOptions {
     pub emit_ast: bool,
     pub emit_hir: bool,
     pub emit_mir: bool,
-    pub syntax_only: bool,
+    pub stop_token: Option<StopTokenStep>,
     pub queries: Vec<EmitQuery>,
 }
 

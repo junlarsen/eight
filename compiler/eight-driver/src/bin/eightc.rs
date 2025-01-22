@@ -1,11 +1,14 @@
 use clap::Parser;
-use eight_driver::pipeline::{execute_compilation_pipeline, PipelineError, PipelineOptions};
+use eight_driver::pipeline::{
+    execute_compilation_pipeline, PipelineError, PipelineOptions, StopTokenStep,
+};
 use eight_driver::query::{EmitQuery, QueryError};
 use miette::NamedSource;
 use std::io::BufRead;
 
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
+#[clap()]
 struct AppArgs {
     /// The input source. If this is `-`, the input is read from stdin.
     input: String,
@@ -26,9 +29,13 @@ struct AppArgs {
     #[arg(long)]
     emit_query: Option<Vec<String>>,
 
-    /// Disable the backend, and only execute the frontend.
-    #[arg(long, default_value = "false")]
+    /// Stop the compiler after the type checker.
+    #[arg(long, default_value = "false", group = "stop-token")]
     syntax_only: bool,
+
+    /// Stop the compiler after MIR lowering.
+    #[arg(long, default_value = "false", group = "stop-token")]
+    mir_only: bool,
 }
 
 // NOTE: We don't care to use From here, because the PipelineOptions should be completely
@@ -42,11 +49,16 @@ impl TryInto<PipelineOptions> for AppArgs {
             .map(|q| EmitQuery::from_queries(&q.iter().map(|s| s.as_str()).collect::<Vec<_>>()))
             .transpose()?
             .unwrap_or_default();
+        let token = match (self.syntax_only, self.mir_only) {
+            (true, _) => Some(StopTokenStep::Frontend),
+            (_, true) => Some(StopTokenStep::Middle),
+            _ => None,
+        };
         Ok(PipelineOptions {
             emit_ast: self.emit_ast,
             emit_hir: self.emit_hir,
             emit_mir: self.emit_mir,
-            syntax_only: self.syntax_only,
+            stop_token: token,
             queries,
         })
     }

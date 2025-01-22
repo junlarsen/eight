@@ -66,7 +66,8 @@ Options:
       --emit-hir                 Should the fully-typed, lowered HIR be emitted?
       --emit-mir                 Should the MIR be emitted?
       --emit-query <EMIT_QUERY>  Emission queries to specify which nodes should be emitted
-      --syntax-only              Disable the backend, and only execute the frontend
+      --syntax-only        Stop the compiler after the type checker
+      --stop-token-mir-lower     Stop the compiler after MIR lowering
   -h, --help                     Print help
   -V, --version                  Print version
 ```
