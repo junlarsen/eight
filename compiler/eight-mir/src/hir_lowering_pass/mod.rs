@@ -176,11 +176,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
             HirExpr::BinaryOp(e) => self.visit_binary_op_expr(b, cx, e),
+            HirExpr::UnaryOp(e) => self.visit_unary_op_expr(b, cx, e),
             HirExpr::Group(_)
             | HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
-            | HirExpr::UnaryOp(_)
-            | HirExpr::BinaryOp(_)
             | HirExpr::ConstantIndex(_)
             | HirExpr::OffsetIndex(_)
             | HirExpr::Construct(_)
@@ -341,7 +340,14 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ) -> MirResult<MirValueId> {
         let operand = self.visit_expr(b, cx, &expr.operand)?;
         let ty = b.data().get_value_type(operand);
-        let inst = unimplemented!("unary operator {candidate:?} is not yet implemented");
+        let inst = match candidate {
+            // Negation of a number is implemented as subtraction from zero.
+            UnaryIntrinsicCandidate::IntegerNeg => {
+                let zero = b.build_constant_integer32(0, self.cc.mir_i32_type());
+                b.build_sub(cx, zero, operand, ty, None)
+            }
+            _ => unimplemented!("unary operator {candidate:?} is not yet implemented"),
+        };
         Ok(inst)
     }
 
