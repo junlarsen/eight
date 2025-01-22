@@ -3,8 +3,6 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 
 /// A single token parsed from the source code.
-///
-/// TODO: Consider if it's worth interning the spans as they are copied a lot around in the AST.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {

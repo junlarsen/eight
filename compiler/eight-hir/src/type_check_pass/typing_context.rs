@@ -492,7 +492,6 @@ impl<'hir> TypingContext<'hir> {
             expr.ty,
             expectation,
             expr.span,
-            // TODO: is this correct?
             expr.span,
         );
         let (trait_name, method_name) = match &expr.op {

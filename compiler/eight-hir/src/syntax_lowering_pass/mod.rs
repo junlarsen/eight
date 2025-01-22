@@ -686,7 +686,6 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
             .transpose()?
             .unwrap_or_else(|| {
                 HirExpr::BooleanLiteral(HirBuilder::build_boolean_literal_expr(
-                    // TODO: Should this span actually be empty? Probably?
                     Span::empty(),
                     true,
                     self.cc.hir_uninitialized_type(),
