@@ -3,7 +3,9 @@ use crate::hir::ty::{
     HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy,
 };
 use crate::intern::{StringInterner, TypedInterner};
-use crate::mir::ty::{MirType, MirTypeId};
+use crate::mir::ty::{
+    MirBoolType, MirFunctionType, MirInteger32Type, MirPointerType, MirType, MirTypeId, MirVoidType,
+};
 use bumpalo::Bump;
 use eight_span::Span;
 use std::rc::Rc;
@@ -42,8 +44,13 @@ impl<'be> CompileContext<'be> {
     }
 
     /// Intern a string into the context.
-    pub fn intern_str(&'be self, name: &str) -> &'be str {
-        self.strings.get(name)
+    pub fn intern_str<T: AsRef<str>>(&'be self, name: T) -> &'be str {
+        self.strings.get(name.as_ref())
+    }
+
+    /// Intern something that can be converted to a string into the context.
+    pub fn intern_as_str<T: ToString>(&'be self, name: T) -> &'be str {
+        self.intern_str(name.to_string())
     }
 }
 
@@ -117,5 +124,47 @@ impl<'be> CompileContext<'be> {
     }
 }
 
-/// Implementation block for the MIR components.
-impl<'be> CompileContext<'be> {}
+impl<'be> CompileContext<'be> {
+    pub fn mir_i32_type(&'be self) -> &'be MirType {
+        let id = MirTypeId::compute_i32_type_id();
+        self.mir_types
+            .get_interned(id, MirType::Integer32(MirInteger32Type))
+    }
+
+    pub fn mir_bool_type(&'be self) -> &'be MirType {
+        let id = MirTypeId::compute_bool_type_id();
+        self.mir_types.get_interned(id, MirType::Bool(MirBoolType))
+    }
+
+    pub fn mir_void_type(&'be self) -> &'be MirType {
+        let id = MirTypeId::compute_void_type_id();
+        self.mir_types.get_interned(id, MirType::Void(MirVoidType))
+    }
+
+    pub fn mir_pointer_type(&'be self, inner: &'be MirType<'be>) -> &'be MirType {
+        let inner_id = MirTypeId::from(inner);
+        let id = MirTypeId::compute_pointer_type_id(&inner_id);
+        self.mir_types
+            .get_interned(id, MirType::Pointer(MirPointerType { inner }))
+    }
+
+    pub fn mir_function_type(
+        &'be self,
+        return_type: &'be MirType,
+        parameters: Vec<&'be MirType>,
+    ) -> &'be MirType<'be> {
+        let return_type_id = MirTypeId::from(return_type);
+        let parameters_ids = parameters
+            .iter()
+            .map(|ty| MirTypeId::from(*ty))
+            .collect::<Vec<_>>();
+        let id = MirTypeId::compute_function_type_id(&return_type_id, parameters_ids.as_slice());
+        self.mir_types.get_interned(
+            id,
+            MirType::Function(MirFunctionType {
+                return_type,
+                parameters,
+            }),
+        )
+    }
+}

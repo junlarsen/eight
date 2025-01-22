@@ -1,5 +1,5 @@
-use crate::arena::MirArena;
 use eight_diagnostics::ice;
+use eight_middle::context::CompileContext;
 use eight_middle::hir::module::HirModule;
 use eight_middle::mir::bb::{MirBasicBlock, MirBasicBlockId};
 use eight_middle::mir::function::{MirFunction, MirFunctionData, MirFunctionId};
@@ -15,16 +15,16 @@ use eight_middle::mir::value::{
 };
 
 pub struct MirModuleContext<'mir, 'hir> {
-    arena: &'mir MirArena<'mir>,
+    cc: &'mir CompileContext<'mir>,
     hir_module: &'hir HirModule<'hir>,
     data: MirModuleData<'mir>,
     function_id: usize,
 }
 
 impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
-    pub fn new(arena: &'mir MirArena<'mir>, hir_module: &'hir HirModule<'hir>) -> Self {
+    pub fn new(cc: &'mir CompileContext<'mir>, hir_module: &'hir HirModule<'hir>) -> Self {
         Self {
-            arena,
+            cc,
             hir_module,
             function_id: 0,
             data: MirModuleData::default(),
@@ -41,7 +41,7 @@ impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
         name: &str,
         ty: &'mir MirFunctionType<'mir>,
     ) -> MirFunctionId {
-        let name = self.arena.names().get(name);
+        let name = self.cc.intern_str(name);
         let id = MirFunctionId(self.function_id);
         self.function_id += 1;
         self.data.function_names.insert(id, name);
@@ -68,7 +68,7 @@ impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
 /// A MIR builder is responsible for building a complete MIR function.
 pub struct MirFunctionBuilder<'mir> {
     id: MirFunctionId,
-    arena: &'mir MirArena<'mir>,
+    cc: &'mir CompileContext<'mir>,
     ty: &'mir MirFunctionType<'mir>,
     name: &'mir str,
     data: MirFunctionData<'mir>,
@@ -82,7 +82,7 @@ pub struct MirFunctionBuilder<'mir> {
 impl<'mir> MirFunctionBuilder<'mir> {
     /// Create a new MIR function builder based on a signature.
     pub fn new(
-        arena: &'mir MirArena<'mir>,
+        cc: &'mir CompileContext<'mir>,
         name: &'mir str,
         ty: &'mir MirFunctionType<'mir>,
         id: MirFunctionId,
@@ -91,7 +91,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
             id,
             ty,
             name,
-            arena,
+            cc,
             data: MirFunctionData::default(),
             block_id: 0,
             value_id: 0,
@@ -117,7 +117,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
     /// Create a new basic block
     pub fn build_basic_block(&mut self, name: Option<&'mir str>) -> MirBasicBlockId {
         let id = self.block_id;
-        let name = name.unwrap_or_else(|| self.arena.names().get_usize(id));
+        let name = name.unwrap_or_else(|| self.cc.intern_as_str(id));
         let id = MirBasicBlockId(id);
         let block = MirBasicBlock {
             name,
@@ -241,9 +241,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Alloca(MirAllocaInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
             // `mem.alloca` always yields a pointer type.
-            ty: self.arena.types().get_pointer_type(ty),
+            ty: self.cc.mir_pointer_type(ty),
             alloc_ty: ty,
         });
         let inst = self.build_instruction(inst_id, inst);
@@ -262,8 +262,8 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst_id = self.get_next_instruction_id();
         let inst = MirInstruction::Store(MirStoreInstruction {
             inst_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
-            ty: self.arena.types().get_void_type(),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            ty: self.cc.mir_void_type(),
             // Stores are always into pointer types
             dest_ty: self.data.get_value_type(value),
             value,
@@ -287,7 +287,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Load(MirLoadInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
             ty,
             src,
         });
@@ -310,7 +310,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Call(MirCallInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
             callee,
             arguments,
             ty: return_ty,
@@ -334,7 +334,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Add(MirAddInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
             lhs,
             rhs,
             ty,
@@ -358,7 +358,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Sub(MirSubInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
             lhs,
             rhs,
             ty,
@@ -382,7 +382,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Mul(MirMulInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
             lhs,
             rhs,
             ty,
@@ -406,7 +406,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Div(MirDivInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.arena.names().get_usize(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
             lhs,
             rhs,
             ty,

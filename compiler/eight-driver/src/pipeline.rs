@@ -12,7 +12,6 @@ use eight_diagnostics::ice;
 use eight_hir::error::HirError;
 use eight_hir::query::HirSignatureQueryDatabase;
 use eight_middle::context::CompileContext;
-use eight_mir::arena::MirArena;
 use eight_mir::error::MirError;
 use eight_syntax::arena::AstArena;
 use eight_syntax::error::ParseError;
@@ -81,7 +80,6 @@ pub struct Pipeline<'c> {
     pub(crate) opts: PipelineOptions,
     pub(crate) cc: ManuallyDrop<CompileContext<'c>>,
     pub(crate) ast_arena: ManuallyDrop<AstArena<'c>>,
-    pub(crate) mir_arena: ManuallyDrop<MirArena<'c>>,
     pub(crate) hir_query_database: OnceCell<HirSignatureQueryDatabase<'c>>,
 }
 
@@ -91,7 +89,6 @@ impl<'c> Pipeline<'c> {
             opts,
             cc: ManuallyDrop::new(CompileContext::new()),
             ast_arena: ManuallyDrop::new(AstArena::default()),
-            mir_arena: ManuallyDrop::new(MirArena::default()),
             hir_query_database: OnceCell::new(),
         }
     }

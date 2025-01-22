@@ -16,7 +16,7 @@ impl EmitMirOperation {
         match query {
             MirEmitQuery::Function(name) => {
                 // TODO: This shouldn't really happen...
-                let name = pipeline.mir_arena.names().get(name);
+                let name = pipeline.cc.intern_str(name);
                 let function = module
                     .data()
                     .get_function_by_name(name)

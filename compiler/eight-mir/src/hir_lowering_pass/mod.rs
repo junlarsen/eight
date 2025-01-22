@@ -1,7 +1,7 @@
-use crate::arena::MirArena;
 use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::error::MirResult;
 use eight_diagnostics::{ice, sanity_check};
+use eight_middle::context::CompileContext;
 use eight_middle::hir::expr::{
     HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
     HirReferenceExpr, HirUnaryOpExpr,
@@ -18,15 +18,15 @@ use eight_middle::scope::Scope;
 use eight_middle::LinkageType;
 
 pub struct MirModuleLoweringPass<'mir> {
-    arena: &'mir MirArena<'mir>,
+    cc: &'mir CompileContext<'mir>,
     /// Mapping between local names and their MIR value ids.
     locals: Scope<&'mir str, MirValueId>,
 }
 
 impl<'mir> MirModuleLoweringPass<'mir> {
-    pub fn new(arena: &'mir MirArena<'mir>) -> Self {
+    pub fn new(cc: &'mir CompileContext<'mir>) -> Self {
         Self {
-            arena,
+            cc,
             locals: Scope::default(),
         }
     }
@@ -34,7 +34,7 @@ impl<'mir> MirModuleLoweringPass<'mir> {
 
 impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_module(&mut self, module: &'hir HirModule<'hir>) -> MirResult<MirModule<'mir>> {
-        let mut module_builder = MirModuleContext::new(self.arena, module);
+        let mut module_builder = MirModuleContext::new(self.cc, module);
         // Forward declare all functions contained in the module
         for function in module.body.functions.values() {
             let return_type = self.visit_ty(function.signature.return_type)?;
@@ -44,19 +44,15 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 .iter()
                 .map(|p| self.visit_ty(p.ty))
                 .collect::<MirResult<Vec<_>>>()?;
-            let MirType::Function(ty) = self
-                .arena
-                .types()
-                .get_function_type(return_type, parameters)
-            else {
+            let MirType::Function(ty) = self.cc.mir_function_type(return_type, parameters) else {
                 ice!("didnt get function type from arena");
             };
-            let name = self.arena.names().get(function.name);
+            let name = self.cc.intern_str(function.name);
             module_builder.forward_declare_function(name, ty);
         }
         // Generate the MIR code for all functions
         for function in module.body.functions.values() {
-            let name = self.arena.names().get(function.name);
+            let name = self.cc.intern_str(function.name);
             let Some(id) = module_builder.data().get_function_id(name) else {
                 ice!(format!("failed to find function id for {}", function.name));
             };
@@ -66,7 +62,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                     function.name
                 ));
             };
-            let mut builder = MirFunctionBuilder::new(self.arena, name, ty, id);
+            let mut builder = MirFunctionBuilder::new(self.cc, name, ty, id);
             self.visit_function(function, &mut builder, &module_builder)?;
             module_builder.implement_function(id, builder.build());
         }
@@ -94,7 +90,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b.move_insertion_point(entry);
         for parameter in node.signature.parameters.iter() {
             let ty = self.visit_ty(parameter.ty)?;
-            let name = self.arena.names().get(parameter.name);
+            let name = self.cc.intern_str(parameter.name);
             let argument = b.build_argument(name, ty);
             self.locals.add(name, argument);
         }
@@ -152,7 +148,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let value_ty = b.data().get_value_type(value);
         let ptr = b.build_alloca(cx, value_ty, None);
         b.build_store(cx, value, ptr, None);
-        let name = self.arena.names().get(stmt.name);
+        let name = self.cc.intern_str(stmt.name);
         self.locals.add(name, ptr);
         Ok(())
     }
@@ -198,7 +194,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirIntegerLiteralExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        let inst = b.build_constant_integer32(expr.value, self.arena.types().get_i32_type());
+        let inst = b.build_constant_integer32(expr.value, self.cc.mir_i32_type());
         Ok(inst)
     }
 
@@ -208,7 +204,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirBooleanLiteralExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        let inst = b.build_constant_bool(expr.value, self.arena.types().get_bool_type());
+        let inst = b.build_constant_bool(expr.value, self.cc.mir_bool_type());
         Ok(inst)
     }
 
@@ -221,7 +217,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         // We need to see if this is the name of a function, and if so, we need to lower it to a
         // function value.
         if expr.is_reference_to_function {
-            let name = self.arena.names().get(expr.name);
+            let name = self.cc.intern_str(expr.name);
             let id = cx.data().get_function_id(name).unwrap_or_else(|| {
                 ice!(format!(
                     "failed to find function id for {} despite passing type checker",
@@ -355,10 +351,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     /// means we can do a lot of shortcutting here.
     pub fn visit_ty(&mut self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirType<'mir>> {
         match node {
-            HirTy::Integer32(_) => Ok(self.arena.types().get_i32_type()),
-            HirTy::Boolean(_) => Ok(self.arena.types().get_bool_type()),
-            HirTy::Unit(_) => Ok(self.arena.types().get_void_type()),
-            HirTy::Pointer(i) => Ok(self.arena.types().get_pointer_type(self.visit_ty(i.inner)?)),
+            HirTy::Integer32(_) => Ok(self.cc.mir_i32_type()),
+            HirTy::Boolean(_) => Ok(self.cc.mir_bool_type()),
+            HirTy::Unit(_) => Ok(self.cc.mir_void_type()),
+            HirTy::Pointer(i) => Ok(self.cc.mir_pointer_type(self.visit_ty(i.inner)?)),
             HirTy::Function(_)
             | HirTy::Nominal(_)
             | HirTy::Variable(_)
