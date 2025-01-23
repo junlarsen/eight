@@ -13,9 +13,9 @@ use eight_diagnostics::ice;
 use eight_middle::context::CompileContext;
 use eight_middle::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy,
-    HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr, HirReferenceExpr, HirTy,
-    HirUnaryOp, HirUnaryOpExpr,
+    HirCallExpr, HirCallableReferenceExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr,
+    HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr,
+    HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
 };
 use eight_middle::scope::Scope;
 use eight_span::Span;
@@ -279,6 +279,14 @@ impl<'hir> TypingContext<'hir> {
         let ty = self.cc.hir_function_type(return_type, parameters);
         self.constrain_eq(expectation, ty, expr.span, expr.name_span);
         Ok(())
+    }
+
+    pub fn infer_callable_reference_expr(
+        &mut self,
+        _: &mut HirCallableReferenceExpr<'hir>,
+        _: &'hir HirTy<'hir>,
+    ) -> HirResult<()> {
+        ice!("callable_reference is not constructable from syntax")
     }
 
     /// Infer the type of an offset index expression.
@@ -548,6 +556,7 @@ impl<'hir> TypingContext<'hir> {
             HirExpr::BooleanLiteral(e) => self.infer_boolean_literal_expr(e, expectation),
             HirExpr::Assign(e) => self.infer_assign_expr(e, expectation),
             HirExpr::Reference(e) => self.infer_reference_expr(e, expectation),
+            HirExpr::CallableReference(e) => self.infer_callable_reference_expr(e, expectation),
             HirExpr::OffsetIndex(e) => self.infer_offset_index_expr(e, expectation),
             HirExpr::ConstantIndex(e) => self.infer_constant_index_expr(e, expectation),
             HirExpr::Call(e) => self.infer_call_expr(e, expectation),

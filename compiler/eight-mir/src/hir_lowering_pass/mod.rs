@@ -180,6 +180,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             | HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
             | HirExpr::ConstantIndex(_)
+            | HirExpr::CallableReference(_)
             | HirExpr::OffsetIndex(_)
             | HirExpr::Construct(_)
             | HirExpr::Assign(_) => unimplemented!("cannot lower this expression"),
@@ -231,7 +232,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let value_ty = b.data().get_value_type(*id);
         let expected_ty = self.visit_ty(expr.ty)?;
         // If it is a pointer type, we automatically dereference it.
-        if let MirType::Pointer(v) = value_ty {
+        if let MirType::Pointer(_) = value_ty {
             let load = b.build_load(cx, *id, expected_ty, None);
             return Ok(load);
         }
@@ -360,7 +361,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             HirTy::Integer32(_) => Ok(self.cc.mir_i32_type()),
             HirTy::Boolean(_) => Ok(self.cc.mir_bool_type()),
             HirTy::Unit(_) => Ok(self.cc.mir_void_type()),
-            HirTy::Pointer(i) => Ok(self.cc.mir_pointer_type()),
+            HirTy::Pointer(_) => Ok(self.cc.mir_pointer_type()),
             HirTy::Function(_)
             | HirTy::Nominal(_)
             | HirTy::Variable(_)

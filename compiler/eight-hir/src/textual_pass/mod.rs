@@ -10,9 +10,10 @@
 use eight_diagnostics::ice;
 use eight_middle::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
-    HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr,
-    HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
+    HirCallExpr, HirCallableReferenceExpr, HirCallableSymbol, HirConstantIndexExpr,
+    HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr,
+    HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
+    HirUnaryOpExpr,
 };
 use eight_middle::hir::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature,
@@ -566,6 +567,7 @@ impl<'a> HirModuleTextualPass<'a> {
             HirExpr::UnaryOp(e) => self.visit_unary_op_expr(e),
             HirExpr::BinaryOp(e) => self.visit_binary_op_expr(e),
             HirExpr::Reference(e) => self.visit_reference_expr(e),
+            HirExpr::CallableReference(e) => self.visit_callable_reference_expr(e),
             HirExpr::ConstantIndex(e) => self.visit_constant_index_expr(e),
             HirExpr::OffsetIndex(e) => self.visit_offset_index_expr(e),
             HirExpr::Call(e) => self.visit_call_expr(e),
@@ -649,6 +651,42 @@ impl<'a> HirModuleTextualPass<'a> {
         expr: &'hir HirReferenceExpr,
     ) -> DocBuilder<Arena<'a>> {
         self.arena.text(expr.name)
+    }
+
+    pub fn visit_callable_reference_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirCallableReferenceExpr,
+    ) -> DocBuilder<Arena<'a>> {
+        match &expr.symbol {
+            HirCallableSymbol::Function(name, span) => self
+                .arena
+                .text(*name)
+                .append(self.arena.text("::"))
+                .append(self.arena.text("<"))
+                .append(self.arena.intersperse(
+                    expr.type_arguments.iter().map(|a| self.visit_ty(a)),
+                    self.arena.text(","),
+                ))
+                .append(self.arena.text(">")),
+            HirCallableSymbol::TraitFunction(trait_name, type_arguments, name, span) => self
+                .arena
+                .text(*trait_name)
+                .append(self.arena.text("<"))
+                .append(self.arena.intersperse(
+                    type_arguments.iter().map(|a| self.visit_ty(a)),
+                    self.arena.text(","),
+                ))
+                .append(self.arena.text(">"))
+                .append(self.arena.text("::"))
+                .append(self.arena.text(*name))
+                .append(self.arena.text("::"))
+                .append(self.arena.text("<"))
+                .append(self.arena.intersperse(
+                    expr.type_arguments.iter().map(|a| self.visit_ty(a)),
+                    self.arena.text(","),
+                ))
+                .append(self.arena.text(">")),
+        }
     }
 
     pub fn visit_constant_index_expr<'hir: 'a>(

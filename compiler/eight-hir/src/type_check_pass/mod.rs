@@ -7,9 +7,9 @@ use crate::error::{
 use eight_diagnostics::ice;
 use eight_middle::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
-    HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr,
-    HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirStruct, HirTrait,
-    HirUnaryOpExpr,
+    HirCallableReferenceExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr,
+    HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr,
+    HirReferenceExpr, HirStruct, HirTrait, HirUnaryOpExpr,
 };
 use eight_middle::hir::{
     HirBlockStmt, HirExprStmt, HirFunctionTy, HirIfStmt, HirLetStmt, HirLoopStmt, HirModule,
@@ -409,6 +409,7 @@ impl HirModuleTypeCheckerPass {
             HirExpr::BooleanLiteral(e) => Self::enter_boolean_literal_expr(cx, e),
             HirExpr::Group(e) => Self::enter_group_expr(cx, e),
             HirExpr::Reference(e) => Self::enter_reference_expr(cx, e),
+            HirExpr::CallableReference(e) => Self::enter_callable_reference_expr(cx, e),
             HirExpr::Assign(e) => Self::enter_assign_expr(cx, e),
             HirExpr::OffsetIndex(e) => Self::enter_offset_index_expr(cx, e),
             HirExpr::ConstantIndex(e) => Self::enter_constant_index_expr(cx, e),
@@ -431,6 +432,7 @@ impl HirModuleTypeCheckerPass {
             HirExpr::BooleanLiteral(e) => Self::leave_boolean_literal_expr(cx, e),
             HirExpr::Group(e) => Self::leave_group_expr(cx, e),
             HirExpr::Reference(e) => Self::leave_reference_expr(cx, e),
+            HirExpr::CallableReference(e) => Self::leave_callable_reference_expr(cx, e),
             HirExpr::Assign(e) => Self::leave_assign_expr(cx, e),
             HirExpr::OffsetIndex(e) => Self::leave_offset_index_expr(cx, e),
             HirExpr::ConstantIndex(e) => Self::leave_constant_index_expr(cx, e),
@@ -539,6 +541,27 @@ impl HirModuleTypeCheckerPass {
         }
         cx.infer_reference_expr(node, node.ty)?;
         Ok(())
+    }
+
+    /// Collect type constraints for a callable reference expression.
+    ///
+    /// This doesn't actually do anything, because we rewrite function calls and references to these
+    /// after the types have been inferred.
+    pub fn enter_callable_reference_expr<'hir>(
+        _: &mut TypingContext<'hir>,
+        _: &mut HirCallableReferenceExpr<'hir>,
+    ) -> HirResult<()> {
+        ice!("callable_reference is not constructable from syntax")
+    }
+
+    /// Perform substitution for a callable reference expression.
+    ///
+    /// Same explanation as `enter_callable_reference_expr`.
+    pub fn leave_callable_reference_expr<'hir>(
+        _: &mut TypingContext<'hir>,
+        _: &mut HirCallableReferenceExpr<'hir>,
+    ) -> HirResult<()> {
+        ice!("callable_reference is not constructable from syntax")
     }
 
     /// Perform substitution for a reference expression.

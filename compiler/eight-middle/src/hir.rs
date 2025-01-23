@@ -16,6 +16,7 @@ pub enum HirExpr<'hir> {
     UnaryOp(HirUnaryOpExpr<'hir>),
     BinaryOp(HirBinaryOpExpr<'hir>),
     Reference(HirReferenceExpr<'hir>),
+    CallableReference(HirCallableReferenceExpr<'hir>),
     ConstantIndex(HirConstantIndexExpr<'hir>),
     OffsetIndex(HirOffsetIndexExpr<'hir>),
     Call(HirCallExpr<'hir>),
@@ -39,6 +40,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::Construct(e) => e.span,
             HirExpr::Group(e) => e.span,
             HirExpr::Reference(e) => e.span,
+            HirExpr::CallableReference(e) => e.span,
             HirExpr::AddressOf(e) => e.span,
             HirExpr::Deref(e) => e.span,
         }
@@ -57,6 +59,7 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::Construct(e) => e.ty,
             HirExpr::Group(e) => e.ty,
             HirExpr::Reference(e) => e.ty,
+            HirExpr::CallableReference(e) => e.ty,
             HirExpr::AddressOf(e) => e.ty,
             HirExpr::Deref(e) => e.ty,
         }
@@ -134,6 +137,36 @@ pub struct HirReferenceExpr<'hir> {
     /// The type of `name` in the current scope.
     pub ty: &'hir HirTy<'hir>,
     pub is_reference_to_function: bool,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct HirCallableReferenceExpr<'hir> {
+    pub span: Span,
+    pub symbol: HirCallableSymbol<'hir>,
+    pub ty: &'hir HirTy<'hir>,
+    pub type_arguments: Vec<&'hir HirTy<'hir>>,
+}
+
+/// A reference to a callable symbol.
+///
+/// A callable symbol is a function or a trait instance's implementation of a trait function. This
+/// distinction from [`HirReferenceExpr`] is important because it allows us to distinguish between
+/// values in scope and function, as well as making the distinction between trait functions and
+/// regular functions.
+///
+/// TODO: Consider moving the enum variants into separate types.
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub enum HirCallableSymbol<'hir> {
+    /// A function defined in the current crate.
+    ///
+    /// Tuple of (name, name_span)
+    Function(&'hir str, Span),
+    /// A function defined in a specific trait instance
+    ///
+    /// Tuple of (trait_name, trait_arguments, name, name_span)
+    TraitFunction(&'hir str, Vec<&'hir HirTy<'hir>>, &'hir str, Span),
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
