@@ -1,6 +1,6 @@
 //! The High-level Intermediate Representation.
 
-use crate::intrinsic::IntrinsicCandidate;
+use crate::intrinsic::CompilerIntrinsic;
 use crate::LinkageType;
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -135,6 +135,11 @@ pub struct HirCallableReferenceExpr<'hir> {
     pub span: Span,
     pub symbol: HirCallableSymbol<'hir>,
     pub ty: &'hir HirTy<'hir>,
+    /// The type arguments that the callable reference was instantiated with.
+    ///
+    /// This field is empty before unification, because the type arguments are not yet known. After
+    /// substitution, this field contains the concrete type arguments that were used to instantiate
+    /// the callable, with indexes matching the function type in `ty`.
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
 }
 
@@ -157,7 +162,7 @@ pub enum HirCallableSymbol<'hir> {
     /// Tuple of (trait_name, trait_arguments, name, name_span)
     TraitFunction(&'hir str, Vec<&'hir HirTy<'hir>>, &'hir str, Span),
     /// Call to a compiler intrinsic, such as the + operator for the builtin types.
-    CompilerIntrinsic(IntrinsicCandidate, Span),
+    CompilerIntrinsic(CompilerIntrinsic, Span),
 }
 
 #[derive(Debug)]

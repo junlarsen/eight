@@ -6,7 +6,7 @@ use crate::hir::{
 };
 use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirModule};
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
-use crate::intrinsic::IntrinsicCandidate;
+use crate::intrinsic::CompilerIntrinsic;
 use crate::mir::MirModule;
 use crate::mir::MirType;
 use crate::mir::MirValueId;
@@ -74,15 +74,15 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
     ) -> MirResult<()> {
-        assert!(
-            !node.signature.is_generic(),
-            "cannot lower generic functions at this time"
-        );
         // If the function is external, it doesn't get any code, and the code generator will assume
         // that it must be externally defined and resolved at link time.
         if node.linkage_type == LinkageType::External {
             return Ok(());
         }
+        assert!(
+            !node.signature.is_generic(),
+            "cannot lower generic functions at this time"
+        );
         self.locals.enter_scope();
 
         let entry = b.build_basic_block(Some("entry"));
@@ -291,9 +291,6 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirBinaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        if let Some(candidate) = HirBinaryOpExpr::is_implemented_as_intrinsic(expr) {
-            return self.visit_binary_intrinsic_candidate(b, cx, candidate, expr);
-        }
         unimplemented!("userland instance binary operator calling is not yet implemented")
     }
 
@@ -314,9 +311,6 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirUnaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        if let Some(candidate) = HirUnaryOpExpr::is_implemented_as_intrinsic(expr) {
-            return self.visit_unary_intrinsic_candidate(b, cx, candidate, expr);
-        }
         unimplemented!("userland instance unary operator calling is not yet implemented")
     }
 
@@ -329,7 +323,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
-        candidate: IntrinsicCandidate,
+        candidate: CompilerIntrinsic,
         expr: &'hir HirBinaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
         let lhs = self.visit_expr(b, cx, &expr.lhs)?;
@@ -338,10 +332,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let rhs_ty = b.data().get_value_type(rhs);
         sanity_check!(lhs_ty == rhs_ty, "lhs and rhs types must be equal");
         let inst = match candidate {
-            IntrinsicCandidate::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
-            IntrinsicCandidate::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
-            IntrinsicCandidate::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
-            IntrinsicCandidate::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
+            CompilerIntrinsic::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
+            CompilerIntrinsic::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
+            CompilerIntrinsic::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
+            CompilerIntrinsic::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
             _ => unimplemented!("binary operator {candidate:?} is not yet implemented"),
         };
         Ok(inst)
@@ -354,14 +348,14 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
-        candidate: IntrinsicCandidate,
+        candidate: CompilerIntrinsic,
         expr: &'hir HirUnaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
         let operand = self.visit_expr(b, cx, &expr.operand)?;
         let ty = b.data().get_value_type(operand);
         let inst = match candidate {
             // Negation of a number is implemented as subtraction from zero.
-            IntrinsicCandidate::IntegerNeg => {
+            CompilerIntrinsic::IntegerNeg => {
                 let zero = b.build_constant_integer32(0, self.cc.mir_i32_type());
                 b.build_sub(cx, zero, operand, ty, None)
             }

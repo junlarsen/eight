@@ -16,10 +16,11 @@ use crate::hir_query::HirSignatureQueryDatabase;
 use crate::hir_type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
+use crate::intrinsic::CompilerIntrinsic;
 use crate::scope::Scope;
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 
 /// A context object for the type checker.
@@ -27,8 +28,6 @@ use std::fmt::Debug;
 /// This object represents the state of the type checker.
 pub struct TypingContext<'hir> {
     /// A reference to the Hir arena for allocating types.
-    ///
-    /// TODO: Should this be private?
     pub cc: &'hir CompileContext<'hir>,
     pub module_query_db: &'hir HirSignatureQueryDatabase<'hir>,
 
@@ -45,6 +44,7 @@ pub struct TypingContext<'hir> {
     /// be a VecDeque, but it's here for future use.
     type_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
     let_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
+    // TODO: make private
     pub type_parameter_instantiations: Scope<(u32, u32), &'hir HirTy<'hir>>,
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
@@ -284,6 +284,14 @@ impl<'hir> TypingContext<'hir> {
                     .collect::<Vec<_>>();
                 let return_type = self
                     .eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
+                // Propagate the type arguments to the expression node itself. The leave function
+                // for HirCallableReferenceExpr will use this to substitute the type arguments with
+                // the concrete type arguments. This is also necessary for analysis of the node to
+                // determine if a call can be reduced into a compiler intrinsic.
+                for parameter in parameters.iter() {
+                    expr.type_arguments.push(parameter);
+                }
+                // Constrain the expression to the function type.
                 let ty = self.cc.hir_function_type(return_type, parameters);
                 self.constrain_eq(expectation, ty, expr.span, *name_span);
                 Ok(())
@@ -532,7 +540,6 @@ impl<'hir> TypingContext<'hir> {
                 vec![expr.lhs.ty(), expr.rhs.ty(), expectation]
             }
         };
-
         self.constrain_instance(
             trait_name,
             expr.span,

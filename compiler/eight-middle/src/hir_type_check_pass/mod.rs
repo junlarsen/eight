@@ -598,10 +598,11 @@ impl HirModuleTypeCheckerPass {
     /// This doesn't actually do anything, because we rewrite function calls and references to these
     /// after the types have been inferred.
     pub fn enter_callable_reference_expr<'hir>(
-        _: &mut TypingContext<'hir>,
-        _: &mut HirCallableReferenceExpr<'hir>,
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirCallableReferenceExpr<'hir>,
     ) -> HirResult<Option<HirExpr<'hir>>> {
-        // TODO: Is this correct?
+        node.ty = Self::visit_type(cx, node.ty)?;
+        cx.infer_callable_reference_expr(node, node.ty)?;
         Ok(None)
     }
 
@@ -613,6 +614,10 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirCallableReferenceExpr<'hir>,
     ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = cx.substitute(node.ty)?;
+        // Propagate the type arguments that were used in the instantiation of the callable.
+        for argument in node.type_arguments.iter_mut() {
+            *argument = cx.substitute(*argument)?;
+        }
         Ok(None)
     }
 
