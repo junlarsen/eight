@@ -45,6 +45,12 @@ started is to install both Rust and Poetry (to download Lit).
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 curl -sSL https://install.python-poetry.org | python3 -
 
+# We depend on LLVM 15, so that has to be available somewhere too. Easiest is to grab it from the LLVM apt repo or
+# equivalent for your distro. Clang-15 is required for Polly
+sudo apt install llvm-15-dev llvm-15-tools clang-15
+# Configure llvm-sys to point at the installed LLVM
+export LLVM_SYS_150_PREFIX="/usr/lib/llvm-15"
+
 # Run unit tests and snapshot tests
 cargo test
 
