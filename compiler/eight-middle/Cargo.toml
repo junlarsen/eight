@@ -4,12 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eight-macros = { path = "../eight-macros" }
 eight-diagnostics = { path = "../eight-diagnostics" }
+eight-macros = { path = "../eight-macros" }
 eight-span = { path = "../eight-span" }
+eight-syntax = { path = "../eight-syntax" }
 
 bumpalo = { workspace = true }
-serde = { workspace = true, optional = true }
+miette = { workspace = true }
+pretty = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }

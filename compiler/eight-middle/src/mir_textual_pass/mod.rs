@@ -1,12 +1,12 @@
-use eight_diagnostics::ice;
-use eight_middle::mir::MirBasicBlock;
-use eight_middle::mir::{
+use crate::mir::MirBasicBlock;
+use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirConstantBool,
     MirConstantInteger32, MirDivInstruction, MirFunction, MirFunctionData, MirFunctionId,
     MirInstruction, MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
     MirStoreInstruction, MirSubInstruction, MirType, MirValue,
 };
-use eight_middle::mir::{MirModule, MirModuleData};
+use crate::mir::{MirModule, MirModuleData};
+use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 #[derive(Default)]

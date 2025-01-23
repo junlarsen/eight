@@ -1,5 +1,5 @@
 use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
-use eight_hir::syntax_lowering_pass::AstSyntaxLoweringPass;
+use eight_middle::ast_lowering_pass::AstLoweringPass;
 use eight_middle::hir::HirModule;
 use eight_syntax::ast::AstTranslationUnit;
 
@@ -10,7 +10,7 @@ impl<'c> PipelineOperation<'c, AstTranslationUnit<'c>, HirModule<'c>> for Syntax
         pipeline: &'c Pipeline<'c>,
         input: AstTranslationUnit<'c>,
     ) -> Result<HirModule<'c>, PipelineError> {
-        let mut lowering_pass = AstSyntaxLoweringPass::new(&pipeline.cc);
+        let mut lowering_pass = AstLoweringPass::new(&pipeline.cc);
         let module = lowering_pass.visit_translation_unit(&input)?;
         Ok(module)
     }

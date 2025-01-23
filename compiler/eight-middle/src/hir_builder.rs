@@ -8,9 +8,8 @@
 //! and abstractions that the syntax of the language provides, providing more information about the
 //! program than the AST.
 
-use crate::error::HirError;
-use eight_middle::hir::HirTy;
-use eight_middle::hir::{
+use crate::hir::HirTy;
+use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBlockStmt,
     HirBooleanLiteralExpr, HirBreakStmt, HirCallExpr, HirConstantIndexExpr, HirConstructExpr,
     HirConstructExprArgument, HirContinueStmt, HirDerefExpr, HirExpr, HirExprStmt, HirFunction,
@@ -18,15 +17,10 @@ use eight_middle::hir::{
     HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirOffsetIndexExpr, HirReferenceExpr,
     HirReturnStmt, HirStmt, HirTrait, HirTraitSignature, HirUnaryOp, HirUnaryOpExpr,
 };
-use eight_middle::LinkageType;
+use crate::hir_error::HirError;
+use crate::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
-
-pub mod error;
-pub mod query;
-pub mod syntax_lowering_pass;
-pub mod textual_pass;
-pub mod type_check_pass;
 
 /// A HIR node builder.
 ///

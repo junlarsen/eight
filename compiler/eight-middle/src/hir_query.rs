@@ -1,9 +1,9 @@
-use eight_diagnostics::ice;
-use eight_middle::hir::HirTy;
-use eight_middle::hir::{
+use crate::hir::HirTy;
+use crate::hir::{
     HirFunctionSignature, HirInstanceSignature, HirModuleSignature, HirStructSignature,
     HirTraitSignature, HirTypeSignature,
 };
+use eight_diagnostics::ice;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 

@@ -1,17 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
+    "compiler/eight-codegen-llvm",
     "compiler/eight-diagnostics",
     "compiler/eight-driver",
-    "compiler/eight-hir",
-    "compiler/eight-mir",
     "compiler/eight-macros",
     "compiler/eight-middle",
+    "compiler/eight-std",
     "compiler/eight-span",
     "compiler/eight-syntax",
     "compiler/eight-tests",
     "tools/eight-not",
-    "tools/eight-xtask", "compiler/eight-std", "compiler/eight-codegen-llvm",
+    "tools/eight-xtask",
 ]
 
 [profile.dev.package]

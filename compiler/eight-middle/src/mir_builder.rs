@@ -1,13 +1,13 @@
-use eight_diagnostics::ice;
-use eight_middle::context::CompileContext;
-use eight_middle::hir::HirModule;
-use eight_middle::mir::{
+use crate::context::CompileContext;
+use crate::hir::HirModule;
+use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirArgument, MirBasicBlock, MirBasicBlockId,
     MirCallInstruction, MirConstantBool, MirConstantInteger32, MirDivInstruction, MirFunction,
     MirFunctionData, MirFunctionId, MirFunctionType, MirInstruction, MirInstructionId,
     MirLoadInstruction, MirModule, MirModuleData, MirMulInstruction, MirPtrAddInstruction,
     MirStoreInstruction, MirSubInstruction, MirType, MirValue, MirValueId,
 };
+use eight_diagnostics::ice;
 pub struct MirModuleContext<'mir, 'hir> {
     cc: &'mir CompileContext<'mir>,
     hir_module: &'hir HirModule<'hir>,

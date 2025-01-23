@@ -1,8 +1,8 @@
 use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
 use crate::query::{EmitQuery, HirEmitQuery};
 use eight_diagnostics::ice;
-use eight_hir::textual_pass::{Document, HirModuleTextualPass};
 use eight_middle::hir::HirModule;
+use eight_middle::hir_textual_pass::{Document, HirModuleTextualPass};
 
 /// Operation for emitting the HIR.
 pub struct HirEmitOperation;

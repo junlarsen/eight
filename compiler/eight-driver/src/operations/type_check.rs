@@ -1,8 +1,8 @@
 use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
 use eight_diagnostics::ice;
-use eight_hir::query::HirSignatureQueryDatabase;
-use eight_hir::type_check_pass::{HirModuleTypeCheckerPass, TypingContext};
 use eight_middle::hir::HirModule;
+use eight_middle::hir_query::HirSignatureQueryDatabase;
+use eight_middle::hir_type_check_pass::{HirModuleTypeCheckerPass, TypingContext};
 
 /// Operation for type checking the HIR.
 pub struct TypeCheckOperation {}

@@ -5,7 +5,6 @@ use crate::hir::{HirBinaryOp, HirBinaryOpExpr, HirUnaryOp, HirUnaryOpExpr};
 use std::fmt::Display;
 
 /// A binary operator that is to be lowered using compiler intrinsics.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum IntrinsicCandidate {
     IntegerAdd,

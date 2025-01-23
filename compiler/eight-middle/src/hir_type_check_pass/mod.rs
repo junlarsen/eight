@@ -1,20 +1,20 @@
 mod typing_context;
 
-use crate::error::{
-    HirError, HirResult, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
-    WrongTraitTypeArgumentCount,
-};
-use eight_diagnostics::ice;
-use eight_middle::hir::{
+use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
     HirCallableReferenceExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr,
     HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr,
     HirReferenceExpr, HirStruct, HirTrait, HirUnaryOpExpr,
 };
-use eight_middle::hir::{
+use crate::hir::{
     HirBlockStmt, HirExprStmt, HirFunctionTy, HirIfStmt, HirLetStmt, HirLoopStmt, HirModule,
     HirPointerTy, HirReturnStmt, HirStmt, HirTy,
 };
+use crate::hir_error::{
+    HirError, HirResult, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
+    WrongTraitTypeArgumentCount,
+};
+use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::BTreeMap;
 use std::fmt::Debug;

@@ -8,7 +8,6 @@ use std::collections::BTreeMap;
 use std::fmt::{Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum HirExpr<'hir> {
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
@@ -67,7 +66,6 @@ impl<'hir> HirExpr<'hir> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirIntegerLiteralExpr<'hir> {
     pub span: Span,
@@ -75,7 +73,6 @@ pub struct HirIntegerLiteralExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirBooleanLiteralExpr<'hir> {
     pub span: Span,
@@ -83,7 +80,6 @@ pub struct HirBooleanLiteralExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirAssignExpr<'hir> {
     pub span: Span,
@@ -92,7 +88,6 @@ pub struct HirAssignExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirUnaryOpExpr<'hir> {
     pub span: Span,
@@ -102,7 +97,6 @@ pub struct HirUnaryOpExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirBinaryOpExpr<'hir> {
     pub span: Span,
@@ -113,7 +107,6 @@ pub struct HirBinaryOpExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirAddressOfExpr<'hir> {
     pub span: Span,
@@ -121,7 +114,6 @@ pub struct HirAddressOfExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirDerefExpr<'hir> {
     pub span: Span,
@@ -129,7 +121,6 @@ pub struct HirDerefExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirReferenceExpr<'hir> {
     pub span: Span,
@@ -140,7 +131,6 @@ pub struct HirReferenceExpr<'hir> {
     pub is_reference_to_function: bool,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirCallableReferenceExpr<'hir> {
     pub span: Span,
@@ -157,7 +147,6 @@ pub struct HirCallableReferenceExpr<'hir> {
 /// regular functions.
 ///
 /// TODO: Consider moving the enum variants into separate types.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum HirCallableSymbol<'hir> {
     /// A function defined in the current crate.
@@ -172,7 +161,6 @@ pub enum HirCallableSymbol<'hir> {
     CompilerIntrinsic(IntrinsicCandidate, Span),
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirOffsetIndexExpr<'hir> {
     pub span: Span,
@@ -182,7 +170,6 @@ pub struct HirOffsetIndexExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirConstantIndexExpr<'hir> {
     pub span: Span,
@@ -193,7 +180,6 @@ pub struct HirConstantIndexExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirCallExpr<'hir> {
     pub span: Span,
@@ -204,7 +190,6 @@ pub struct HirCallExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirConstructExpr<'hir> {
     pub span: Span,
@@ -214,7 +199,6 @@ pub struct HirConstructExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirConstructExprArgument<'hir> {
     pub span: Span,
@@ -223,7 +207,6 @@ pub struct HirConstructExprArgument<'hir> {
     pub expr: Box<HirExpr<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirGroupExpr<'hir> {
     pub span: Span,
@@ -231,14 +214,12 @@ pub struct HirGroupExpr<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum HirUnaryOp {
     Not,
     Neg,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum HirBinaryOp {
     Add,
@@ -259,7 +240,6 @@ pub enum HirBinaryOp {
 /// A scalar type in the HIR.
 ///
 /// Not to be confused with [`HirTy`], which is a type that can be used in HIR.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirType<'hir> {
     pub span: Span,
@@ -268,7 +248,6 @@ pub struct HirType<'hir> {
     pub signature: &'hir HirTypeSignature<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirStruct<'hir> {
     /// Span encapsulating the entire struct definition.
@@ -279,7 +258,6 @@ pub struct HirStruct<'hir> {
     pub instantiated_fields: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirFunction<'hir> {
     /// Span encapsulating the entire function definition.
@@ -317,7 +295,6 @@ pub struct HirFunction<'hir> {
     pub linkage_type: LinkageType,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirTrait<'hir> {
     pub span: Span,
@@ -326,7 +303,6 @@ pub struct HirTrait<'hir> {
     pub signature: &'hir HirTraitSignature<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirTraitFunctionItem<'hir> {
     pub span: Span,
@@ -335,7 +311,6 @@ pub struct HirTraitFunctionItem<'hir> {
     pub signature: &'hir HirFunctionSignature<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirInstance<'hir> {
     pub span: Span,
@@ -355,14 +330,12 @@ pub struct HirInstance<'hir> {
 ///
 /// We use a BTreeMap here instead of a HashMap to preserve the order of the types for when we're
 /// emitting code.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirModule<'hir> {
     pub signature: &'hir HirModuleSignature<'hir>,
     pub body: HirModuleBody<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
 pub struct HirModuleBody<'hir> {
     pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
@@ -383,7 +356,6 @@ impl<'hir> HirModule<'hir> {
 /// It should be noted that the module signature is actually not mutated after it has been derived
 /// from the AST. This is because the signature acts as an API surface for the compiler. It is
 /// intended to be query-only.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Default)]
 pub struct HirModuleSignature<'hir> {
     pub functions: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
@@ -434,7 +406,6 @@ impl<'hir> HirModuleSignature<'hir> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum HirModuleItemSignature<'hir> {
     Function(&'hir HirFunctionSignature<'hir>),
@@ -444,7 +415,6 @@ pub enum HirModuleItemSignature<'hir> {
     Instance(&'hir HirInstanceSignature<'hir>),
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirStructSignature<'hir> {
     pub span: Span,
@@ -453,7 +423,6 @@ pub struct HirStructSignature<'hir> {
     pub fields: BTreeMap<&'hir str, &'hir HirStructFieldSignature<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirStructFieldSignature<'hir> {
     pub span: Span,
@@ -463,7 +432,6 @@ pub struct HirStructFieldSignature<'hir> {
     pub ty_annotation: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirTypeSignature<'hir> {
     pub span: Span,
@@ -473,7 +441,6 @@ pub struct HirTypeSignature<'hir> {
 }
 
 /// A signature for a function.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirFunctionSignature<'hir> {
     pub span: Span,
@@ -490,7 +457,6 @@ impl<'hir> HirFunctionSignature<'hir> {
 }
 
 /// A signature for a single parameter of a function.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirFunctionParameterSignature<'hir> {
     pub span: Span,
@@ -501,7 +467,6 @@ pub struct HirFunctionParameterSignature<'hir> {
 }
 
 /// A signature for a type parameter of a trait or a function.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirTypeParameterSignature<'hir> {
     pub span: Span,
@@ -511,7 +476,6 @@ pub struct HirTypeParameterSignature<'hir> {
     pub ty: &'hir HirTy<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirTraitSignature<'hir> {
     pub span: Span,
@@ -521,7 +485,6 @@ pub struct HirTraitSignature<'hir> {
     pub methods: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirInstanceSignature<'hir> {
     pub span: Span,
@@ -533,7 +496,6 @@ pub struct HirInstanceSignature<'hir> {
     pub methods: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub enum HirStmt<'hir> {
     Let(HirLetStmt<'hir>),
@@ -561,7 +523,6 @@ impl HirStmt<'_> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirLetStmt<'hir> {
     pub span: Span,
@@ -572,7 +533,6 @@ pub struct HirLetStmt<'hir> {
     pub value: HirExpr<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirIfStmt<'hir> {
     pub span: Span,
@@ -581,14 +541,12 @@ pub struct HirIfStmt<'hir> {
     pub unhappy_path: Vec<HirStmt<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirExprStmt<'hir> {
     pub span: Span,
     pub expr: HirExpr<'hir>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirLoopStmt<'hir> {
     pub span: Span,
@@ -599,26 +557,22 @@ pub struct HirLoopStmt<'hir> {
     pub body: Vec<HirStmt<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirBreakStmt {
     pub span: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirContinueStmt {
     pub span: Span,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirReturnStmt<'hir> {
     pub span: Span,
     pub value: Option<HirExpr<'hir>>,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirBlockStmt<'hir> {
     pub span: Span,
@@ -712,7 +666,6 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
 }
 
 /// A single type in the HIR representation.
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum HirTy<'hir> {
     /// The builtin type `i32`.
     Integer32(HirInteger32Ty),
@@ -948,7 +901,6 @@ impl HirTy<'_> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirInteger32Ty {}
 
@@ -958,7 +910,6 @@ impl Display for HirInteger32Ty {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirBooleanTy {}
 
@@ -968,7 +919,6 @@ impl Display for HirBooleanTy {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirUnitTy {}
 
@@ -978,7 +928,6 @@ impl Display for HirUnitTy {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirVariableTy {
     pub depth: u32,
@@ -991,7 +940,6 @@ impl Display for HirVariableTy {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirFunctionTy<'hir> {
     pub return_type: &'hir HirTy<'hir>,
@@ -1010,7 +958,6 @@ impl Display for HirFunctionTy<'_> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirPointerTy<'hir> {
     pub inner: &'hir HirTy<'hir>,
@@ -1022,7 +969,6 @@ impl Display for HirPointerTy<'_> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirNominalTy<'hir> {
     pub name: &'hir str,
@@ -1035,7 +981,6 @@ impl<'hir> Display for HirNominalTy<'hir> {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirUninitializedTy {}
 
@@ -1045,7 +990,6 @@ impl Display for HirUninitializedTy {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct HirMetaTy {
     pub index: u32,

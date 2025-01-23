@@ -7,21 +7,21 @@
 //! It is provided on a best-effort basis, and holds no backwards compatibility guarantees. It also
 //! invents syntax not found in the base language, such as statement blocks and while loops.
 
-use eight_diagnostics::ice;
-use eight_middle::hir::{
+use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
     HirCallExpr, HirCallableReferenceExpr, HirCallableSymbol, HirConstantIndexExpr,
     HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr,
     HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
     HirUnaryOpExpr,
 };
-use eight_middle::hir::{
+use crate::hir::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature,
     HirFunctionSignature, HirFunctionTy, HirIfStmt, HirInstanceSignature, HirLetStmt, HirLoopStmt,
     HirMetaTy, HirModule, HirNominalTy, HirPointerTy, HirReturnStmt, HirStmt, HirStructSignature,
     HirTraitSignature, HirTy, HirTypeParameterSignature, HirTypeSignature, HirVariableTy,
 };
-use eight_middle::LinkageType;
+use crate::LinkageType;
+use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 #[derive(Default)]

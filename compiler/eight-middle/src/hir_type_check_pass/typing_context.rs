@@ -1,23 +1,23 @@
-use crate::error::{
+use crate::context::CompileContext;
+use crate::hir::{
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
+    HirCallExpr, HirCallableReferenceExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr,
+    HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr,
+    HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
+};
+use crate::hir_error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
     FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
     InvalidStructFieldReferenceError, MissingFieldError, SelfReferentialTypeError,
     TraitDoesNotExistError, TraitInstanceMissingFnError, TraitMissingInstanceError,
     TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
 };
-use crate::query::HirSignatureQueryDatabase;
-use crate::type_check_pass::{
+use crate::hir_query::HirSignatureQueryDatabase;
+use crate::hir_type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
+use crate::scope::Scope;
 use eight_diagnostics::ice;
-use eight_middle::context::CompileContext;
-use eight_middle::hir::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirCallableReferenceExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr,
-    HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr,
-    HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
-};
-use eight_middle::scope::Scope;
 use eight_span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
@@ -45,7 +45,7 @@ pub struct TypingContext<'hir> {
     /// be a VecDeque, but it's here for future use.
     type_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
     let_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
-    pub(crate) type_parameter_instantiations: Scope<(u32, u32), &'hir HirTy<'hir>>,
+    pub type_parameter_instantiations: Scope<(u32, u32), &'hir HirTy<'hir>>,
     /// Track the current function for type checking against expected return types.
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
 }

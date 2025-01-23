@@ -1,19 +1,19 @@
-use crate::error::{
-    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
-};
-use crate::HirBuilder;
-use eight_diagnostics::ice;
-use eight_middle::context::CompileContext;
-use eight_middle::hir::HirTy;
-use eight_middle::hir::{
+use crate::context::CompileContext;
+use crate::hir::HirTy;
+use crate::hir::{
     HirBinaryOp, HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction,
     HirFunctionParameterSignature, HirFunctionSignature, HirInstance, HirInstanceSignature,
     HirLetStmt, HirModule, HirModuleBody, HirModuleSignature, HirStmt, HirStruct,
     HirStructFieldSignature, HirStructSignature, HirTrait, HirTraitSignature, HirType,
     HirTypeParameterSignature, HirTypeSignature, HirUnaryOp,
 };
-use eight_middle::scope::Scope;
-use eight_middle::LinkageType;
+use crate::hir_builder::HirBuilder;
+use crate::hir_error::{
+    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
+};
+use crate::scope::Scope;
+use crate::LinkageType;
+use eight_diagnostics::ice;
 use eight_span::Span;
 use eight_syntax::ast::{
     AstAssignExpr, AstBinaryOp, AstBinaryOpExpr, AstBooleanLiteralExpr, AstBracketIndexExpr,
@@ -34,7 +34,7 @@ use std::collections::{BTreeMap, VecDeque};
 /// lowered into a TConst type, despite the fact that the type checker will replace this with a
 /// fresh type variable. This is to allow the type checker to generate a fresh type variable for
 /// each type parameter for the local context.
-pub struct AstSyntaxLoweringPass<'ast, 'hir> {
+pub struct AstLoweringPass<'ast, 'hir> {
     cc: &'hir CompileContext<'hir>,
     loop_depth: VecDeque<&'ast AstForStmt<'ast>>,
 
@@ -47,7 +47,7 @@ pub struct AstSyntaxLoweringPass<'ast, 'hir> {
     type_binding_index: u32,
 }
 
-impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
+impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     pub fn new(cc: &'hir CompileContext<'hir>) -> Self {
         Self {
             cc,
@@ -102,7 +102,7 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
     }
 }
 
-impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
+impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     pub fn visit_expr(&mut self, node: &'ast AstExpr) -> HirResult<HirExpr<'hir>> {
         match node {
             AstExpr::Assign(e) => self.visit_assign_expr(e),

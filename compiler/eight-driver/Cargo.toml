@@ -15,9 +15,7 @@ ron = { workspace = true }
 thiserror = { workspace = true }
 nom = "7.1.3"
 
-eight-hir = { path = "../eight-hir" }
 eight-middle = { path = "../eight-middle" }
-eight-mir = { path = "../eight-mir" }
 eight-syntax = { path = "../eight-syntax" }
 eight-diagnostics = { path = "../eight-diagnostics" }
 eight-codegen-llvm = { path = "../eight-codegen-llvm" }

@@ -9,8 +9,8 @@ eight-diagnostics = { path = "../eight-diagnostics" }
 eight-macros = { path = "../eight-macros" }
 eight-span = { path = "../eight-span" }
 eight-syntax = { path = "../eight-syntax" }
-eight-hir = { path = "../eight-hir" }
-eight-mir = { path = "../eight-mir" }
+eight-middle = { path = "../eight-middle" }
+
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
 

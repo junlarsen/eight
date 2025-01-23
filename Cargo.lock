@@ -257,30 +257,12 @@ dependencies = [
  "clap",
  "eight-codegen-llvm",
  "eight-diagnostics",
- "eight-hir",
  "eight-macros",
  "eight-middle",
- "eight-mir",
  "eight-syntax",
  "miette",
  "nom",
  "ron 0.8.1",
- "thiserror 2.0.11",
-]
-
-[[package]]
-name = "eight-hir"
-version = "0.1.0"
-dependencies = [
- "bumpalo",
- "eight-diagnostics",
- "eight-macros",
- "eight-middle",
- "eight-span",
- "eight-syntax",
- "miette",
- "pretty",
- "serde",
  "thiserror 2.0.11",
 ]
 
@@ -300,18 +282,7 @@ dependencies = [
  "eight-diagnostics",
  "eight-macros",
  "eight-span",
- "serde",
-]
-
-[[package]]
-name = "eight-mir"
-version = "0.1.0"
-dependencies = [
- "bumpalo",
- "eight-diagnostics",
- "eight-hir",
- "eight-macros",
- "eight-middle",
+ "eight-syntax",
  "miette",
  "pretty",
  "thiserror 2.0.11",
@@ -355,9 +326,8 @@ version = "0.1.0"
 dependencies = [
  "eight-diagnostics",
  "eight-driver",
- "eight-hir",
  "eight-macros",
- "eight-mir",
+ "eight-middle",
  "eight-span",
  "eight-syntax",
  "insta",

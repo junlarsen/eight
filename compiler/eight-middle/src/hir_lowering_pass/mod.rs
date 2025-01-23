@@ -1,20 +1,20 @@
-use crate::builder::{MirFunctionBuilder, MirModuleContext};
-use crate::error::MirResult;
-use eight_diagnostics::{ice, sanity_check};
-use eight_middle::context::CompileContext;
-use eight_middle::hir::HirModule;
-use eight_middle::hir::HirTy;
-use eight_middle::hir::{
+use crate::context::CompileContext;
+use crate::hir::HirModule;
+use crate::hir::HirTy;
+use crate::hir::{
     HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
     HirReferenceExpr, HirUnaryOpExpr,
 };
-use eight_middle::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
-use eight_middle::intrinsic::IntrinsicCandidate;
-use eight_middle::mir::MirModule;
-use eight_middle::mir::MirType;
-use eight_middle::mir::MirValueId;
-use eight_middle::scope::Scope;
-use eight_middle::LinkageType;
+use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
+use crate::intrinsic::IntrinsicCandidate;
+use crate::mir::MirModule;
+use crate::mir::MirType;
+use crate::mir::MirValueId;
+use crate::mir_builder::{MirFunctionBuilder, MirModuleContext};
+use crate::mir_error::MirResult;
+use crate::scope::Scope;
+use crate::LinkageType;
+use eight_diagnostics::{ice, sanity_check};
 
 pub struct MirModuleLoweringPass<'mir> {
     cc: &'mir CompileContext<'mir>,
