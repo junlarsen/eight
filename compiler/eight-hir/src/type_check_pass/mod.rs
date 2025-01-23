@@ -5,11 +5,19 @@ use crate::error::{
     WrongTraitTypeArgumentCount,
 };
 use eight_diagnostics::ice;
-use eight_middle::hir::{HirBlockStmt, HirExprStmt, HirFunctionTy, HirIfStmt, HirLetStmt, HirLoopStmt, HirModule, HirPointerTy, HirReturnStmt, HirStmt, HirTy};
+use eight_middle::hir::{
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
+    HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr,
+    HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirStruct, HirTrait,
+    HirUnaryOpExpr,
+};
+use eight_middle::hir::{
+    HirBlockStmt, HirExprStmt, HirFunctionTy, HirIfStmt, HirLetStmt, HirLoopStmt, HirModule,
+    HirPointerTy, HirReturnStmt, HirStmt, HirTy,
+};
 use eight_span::Span;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
-use eight_middle::hir::{HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirStruct, HirTrait, HirUnaryOpExpr};
 pub use typing_context::TypingContext;
 
 #[derive(Debug)]

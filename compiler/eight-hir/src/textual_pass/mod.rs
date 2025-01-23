@@ -8,10 +8,20 @@
 //! invents syntax not found in the base language, such as statement blocks and while loops.
 
 use eight_diagnostics::ice;
-use eight_middle::hir::{HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature, HirFunctionSignature, HirFunctionTy, HirIfStmt, HirInstanceSignature, HirLetStmt, HirLoopStmt, HirMetaTy, HirModule, HirNominalTy, HirPointerTy, HirReturnStmt, HirStmt, HirStructSignature, HirTraitSignature, HirTy, HirTypeParameterSignature, HirTypeSignature, HirVariableTy};
+use eight_middle::hir::{
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
+    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
+    HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr,
+    HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr,
+};
+use eight_middle::hir::{
+    HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature,
+    HirFunctionSignature, HirFunctionTy, HirIfStmt, HirInstanceSignature, HirLetStmt, HirLoopStmt,
+    HirMetaTy, HirModule, HirNominalTy, HirPointerTy, HirReturnStmt, HirStmt, HirStructSignature,
+    HirTraitSignature, HirTy, HirTypeParameterSignature, HirTypeSignature, HirVariableTy,
+};
 use eight_middle::LinkageType;
 use pretty::{Arena, DocAllocator, DocBuilder};
-use eight_middle::hir::{HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr};
 
 #[derive(Default)]
 pub struct HirModuleTextualPass<'a> {

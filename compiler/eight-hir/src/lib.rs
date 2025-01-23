@@ -10,10 +10,17 @@
 
 use crate::error::HirError;
 use eight_middle::hir::HirTy;
+use eight_middle::hir::{
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBlockStmt,
+    HirBooleanLiteralExpr, HirBreakStmt, HirCallExpr, HirConstantIndexExpr, HirConstructExpr,
+    HirConstructExprArgument, HirContinueStmt, HirDerefExpr, HirExpr, HirExprStmt, HirFunction,
+    HirFunctionSignature, HirGroupExpr, HirIfStmt, HirInstance, HirInstanceSignature,
+    HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirOffsetIndexExpr, HirReferenceExpr,
+    HirReturnStmt, HirStmt, HirTrait, HirTraitSignature, HirUnaryOp, HirUnaryOpExpr,
+};
 use eight_middle::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
-use eight_middle::hir::{HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBlockStmt, HirBooleanLiteralExpr, HirBreakStmt, HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirContinueStmt, HirDerefExpr, HirExpr, HirExprStmt, HirFunction, HirFunctionSignature, HirGroupExpr, HirIfStmt, HirInstance, HirInstanceSignature, HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirOffsetIndexExpr, HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature, HirUnaryOp, HirUnaryOpExpr};
 
 pub mod error;
 pub mod query;

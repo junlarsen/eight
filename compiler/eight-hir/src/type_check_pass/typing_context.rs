@@ -11,11 +11,16 @@ use crate::type_check_pass::{
 };
 use eight_diagnostics::ice;
 use eight_middle::context::CompileContext;
+use eight_middle::hir::{
+    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
+    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy,
+    HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr, HirReferenceExpr, HirTy,
+    HirUnaryOp, HirUnaryOpExpr,
+};
 use eight_middle::scope::Scope;
 use eight_span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
-use eight_middle::hir::{HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr, HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr};
 
 /// A context object for the type checker.
 ///

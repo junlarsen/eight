@@ -1,8 +1,11 @@
 use eight_diagnostics::ice;
 use eight_middle::hir::HirTy;
+use eight_middle::hir::{
+    HirFunctionSignature, HirInstanceSignature, HirModuleSignature, HirStructSignature,
+    HirTraitSignature, HirTypeSignature,
+};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use eight_middle::hir::{HirFunctionSignature, HirInstanceSignature, HirModuleSignature, HirStructSignature, HirTraitSignature, HirTypeSignature};
 
 /// A stable reference that does hashing and comparison by pointer.
 #[derive(Debug)]

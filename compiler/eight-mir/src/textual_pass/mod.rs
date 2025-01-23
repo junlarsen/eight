@@ -1,14 +1,12 @@
 use eight_diagnostics::ice;
-use eight_middle::mir::bb::MirBasicBlock;
-use eight_middle::mir::function::{MirFunction, MirFunctionData, MirFunctionId};
-use eight_middle::mir::instruction::{
-    MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirDivInstruction, MirInstruction,
-    MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
-    MirStoreInstruction, MirSubInstruction,
+use eight_middle::mir::MirBasicBlock;
+use eight_middle::mir::{
+    MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirConstantBool,
+    MirConstantInteger32, MirDivInstruction, MirFunction, MirFunctionData, MirFunctionId,
+    MirInstruction, MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
+    MirStoreInstruction, MirSubInstruction, MirType, MirValue,
 };
-use eight_middle::mir::module::{MirModule, MirModuleData};
-use eight_middle::mir::ty::MirType;
-use eight_middle::mir::value::{MirConstantBool, MirConstantInteger32, MirValue};
+use eight_middle::mir::{MirModule, MirModuleData};
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 #[derive(Default)]

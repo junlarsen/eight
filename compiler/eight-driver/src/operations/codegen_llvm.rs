@@ -1,6 +1,6 @@
 use crate::pipeline::PipelineOperation;
 use eight_codegen_llvm::{LLVMCodeGeneratorContext, MirModuleLLVMCodeGeneratorPass};
-use eight_middle::mir::module::MirModule;
+use eight_middle::mir::MirModule;
 
 /// Operation for generating LLVM IR from the MIR.
 pub struct CodegenLLVMOperation {}

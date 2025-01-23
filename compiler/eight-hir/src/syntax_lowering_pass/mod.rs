@@ -5,6 +5,13 @@ use crate::HirBuilder;
 use eight_diagnostics::ice;
 use eight_middle::context::CompileContext;
 use eight_middle::hir::HirTy;
+use eight_middle::hir::{
+    HirBinaryOp, HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction,
+    HirFunctionParameterSignature, HirFunctionSignature, HirInstance, HirInstanceSignature,
+    HirLetStmt, HirModule, HirModuleBody, HirModuleSignature, HirStmt, HirStruct,
+    HirStructFieldSignature, HirStructSignature, HirTrait, HirTraitSignature, HirType,
+    HirTypeParameterSignature, HirTypeSignature, HirUnaryOp,
+};
 use eight_middle::scope::Scope;
 use eight_middle::LinkageType;
 use eight_span::Span;
@@ -17,7 +24,6 @@ use eight_syntax::ast::{
     AstTranslationUnit, AstType, AstTypeItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr,
 };
 use std::collections::{BTreeMap, VecDeque};
-use eight_middle::hir::{HirBinaryOp, HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction, HirFunctionParameterSignature, HirFunctionSignature, HirInstance, HirInstanceSignature, HirLetStmt, HirModule, HirModuleBody, HirModuleSignature, HirStmt, HirStruct, HirStructFieldSignature, HirStructSignature, HirTrait, HirTraitSignature, HirType, HirTypeParameterSignature, HirTypeSignature, HirUnaryOp};
 
 /// Translation pass that lowers the `eight-syntax` AST into the HIR representation.
 ///

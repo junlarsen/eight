@@ -1,11 +1,11 @@
 //! The High-level Intermediate Representation.
 
+use crate::LinkageType;
+use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::BTreeMap;
 use std::fmt::{Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
-use eight_diagnostics::ice;
-use crate::LinkageType;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]

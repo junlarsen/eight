@@ -2,14 +2,17 @@ use crate::builder::{MirFunctionBuilder, MirModuleContext};
 use crate::error::MirResult;
 use eight_diagnostics::{ice, sanity_check};
 use eight_middle::context::CompileContext;
-use eight_middle::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use eight_middle::hir::HirModule;
 use eight_middle::hir::HirTy;
-use eight_middle::hir::{HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr, HirUnaryOpExpr};
+use eight_middle::hir::{
+    HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
+    HirReferenceExpr, HirUnaryOpExpr,
+};
+use eight_middle::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use eight_middle::intrinsic::{BinaryIntrinsicCandidate, UnaryIntrinsicCandidate};
-use eight_middle::mir::module::MirModule;
-use eight_middle::mir::ty::MirType;
-use eight_middle::mir::value::MirValueId;
+use eight_middle::mir::MirModule;
+use eight_middle::mir::MirType;
+use eight_middle::mir::MirValueId;
 use eight_middle::scope::Scope;
 use eight_middle::LinkageType;
 
