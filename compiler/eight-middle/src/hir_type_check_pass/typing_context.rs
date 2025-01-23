@@ -1,9 +1,9 @@
 use crate::context::CompileContext;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirCallableReferenceExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr,
-    HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr,
-    HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
+    HirCallExpr, HirCallableReferenceExpr, HirCallableSymbol, HirConstantIndexExpr,
+    HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr,
+    HirMetaTy, HirOffsetIndexExpr, HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
 };
 use crate::hir_error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
@@ -235,58 +235,61 @@ impl<'hir> TypingContext<'hir> {
         Ok(())
     }
 
-    /// Infer the type of a reference expression.
+    /// Infer the type of a reference expression. These are guaranteed to be local variables, as
+    /// function calls have been factored out.
     pub fn infer_reference_expr(
         &mut self,
         expr: &mut HirReferenceExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        // We attempt to look up a local variable first. This is cheaper than attempting to
-        // instantiate a generic function.
-        if let Some(local_ty) = self.find_let_binding(expr.name) {
-            self.constrain_eq(expectation, local_ty, expr.span, expr.name_span);
-            return Ok(());
-        }
-
-        // If the function refers to a function signature, we attempt to instantiate it if
-        // it is generic.
-        let Some(signature) = self.module_query_db.query_function_by_name(expr.name) else {
+        let Some(local_ty) = self.find_let_binding(expr.name) else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
-        // Non-generic functions are already "instantiated" and can be constrained directly.
-        if signature.type_parameters.is_empty() {
-            let parameters = signature
-                .parameters
-                .iter()
-                .map(|p| p.ty)
-                .collect::<Vec<_>>();
-            let ty = self.cc.hir_function_type(signature.return_type, parameters);
-            self.constrain_eq(expectation, ty, expr.span, expr.name_span);
-            return Ok(());
-        }
-
-        // Otherwise, we need to instantiate the generic parameters of the function, and
-        // substitute the parameters and return types if they refer to one of the generic
-        // type parameters.
-        let mut instantiations = HashMap::new();
-        let parameters = signature
-            .parameters
-            .iter()
-            .map(|p| self.eliminate_type_variables_within_ty(&mut instantiations, p.ty))
-            .collect::<Vec<_>>();
-        let return_type =
-            self.eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
-        let ty = self.cc.hir_function_type(return_type, parameters);
-        self.constrain_eq(expectation, ty, expr.span, expr.name_span);
+        self.constrain_eq(expectation, local_ty, expr.span, expr.name_span);
         Ok(())
     }
 
     pub fn infer_callable_reference_expr(
         &mut self,
-        _: &mut HirCallableReferenceExpr<'hir>,
-        _: &'hir HirTy<'hir>,
+        expr: &mut HirCallableReferenceExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        ice!("callable_reference is not constructable from syntax")
+        match &expr.symbol {
+            HirCallableSymbol::Function(name, name_span) => {
+                // If the function refers to a function signature, we attempt to instantiate it if
+                // it is generic.
+                let Some(signature) = self.module_query_db.query_function_by_name(name) else {
+                    ice!("called infer() on a name that doesn't exist in the context");
+                };
+                // Non-generic functions are already "instantiated" and can be constrained directly.
+                if signature.type_parameters.is_empty() {
+                    let parameters = signature
+                        .parameters
+                        .iter()
+                        .map(|p| p.ty)
+                        .collect::<Vec<_>>();
+                    let ty = self.cc.hir_function_type(signature.return_type, parameters);
+                    self.constrain_eq(expectation, ty, expr.span, *name_span);
+                    return Ok(());
+                }
+
+                // Otherwise, we need to instantiate the generic parameters of the function, and
+                // substitute the parameters and return types if they refer to one of the generic
+                // type parameters.
+                let mut instantiations = HashMap::new();
+                let parameters = signature
+                    .parameters
+                    .iter()
+                    .map(|p| self.eliminate_type_variables_within_ty(&mut instantiations, p.ty))
+                    .collect::<Vec<_>>();
+                let return_type = self
+                    .eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
+                let ty = self.cc.hir_function_type(return_type, parameters);
+                self.constrain_eq(expectation, ty, expr.span, *name_span);
+                Ok(())
+            }
+            _ => unimplemented!(),
+        }
     }
 
     /// Infer the type of an offset index expression.

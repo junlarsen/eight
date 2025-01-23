@@ -2,14 +2,15 @@ mod typing_context;
 
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
-    HirCallableReferenceExpr, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr,
-    HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr,
-    HirReferenceExpr, HirStruct, HirTrait, HirUnaryOpExpr,
+    HirCallableReferenceExpr, HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr,
+    HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr,
+    HirOffsetIndexExpr, HirReferenceExpr, HirStruct, HirTrait, HirUnaryOpExpr,
 };
 use crate::hir::{
     HirBlockStmt, HirExprStmt, HirFunctionTy, HirIfStmt, HirLetStmt, HirLoopStmt, HirModule,
     HirPointerTy, HirReturnStmt, HirStmt, HirTy,
 };
+use crate::hir_builder::HirBuilder;
 use crate::hir_error::{
     HirError, HirResult, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
     WrongTraitTypeArgumentCount,
@@ -538,7 +539,18 @@ impl HirModuleTypeCheckerPass {
 
         // If this surely points to a function (remember let-bindings take priority because they
         // may shadow a function), we can add metadata to the expression.
-        node.is_reference_to_function = is_function_reference && !is_local_reference;
+        let is_definitely_function = is_function_reference && !is_local_reference;
+        if is_definitely_function {
+            let mut node = HirBuilder::build_callable_reference_expr(
+                node.span,
+                HirCallableSymbol::Function(node.name, node.name_span),
+                node.ty,
+                vec![],
+            );
+            let ty = node.ty;
+            cx.infer_callable_reference_expr(&mut node, ty)?;
+            return Ok(Some(HirExpr::CallableReference(node)));
+        }
 
         // If we don't know where this name comes from, we have a type error.
         if !is_local_reference && !is_function_reference {
@@ -568,6 +580,7 @@ impl HirModuleTypeCheckerPass {
         _: &mut TypingContext<'hir>,
         _: &mut HirCallableReferenceExpr<'hir>,
     ) -> HirResult<Option<HirExpr<'hir>>> {
+        // TODO: Is this correct?
         Ok(None)
     }
 
@@ -575,10 +588,10 @@ impl HirModuleTypeCheckerPass {
     ///
     /// Same explanation as `enter_callable_reference_expr`.
     pub fn leave_callable_reference_expr<'hir>(
-        _: &mut TypingContext<'hir>,
-        _: &mut HirCallableReferenceExpr<'hir>,
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirCallableReferenceExpr<'hir>,
     ) -> HirResult<Option<HirExpr<'hir>>> {
-        todo!("substitute types back into callable reference");
+        node.ty = cx.substitute(node.ty)?;
         Ok(None)
     }
 

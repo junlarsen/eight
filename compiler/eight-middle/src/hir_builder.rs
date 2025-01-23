@@ -8,7 +8,6 @@
 //! and abstractions that the syntax of the language provides, providing more information about the
 //! program than the AST.
 
-use crate::hir::HirTy;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBlockStmt,
     HirBooleanLiteralExpr, HirBreakStmt, HirCallExpr, HirConstantIndexExpr, HirConstructExpr,
@@ -17,6 +16,7 @@ use crate::hir::{
     HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirOffsetIndexExpr, HirReferenceExpr,
     HirReturnStmt, HirStmt, HirTrait, HirTraitSignature, HirUnaryOp, HirUnaryOpExpr,
 };
+use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirTy};
 use crate::hir_error::HirError;
 use crate::LinkageType;
 use eight_span::Span;
@@ -368,7 +368,20 @@ impl<'hir> HirBuilder {
             name,
             name_span,
             ty,
-            is_reference_to_function: false,
+        }
+    }
+
+    pub fn build_callable_reference_expr(
+        span: Span,
+        symbol: HirCallableSymbol<'hir>,
+        ty: &'hir HirTy<'hir>,
+        type_arguments: Vec<&'hir HirTy<'hir>>,
+    ) -> HirCallableReferenceExpr<'hir> {
+        HirCallableReferenceExpr {
+            span,
+            symbol,
+            ty,
+            type_arguments,
         }
     }
 }

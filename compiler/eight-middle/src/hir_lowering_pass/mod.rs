@@ -1,10 +1,10 @@
 use crate::context::CompileContext;
-use crate::hir::HirModule;
 use crate::hir::HirTy;
 use crate::hir::{
     HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
     HirReferenceExpr, HirUnaryOpExpr,
 };
+use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirModule};
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::intrinsic::IntrinsicCandidate;
 use crate::mir::MirModule;
@@ -172,6 +172,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         match expr {
             HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(b, cx, e),
             HirExpr::Reference(e) => self.visit_reference_expr(b, cx, e),
+            HirExpr::CallableReference(e) => self.visit_callable_reference_expr(b, cx, e),
             HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
             HirExpr::BinaryOp(e) => self.visit_binary_op_expr(b, cx, e),
@@ -180,7 +181,6 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             | HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
             | HirExpr::ConstantIndex(_)
-            | HirExpr::CallableReference(_)
             | HirExpr::OffsetIndex(_)
             | HirExpr::Construct(_)
             | HirExpr::Assign(_) => unimplemented!("cannot lower this expression"),
@@ -207,24 +207,19 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         Ok(inst)
     }
 
+    /// Translate a reference expression into MIR.
+    ///
+    /// At this stage in the translation pipeline, we are ensured that a [`MirReferenceExpr`] is
+    /// only used to point to local variables. This means that we can safely lower it to load.
+    ///
+    /// Function references are lowered into [`HirCallableReferenceExpr`] nodes, which are handled
+    /// by a separate visitor.
     pub fn visit_reference_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirReferenceExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        // We need to see if this is the name of a function, and if so, we need to lower it to a
-        // function value.
-        if expr.is_reference_to_function {
-            let name = self.cc.intern_str(expr.name);
-            let id = cx.data().get_function_id(name).unwrap_or_else(|| {
-                ice!(format!(
-                    "failed to find function id for {} despite passing type checker",
-                    expr.name
-                ));
-            });
-            return Ok(b.build_function_ref(id));
-        };
         // Arguments can be used directly, but locals need to be loaded.
         let id = self.locals.find(&expr.name).unwrap_or_else(|| {
             ice!(format!("failed to find local value for {}", expr.name));
@@ -237,6 +232,29 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             return Ok(load);
         }
         Ok(*id)
+    }
+
+    pub fn visit_callable_reference_expr(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirCallableReferenceExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        match &expr.symbol {
+            // If this is a simple function name, we can lower it to a specific function value.
+            HirCallableSymbol::Function(name, _) => {
+                // TODO: Mangle the name along with the type arguments.
+                let name = self.cc.intern_str(name);
+                let id = cx.data().get_function_id(name).unwrap_or_else(|| {
+                    ice!(format!(
+                        "failed to find function id for {} despite passing type checker",
+                        name
+                    ));
+                });
+                Ok(b.build_function_ref(id))
+            }
+            _ => unimplemented!(),
+        }
     }
 
     pub fn visit_call_expr(
