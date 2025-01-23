@@ -350,7 +350,9 @@ impl<'hir> TypingContext<'hir> {
         // If the user provided type parameters, we need to constrain them to be equal to the types
         // that will be backpropagated to the callee. If the count here is mismatched, then there's
         // a user error.
-        if callee.type_arguments.len() != expr.type_arguments.len() {
+        if !expr.type_arguments.is_empty()
+            && callee.type_arguments.len() != expr.type_arguments.len()
+        {
             return Err(HirError::WrongFunctionTypeArgumentCount(
                 WrongFunctionTypeArgumentCount {
                     expected: callee.type_arguments.len(),
