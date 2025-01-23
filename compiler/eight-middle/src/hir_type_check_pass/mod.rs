@@ -164,11 +164,15 @@ impl HirModuleTypeCheckerPass {
         // child nodes of the function body, then we solve the type constraints, and finally we
         // traverse once more to perform substitution of each node.
         for stmt in node.body.iter_mut() {
-            Self::enter_stmt(cx, stmt)?;
+            if let Some(next) = Self::enter_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
         cx.solve_constraints()?;
         for stmt in node.body.iter_mut() {
-            Self::leave_stmt(cx, stmt)?;
+            if let Some(next) = Self::leave_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
         cx.leave_let_binding_scope();
         cx.record_function_context_exit();
@@ -403,7 +407,7 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         match node {
             HirExpr::IntegerLiteral(e) => Self::enter_integer_literal_expr(cx, e),
             HirExpr::BooleanLiteral(e) => Self::enter_boolean_literal_expr(cx, e),
@@ -426,7 +430,7 @@ impl HirModuleTypeCheckerPass {
     pub fn leave_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         match node {
             HirExpr::IntegerLiteral(e) => Self::leave_integer_literal_expr(cx, e),
             HirExpr::BooleanLiteral(e) => Self::leave_boolean_literal_expr(cx, e),
@@ -451,19 +455,19 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_integer_literal_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirIntegerLiteralExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
         cx.infer_integer_literal_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for an integer literal expression.
     pub fn leave_integer_literal_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirIntegerLiteralExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a boolean literal expression.
@@ -472,19 +476,19 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_boolean_literal_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirBooleanLiteralExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
         cx.infer_boolean_literal_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a boolean literal expression.
     pub fn leave_boolean_literal_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirBooleanLiteralExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a group expression.
@@ -493,21 +497,25 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_group_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirGroupExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.inner)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.inner)? {
+            let _ = std::mem::replace(&mut node.inner, Box::new(next));
+        }
         cx.infer_group_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a group expression.
     pub fn leave_group_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirGroupExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.inner)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.inner)? {
+            let _ = std::mem::replace(&mut node.inner, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a reference expression.
@@ -519,7 +527,7 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_reference_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirReferenceExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
         // See if the name resolves to a local let-binding or a function name.
         let is_local_reference = cx.find_let_binding(node.name).is_some();
@@ -540,7 +548,16 @@ impl HirModuleTypeCheckerPass {
             }));
         }
         cx.infer_reference_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
+    }
+
+    /// Perform substitution for a reference expression.
+    pub fn leave_reference_expr<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirReferenceExpr<'hir>,
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        node.ty = cx.substitute(node.ty)?;
+        Ok(None)
     }
 
     /// Collect type constraints for a callable reference expression.
@@ -550,8 +567,8 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_callable_reference_expr<'hir>(
         _: &mut TypingContext<'hir>,
         _: &mut HirCallableReferenceExpr<'hir>,
-    ) -> HirResult<()> {
-        ice!("callable_reference is not constructable from syntax")
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        Ok(None)
     }
 
     /// Perform substitution for a callable reference expression.
@@ -560,17 +577,9 @@ impl HirModuleTypeCheckerPass {
     pub fn leave_callable_reference_expr<'hir>(
         _: &mut TypingContext<'hir>,
         _: &mut HirCallableReferenceExpr<'hir>,
-    ) -> HirResult<()> {
-        ice!("callable_reference is not constructable from syntax")
-    }
-
-    /// Perform substitution for a reference expression.
-    pub fn leave_reference_expr<'hir>(
-        cx: &mut TypingContext<'hir>,
-        node: &mut HirReferenceExpr<'hir>,
-    ) -> HirResult<()> {
-        node.ty = cx.substitute(node.ty)?;
-        Ok(())
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        todo!("substitute types back into callable reference");
+        Ok(None)
     }
 
     /// Collect type constraints for an assign expression.
@@ -580,22 +589,31 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_assign_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirAssignExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.lhs)?;
-        Self::enter_expr(cx, &mut node.rhs)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.lhs)? {
+            let _ = std::mem::replace(&mut node.lhs, Box::new(next));
+        }
+        if let Some(next) = Self::enter_expr(cx, &mut node.rhs)? {
+            let _ = std::mem::replace(&mut node.rhs, Box::new(next));
+        }
         cx.infer_assign_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
+    /// Perform substitution for an assignment expression.
     pub fn leave_assign_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirAssignExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.lhs)?;
-        Self::leave_expr(cx, &mut node.rhs)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.lhs)? {
+            let _ = std::mem::replace(&mut node.lhs, Box::new(next));
+        }
+        if let Some(next) = Self::leave_expr(cx, &mut node.rhs)? {
+            let _ = std::mem::replace(&mut node.rhs, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for an offset index expression.
@@ -605,184 +623,228 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_offset_index_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirOffsetIndexExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.origin)?;
-        Self::enter_expr(cx, &mut node.index)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.origin)? {
+            let _ = std::mem::replace(&mut node.origin, Box::new(next));
+        }
+        if let Some(next) = Self::enter_expr(cx, &mut node.index)? {
+            let _ = std::mem::replace(&mut node.index, Box::new(next));
+        }
         cx.infer_offset_index_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for an offset index expression.
     pub fn leave_offset_index_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirOffsetIndexExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.origin)?;
-        Self::leave_expr(cx, &mut node.index)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.origin)? {
+            let _ = std::mem::replace(&mut node.origin, Box::new(next));
+        }
+        if let Some(next) = Self::leave_expr(cx, &mut node.index)? {
+            let _ = std::mem::replace(&mut node.index, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a constant index expression.
     pub fn enter_constant_index_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirConstantIndexExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.origin)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.origin)? {
+            let _ = std::mem::replace(&mut node.origin, Box::new(next));
+        }
         cx.infer_constant_index_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a constant index expression.
     pub fn leave_constant_index_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirConstantIndexExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.origin)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.origin)? {
+            let _ = std::mem::replace(&mut node.origin, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a call expression.
     pub fn enter_call_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirCallExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.callee)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.callee)? {
+            let _ = std::mem::replace(&mut node.callee, Box::new(next));
+        }
         for arg in node.arguments.iter_mut() {
-            Self::enter_expr(cx, arg)?;
+            if let Some(next) = Self::enter_expr(cx, arg)? {
+                let _ = std::mem::replace(arg, next);
+            }
         }
         cx.infer_call_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a call expression.
     pub fn leave_call_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirCallExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.callee)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.callee)? {
+            let _ = std::mem::replace(&mut node.callee, Box::new(next));
+        }
         for arg in node.arguments.iter_mut() {
-            Self::leave_expr(cx, arg)?;
+            if let Some(next) = Self::leave_expr(cx, arg)? {
+                let _ = std::mem::replace(arg, next);
+            }
         }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a construct expression.
     pub fn enter_construct_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirConstructExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         // Nothing to re-assign here. This is just a check that the type that is being constructed
         // actually exists.
         Self::visit_type(cx, node.callee)?;
         node.ty = Self::visit_type(cx, node.ty)?;
         for arg in node.arguments.iter_mut() {
-            Self::enter_expr(cx, arg.expr.as_mut())?;
+            if let Some(next) = Self::enter_expr(cx, arg.expr.as_mut())? {
+                let _ = std::mem::replace(arg.expr.as_mut(), next);
+            }
         }
         cx.infer_construct_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a construct expression.
     pub fn leave_construct_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirConstructExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = cx.substitute(node.ty)?;
         for arg in node.arguments.iter_mut() {
-            Self::leave_expr(cx, &mut arg.expr)?;
+            if let Some(next) = Self::leave_expr(cx, &mut arg.expr)? {
+                let _ = std::mem::replace(&mut arg.expr, Box::new(next));
+            }
         }
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for an address of expression.
     pub fn enter_address_of_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirAddressOfExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.inner)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.inner)? {
+            let _ = std::mem::replace(&mut node.inner, Box::new(next));
+        }
         cx.infer_address_of_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for an address of expression.
     pub fn leave_address_of_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirAddressOfExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.inner)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.inner)? {
+            let _ = std::mem::replace(&mut node.inner, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a deref expression.
     pub fn enter_deref_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirDerefExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.inner)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.inner)? {
+            let _ = std::mem::replace(&mut node.inner, Box::new(next));
+        }
         cx.infer_deref_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a deref expression.
     pub fn leave_deref_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirDerefExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.inner)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.inner)? {
+            let _ = std::mem::replace(&mut node.inner, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for an unary operation expression.
     pub fn enter_unary_op_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirUnaryOpExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.operand)?;
-        Ok(())
+        if let Some(next) = Self::enter_expr(cx, &mut node.operand)? {
+            let _ = std::mem::replace(&mut node.operand, Box::new(next));
+        }
+        Ok(None)
     }
 
     /// Perform substitution for an unary operation expression.
     pub fn leave_unary_op_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirUnaryOpExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.operand)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.operand)? {
+            let _ = std::mem::replace(&mut node.operand, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a binary operation expression.
     pub fn enter_binary_op_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirBinaryOpExpr<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.lhs)?;
-        Self::enter_expr(cx, &mut node.rhs)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.lhs)? {
+            let _ = std::mem::replace(&mut node.lhs, Box::new(next));
+        }
+        if let Some(next) = Self::enter_expr(cx, &mut node.rhs)? {
+            let _ = std::mem::replace(&mut node.rhs, Box::new(next));
+        }
         cx.infer_binary_op_expr(node, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a binary operation expression.
     pub fn leave_binary_op_expr<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirBinaryOpExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.lhs)?;
-        Self::leave_expr(cx, &mut node.rhs)?;
+    ) -> HirResult<Option<HirExpr<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.lhs)? {
+            let _ = std::mem::replace(&mut node.lhs, Box::new(next));
+        }
+        if let Some(next) = Self::leave_expr(cx, &mut node.rhs)? {
+            let _ = std::mem::replace(&mut node.rhs, Box::new(next));
+        }
         node.ty = cx.substitute(node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a statement.
@@ -795,7 +857,7 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
         match node {
             HirStmt::Let(s) => Self::enter_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::enter_expr_stmt(cx, e),
@@ -804,7 +866,7 @@ impl HirModuleTypeCheckerPass {
             HirStmt::If(i) => Self::enter_if_stmt(cx, i),
             HirStmt::Block(b) => Self::enter_block_stmt(cx, b),
             // Nothing to do for these nodes.
-            HirStmt::Break(_) | HirStmt::Continue(_) => Ok(()),
+            HirStmt::Break(_) | HirStmt::Continue(_) => Ok(None),
         }
     }
 
@@ -812,7 +874,7 @@ impl HirModuleTypeCheckerPass {
     pub fn leave_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
         match node {
             HirStmt::Let(s) => Self::leave_let_stmt(cx, s),
             HirStmt::Expr(e) => Self::leave_expr_stmt(cx, e),
@@ -821,7 +883,7 @@ impl HirModuleTypeCheckerPass {
             HirStmt::If(i) => Self::leave_if_stmt(cx, i),
             HirStmt::Block(b) => Self::leave_block_stmt(cx, b),
             // Nothing to do for these nodes.
-            HirStmt::Break(_) | HirStmt::Continue(_) => Ok(()),
+            HirStmt::Break(_) | HirStmt::Continue(_) => Ok(None),
         }
     }
 
@@ -832,105 +894,128 @@ impl HirModuleTypeCheckerPass {
     pub fn enter_let_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirLetStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
         // Replace any uninitialized types with a fresh type variable.
         node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.value)?;
+        if let Some(next) = Self::enter_expr(cx, &mut node.value)? {
+            let _ = std::mem::replace(&mut node.value, next);
+        }
         cx.infer(&mut node.value, node.ty)?;
         // Propagate the type of the expression to the type of the let-binding
         node.ty = node.value.ty();
         cx.record_let_binding(node.name, node.span, node.ty)?;
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a let statement.
     pub fn leave_let_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirLetStmt<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.value)?;
+    ) -> HirResult<Option<HirStmt<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.value)? {
+            let _ = std::mem::replace(&mut node.value, next);
+        }
         // Propagate the type of the expression to the type of the let-binding
         node.ty = node.value.ty();
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for an expression statement.
     pub fn enter_expr_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirExprStmt<'hir>,
-    ) -> HirResult<()> {
-        Self::enter_expr(cx, &mut node.expr)?;
-        Ok(())
+    ) -> HirResult<Option<HirStmt<'hir>>> {
+        if let Some(next) = Self::enter_expr(cx, &mut node.expr)? {
+            let _ = std::mem::replace(&mut node.expr, next);
+        }
+        Ok(None)
     }
 
     /// Perform substitution for an expression statement.
     pub fn leave_expr_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirExprStmt<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.expr)?;
-        Ok(())
+    ) -> HirResult<Option<HirStmt<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.expr)? {
+            let _ = std::mem::replace(&mut node.expr, next);
+        }
+        Ok(None)
     }
 
     /// Collect type constraints for a loop statement.
     pub fn enter_loop_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirLoopStmt<'hir>,
-    ) -> HirResult<()> {
-        Self::enter_expr(cx, &mut node.condition)?;
+    ) -> HirResult<Option<HirStmt<'hir>>> {
+        if let Some(next) = Self::enter_expr(cx, &mut node.condition)? {
+            let _ = std::mem::replace(&mut node.condition, next);
+        }
         // We also impose a new constraint that the condition must be a boolean
         cx.infer(&mut node.condition, cx.cc.hir_boolean_type())?;
         cx.enter_let_binding_scope();
         for stmt in node.body.iter_mut() {
-            Self::enter_stmt(cx, stmt)?;
+            if let Some(next) = Self::enter_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
         cx.leave_let_binding_scope();
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a loop statement.
     pub fn leave_loop_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirLoopStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.condition)? {
+            let _ = std::mem::replace(&mut node.condition, next);
+        }
         Self::leave_expr(cx, &mut node.condition)?;
         for stmt in node.body.iter_mut() {
-            Self::leave_stmt(cx, stmt)?;
+            if let Some(next) = Self::leave_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a block statement.
     pub fn enter_block_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirBlockStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
         cx.enter_let_binding_scope();
         for stmt in node.body.iter_mut() {
-            Self::enter_stmt(cx, stmt)?;
+            if let Some(next) = Self::enter_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
         cx.leave_let_binding_scope();
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a block statement.
     pub fn leave_block_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirBlockStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
         for stmt in node.body.iter_mut() {
-            Self::leave_stmt(cx, stmt)?;
+            if let Some(next) = Self::leave_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for a break statement.
     pub fn enter_return_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirReturnStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
         if let Some(inner) = node.value.as_mut() {
-            Self::enter_expr(cx, inner)?;
+            if let Some(next) = Self::enter_expr(cx, inner)? {
+                let _ = std::mem::replace(inner, next);
+            }
             let parent = cx
                 .find_function_context()
                 // In the future syntax like this might be legal, but even then it should be caught in
@@ -938,58 +1023,72 @@ impl HirModuleTypeCheckerPass {
                 .unwrap_or_else(|| ice!("tried to infer return statement outside of function"));
             cx.infer(inner, parent.return_type)?;
         }
-        Ok(())
+        Ok(None)
     }
 
     /// Perform substitution for a return statement.
     pub fn leave_return_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirReturnStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
         if let Some(inner) = node.value.as_mut() {
-            Self::leave_expr(cx, inner)?;
+            if let Some(next) = Self::leave_expr(cx, inner)? {
+                let _ = std::mem::replace(inner, next);
+            }
         }
-        Ok(())
+        Ok(None)
     }
 
     /// Collect type constraints for an if statement.
     pub fn enter_if_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirIfStmt<'hir>,
-    ) -> HirResult<()> {
-        Self::enter_expr(cx, &mut node.condition)?;
+    ) -> HirResult<Option<HirStmt<'hir>>> {
+        if let Some(next) = Self::enter_expr(cx, &mut node.condition)? {
+            let _ = std::mem::replace(&mut node.condition, next);
+        }
         // We also impose a new constraint that the condition must be a boolean
         cx.infer(&mut node.condition, cx.cc.hir_boolean_type())?;
 
         // Traverse down the happy path
         cx.enter_let_binding_scope();
         for stmt in node.happy_path.iter_mut() {
-            Self::enter_stmt(cx, stmt)?;
+            if let Some(next) = Self::enter_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
         cx.leave_let_binding_scope();
 
         // Traverse down the unhappy path
         cx.enter_let_binding_scope();
         for stmt in node.unhappy_path.iter_mut() {
-            Self::enter_stmt(cx, stmt)?;
+            if let Some(next) = Self::enter_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
         cx.leave_let_binding_scope();
-
-        Ok(())
+        Ok(None)
     }
 
     pub fn leave_if_stmt<'hir>(
         cx: &mut TypingContext<'hir>,
         node: &mut HirIfStmt<'hir>,
-    ) -> HirResult<()> {
+    ) -> HirResult<Option<HirStmt<'hir>>> {
+        if let Some(next) = Self::leave_expr(cx, &mut node.condition)? {
+            let _ = std::mem::replace(&mut node.condition, next);
+        }
         Self::leave_expr(cx, &mut node.condition)?;
         for stmt in node.happy_path.iter_mut() {
-            Self::leave_stmt(cx, stmt)?;
+            if let Some(next) = Self::leave_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
         for stmt in node.unhappy_path.iter_mut() {
-            Self::leave_stmt(cx, stmt)?;
+            if let Some(next) = Self::leave_stmt(cx, stmt)? {
+                let _ = std::mem::replace(stmt, next);
+            }
         }
-        Ok(())
+        Ok(None)
     }
 }
 
