@@ -9,7 +9,7 @@ use eight_middle::hir::{
     HirReferenceExpr, HirUnaryOpExpr,
 };
 use eight_middle::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
-use eight_middle::intrinsic::{BinaryIntrinsicCandidate, UnaryIntrinsicCandidate};
+use eight_middle::intrinsic::IntrinsicCandidate;
 use eight_middle::mir::MirModule;
 use eight_middle::mir::MirType;
 use eight_middle::mir::MirValueId;
@@ -311,7 +311,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
-        candidate: BinaryIntrinsicCandidate,
+        candidate: IntrinsicCandidate,
         expr: &'hir HirBinaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
         let lhs = self.visit_expr(b, cx, &expr.lhs)?;
@@ -320,10 +320,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let rhs_ty = b.data().get_value_type(rhs);
         sanity_check!(lhs_ty == rhs_ty, "lhs and rhs types must be equal");
         let inst = match candidate {
-            BinaryIntrinsicCandidate::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
-            BinaryIntrinsicCandidate::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
-            BinaryIntrinsicCandidate::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
-            BinaryIntrinsicCandidate::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
+            IntrinsicCandidate::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
+            IntrinsicCandidate::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
+            IntrinsicCandidate::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
+            IntrinsicCandidate::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
             _ => unimplemented!("binary operator {candidate:?} is not yet implemented"),
         };
         Ok(inst)
@@ -336,14 +336,14 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
-        candidate: UnaryIntrinsicCandidate,
+        candidate: IntrinsicCandidate,
         expr: &'hir HirUnaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
         let operand = self.visit_expr(b, cx, &expr.operand)?;
         let ty = b.data().get_value_type(operand);
         let inst = match candidate {
             // Negation of a number is implemented as subtraction from zero.
-            UnaryIntrinsicCandidate::IntegerNeg => {
+            IntrinsicCandidate::IntegerNeg => {
                 let zero = b.build_constant_integer32(0, self.cc.mir_i32_type());
                 b.build_sub(cx, zero, operand, ty, None)
             }

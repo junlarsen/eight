@@ -2,10 +2,12 @@
 
 use crate::hir::HirTy;
 use crate::hir::{HirBinaryOp, HirBinaryOpExpr, HirUnaryOp, HirUnaryOpExpr};
+use std::fmt::Display;
 
 /// A binary operator that is to be lowered using compiler intrinsics.
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
-pub enum BinaryIntrinsicCandidate {
+pub enum IntrinsicCandidate {
     IntegerAdd,
     IntegerSub,
     IntegerMul,
@@ -23,13 +25,34 @@ pub enum BinaryIntrinsicCandidate {
     BooleanOr,
     BooleanEq,
     BooleanNeq,
-}
-
-/// A unary operator that is to be lowered using compiler intrinsics.
-#[derive(Debug)]
-pub enum UnaryIntrinsicCandidate {
     IntegerNeg,
     BooleanNot,
+}
+
+impl Display for IntrinsicCandidate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IntrinsicCandidate::IntegerAdd => write!(f, "__builtin_iadd"),
+            IntrinsicCandidate::IntegerSub => write!(f, "__builtin_isub"),
+            IntrinsicCandidate::IntegerMul => write!(f, "__builtin_imul"),
+            IntrinsicCandidate::IntegerDiv => write!(f, "__builtin_idiv"),
+            IntrinsicCandidate::IntegerRem => write!(f, "__builtin_irem"),
+            IntrinsicCandidate::IntegerEq => write!(f, "__builtin_ieq"),
+            IntrinsicCandidate::IntegerNeq => write!(f, "__builtin_ineq"),
+            IntrinsicCandidate::IntegerLt => write!(f, "__builtin_ilt"),
+            IntrinsicCandidate::IntegerGt => write!(f, "__builtin_igt"),
+            IntrinsicCandidate::IntegerLte => write!(f, "__builtin_ilte"),
+            IntrinsicCandidate::IntegerGte => write!(f, "__builtin_igte"),
+            IntrinsicCandidate::IntegerAnd => write!(f, "__builtin_iand"),
+            IntrinsicCandidate::IntegerOr => write!(f, "__builtin_ior"),
+            IntrinsicCandidate::BooleanAnd => write!(f, "__builtin_and"),
+            IntrinsicCandidate::BooleanOr => write!(f, "__builtin_or"),
+            IntrinsicCandidate::BooleanEq => write!(f, "__builtin_eq"),
+            IntrinsicCandidate::BooleanNeq => write!(f, "__builtin_neq"),
+            IntrinsicCandidate::IntegerNeg => write!(f, "__builtin_neg"),
+            IntrinsicCandidate::BooleanNot => write!(f, "__builtin_not"),
+        }
+    }
 }
 
 impl HirBinaryOpExpr<'_> {
@@ -38,25 +61,25 @@ impl HirBinaryOpExpr<'_> {
     /// Calling this function is only safe once the expression has passed the type checker. Its
     /// output is meaningless before type checking.
     #[rustfmt::skip]
-    pub fn is_implemented_as_intrinsic(expr: &HirBinaryOpExpr<'_>) -> Option<BinaryIntrinsicCandidate> {
+    pub fn is_implemented_as_intrinsic(expr: &HirBinaryOpExpr<'_>) -> Option<IntrinsicCandidate> {
         match (&expr.op, expr.lhs.ty(), expr.rhs.ty()) {
             // Built-in intrinsics for i32
-            (HirBinaryOp::Add, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerAdd),
-            (HirBinaryOp::Sub, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerSub),
-            (HirBinaryOp::Mul, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerMul),
-            (HirBinaryOp::Div, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerDiv),
-            (HirBinaryOp::Rem, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerRem),
-            (HirBinaryOp::Eq, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerEq),
-            (HirBinaryOp::Neq, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerNeq),
-            (HirBinaryOp::Lt, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerLt),
-            (HirBinaryOp::Gt, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerGt),
-            (HirBinaryOp::Lte, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerLte),
-            (HirBinaryOp::Gte, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerGte),
-            (HirBinaryOp::And, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerAnd),
-            (HirBinaryOp::Or, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(BinaryIntrinsicCandidate::IntegerOr),
+            (HirBinaryOp::Add, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerAdd),
+            (HirBinaryOp::Sub, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerSub),
+            (HirBinaryOp::Mul, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerMul),
+            (HirBinaryOp::Div, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerDiv),
+            (HirBinaryOp::Rem, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerRem),
+            (HirBinaryOp::Eq, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerEq),
+            (HirBinaryOp::Neq, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerNeq),
+            (HirBinaryOp::Lt, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerLt),
+            (HirBinaryOp::Gt, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerGt),
+            (HirBinaryOp::Lte, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerLte),
+            (HirBinaryOp::Gte, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerGte),
+            (HirBinaryOp::And, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerAnd),
+            (HirBinaryOp::Or, HirTy::Integer32(_), HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerOr),
             // Built-in intrinsics for bool
-            (HirBinaryOp::And, HirTy::Boolean(_), HirTy::Boolean(_)) => Some(BinaryIntrinsicCandidate::BooleanAnd),
-            (HirBinaryOp::Or, HirTy::Boolean(_), HirTy::Boolean(_)) => Some(BinaryIntrinsicCandidate::BooleanOr),
+            (HirBinaryOp::And, HirTy::Boolean(_), HirTy::Boolean(_)) => Some(IntrinsicCandidate::BooleanAnd),
+            (HirBinaryOp::Or, HirTy::Boolean(_), HirTy::Boolean(_)) => Some(IntrinsicCandidate::BooleanOr),
             // This is not a binary operator that compiles to an intrinsic
             _ => None,
         }
@@ -69,12 +92,12 @@ impl HirUnaryOpExpr<'_> {
     /// Calling this function is only safe once the expression has passed the type checker. Its
     /// output is meaningless before type checking.
     #[rustfmt::skip]
-    pub fn is_implemented_as_intrinsic(expr: &HirUnaryOpExpr<'_>) -> Option<UnaryIntrinsicCandidate> {
+    pub fn is_implemented_as_intrinsic(expr: &HirUnaryOpExpr<'_>) -> Option<IntrinsicCandidate> {
         match (&expr.op, expr.operand.ty()) {
             // Built-in intrinsics for i32
-            (HirUnaryOp::Neg, HirTy::Integer32(_)) => Some(UnaryIntrinsicCandidate::IntegerNeg),
+            (HirUnaryOp::Neg, HirTy::Integer32(_)) => Some(IntrinsicCandidate::IntegerNeg),
             // Built-in intrinsics for bool
-            (HirUnaryOp::Not, HirTy::Boolean(_)) => Some(UnaryIntrinsicCandidate::BooleanNot),
+            (HirUnaryOp::Not, HirTy::Boolean(_)) => Some(IntrinsicCandidate::BooleanNot),
             // This is not a unary operator that compiles to an intrinsic
             _ => None,
         }

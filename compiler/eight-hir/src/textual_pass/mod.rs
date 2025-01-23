@@ -686,6 +686,16 @@ impl<'a> HirModuleTextualPass<'a> {
                     self.arena.text(","),
                 ))
                 .append(self.arena.text(">")),
+            HirCallableSymbol::CompilerIntrinsic(name, _) => self
+                .arena
+                .as_string(name)
+                .append(self.arena.text("::"))
+                .append(self.arena.text("<"))
+                .append(self.arena.intersperse(
+                    expr.type_arguments.iter().map(|a| self.visit_ty(a)),
+                    self.arena.text(","),
+                ))
+                .append(self.arena.text(">")),
         }
     }
 
