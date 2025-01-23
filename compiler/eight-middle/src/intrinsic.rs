@@ -1,7 +1,7 @@
 //! Utilities for built-in compiler intrinsics.
 
-use crate::hir::expr::{HirBinaryOp, HirBinaryOpExpr, HirUnaryOp, HirUnaryOpExpr};
-use crate::hir::ty::HirTy;
+use crate::hir::HirTy;
+use crate::hir::{HirBinaryOp, HirBinaryOpExpr, HirUnaryOp, HirUnaryOpExpr};
 
 /// A binary operator that is to be lowered using compiler intrinsics.
 #[derive(Debug)]

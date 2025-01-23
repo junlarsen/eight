@@ -1,6 +1,6 @@
 use eight_diagnostics::ice;
 use eight_middle::context::CompileContext;
-use eight_middle::hir::module::HirModule;
+use eight_middle::hir::HirModule;
 use eight_middle::mir::bb::{MirBasicBlock, MirBasicBlockId};
 use eight_middle::mir::function::{MirFunction, MirFunctionData, MirFunctionId};
 use eight_middle::mir::instruction::{

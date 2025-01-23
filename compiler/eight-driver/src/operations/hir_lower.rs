@@ -1,5 +1,5 @@
 use crate::pipeline::{Pipeline, PipelineError, PipelineOperation, StopTokenStep};
-use eight_middle::hir::module::HirModule;
+use eight_middle::hir::HirModule;
 use eight_middle::mir::module::MirModule;
 use eight_mir::hir_lowering_pass::MirModuleLoweringPass;
 

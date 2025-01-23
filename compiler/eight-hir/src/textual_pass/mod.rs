@@ -8,27 +8,10 @@
 //! invents syntax not found in the base language, such as statement blocks and while loops.
 
 use eight_diagnostics::ice;
-use eight_middle::hir::expr::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
-    HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
-    HirUnaryOpExpr,
-};
-use eight_middle::hir::item::{HirFunction, HirInstance};
-use eight_middle::hir::module::HirModule;
-use eight_middle::hir::signature::{
-    HirFunctionParameterSignature, HirFunctionSignature, HirInstanceSignature, HirStructSignature,
-    HirTraitSignature, HirTypeParameterSignature, HirTypeSignature,
-};
-use eight_middle::hir::stmt::{
-    HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
-    HirReturnStmt, HirStmt,
-};
-use eight_middle::hir::ty::{
-    HirFunctionTy, HirMetaTy, HirNominalTy, HirPointerTy, HirTy, HirVariableTy,
-};
+use eight_middle::hir::{HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature, HirFunctionSignature, HirFunctionTy, HirIfStmt, HirInstanceSignature, HirLetStmt, HirLoopStmt, HirMetaTy, HirModule, HirNominalTy, HirPointerTy, HirReturnStmt, HirStmt, HirStructSignature, HirTraitSignature, HirTy, HirTypeParameterSignature, HirTypeSignature, HirVariableTy};
 use eight_middle::LinkageType;
 use pretty::{Arena, DocAllocator, DocBuilder};
+use eight_middle::hir::{HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp, HirUnaryOpExpr};
 
 #[derive(Default)]
 pub struct HirModuleTextualPass<'a> {

@@ -9,22 +9,11 @@
 //! program than the AST.
 
 use crate::error::HirError;
-use eight_middle::hir::expr::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirDerefExpr,
-    HirExpr, HirGroupExpr, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
-    HirUnaryOpExpr,
-};
-use eight_middle::hir::item::{HirFunction, HirInstance, HirTrait};
-use eight_middle::hir::signature::{HirFunctionSignature, HirInstanceSignature, HirTraitSignature};
-use eight_middle::hir::stmt::{
-    HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirIfStmt, HirLetStmt, HirLoopStmt,
-    HirReturnStmt, HirStmt,
-};
-use eight_middle::hir::ty::HirTy;
+use eight_middle::hir::HirTy;
 use eight_middle::LinkageType;
 use eight_span::Span;
 use std::collections::BTreeMap;
+use eight_middle::hir::{HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBlockStmt, HirBooleanLiteralExpr, HirBreakStmt, HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirContinueStmt, HirDerefExpr, HirExpr, HirExprStmt, HirFunction, HirFunctionSignature, HirGroupExpr, HirIfStmt, HirInstance, HirInstanceSignature, HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirOffsetIndexExpr, HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature, HirUnaryOp, HirUnaryOpExpr};
 
 pub mod error;
 pub mod query;

@@ -1,7 +1,3 @@
-use crate::hir::ty::{
-    HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirMetaTy, HirNominalTy, HirPointerTy, HirTy,
-    HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy,
-};
 use crate::intern::{StringInterner, TypedInterner};
 use crate::mir::ty::{
     MirBoolType, MirFunctionType, MirInteger32Type, MirPointerType, MirType, MirTypeId, MirVoidType,
@@ -9,6 +5,7 @@ use crate::mir::ty::{
 use bumpalo::Bump;
 use eight_span::Span;
 use std::rc::Rc;
+use crate::hir::{HirBooleanTy, HirFunctionTy, HirInteger32Ty, HirMetaTy, HirNominalTy, HirPointerTy, HirTy, HirTyId, HirUninitializedTy, HirUnitTy, HirVariableTy};
 
 /// A shared context for the middle-end and backend components.
 pub struct CompileContext<'be> {
