@@ -1,0 +1,9 @@
+// RUN: %eightc %s --emit-hir --emit-query hir.fn.main --syntax-only | %fc %s
+
+intrinsic_fn id<T>(x: T) -> T;
+
+fn main() -> i32 {
+// CHECK-LABEL: main
+  let k = id::<i32>(true);
+  return 0;
+}

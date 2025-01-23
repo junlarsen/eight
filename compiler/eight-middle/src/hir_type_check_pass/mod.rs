@@ -616,7 +616,7 @@ impl HirModuleTypeCheckerPass {
         node.ty = cx.substitute(node.ty)?;
         // Propagate the type arguments that were used in the instantiation of the callable.
         for argument in node.type_arguments.iter_mut() {
-            *argument = cx.substitute(*argument)?;
+            *argument = cx.substitute(argument)?;
         }
         Ok(None)
     }

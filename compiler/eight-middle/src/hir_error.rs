@@ -28,6 +28,7 @@ declare_error_type! {
         BindingReDeclaresName(BindingReDeclaresName),
         ConstructingNonStructType(ConstructingNonStructTypeError),
         ConstructingPointerType(ConstructingPointerTypeError),
+        WrongFunctionTypeArgumentCount(WrongFunctionTypeArgumentCount),
     }
 }
 
@@ -252,4 +253,17 @@ pub struct ConstructingPointerTypeError {
     pub name: String,
     #[label = "type {name} is a pointer type and cannot be constructed"]
     pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::wrong_function_type_argument_count))]
+#[error("function {name} requires {expected} type arguments, but {actual} were supplied")]
+pub struct WrongFunctionTypeArgumentCount {
+    pub expected: usize,
+    pub actual: usize,
+    pub name: String,
+    #[label = "supplied {actual} type arguments"]
+    pub span: Span,
+    #[label = "declares {expected} type arguments"]
+    pub function_declaration_loc: Span,
 }

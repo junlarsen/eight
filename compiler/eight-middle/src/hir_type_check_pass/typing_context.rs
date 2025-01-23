@@ -11,16 +11,16 @@ use crate::hir_error::{
     InvalidStructFieldReferenceError, MissingFieldError, SelfReferentialTypeError,
     TraitDoesNotExistError, TraitInstanceMissingFnError, TraitMissingInstanceError,
     TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
+    WrongFunctionTypeArgumentCount,
 };
 use crate::hir_query::HirSignatureQueryDatabase;
 use crate::hir_type_check_pass::{
     Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
 };
-use crate::intrinsic::CompilerIntrinsic;
 use crate::scope::Scope;
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 
 /// A context object for the type checker.
@@ -272,7 +272,6 @@ impl<'hir> TypingContext<'hir> {
                     self.constrain_eq(expectation, ty, expr.span, *name_span);
                     return Ok(());
                 }
-
                 // Otherwise, we need to instantiate the generic parameters of the function, and
                 // substitute the parameters and return types if they refer to one of the generic
                 // type parameters.
@@ -284,13 +283,17 @@ impl<'hir> TypingContext<'hir> {
                     .collect::<Vec<_>>();
                 let return_type = self
                     .eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
+
                 // Propagate the type arguments to the expression node itself. The leave function
                 // for HirCallableReferenceExpr will use this to substitute the type arguments with
                 // the concrete type arguments. This is also necessary for analysis of the node to
                 // determine if a call can be reduced into a compiler intrinsic.
-                for parameter in parameters.iter() {
-                    expr.type_arguments.push(parameter);
+                for parameter in signature.type_parameters.iter() {
+                    expr.type_arguments.push(
+                        self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty),
+                    );
                 }
+
                 // Constrain the expression to the function type.
                 let ty = self.cc.hir_function_type(return_type, parameters);
                 self.constrain_eq(expectation, ty, expr.span, *name_span);
@@ -338,6 +341,38 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirCallExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
+        let HirExpr::CallableReference(callee) = expr.callee.as_ref() else {
+            ice!("managed to call an expression that was not reduced into a callable reference");
+        };
+        let HirCallableSymbol::Function(name, name_span) = callee.symbol else {
+            unimplemented!("does not resolve trait or intrinsics yet")
+        };
+        // If the user provided type parameters, we need to constrain them to be equal to the types
+        // that will be backpropagated to the callee. If the count here is mismatched, then there's
+        // a user error.
+        if callee.type_arguments.len() != expr.type_arguments.len() {
+            return Err(HirError::WrongFunctionTypeArgumentCount(
+                WrongFunctionTypeArgumentCount {
+                    expected: callee.type_arguments.len(),
+                    actual: expr.type_arguments.len(),
+                    name: name.to_owned(),
+                    span: expr.span,
+                    // TODO: This does not point at the function declaration, but rather the
+                    // function call.
+                    function_declaration_loc: name_span,
+                },
+            ));
+        }
+        // Constrain each of the provided arguments to the type that is expected for the callee.
+        for (argument, type_argument) in expr.arguments.iter().zip(expr.type_arguments.iter()) {
+            self.constrain_eq(
+                type_argument,
+                argument.ty(),
+                argument.span(),
+                argument.span(),
+            );
+        }
+
         let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
         let expected_signature = self.cc.hir_function_type(expectation, expected_args);
         self.unify_eq(EqualityConstraint {
