@@ -377,20 +377,9 @@ impl<'hir> TypingContext<'hir> {
 
         let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
         let expected_signature = self.cc.hir_function_type(expectation, expected_args);
-        self.unify_eq(EqualityConstraint {
-            expectation: expected_signature,
-            actual: expr.callee.ty(),
-            expectation_loc: expr.span,
-            actual_loc: expr.callee.span(),
-        })?;
-
+        self.constrain_eq(expected_signature, expr.callee.ty(), expr.span, expr.callee.span());
         // Constrain the return type of the expression to the wanted type
-        self.unify_eq(EqualityConstraint {
-            expectation,
-            actual: expr.ty,
-            expectation_loc: expr.span,
-            actual_loc: expr.callee.span(),
-        })?;
+        self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
         Ok(())
     }
 
@@ -438,12 +427,7 @@ impl<'hir> TypingContext<'hir> {
                 }));
             };
             visited_fields.insert(provided_field.field);
-            self.unify_eq(EqualityConstraint {
-                actual: provided_field.expr.ty(),
-                actual_loc: provided_field.expr.span(),
-                expectation: field_definition.ty,
-                expectation_loc: field_definition.span,
-            })?;
+            self.constrain_eq(field_definition.ty, provided_field.expr.ty(), provided_field.expr.span(), provided_field.expr.span());
         }
         // If some of the fields from the struct are missing
         for field in ty.fields.values() {
@@ -458,18 +442,8 @@ impl<'hir> TypingContext<'hir> {
         }
         // Constrain the expected type to the callee type, and the callee to the type being
         // constructed.
-        self.unify_eq(EqualityConstraint {
-            expectation: expr.ty,
-            expectation_loc: expr.span,
-            actual: expr.callee,
-            actual_loc: expr.span,
-        })?;
-        self.unify_eq(EqualityConstraint {
-            expectation: expr.ty,
-            expectation_loc: expr.span,
-            actual: expectation,
-            actual_loc: expr.span,
-        })?;
+        self.constrain_eq(expr.ty, expr.callee, expr.span, expr.span);
+        self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
         Ok(())
     }
 
