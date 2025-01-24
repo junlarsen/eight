@@ -1,0 +1,150 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for hir
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - "--terminator=hir"
+    - tests/hir-lower/instances.test
+input_file: compiler/eight-tests/tests/hir-lower/instances.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+hir_module {
+  declares {
+    // module types
+    type i32;
+    
+    // module struct types
+    
+    
+    // module functions
+    fn i32_add(a: i32, b: i32) -> i32;
+    fn i32_div(a: i32, b: i32) -> i32;
+    fn i32_eq(a: i32, b: i32) -> bool;
+    fn i32_ge(a: i32, b: i32) -> bool;
+    fn i32_gt(a: i32, b: i32) -> bool;
+    fn i32_gte(a: i32, b: i32) -> bool;
+    fn i32_le(a: i32, b: i32) -> bool;
+    fn i32_lt(a: i32, b: i32) -> bool;
+    fn i32_lte(a: i32, b: i32) -> bool;
+    fn i32_mul(a: i32, b: i32) -> i32;
+    fn i32_neq(a: i32, b: i32) -> bool;
+    fn i32_rem(a: i32, b: i32) -> i32;
+    fn i32_sub(a: i32, b: i32) -> i32;
+    
+    // module traits
+    trait Add<$1'0, $1'1, $1'2> {
+      fn add(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Div<$1'0, $1'1, $1'2> {
+      fn div(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Eq<$1'0, $1'1> {
+      fn eq(a: $1'0, b: $1'1) -> bool;
+      fn neq(a: $1'0, b: $1'1) -> bool;
+    }
+    trait Mul<$1'0, $1'1, $1'2> {
+      fn mul(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Ord<$1'0, $1'1> {
+      fn ge(a: $1'0, b: $1'1) -> bool;
+      fn gt(a: $1'0, b: $1'1) -> bool;
+      fn le(a: $1'0, b: $1'1) -> bool;
+      fn lt(a: $1'0, b: $1'1) -> bool;
+    }
+    trait Rem<$1'0, $1'1, $1'2> {
+      fn rem(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Sub<$1'0, $1'1, $1'2> {
+      fn sub(a: $1'0, b: $1'1) -> $1'2;
+    }
+    
+    // module instances
+    instance Ord<i32, i32> {
+      fn ge(a: i32, b: i32) -> bool;
+      fn gt(a: i32, b: i32) -> bool;
+      fn le(a: i32, b: i32) -> bool;
+      fn lt(a: i32, b: i32) -> bool;
+    }
+    instance Add<i32, i32, i32> {
+      fn add(a: i32, b: i32) -> i32;
+    }
+    instance Sub<i32, i32, i32> {
+      fn sub(a: i32, b: i32) -> i32;
+    }
+    instance Mul<i32, i32, i32> {
+      fn mul(a: i32, b: i32) -> i32;
+    }
+    instance Div<i32, i32, i32> {
+      fn div(a: i32, b: i32) -> i32;
+    }
+    instance Rem<i32, i32, i32> {
+      fn rem(a: i32, b: i32) -> i32;
+    }
+    instance Eq<i32, i32> {
+      fn eq(a: i32, b: i32) -> bool;
+      fn neq(a: i32, b: i32) -> bool;
+    }
+  }
+  
+  defining {
+    // module functions
+    
+    // module intrinsic functions
+    instance Ord<i32, i32> {
+      fn lt<>(a: i32, b: i32) -> bool {
+        return ((i32_lt::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+      }
+      fn gt<>(a: i32, b: i32) -> bool {
+        return ((i32_gt::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+      }
+      fn le<>(a: i32, b: i32) -> bool {
+        return ((i32_le::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+      }
+      fn ge<>(a: i32, b: i32) -> bool {
+        return ((i32_ge::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+      }
+    }
+    instance Add<i32, i32, i32> {
+      fn add<>(a: i32, b: i32) -> i32 {
+        return ((i32_add::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+      }
+    }
+    instance Sub<i32, i32, i32> {
+      fn sub<>(a: i32, b: i32) -> i32 {
+        return ((i32_sub::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+      }
+    }
+    instance Mul<i32, i32, i32> {
+      fn mul<>(a: i32, b: i32) -> i32 {
+        return ((i32_mul::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+      }
+    }
+    instance Div<i32, i32, i32> {
+      fn div<>(a: i32, b: i32) -> i32 {
+        return ((i32_div::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+      }
+    }
+    instance Rem<i32, i32, i32> {
+      fn rem<>(a: i32, b: i32) -> i32 {
+        return ((i32_rem::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+      }
+    }
+    instance Eq<i32, i32> {
+      fn eq<>(a: i32, b: i32) -> bool {
+        return ((i32_eq::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+      }
+      fn neq<>(a: i32, b: i32) -> bool {
+        return ((i32_neq::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+      }
+    }
+  
+  }
+}
+eightc: early termination due to: --terminator=hir

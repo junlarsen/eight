@@ -1,0 +1,34 @@
+intrinsic_fn malloc<T>(size: i32) -> *T;
+trait Div<A, B, R> {
+  fn div(a: A, b: B) -> R;
+}
+trait Add<A, B, R> {
+  fn add(a: A, b: B) -> R;
+}
+trait Mul<A, B, R> {
+  fn mul(a: A, b: B) -> R;
+}
+instance Div<i32, i32, i32> {
+  intrinsic_fn div(a: i32, b: i32) -> i32;
+}
+instance Add<i32, i32, i32>  {
+  intrinsic_fn add(a: i32, b: i32) -> i32;
+}
+instance Mul<i32, i32, i32> {
+  intrinsic_fn mul(a: i32, b: i32) -> i32;
+}
+
+
+struct vec512 {
+  vs: *i32,
+}
+
+fn vec512_fma(x: vec512, y: vec512, acc: vec512) -> vec512 {
+  let vs = new vec512 {
+    vs: malloc(512 / 4),
+  };
+  for (let i = 0; i < 512 / 4; i = i + 1) {
+    vs.vs[i] = x.vs[i] * y.vs[i] + acc.vs[i];
+  }
+  return vs;
+}

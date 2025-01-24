@@ -1,0 +1,27 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for hir
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - "--terminator=hir"
+    - tests/hir-lower/quicksort.test
+input_file: compiler/eight-tests/tests/hir-lower/quicksort.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::trait_does_not_exist
+
+  × trait Sub does not exist
+    ╭─[tests/hir-lower/quicksort.test:11:11]
+ 10 │   let x = xs[r];
+ 11 │   let i = l - 1;
+    ·           ──┬──
+    ·             ╰── required trait Sub to exist
+ 12 │   for (let j = l; j < r; j = j + 1) {
+    ╰────

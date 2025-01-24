@@ -1,0 +1,653 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for ast
+info:
+  program: eightc
+  args:
+    - "--emit-ast"
+    - "--terminator=syntax"
+    - tests/ast-lower/record_decl.test
+input_file: compiler/eight-tests/tests/ast-lower/record_decl.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+(
+    items: [
+        Struct((
+            span: (
+                low: 0,
+                high: 44,
+            ),
+            name: (
+                name: "Node",
+                span: (
+                    low: 7,
+                    high: 11,
+                ),
+            ),
+            members: [
+                (
+                    span: (
+                        low: 16,
+                        high: 27,
+                    ),
+                    name: (
+                        name: "value",
+                        span: (
+                            low: 16,
+                            high: 21,
+                        ),
+                    ),
+                    ty: Integer32((
+                        span: (
+                            low: 23,
+                            high: 26,
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 30,
+                        high: 42,
+                    ),
+                    name: (
+                        name: "next",
+                        span: (
+                            low: 30,
+                            high: 34,
+                        ),
+                    ),
+                    ty: Pointer((
+                        span: (
+                            low: 36,
+                            high: 41,
+                        ),
+                        inner: Named((
+                            span: (
+                                low: 37,
+                                high: 41,
+                            ),
+                            name: (
+                                name: "Node",
+                                span: (
+                                    low: 37,
+                                    high: 41,
+                                ),
+                            ),
+                        )),
+                    )),
+                ),
+            ],
+        )),
+        Function((
+            span: (
+                low: 46,
+                high: 151,
+            ),
+            name: (
+                name: "prepend",
+                span: (
+                    low: 49,
+                    high: 56,
+                ),
+            ),
+            parameters: [
+                (
+                    span: (
+                        low: 57,
+                        high: 67,
+                    ),
+                    name: (
+                        name: "node",
+                        span: (
+                            low: 57,
+                            high: 61,
+                        ),
+                    ),
+                    ty: Named((
+                        span: (
+                            low: 63,
+                            high: 67,
+                        ),
+                        name: (
+                            name: "Node",
+                            span: (
+                                low: 63,
+                                high: 67,
+                            ),
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 69,
+                        high: 79,
+                    ),
+                    name: (
+                        name: "value",
+                        span: (
+                            low: 69,
+                            high: 74,
+                        ),
+                    ),
+                    ty: Integer32((
+                        span: (
+                            low: 76,
+                            high: 79,
+                        ),
+                    )),
+                ),
+            ],
+            type_parameters: [],
+            return_type: Some(Named((
+                span: (
+                    low: 84,
+                    high: 88,
+                ),
+                name: (
+                    name: "Node",
+                    span: (
+                        low: 84,
+                        high: 88,
+                    ),
+                ),
+            ))),
+            body: [
+                Return((
+                    span: (
+                        low: 93,
+                        high: 149,
+                    ),
+                    value: Some(Construct((
+                        span: (
+                            low: 100,
+                            high: 148,
+                        ),
+                        callee: Named((
+                            span: (
+                                low: 104,
+                                high: 108,
+                            ),
+                            name: (
+                                name: "Node",
+                                span: (
+                                    low: 104,
+                                    high: 108,
+                                ),
+                            ),
+                        )),
+                        arguments: [
+                            (
+                                span: (
+                                    low: 115,
+                                    high: 127,
+                                ),
+                                field: (
+                                    name: "value",
+                                    span: (
+                                        low: 115,
+                                        high: 120,
+                                    ),
+                                ),
+                                expr: Reference((
+                                    span: (
+                                        low: 122,
+                                        high: 127,
+                                    ),
+                                    name: (
+                                        name: "value",
+                                        span: (
+                                            low: 122,
+                                            high: 127,
+                                        ),
+                                    ),
+                                )),
+                            ),
+                            (
+                                span: (
+                                    low: 133,
+                                    high: 143,
+                                ),
+                                field: (
+                                    name: "next",
+                                    span: (
+                                        low: 133,
+                                        high: 137,
+                                    ),
+                                ),
+                                expr: Reference((
+                                    span: (
+                                        low: 139,
+                                        high: 143,
+                                    ),
+                                    name: (
+                                        name: "node",
+                                        span: (
+                                            low: 139,
+                                            high: 143,
+                                        ),
+                                    ),
+                                )),
+                            ),
+                        ],
+                    ))),
+                )),
+            ],
+            is_intrinsic: false,
+        )),
+        Function((
+            span: (
+                low: 153,
+                high: 346,
+            ),
+            name: (
+                name: "append",
+                span: (
+                    low: 156,
+                    high: 162,
+                ),
+            ),
+            parameters: [
+                (
+                    span: (
+                        low: 163,
+                        high: 173,
+                    ),
+                    name: (
+                        name: "node",
+                        span: (
+                            low: 163,
+                            high: 167,
+                        ),
+                    ),
+                    ty: Named((
+                        span: (
+                            low: 169,
+                            high: 173,
+                        ),
+                        name: (
+                            name: "Node",
+                            span: (
+                                low: 169,
+                                high: 173,
+                            ),
+                        ),
+                    )),
+                ),
+                (
+                    span: (
+                        low: 175,
+                        high: 185,
+                    ),
+                    name: (
+                        name: "value",
+                        span: (
+                            low: 175,
+                            high: 180,
+                        ),
+                    ),
+                    ty: Integer32((
+                        span: (
+                            low: 182,
+                            high: 185,
+                        ),
+                    )),
+                ),
+            ],
+            type_parameters: [],
+            return_type: None,
+            body: [
+                For((
+                    span: (
+                        low: 191,
+                        high: 249,
+                    ),
+                    initializer: Some((
+                        span: (
+                            low: 196,
+                            high: 211,
+                        ),
+                        name: (
+                            name: "curr",
+                            span: (
+                                low: 200,
+                                high: 204,
+                            ),
+                        ),
+                        initializer: Reference((
+                            span: (
+                                low: 207,
+                                high: 211,
+                            ),
+                            name: (
+                                name: "node",
+                                span: (
+                                    low: 207,
+                                    high: 211,
+                                ),
+                            ),
+                        )),
+                    )),
+                    condition: Some(BinaryOp((
+                        span: (
+                            low: 213,
+                            high: 227,
+                        ),
+                        lhs: DotIndex((
+                            span: (
+                                low: 213,
+                                high: 222,
+                            ),
+                            origin: Reference((
+                                span: (
+                                    low: 213,
+                                    high: 217,
+                                ),
+                                name: (
+                                    name: "curr",
+                                    span: (
+                                        low: 213,
+                                        high: 217,
+                                    ),
+                                ),
+                            )),
+                            index: (
+                                name: "next",
+                                span: (
+                                    low: 218,
+                                    high: 222,
+                                ),
+                            ),
+                        )),
+                        rhs: IntegerLiteral((
+                            span: (
+                                low: 226,
+                                high: 227,
+                            ),
+                            value: 0,
+                        )),
+                        op: Neq,
+                        op_span: (
+                            low: 223,
+                            high: 225,
+                        ),
+                    ))),
+                    increment: Some(Assign((
+                        span: (
+                            low: 229,
+                            high: 245,
+                        ),
+                        lhs: Reference((
+                            span: (
+                                low: 229,
+                                high: 233,
+                            ),
+                            name: (
+                                name: "curr",
+                                span: (
+                                    low: 229,
+                                    high: 233,
+                                ),
+                            ),
+                        )),
+                        rhs: DotIndex((
+                            span: (
+                                low: 236,
+                                high: 245,
+                            ),
+                            origin: Reference((
+                                span: (
+                                    low: 236,
+                                    high: 240,
+                                ),
+                                name: (
+                                    name: "curr",
+                                    span: (
+                                        low: 236,
+                                        high: 240,
+                                    ),
+                                ),
+                            )),
+                            index: (
+                                name: "next",
+                                span: (
+                                    low: 241,
+                                    high: 245,
+                                ),
+                            ),
+                        )),
+                    ))),
+                    body: [],
+                )),
+                Let((
+                    span: (
+                        low: 252,
+                        high: 285,
+                    ),
+                    name: (
+                        name: "node",
+                        span: (
+                            low: 256,
+                            high: 260,
+                        ),
+                    ),
+                    ty: None,
+                    value: Call((
+                        span: (
+                            low: 263,
+                            high: 284,
+                        ),
+                        callee: Reference((
+                            span: (
+                                low: 263,
+                                high: 269,
+                            ),
+                            name: (
+                                name: "malloc",
+                                span: (
+                                    low: 263,
+                                    high: 269,
+                                ),
+                            ),
+                        )),
+                        arguments: [
+                            BinaryOp((
+                                span: (
+                                    low: 278,
+                                    high: 283,
+                                ),
+                                lhs: IntegerLiteral((
+                                    span: (
+                                        low: 278,
+                                        high: 279,
+                                    ),
+                                    value: 8,
+                                )),
+                                rhs: IntegerLiteral((
+                                    span: (
+                                        low: 282,
+                                        high: 283,
+                                    ),
+                                    value: 4,
+                                )),
+                                op: Add,
+                                op_span: (
+                                    low: 280,
+                                    high: 281,
+                                ),
+                            )),
+                        ],
+                        type_arguments: [
+                            Named((
+                                span: (
+                                    low: 272,
+                                    high: 276,
+                                ),
+                                name: (
+                                    name: "Node",
+                                    span: (
+                                        low: 272,
+                                        high: 276,
+                                    ),
+                                ),
+                            )),
+                        ],
+                    )),
+                )),
+                Expr((
+                    span: (
+                        low: 288,
+                        high: 307,
+                    ),
+                    expr: Assign((
+                        span: (
+                            low: 288,
+                            high: 306,
+                        ),
+                        lhs: DotIndex((
+                            span: (
+                                low: 288,
+                                high: 298,
+                            ),
+                            origin: Reference((
+                                span: (
+                                    low: 288,
+                                    high: 292,
+                                ),
+                                name: (
+                                    name: "node",
+                                    span: (
+                                        low: 288,
+                                        high: 292,
+                                    ),
+                                ),
+                            )),
+                            index: (
+                                name: "value",
+                                span: (
+                                    low: 293,
+                                    high: 298,
+                                ),
+                            ),
+                        )),
+                        rhs: Reference((
+                            span: (
+                                low: 301,
+                                high: 306,
+                            ),
+                            name: (
+                                name: "value",
+                                span: (
+                                    low: 301,
+                                    high: 306,
+                                ),
+                            ),
+                        )),
+                    )),
+                )),
+                Expr((
+                    span: (
+                        low: 310,
+                        high: 324,
+                    ),
+                    expr: Assign((
+                        span: (
+                            low: 310,
+                            high: 323,
+                        ),
+                        lhs: DotIndex((
+                            span: (
+                                low: 310,
+                                high: 319,
+                            ),
+                            origin: Reference((
+                                span: (
+                                    low: 310,
+                                    high: 314,
+                                ),
+                                name: (
+                                    name: "node",
+                                    span: (
+                                        low: 310,
+                                        high: 314,
+                                    ),
+                                ),
+                            )),
+                            index: (
+                                name: "next",
+                                span: (
+                                    low: 315,
+                                    high: 319,
+                                ),
+                            ),
+                        )),
+                        rhs: IntegerLiteral((
+                            span: (
+                                low: 322,
+                                high: 323,
+                            ),
+                            value: 0,
+                        )),
+                    )),
+                )),
+                Expr((
+                    span: (
+                        low: 327,
+                        high: 344,
+                    ),
+                    expr: Assign((
+                        span: (
+                            low: 327,
+                            high: 343,
+                        ),
+                        lhs: DotIndex((
+                            span: (
+                                low: 327,
+                                high: 336,
+                            ),
+                            origin: Reference((
+                                span: (
+                                    low: 327,
+                                    high: 331,
+                                ),
+                                name: (
+                                    name: "curr",
+                                    span: (
+                                        low: 327,
+                                        high: 331,
+                                    ),
+                                ),
+                            )),
+                            index: (
+                                name: "next",
+                                span: (
+                                    low: 332,
+                                    high: 336,
+                                ),
+                            ),
+                        )),
+                        rhs: Reference((
+                            span: (
+                                low: 339,
+                                high: 343,
+                            ),
+                            name: (
+                                name: "node",
+                                span: (
+                                    low: 339,
+                                    high: 343,
+                                ),
+                            ),
+                        )),
+                    )),
+                )),
+            ],
+            is_intrinsic: false,
+        )),
+    ],
+)
+
+----- stderr -----
+eightc: early termination due to: --terminator=syntax

@@ -1,3 +1,17 @@
+intrinsic_fn malloc<T>(size: i32) -> *T;
+trait Add<A, B, R> {
+  fn add(a: A, b: B) -> R;
+}
+trait Mul<A, B, R> {
+  fn mul(a: A, b: B) -> R;
+}
+instance Add<i32, i32, i32>  {
+  intrinsic_fn add(a: i32, b: i32) -> i32;
+}
+instance Mul<i32, i32, i32> {
+  intrinsic_fn mul(a: i32, b: i32) -> i32;
+}
+
 struct Matrix {
   r: i32,
   c: i32,

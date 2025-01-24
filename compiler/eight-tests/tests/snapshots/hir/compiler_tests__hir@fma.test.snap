@@ -1,0 +1,27 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for hir
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - "--terminator=hir"
+    - tests/hir-lower/fma.test
+input_file: compiler/eight-tests/tests/hir-lower/fma.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::trait_does_not_exist
+
+  × trait Ord does not exist
+    ╭─[tests/hir-lower/fma.test:30:19]
+ 29 │   };
+ 30 │   for (let i = 0; i < 512 / 4; i = i + 1) {
+    ·                   ─────┬─────
+    ·                        ╰── required trait Ord to exist
+ 31 │     vs.vs[i] = x.vs[i] * y.vs[i] + acc.vs[i];
+    ╰────

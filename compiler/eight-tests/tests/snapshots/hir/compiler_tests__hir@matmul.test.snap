@@ -1,0 +1,27 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for hir
+info:
+  program: eightc
+  args:
+    - "--emit-hir"
+    - "--terminator=hir"
+    - tests/hir-lower/matmul.test
+input_file: compiler/eight-tests/tests/hir-lower/matmul.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: sema::trait_missing_instance
+
+  × trait Mul does not have instance Mul<_, i32, _>
+    ╭─[tests/hir-lower/matmul.test:25:23]
+ 24 │     c: b.c,
+ 25 │     buf: malloc(a.r * b.c * 4),
+    ·                       ───┬───
+    ·                          ╰── required instance Mul<_, i32, _> for trait Mul
+ 26 │   };
+    ╰────

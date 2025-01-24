@@ -1,0 +1,177 @@
+---
+source: compiler/eight-tests/tests/compiler_tests.rs
+description: compiler test suite for ast
+info:
+  program: eightc
+  args:
+    - "--emit-ast"
+    - "--terminator=syntax"
+    - tests/ast-lower/for_loop_reduction.test
+input_file: compiler/eight-tests/tests/ast-lower/for_loop_reduction.test
+snapshot_kind: text
+---
+success: false
+exit_code: 1
+----- stdout -----
+(
+    items: [
+        Function((
+            span: (
+                low: 0,
+                high: 81,
+            ),
+            name: (
+                name: "loop_transform",
+                span: (
+                    low: 3,
+                    high: 17,
+                ),
+            ),
+            parameters: [],
+            type_parameters: [],
+            return_type: None,
+            body: [
+                For((
+                    span: (
+                        low: 24,
+                        high: 79,
+                    ),
+                    initializer: Some((
+                        span: (
+                            low: 29,
+                            high: 38,
+                        ),
+                        name: (
+                            name: "i",
+                            span: (
+                                low: 33,
+                                high: 34,
+                            ),
+                        ),
+                        initializer: IntegerLiteral((
+                            span: (
+                                low: 37,
+                                high: 38,
+                            ),
+                            value: 0,
+                        )),
+                    )),
+                    condition: Some(BinaryOp((
+                        span: (
+                            low: 40,
+                            high: 46,
+                        ),
+                        lhs: Reference((
+                            span: (
+                                low: 40,
+                                high: 41,
+                            ),
+                            name: (
+                                name: "i",
+                                span: (
+                                    low: 40,
+                                    high: 41,
+                                ),
+                            ),
+                        )),
+                        rhs: IntegerLiteral((
+                            span: (
+                                low: 44,
+                                high: 46,
+                            ),
+                            value: 10,
+                        )),
+                        op: Lt,
+                        op_span: (
+                            low: 42,
+                            high: 43,
+                        ),
+                    ))),
+                    increment: Some(Assign((
+                        span: (
+                            low: 48,
+                            high: 57,
+                        ),
+                        lhs: Reference((
+                            span: (
+                                low: 48,
+                                high: 49,
+                            ),
+                            name: (
+                                name: "i",
+                                span: (
+                                    low: 48,
+                                    high: 49,
+                                ),
+                            ),
+                        )),
+                        rhs: BinaryOp((
+                            span: (
+                                low: 52,
+                                high: 57,
+                            ),
+                            lhs: Reference((
+                                span: (
+                                    low: 52,
+                                    high: 53,
+                                ),
+                                name: (
+                                    name: "i",
+                                    span: (
+                                        low: 52,
+                                        high: 53,
+                                    ),
+                                ),
+                            )),
+                            rhs: IntegerLiteral((
+                                span: (
+                                    low: 56,
+                                    high: 57,
+                                ),
+                                value: 1,
+                            )),
+                            op: Add,
+                            op_span: (
+                                low: 54,
+                                high: 55,
+                            ),
+                        )),
+                    ))),
+                    body: [
+                        Let((
+                            span: (
+                                low: 65,
+                                high: 75,
+                            ),
+                            name: (
+                                name: "x",
+                                span: (
+                                    low: 69,
+                                    high: 70,
+                                ),
+                            ),
+                            ty: None,
+                            value: Reference((
+                                span: (
+                                    low: 73,
+                                    high: 74,
+                                ),
+                                name: (
+                                    name: "i",
+                                    span: (
+                                        low: 73,
+                                        high: 74,
+                                    ),
+                                ),
+                            )),
+                        )),
+                    ],
+                )),
+            ],
+            is_intrinsic: false,
+        )),
+    ],
+)
+
+----- stderr -----
+eightc: early termination due to: --terminator=syntax
