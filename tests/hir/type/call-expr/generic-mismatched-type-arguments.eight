@@ -1,9 +1,10 @@
-// RUN: %eightc %s --emit-hir --emit-query hir.fn.main --syntax-only | %fc %s
+// RUN: %not %eightc %s --syntax-only 2>&1 | %fc %s
 
 intrinsic_fn id<T>(x: T) -> T;
 
 fn main() -> i32 {
-// CHECK-LABEL: main
   let k = id::<i32, bool>(123);
   return 0;
 }
+
+// CHECK-LABEL: sema::wrong_function_type_argument_count
