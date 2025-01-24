@@ -982,12 +982,15 @@ impl<'hir> TypingContext<'hir> {
             (HirTy::Uninitialized(_), _) | (_, HirTy::Uninitialized(_)) => {
                 ice!("tried to unify with uninitialized type")
             }
-            (lhs, rhs) => Err(HirError::TypeMismatch(TypeMismatchError {
-                actual_loc,
-                expected_loc: expectation_loc,
-                actual_type: rhs.format(),
-                expected_type: lhs.format(),
-            })),
+            (lhs, rhs) => {
+                // Substitute both the types so that we can get a better error message.
+                Err(HirError::TypeMismatch(TypeMismatchError {
+                    actual_loc,
+                    expected_loc: expectation_loc,
+                    actual_type: self.substitute(rhs)?.format(),
+                    expected_type: self.substitute(lhs)?.format(),
+                }))
+            }
         }
     }
 

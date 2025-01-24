@@ -6,6 +6,5 @@ fn test(in: *i32) -> i32 {
 }
 
 // CHECK-LABEL: sema::type_mismatch
-// COM: CHECK: the expression has type *i32
-// CHECK: the expression has type *[[TYPE_VAR:\?[0-9]+]]
+// CHECK: the expression has type **i32
 // CHECK: expected type bool
