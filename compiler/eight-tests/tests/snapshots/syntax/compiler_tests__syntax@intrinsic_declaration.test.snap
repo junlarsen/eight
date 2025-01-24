@@ -5,7 +5,7 @@ info:
   program: eightc
   args:
     - "--emit-ast"
-    - "--syntax-only"
+    - "--terminator=syntax"
     - tests/syntax/intrinsic_declaration.test
 input_file: compiler/eight-tests/tests/syntax/intrinsic_declaration.test
 snapshot_kind: text
@@ -89,4 +89,4 @@ exit_code: 0
 )
 
 ----- stderr -----
-eightc: early termination due to: --syntax-only
+eightc: early termination due to: --terminator=syntax

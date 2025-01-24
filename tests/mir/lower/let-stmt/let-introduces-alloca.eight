@@ -1,4 +1,4 @@
-// RUN: %eightc --emit-mir --emit-query mir.fn.test %s | %fc %s
+// RUN: %not %eightc --emit-mir --emit-query mir.fn.test --terminator=mir %s 2>&1 | %fc %s
 
 fn test() {
 // CHECK-LABEL: mir_function test

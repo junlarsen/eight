@@ -1,4 +1,4 @@
-// RUN: %eightc --emit-hir --syntax-only --emit-query hir.fn.test %s | %fc %s
+// RUN: %not %eightc --emit-hir --terminator=hir --emit-query hir.fn.test %s 2>&1 | %fc %s
 
 // In this test, we modify Not to give us an i32
 trait Not<A, R> {

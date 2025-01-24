@@ -1,4 +1,4 @@
-// RUN: %not %eightc --emit-hir --syntax-only %s 2>&1 | %fc %s
+// RUN: %not %eightc %s 2>&1 | %fc %s
 
 trait Add<A, B, R> {
   fn add(a: A, b: B) -> R;

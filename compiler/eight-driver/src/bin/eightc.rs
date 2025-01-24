@@ -1,6 +1,6 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use eight_driver::pipeline::{
-    execute_compilation_pipeline, PipelineError, PipelineOptions, StopTokenStep,
+    execute_compilation_pipeline, PipelineError, PipelineOptions, TerminationStep,
 };
 use eight_driver::query::{EmitQuery, QueryError};
 use miette::NamedSource;
@@ -9,7 +9,7 @@ use std::io::BufRead;
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 #[clap()]
-struct AppArgs {
+struct EightCompilerArgs {
     /// The input source. If this is `-`, the input is read from stdin.
     input: String,
 
@@ -29,18 +29,33 @@ struct AppArgs {
     #[arg(long)]
     emit_query: Option<Vec<String>>,
 
-    /// Stop the compiler after the type checker.
-    #[arg(long, default_value = "false", group = "stop-token")]
-    syntax_only: bool,
+    /// Stop the compiler after the given step.
+    #[arg(long, value_enum, default_value_t = TerminateAfter::Never)]
+    terminator: TerminateAfter,
+}
 
-    /// Stop the compiler after MIR lowering.
-    #[arg(long, default_value = "false", group = "stop-token")]
-    mir_only: bool,
+#[derive(ValueEnum, Debug, Clone)]
+pub enum TerminateAfter {
+    Never,
+    Syntax,
+    Hir,
+    Mir,
+}
+
+impl From<TerminateAfter> for Option<TerminationStep> {
+    fn from(t: TerminateAfter) -> Self {
+        match t {
+            TerminateAfter::Never => None,
+            TerminateAfter::Syntax => Some(TerminationStep::Syntax),
+            TerminateAfter::Hir => Some(TerminationStep::Hir),
+            TerminateAfter::Mir => Some(TerminationStep::Mir),
+        }
+    }
 }
 
 // NOTE: We don't care to use From here, because the PipelineOptions should be completely
 // independent of AppArgs. For all the PipelineOptions knows, the AppArgs don't even exist.
-impl TryInto<PipelineOptions> for AppArgs {
+impl TryInto<PipelineOptions> for EightCompilerArgs {
     type Error = QueryError;
 
     fn try_into(self) -> Result<PipelineOptions, Self::Error> {
@@ -49,23 +64,18 @@ impl TryInto<PipelineOptions> for AppArgs {
             .map(|q| EmitQuery::from_queries(&q.iter().map(|s| s.as_str()).collect::<Vec<_>>()))
             .transpose()?
             .unwrap_or_default();
-        let token = match (self.syntax_only, self.mir_only) {
-            (true, _) => Some(StopTokenStep::Frontend),
-            (_, true) => Some(StopTokenStep::Middle),
-            _ => None,
-        };
         Ok(PipelineOptions {
             emit_ast: self.emit_ast,
             emit_hir: self.emit_hir,
             emit_mir: self.emit_mir,
-            stop_token: token,
+            termination_step: self.terminator.into(),
             queries,
         })
     }
 }
 
 fn main() -> miette::Result<()> {
-    let args = AppArgs::parse();
+    let args = EightCompilerArgs::parse();
 
     let source = match args.input.as_str() {
         "-" => std::io::stdin()
@@ -83,7 +93,7 @@ fn main() -> miette::Result<()> {
             Ok(_) => Ok(()),
             Err(PipelineError::StopToken(msg)) => {
                 eprintln!("eightc: early termination due to: {}", msg);
-                std::process::exit(0);
+                std::process::exit(1);
             }
             Err(e) => Err(e),
         }?;

@@ -1,4 +1,4 @@
-// RUN: %not %eightc --emit-mir --emit-query mir.fn.test --mir-only %s 2>&1 | %fc %s
+// RUN: %not %eightc --emit-mir --emit-query mir.fn.test --terminator=mir %s 2>&1 | %fc %s
 
 trait Mul<A, B, R> {
   fn mul(a: A, b: B) -> R;

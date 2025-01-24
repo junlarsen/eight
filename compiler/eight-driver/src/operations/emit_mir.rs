@@ -1,4 +1,4 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation, StopTokenStep};
+use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
 use crate::query::{EmitQuery, MirEmitQuery};
 use eight_diagnostics::ice;
 use eight_middle::mir::MirModule;
@@ -31,8 +31,8 @@ impl<'c> PipelineOperation<'c, MirModule<'c>, MirModule<'c>> for EmitMirOperatio
         pipeline: &'c Pipeline<'c>,
         input: MirModule<'c>,
     ) -> Result<MirModule<'c>, PipelineError> {
-        if matches!(pipeline.opts.stop_token, Some(StopTokenStep::Frontend)) {
-            return Err(PipelineError::StopToken("--syntax-only".to_owned()));
+        if !pipeline.opts.emit_mir {
+            return Ok(input);
         }
 
         let textual_pass = MirModuleTextualPass::default();
@@ -40,7 +40,7 @@ impl<'c> PipelineOperation<'c, MirModule<'c>, MirModule<'c>> for EmitMirOperatio
         if pipeline.opts.queries.is_empty() {
             let text =
                 MirModuleTextualPass::format_doc_to_string(textual_pass.visit_module(&input));
-            println!("{}", text);
+            eprintln!("{}", text);
             return Ok(input);
         }
         // Otherwise, we emit the results of the queries.
@@ -50,7 +50,7 @@ impl<'c> PipelineOperation<'c, MirModule<'c>, MirModule<'c>> for EmitMirOperatio
             };
             let target = Self::decode(pipeline, query, &input, &textual_pass)?;
             let text = MirModuleTextualPass::format_doc_to_string(target);
-            println!("{}", text);
+            eprintln!("{}", text);
         }
         Ok(input)
     }

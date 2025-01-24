@@ -26,14 +26,30 @@ pub fn execute_compilation_pipeline(
     input: &str,
 ) -> Result<(), PipelineError> {
     let pipeline = Pipeline::new(opts);
-    let tu = ParseOperation::execute(&pipeline, input)?;
-    let tu = AstEmitOperation::execute(&pipeline, tu)?;
-    let module = SyntaxLowerOperation::execute(&pipeline, tu)?;
-    let module = TypeCheckOperation::execute(&pipeline, module)?;
-    let module = HirEmitOperation::execute(&pipeline, module)?;
-    let module = HirLowerOperation::execute(&pipeline, module)?;
-    let module = EmitMirOperation::execute(&pipeline, module)?;
-    let _: () = CodegenLLVMOperation::execute(&pipeline, module)?;
+    // Syntax passes are always ran, otherwise there's nothing for the compiler to do.
+    let module = ParseOperation::execute(&pipeline, input)?;
+    let module = AstEmitOperation::execute(&pipeline, module)?;
+    // Gate the HIR passes behind --terminator=syntax
+    let module =
+        pipeline.run_pass_collection_if(pipeline.is_requesting_hir(), move |pipeline| {
+            let module = SyntaxLowerOperation::execute(pipeline, module)?;
+            let module = TypeCheckOperation::execute(pipeline, module)?;
+            let module = HirEmitOperation::execute(pipeline, module)?;
+            Ok(module)
+        })?;
+    // Gate the MIR passes behind --terminator=hir
+    let module =
+        pipeline.run_pass_collection_if(pipeline.is_requesting_mir(), move |pipeline| {
+            let module = HirLowerOperation::execute(pipeline, module)?;
+            let module = EmitMirOperation::execute(pipeline, module)?;
+            Ok(module)
+        })?;
+    // Gate the Codegen passes behind --terminator=mir
+    let _: () =
+        pipeline.run_pass_collection_if(pipeline.is_requesting_codegen(), move |pipeline| {
+            let _: () = CodegenLLVMOperation::execute(pipeline, module)?;
+            Ok(())
+        })?;
     Ok(())
 }
 
@@ -66,9 +82,10 @@ pub enum PipelineError {
 
 /// Stop token indicating that the pipeline should stop after a certain step.
 #[derive(Eq, PartialEq)]
-pub enum StopTokenStep {
-    Frontend,
-    Middle,
+pub enum TerminationStep {
+    Syntax,
+    Hir,
+    Mir,
 }
 
 /// Options for the compilation pipeline.
@@ -78,7 +95,7 @@ pub struct PipelineOptions {
     pub emit_ast: bool,
     pub emit_hir: bool,
     pub emit_mir: bool,
-    pub stop_token: Option<StopTokenStep>,
+    pub termination_step: Option<TerminationStep>,
     pub queries: Vec<EmitQuery>,
 }
 
@@ -105,6 +122,55 @@ impl<'c> Pipeline<'c> {
         self.hir_query_database.get().unwrap_or_else(|| {
             ice!("failed to get query database, are you sure the hir lowering has been executed?")
         })
+    }
+
+    /// Codegen passes run if the stop token is not set to MIR.
+    pub fn is_requesting_codegen(&self) -> bool {
+        !matches!(
+            self.opts.termination_step,
+            Some(TerminationStep::Mir | TerminationStep::Hir | TerminationStep::Syntax)
+        )
+    }
+
+    /// MIR passes run if the stop token is not set to HIR.
+    pub fn is_requesting_mir(&self) -> bool {
+        !matches!(
+            self.opts.termination_step,
+            Some(TerminationStep::Hir | TerminationStep::Syntax)
+        )
+    }
+
+    /// HIR passes run if the stop token is not set to Syntax.
+    pub fn is_requesting_hir(&self) -> bool {
+        !matches!(self.opts.termination_step, Some(TerminationStep::Syntax))
+    }
+
+    /// Get the error to return if the pipeline is early terminated.
+    pub fn get_terminator_error(&self) -> PipelineError {
+        match self.opts.termination_step {
+            Some(TerminationStep::Syntax) => {
+                PipelineError::StopToken("--terminator=syntax".to_owned())
+            }
+            Some(TerminationStep::Mir) => PipelineError::StopToken("--terminator=mir".to_owned()),
+            Some(TerminationStep::Hir) => PipelineError::StopToken("--terminator=hir".to_owned()),
+            None => ice!("called get_terminator_error() when no early termination was requested"),
+        }
+    }
+
+    /// Run the `operation` if `cond` is true.
+    ///
+    /// This is used for grouping passes under conditions. This can for example, disable codegen if
+    /// compiler arguments specify to not run the backend.
+    pub fn run_pass_collection_if<O>(
+        &'c self,
+        cond: bool,
+        operation: impl FnOnce(&'c Pipeline<'c>) -> Result<O, PipelineError>,
+    ) -> Result<O, PipelineError> {
+        if cond {
+            operation(self)
+        } else {
+            Err(self.get_terminator_error())
+        }
     }
 }
 

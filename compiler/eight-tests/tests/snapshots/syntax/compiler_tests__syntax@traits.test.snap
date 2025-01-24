@@ -5,7 +5,7 @@ info:
   program: eightc
   args:
     - "--emit-ast"
-    - "--syntax-only"
+    - "--terminator=syntax"
     - tests/syntax/traits.test
 input_file: compiler/eight-tests/tests/syntax/traits.test
 snapshot_kind: text
@@ -1606,4 +1606,4 @@ exit_code: 0
 )
 
 ----- stderr -----
-eightc: early termination due to: --syntax-only
+eightc: early termination due to: --terminator=syntax

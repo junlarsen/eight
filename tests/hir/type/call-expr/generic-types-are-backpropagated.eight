@@ -1,4 +1,4 @@
-// RUN: %eightc %s --emit-hir --emit-query hir.fn.main --syntax-only | %fc %s
+// RUN: %not %eightc %s --emit-hir --emit-query hir.fn.main --terminator=mir 2>&1 | %fc %s
 
 intrinsic_fn id<T>(x: T) -> T;
 

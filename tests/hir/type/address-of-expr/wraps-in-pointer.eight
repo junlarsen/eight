@@ -1,4 +1,4 @@
-// RUN: %eightc --emit-hir --syntax-only --emit-query hir.fn.foo %s | %fc %s
+// RUN: %not %eightc --emit-hir --terminator=mir --emit-query hir.fn.foo %s 2>&1 | %fc %s
 fn foo() {
 // CHECK-LABEL: foo
   let infer = &123;

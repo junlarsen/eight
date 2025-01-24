@@ -41,7 +41,7 @@ impl<'hir> PipelineOperation<'hir, HirModule<'hir>, HirModule<'hir>> for HirEmit
         if pipeline.opts.queries.is_empty() {
             let text =
                 HirModuleTextualPass::format_doc_to_string(textual_pass.visit_module(&input));
-            println!("{}", text);
+            eprintln!("{}", text);
             return Ok(input);
         }
         // Otherwise, we emit the results of the queries.
@@ -51,7 +51,7 @@ impl<'hir> PipelineOperation<'hir, HirModule<'hir>, HirModule<'hir>> for HirEmit
             };
             let target = Self::decode(pipeline, query, &input, &textual_pass)?;
             let text = HirModuleTextualPass::format_doc_to_string(target);
-            println!("{}", text);
+            eprintln!("{}", text);
         }
         Ok(input)
     }
