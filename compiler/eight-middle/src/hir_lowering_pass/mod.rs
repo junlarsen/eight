@@ -1,11 +1,11 @@
 use crate::context::CompileContext;
-use crate::hir::HirTy;
 use crate::hir::{
     HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
     HirReferenceExpr, HirUnaryOpExpr,
 };
 use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirModule};
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
+use crate::hir::{HirGroupExpr, HirTy};
 use crate::intrinsic::CompilerIntrinsic;
 use crate::mir::MirModule;
 use crate::mir::MirType;
@@ -177,8 +177,8 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
             HirExpr::BinaryOp(e) => self.visit_binary_op_expr(b, cx, e),
             HirExpr::UnaryOp(e) => self.visit_unary_op_expr(b, cx, e),
-            HirExpr::Group(_)
-            | HirExpr::AddressOf(_)
+            HirExpr::Group(e) => self.visit_group_expr(b, cx, e),
+            HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
             | HirExpr::ConstantIndex(_)
             | HirExpr::OffsetIndex(_)
@@ -272,6 +272,15 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let return_ty = self.visit_ty(expr.ty)?;
         let call = b.build_call(cx, callee, arguments, return_ty, None);
         Ok(call)
+    }
+
+    pub fn visit_group_expr(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirGroupExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        self.visit_expr(b, cx, &expr.inner)
     }
 
     /// Translate a binary operator expression into MIR.
