@@ -5,18 +5,9 @@ use crate::hir::{
     HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr,
     HirMetaTy, HirOffsetIndexExpr, HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
 };
-use crate::hir_error::{
-    BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
-    FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError,
-    InvalidStructFieldReferenceError, MissingFieldError, SelfReferentialTypeError,
-    TraitDoesNotExistError, TraitInstanceMissingFnError, TraitMissingInstanceError,
-    TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
-    WrongFunctionTypeArgumentCount,
-};
+use crate::hir_error::{BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError, DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError, SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError, TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount};
 use crate::hir_query::HirSignatureQueryDatabase;
-use crate::hir_type_check_pass::{
-    Constraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint,
-};
+use crate::hir_type_check_pass::{Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint};
 use crate::scope::Scope;
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -467,8 +458,7 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // *a means inner is a pointer type, and expected and e are unbox inner
-        let inner_ptr = self.cc.hir_pointer_type(expectation);
-        self.constrain_eq(expr.inner.ty(), inner_ptr, expr.span, expr.inner.span());
+        self.constrain_dereferenceable(expr.inner.ty(), expr.ty, expr.span);
         self.constrain_eq(expr.ty, expectation, expr.span, expr.inner.span());
         Ok(())
     }
@@ -730,6 +720,20 @@ impl<'hir> TypingContext<'hir> {
         self.constraints.push(constraint)
     }
 
+    pub fn constrain_dereferenceable(
+        &mut self,
+        ty: &'hir HirTy<'hir>,
+        expectation: &'hir HirTy<'hir>,
+        span: Span,
+    ) {
+        let constraint = Constraint::Dereferenceable(DereferenceableConstraint {
+            ty,
+            span,
+            expectation,
+        });
+        self.constraints.push(constraint)
+    }
+
     /// Solve the constraints that have been implied on the context so far.
     pub fn solve_constraints(&mut self) -> HirResult<()> {
         let constraints = self.constraints.drain(..).collect::<Vec<_>>();
@@ -739,6 +743,7 @@ impl<'hir> TypingContext<'hir> {
                 Constraint::Equality(c) => self.unify_eq(c)?,
                 Constraint::FieldProjection(c) => self.unify_field_projection(c)?,
                 Constraint::Instance(c) => self.unify_instance(c)?,
+                Constraint::Dereferenceable(c) => self.unify_dereferenceable(c)?,
             }
         }
         Ok(())
@@ -851,6 +856,31 @@ impl<'hir> TypingContext<'hir> {
             actual_loc: Span::empty(),
         };
         self.unify_eq(constraint)?;
+        Ok(())
+    }
+
+    /// Perform unification of a dereferenceable constraint.
+    pub fn unify_dereferenceable(
+        &mut self,
+        DereferenceableConstraint {
+            ty,
+            expectation,
+            span,
+        }: DereferenceableConstraint<'hir>,
+    ) -> HirResult<()> {
+        let substituted = self.substitute(ty)?;
+        let HirTy::Pointer(ptr) = substituted else {
+            return Err(HirError::DereferenceOfNonPointer(DereferenceOfNonPointerError {
+                span,
+                ty: substituted.format_substitutable_type()
+            }));
+        };
+        self.unify_eq(EqualityConstraint {
+            expectation,
+            expectation_loc: span,
+            actual: ptr.inner,
+            actual_loc: span,
+        })?;
         Ok(())
     }
 

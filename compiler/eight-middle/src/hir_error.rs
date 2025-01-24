@@ -29,6 +29,7 @@ declare_error_type! {
         ConstructingNonStructType(ConstructingNonStructTypeError),
         ConstructingPointerType(ConstructingPointerTypeError),
         WrongFunctionTypeArgumentCount(WrongFunctionTypeArgumentCount),
+        DereferenceOfNonPointer(DereferenceOfNonPointerError),
     }
 }
 
@@ -266,4 +267,13 @@ pub struct WrongFunctionTypeArgumentCount {
     pub span: Span,
     #[label = "declares {expected} type arguments"]
     pub function_declaration_loc: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(sema::dereference_of_non_pointer))]
+#[error("type {ty} is not a pointer type, and cannot be dereferenced")]
+pub struct DereferenceOfNonPointerError {
+    pub ty: String,
+    #[label = "{ty} is not dereferenceable"]
+    pub span: Span,
 }

@@ -1,0 +1,9 @@
+// RUN: %not %eightc %s 2>&1 | %fc %s
+
+fn test() {
+  let x = *123;
+}
+
+
+// CHECK-LABEL: sema::dereference_of_non_pointer
+// CHECK: i32 is not dereferenceable

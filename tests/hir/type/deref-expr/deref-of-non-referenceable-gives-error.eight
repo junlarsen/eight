@@ -6,5 +6,5 @@ fn test(in: i32) {
 
 // It seems like we're not able to detect that this is an error.
 
-// CHECK-LABEL: test
-// CHECK: the expression has type *[[TYPE_VAR:\?[0-9]+]]
+// CHECK-LABEL: sema::dereference_of_non_pointer
+// CHECK: i32 is not dereferenceable

@@ -26,6 +26,7 @@ pub enum Constraint<'hir> {
     Equality(EqualityConstraint<'hir>),
     FieldProjection(FieldProjectionConstraint<'hir>),
     Instance(InstanceConstraint<'hir>),
+    Dereferenceable(DereferenceableConstraint<'hir>),
 }
 
 /// Represent a constraint that two types have to be equal.
@@ -64,6 +65,18 @@ pub struct InstanceConstraint<'hir> {
     pub method_span: Span,
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
     pub expectation: &'hir HirTy<'hir>,
+}
+
+/// A constraint that a type is dereferenceable.
+/// 
+/// Today, this simply means that the type is a pointer type.
+#[derive(Debug)]
+pub struct DereferenceableConstraint<'hir> {
+    /// The type that is dereferenceable
+    pub ty: &'hir HirTy<'hir>,
+    /// The type that it should dereference into
+    pub expectation: &'hir HirTy<'hir>,
+    pub span: Span,
 }
 
 /// Replace the $expr node with the result of $app if it changed, optionally wrapped in the function

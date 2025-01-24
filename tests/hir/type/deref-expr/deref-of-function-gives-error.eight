@@ -7,6 +7,7 @@ fn test() -> i32 {
   return infer;
 }
 
-// It should be illegal to deref a function type.
+// TODO: This error message should be better
 
-// CHECK-LABEL: sema::type_mismatch
+// CHECK-LABEL: sema::dereference_of_non_pointer
+// CHECK: fn(i32) -> *_ is not dereferenceable
