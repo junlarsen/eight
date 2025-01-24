@@ -5,9 +5,19 @@ use crate::hir::{
     HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr,
     HirMetaTy, HirOffsetIndexExpr, HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
 };
-use crate::hir_error::{BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError, DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError, HirResult, InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError, SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError, TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount};
+use crate::hir_error::{
+    BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
+    DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError, HirResult,
+    InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
+    SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
+    TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
+    WrongFunctionTypeArgumentCount,
+};
 use crate::hir_query::HirSignatureQueryDatabase;
-use crate::hir_type_check_pass::{Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint, InstanceConstraint};
+use crate::hir_type_check_pass::{
+    Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint,
+    InstanceConstraint,
+};
 use crate::scope::Scope;
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -368,7 +378,12 @@ impl<'hir> TypingContext<'hir> {
 
         let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
         let expected_signature = self.cc.hir_function_type(expectation, expected_args);
-        self.constrain_eq(expected_signature, expr.callee.ty(), expr.span, expr.callee.span());
+        self.constrain_eq(
+            expected_signature,
+            expr.callee.ty(),
+            expr.span,
+            expr.callee.span(),
+        );
         // Constrain the return type of the expression to the wanted type
         self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
         Ok(())
@@ -418,7 +433,12 @@ impl<'hir> TypingContext<'hir> {
                 }));
             };
             visited_fields.insert(provided_field.field);
-            self.constrain_eq(field_definition.ty, provided_field.expr.ty(), provided_field.expr.span(), provided_field.expr.span());
+            self.constrain_eq(
+                field_definition.ty,
+                provided_field.expr.ty(),
+                provided_field.expr.span(),
+                provided_field.expr.span(),
+            );
         }
         // If some of the fields from the struct are missing
         for field in ty.fields.values() {
@@ -870,10 +890,12 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         let substituted = self.substitute(ty)?;
         let HirTy::Pointer(ptr) = substituted else {
-            return Err(HirError::DereferenceOfNonPointer(DereferenceOfNonPointerError {
-                span,
-                ty: substituted.format_substitutable_type()
-            }));
+            return Err(HirError::DereferenceOfNonPointer(
+                DereferenceOfNonPointerError {
+                    span,
+                    ty: substituted.format_substitutable_type(),
+                },
+            ));
         };
         self.unify_eq(EqualityConstraint {
             expectation,

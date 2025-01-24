@@ -68,7 +68,7 @@ pub struct InstanceConstraint<'hir> {
 }
 
 /// A constraint that a type is dereferenceable.
-/// 
+///
 /// Today, this simply means that the type is a pointer type.
 #[derive(Debug)]
 pub struct DereferenceableConstraint<'hir> {

@@ -170,7 +170,11 @@ impl<'a> HirModuleTextualPass<'a> {
         function: &'hir HirFunction,
     ) -> DocBuilder<Arena<'a>> {
         self.arena
-            .text("fn")
+            .text(if function.linkage_type == LinkageType::Eight {
+                "fn"
+            } else {
+                "intrinsic_fn"
+            })
             .append(self.arena.space())
             .append(self.arena.text(function.name))
             .append(self.arena.text("<"))
@@ -206,23 +210,28 @@ impl<'a> HirModuleTextualPass<'a> {
                 Some(t) => t,
                 None => function.signature.return_type,
             }))
-            .append(self.arena.space())
-            .append(self.arena.text("{"))
-            .append(
+            .append(if function.linkage_type == LinkageType::Eight {
                 self.arena
-                    .hardline()
+                    .space()
+                    .append(self.arena.text("{"))
                     .append(
                         self.arena
-                            .intersperse(
-                                function.body.iter().map(|s| self.visit_stmt(s)),
-                                self.arena.line(),
+                            .hardline()
+                            .append(
+                                self.arena
+                                    .intersperse(
+                                        function.body.iter().map(|s| self.visit_stmt(s)),
+                                        self.arena.line(),
+                                    )
+                                    .append(self.arena.hardline()),
                             )
-                            .append(self.arena.hardline()),
+                            .nest(2)
+                            .group(),
                     )
-                    .nest(2)
-                    .group(),
-            )
-            .append(self.arena.text("}"))
+                    .append(self.arena.text("}"))
+            } else {
+                self.arena.text(";")
+            })
     }
 
     pub fn visit_instance<'hir: 'a>(
