@@ -9,12 +9,11 @@
 //! program than the AST.
 
 use crate::hir::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBlockStmt,
-    HirBooleanLiteralExpr, HirBreakStmt, HirCallExpr, HirConstantIndexExpr, HirConstructExpr,
-    HirConstructExprArgument, HirContinueStmt, HirDerefExpr, HirExpr, HirExprStmt, HirFunction,
-    HirFunctionSignature, HirGroupExpr, HirIfStmt, HirInstance, HirInstanceSignature,
-    HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirOffsetIndexExpr, HirReferenceExpr,
-    HirReturnStmt, HirStmt, HirTrait, HirTraitSignature, HirUnaryOp, HirUnaryOpExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBlockStmt, HirBooleanLiteralExpr, HirBreakStmt,
+    HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirContinueStmt,
+    HirDerefExpr, HirExpr, HirExprStmt, HirFunction, HirFunctionSignature, HirGroupExpr, HirIfStmt,
+    HirInstance, HirInstanceSignature, HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt,
+    HirOffsetIndexExpr, HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature,
 };
 use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirTy};
 use crate::hir_error::HirError;
@@ -190,14 +189,16 @@ impl<'hir> HirBuilder {
         span: Span,
         callee: HirExpr<'hir>,
         arguments: Vec<HirExpr<'hir>>,
-        type_arguments: Vec<&'hir HirTy<'hir>>,
+        function_type_arguments: Vec<&'hir HirTy<'hir>>,
+        trait_type_arguments: Vec<&'hir HirTy<'hir>>,
         ty: &'hir HirTy<'hir>,
     ) -> HirCallExpr<'hir> {
         HirCallExpr {
             span,
             callee: Box::new(callee),
             arguments,
-            type_arguments,
+            function_type_arguments,
+            trait_type_arguments,
             ty,
         }
     }
@@ -263,23 +264,6 @@ impl<'hir> HirBuilder {
         HirBooleanLiteralExpr { span, value, ty }
     }
 
-    /// Build a unary operation expression
-    pub fn build_unary_op_expr(
-        span: Span,
-        operand: HirExpr<'hir>,
-        op: HirUnaryOp,
-        op_span: Span,
-        ty: &'hir HirTy<'hir>,
-    ) -> HirUnaryOpExpr<'hir> {
-        HirUnaryOpExpr {
-            span,
-            operand: Box::new(operand),
-            op,
-            op_span,
-            ty,
-        }
-    }
-
     /// Build a deref expression
     pub fn build_deref_expr(
         span: Span,
@@ -302,25 +286,6 @@ impl<'hir> HirBuilder {
         HirAddressOfExpr {
             span,
             inner: Box::new(inner),
-            ty,
-        }
-    }
-
-    /// Build a binary operation expression
-    pub fn build_binary_op_expr(
-        span: Span,
-        lhs: HirExpr<'hir>,
-        rhs: HirExpr<'hir>,
-        op: HirBinaryOp,
-        op_span: Span,
-        ty: &'hir HirTy<'hir>,
-    ) -> HirBinaryOpExpr<'hir> {
-        HirBinaryOpExpr {
-            span,
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
-            op,
-            op_span,
             ty,
         }
     }
@@ -375,13 +340,7 @@ impl<'hir> HirBuilder {
         span: Span,
         symbol: HirCallableSymbol<'hir>,
         ty: &'hir HirTy<'hir>,
-        type_arguments: Vec<&'hir HirTy<'hir>>,
     ) -> HirCallableReferenceExpr<'hir> {
-        HirCallableReferenceExpr {
-            span,
-            symbol,
-            ty,
-            type_arguments,
-        }
+        HirCallableReferenceExpr { span, symbol, ty }
     }
 }

@@ -1,12 +1,10 @@
 use crate::context::CompileContext;
 use crate::hir::{
-    HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr,
-    HirReferenceExpr, HirUnaryOpExpr,
+    HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
 };
 use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirModule};
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::hir::{HirGroupExpr, HirTy};
-use crate::builtin::CompilerBuiltin;
 use crate::mir::MirModule;
 use crate::mir::MirType;
 use crate::mir::MirValueId;
@@ -14,7 +12,7 @@ use crate::mir_builder::{MirFunctionBuilder, MirModuleContext};
 use crate::mir_error::MirResult;
 use crate::scope::Scope;
 use crate::LinkageType;
-use eight_diagnostics::{ice, sanity_check};
+use eight_diagnostics::ice;
 
 pub struct MirModuleLoweringPass<'mir> {
     cc: &'mir CompileContext<'mir>,
@@ -175,8 +173,6 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             HirExpr::CallableReference(e) => self.visit_callable_reference_expr(b, cx, e),
             HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
-            HirExpr::BinaryOp(e) => self.visit_binary_op_expr(b, cx, e),
-            HirExpr::UnaryOp(e) => self.visit_unary_op_expr(b, cx, e),
             HirExpr::Group(e) => self.visit_group_expr(b, cx, e),
             HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
@@ -242,9 +238,9 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ) -> MirResult<MirValueId> {
         match &expr.symbol {
             // If this is a simple function name, we can lower it to a specific function value.
-            HirCallableSymbol::Function(name, _) => {
+            HirCallableSymbol::Function(s) => {
                 // TODO: Mangle the name along with the type arguments.
-                let name = self.cc.intern_str(name);
+                let name = self.cc.intern_str(s.name);
                 let id = cx.data().get_function_id(name).unwrap_or_else(|| {
                     ice!(format!(
                         "failed to find function id for {} despite passing type checker",
@@ -281,96 +277,6 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         expr: &'hir HirGroupExpr<'hir>,
     ) -> MirResult<MirValueId> {
         self.visit_expr(b, cx, &expr.inner)
-    }
-
-    /// Translate a binary operator expression into MIR.
-    ///
-    /// Binary operators are special, because they can be overloaded by the user by adding an
-    /// instance of the trait the operator corresponds to.
-    ///
-    /// If the trait is not overloaded in user land, but instead defined through the compiler
-    /// intrinsics in the standard library, we can lower the operator into the corresponding MIR
-    /// instructions.
-    ///
-    /// When this is not the case, we need to construct a function call to the trait instance
-    /// function that matches the expression's types.
-    pub fn visit_binary_op_expr(
-        &mut self,
-        b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
-        expr: &'hir HirBinaryOpExpr<'hir>,
-    ) -> MirResult<MirValueId> {
-        unimplemented!("userland instance binary operator calling is not yet implemented")
-    }
-
-    /// Translate a unary operator expression into MIR.
-    ///
-    /// Unary operators are special, because they can be overloaded by the user by adding an
-    /// instance of the trait the operator corresponds to.
-    ///
-    /// If the trait is not overloaded in user land, but instead defined through the compiler
-    /// intrinsics in the standard library, we can lower the operator into the corresponding MIR
-    /// instructions.
-    ///
-    /// When this is not the case, we need to construct a function call to the trait instance
-    /// function that matches the expression's types.
-    pub fn visit_unary_op_expr(
-        &mut self,
-        b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
-        expr: &'hir HirUnaryOpExpr<'hir>,
-    ) -> MirResult<MirValueId> {
-        unimplemented!("userland instance unary operator calling is not yet implemented")
-    }
-
-    /// Translate a binary operator that is guaranteed to be implemented as an intrinsic.
-    ///
-    /// The standard library only defines operators on equal types, so we can safely assume that
-    /// both LHS and RHS are of the same type, and that the resulting type of this operator is the
-    /// same as the LHS (and consequently RHS) type.
-    pub fn visit_binary_intrinsic_candidate(
-        &mut self,
-        b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
-        candidate: CompilerBuiltin,
-        expr: &'hir HirBinaryOpExpr<'hir>,
-    ) -> MirResult<MirValueId> {
-        let lhs = self.visit_expr(b, cx, &expr.lhs)?;
-        let rhs = self.visit_expr(b, cx, &expr.rhs)?;
-        let lhs_ty = b.data().get_value_type(lhs);
-        let rhs_ty = b.data().get_value_type(rhs);
-        sanity_check!(lhs_ty == rhs_ty, "lhs and rhs types must be equal");
-        let inst = match candidate {
-            CompilerBuiltin::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
-            CompilerBuiltin::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
-            CompilerBuiltin::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
-            CompilerBuiltin::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
-            _ => unimplemented!("binary operator {candidate:?} is not yet implemented"),
-        };
-        Ok(inst)
-    }
-
-    /// Translate a unary operator that is guaranteed to be implemented as an intrinsic.
-    ///
-    /// The standard library only defines unary operators on types that result in the same type.
-    pub fn visit_unary_intrinsic_candidate(
-        &mut self,
-        b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
-        candidate: CompilerBuiltin,
-        expr: &'hir HirUnaryOpExpr<'hir>,
-    ) -> MirResult<MirValueId> {
-        let operand = self.visit_expr(b, cx, &expr.operand)?;
-        let ty = b.data().get_value_type(operand);
-        let inst = match candidate {
-            // Negation of a number is implemented as subtraction from zero.
-            CompilerBuiltin::IntegerNeg => {
-                let zero = b.build_constant_integer32(0, self.cc.mir_i32_type());
-                b.build_sub(cx, zero, operand, ty, None)
-            }
-            _ => unimplemented!("unary operator {candidate:?} is not yet implemented"),
-        };
-        Ok(inst)
     }
 
     /// Translate a type into MIR.

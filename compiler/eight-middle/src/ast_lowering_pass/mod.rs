@@ -1,11 +1,10 @@
 use crate::context::CompileContext;
-use crate::hir::HirTy;
+use crate::hir::{HirCallableSymbol, HirTy};
 use crate::hir::{
-    HirBinaryOp, HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction,
-    HirFunctionParameterSignature, HirFunctionSignature, HirInstance, HirInstanceSignature,
-    HirLetStmt, HirModule, HirModuleBody, HirModuleSignature, HirStmt, HirStruct,
-    HirStructFieldSignature, HirStructSignature, HirTrait, HirTraitSignature, HirType,
-    HirTypeParameterSignature, HirTypeSignature, HirUnaryOp,
+    HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction, HirFunctionParameterSignature,
+    HirFunctionSignature, HirInstance, HirInstanceSignature, HirLetStmt, HirModule, HirModuleBody,
+    HirModuleSignature, HirStmt, HirStruct, HirStructFieldSignature, HirStructSignature, HirTrait,
+    HirTraitSignature, HirType, HirTypeParameterSignature, HirTypeSignature,
 };
 use crate::hir_builder::HirBuilder;
 use crate::hir_error::{
@@ -137,6 +136,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
                 .iter()
                 .map(|t| self.visit_type(t))
                 .collect::<HirResult<Vec<_>>>()?,
+            // TODO: Populate this
+            vec![],
             self.cc.hir_uninitialized_type(),
         )))
     }
@@ -206,39 +207,94 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     /// We translate the AddressOf and Deref operators into separate expressions, as they produce
     /// different types
     pub fn visit_unary_op_expr(&mut self, node: &'ast AstUnaryOpExpr) -> HirResult<HirExpr<'hir>> {
-        match &node.op {
-            AstUnaryOp::Not | AstUnaryOp::Neg => {
-                Ok(HirExpr::UnaryOp(HirBuilder::build_unary_op_expr(
-                    node.span,
-                    self.visit_expr(node.operand)?,
-                    self.visit_unary_op(&node.op)?,
-                    node.op_span,
-                    self.cc.hir_uninitialized_type(),
-                )))
-            }
-            AstUnaryOp::Deref => Ok(HirExpr::Deref(HirBuilder::build_deref_expr(
+        // Translate address of and deref operators into separate expressions, as they have wildly
+        // different semantics from the other operators.
+        if let AstUnaryOp::AddressOf = node.op {
+            return Ok(HirExpr::AddressOf(HirBuilder::build_address_of_expr(
                 node.span,
                 self.visit_expr(node.operand)?,
                 self.cc.hir_uninitialized_type(),
-            ))),
-            AstUnaryOp::AddressOf => Ok(HirExpr::AddressOf(HirBuilder::build_address_of_expr(
-                node.span,
-                self.visit_expr(node.operand)?,
-                self.cc.hir_uninitialized_type(),
-            ))),
+            )));
         }
+        // TODO: Consider if we should allow overloading of dereference
+        if let AstUnaryOp::Deref = node.op {
+            return Ok(HirExpr::Deref(HirBuilder::build_deref_expr(
+                node.span,
+                self.visit_expr(node.operand)?,
+                self.cc.hir_uninitialized_type(),
+            )));
+        }
+
+        let (trait_name, function_name) = match node.op {
+            AstUnaryOp::Not => ("Not", "not"),
+            AstUnaryOp::Neg => ("Neg", "neg"),
+            _ => ice!("visit_unary_op called addressof or deref operator"),
+        };
+        let sym = HirCallableSymbol::new_trait_function(
+            trait_name,
+            node.op_span,
+            vec![],
+            function_name,
+            node.op_span,
+            vec![],
+        );
+        let callable_reference = HirBuilder::build_callable_reference_expr(
+            node.span,
+            sym,
+            self.cc.hir_uninitialized_type(),
+        );
+        Ok(HirExpr::Call(HirBuilder::build_call_expr(
+            node.span,
+            HirExpr::CallableReference(callable_reference),
+            vec![self.visit_expr(node.operand)?],
+            // There are no explicit type arguments provided, besides, as we mentioned above, there
+            // are no type parameters on these trait functions.
+            vec![],
+            vec![],
+            self.cc.hir_uninitialized_type(),
+        )))
     }
 
     pub fn visit_binary_op_expr(
         &mut self,
         node: &'ast AstBinaryOpExpr,
     ) -> HirResult<HirExpr<'hir>> {
-        Ok(HirExpr::BinaryOp(HirBuilder::build_binary_op_expr(
-            node.span,
-            self.visit_expr(node.lhs)?,
-            self.visit_expr(node.rhs)?,
-            self.visit_binary_op(&node.op)?,
+        let (trait_name, function_name) = match node.op {
+            AstBinaryOp::Add => ("Add", "add"),
+            AstBinaryOp::Sub => ("Sub", "sub"),
+            AstBinaryOp::Mul => ("Mul", "mul"),
+            AstBinaryOp::Div => ("Div", "div"),
+            AstBinaryOp::Rem => ("Rem", "rem"),
+            AstBinaryOp::Eq => ("Eq", "eq"),
+            AstBinaryOp::Neq => ("Neq", "neq"),
+            AstBinaryOp::Lt => ("Ord", "lt"),
+            AstBinaryOp::Gt => ("Ord", "gt"),
+            AstBinaryOp::Lte => ("Ord", "le"),
+            AstBinaryOp::Gte => ("Ord", "ge"),
+            AstBinaryOp::And => ("And", "and"),
+            AstBinaryOp::Or => ("Or", "or"),
+        };
+        let sym = HirCallableSymbol::new_trait_function(
+            trait_name,
             node.op_span,
+            vec![],
+            function_name,
+            node.op_span,
+            vec![],
+        );
+        let callable_reference = HirBuilder::build_callable_reference_expr(
+            node.span,
+            sym,
+            self.cc.hir_uninitialized_type(),
+        );
+        Ok(HirExpr::Call(HirBuilder::build_call_expr(
+            node.span,
+            HirExpr::CallableReference(callable_reference),
+            vec![self.visit_expr(node.lhs)?, self.visit_expr(node.rhs)?],
+            // There are no explicit type arguments provided, besides, as we mentioned above, there
+            // are no type parameters on these trait functions.
+            vec![],
+            vec![],
             self.cc.hir_uninitialized_type(),
         )))
     }
@@ -280,32 +336,6 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.name.span,
             self.cc.hir_uninitialized_type(),
         )))
-    }
-
-    pub fn visit_unary_op(&mut self, node: &'ast AstUnaryOp) -> HirResult<HirUnaryOp> {
-        match node {
-            AstUnaryOp::Not => Ok(HirUnaryOp::Not),
-            AstUnaryOp::Neg => Ok(HirUnaryOp::Neg),
-            _ => ice!("visit_unary_op called addressof or deref operator"),
-        }
-    }
-
-    pub fn visit_binary_op(&mut self, node: &'ast AstBinaryOp) -> HirResult<HirBinaryOp> {
-        match node {
-            AstBinaryOp::Add => Ok(HirBinaryOp::Add),
-            AstBinaryOp::Sub => Ok(HirBinaryOp::Sub),
-            AstBinaryOp::Mul => Ok(HirBinaryOp::Mul),
-            AstBinaryOp::Div => Ok(HirBinaryOp::Div),
-            AstBinaryOp::Rem => Ok(HirBinaryOp::Rem),
-            AstBinaryOp::Eq => Ok(HirBinaryOp::Eq),
-            AstBinaryOp::Neq => Ok(HirBinaryOp::Neq),
-            AstBinaryOp::Lt => Ok(HirBinaryOp::Lt),
-            AstBinaryOp::Gt => Ok(HirBinaryOp::Gt),
-            AstBinaryOp::Lte => Ok(HirBinaryOp::Lte),
-            AstBinaryOp::Gte => Ok(HirBinaryOp::Gte),
-            AstBinaryOp::And => Ok(HirBinaryOp::And),
-            AstBinaryOp::Or => Ok(HirBinaryOp::Or),
-        }
     }
 
     pub fn visit_translation_unit(

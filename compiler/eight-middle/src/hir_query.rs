@@ -94,6 +94,19 @@ impl<'hir> HirSignatureQueryDatabase<'hir> {
         None
     }
 
+    /// Query for a trait and a signature that matches the names.
+    ///
+    /// As the name implies, this does not check against types.
+    pub fn query_trait_and_signature_by_name(
+        &self,
+        trait_name: &str,
+        method_name: &str,
+    ) -> Option<(&HirTraitSignature, &HirFunctionSignature)> {
+        let trait_sig = self.query_trait_by_name(trait_name)?;
+        let method_sig = trait_sig.methods.get(method_name)?;
+        Some((trait_sig, method_sig))
+    }
+
     /// Query the database for a trait by its name.
     pub fn query_trait_by_name(&self, name: &str) -> Option<&HirTraitSignature> {
         self.sig.traits.get(name).copied()

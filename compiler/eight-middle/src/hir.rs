@@ -1,6 +1,5 @@
 //! The High-level Intermediate Representation.
 
-use crate::builtin::CompilerBuiltin;
 use crate::LinkageType;
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -13,8 +12,6 @@ pub enum HirExpr<'hir> {
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     Assign(HirAssignExpr<'hir>),
-    UnaryOp(HirUnaryOpExpr<'hir>),
-    BinaryOp(HirBinaryOpExpr<'hir>),
     Reference(HirReferenceExpr<'hir>),
     CallableReference(HirCallableReferenceExpr<'hir>),
     ConstantIndex(HirConstantIndexExpr<'hir>),
@@ -32,8 +29,6 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::IntegerLiteral(e) => e.span,
             HirExpr::BooleanLiteral(e) => e.span,
             HirExpr::Assign(e) => e.span,
-            HirExpr::UnaryOp(e) => e.span,
-            HirExpr::BinaryOp(e) => e.span,
             HirExpr::ConstantIndex(e) => e.span,
             HirExpr::OffsetIndex(e) => e.span,
             HirExpr::Call(e) => e.span,
@@ -51,8 +46,6 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::IntegerLiteral(e) => e.ty,
             HirExpr::BooleanLiteral(e) => e.ty,
             HirExpr::Assign(e) => e.ty,
-            HirExpr::UnaryOp(e) => e.ty,
-            HirExpr::BinaryOp(e) => e.ty,
             HirExpr::ConstantIndex(e) => e.ty,
             HirExpr::OffsetIndex(e) => e.ty,
             HirExpr::Call(e) => e.ty,
@@ -89,25 +82,6 @@ pub struct HirAssignExpr<'hir> {
 }
 
 #[derive(Debug)]
-pub struct HirUnaryOpExpr<'hir> {
-    pub span: Span,
-    pub operand: Box<HirExpr<'hir>>,
-    pub op: HirUnaryOp,
-    pub op_span: Span,
-    pub ty: &'hir HirTy<'hir>,
-}
-
-#[derive(Debug)]
-pub struct HirBinaryOpExpr<'hir> {
-    pub span: Span,
-    pub lhs: Box<HirExpr<'hir>>,
-    pub rhs: Box<HirExpr<'hir>>,
-    pub op: HirBinaryOp,
-    pub op_span: Span,
-    pub ty: &'hir HirTy<'hir>,
-}
-
-#[derive(Debug)]
 pub struct HirAddressOfExpr<'hir> {
     pub span: Span,
     pub inner: Box<HirExpr<'hir>>,
@@ -135,12 +109,6 @@ pub struct HirCallableReferenceExpr<'hir> {
     pub span: Span,
     pub symbol: HirCallableSymbol<'hir>,
     pub ty: &'hir HirTy<'hir>,
-    /// The type arguments that the callable reference was instantiated with.
-    ///
-    /// This field is empty before unification, because the type arguments are not yet known. After
-    /// substitution, this field contains the concrete type arguments that were used to instantiate
-    /// the callable, with indexes matching the function type in `ty`.
-    pub type_arguments: Vec<&'hir HirTy<'hir>>,
 }
 
 /// A reference to a callable symbol.
@@ -149,20 +117,62 @@ pub struct HirCallableReferenceExpr<'hir> {
 /// distinction from [`HirReferenceExpr`] is important because it allows us to distinguish between
 /// values in scope and function, as well as making the distinction between trait functions and
 /// regular functions.
-///
-/// TODO: Consider moving the enum variants into separate types.
 #[derive(Debug)]
 pub enum HirCallableSymbol<'hir> {
-    /// A function defined in the current crate.
+    Function(HirFunctionCallableSymbol<'hir>),
+    TraitFunction(HirTraitFunctionCallableSymbol<'hir>),
+}
+
+#[derive(Debug)]
+pub struct HirFunctionCallableSymbol<'hir> {
+    pub name: &'hir str,
+    pub name_span: Span,
+    /// The type arguments that the callable reference was instantiated with.
     ///
-    /// Tuple of (name, name_span)
-    Function(&'hir str, Span),
-    /// A function defined in a specific trait instance
-    ///
-    /// Tuple of (trait_name, trait_arguments, name, name_span)
-    TraitFunction(&'hir str, Vec<&'hir HirTy<'hir>>, &'hir str, Span),
-    /// Call to a compiler intrinsic, such as the + operator for the builtin types.
-    CompilerIntrinsic(CompilerBuiltin, Span),
+    /// These are unknown to begin with, but can be filled in after unification.
+    pub type_arguments: Vec<&'hir HirTy<'hir>>,
+}
+
+#[derive(Debug)]
+pub struct HirTraitFunctionCallableSymbol<'hir> {
+    pub trait_name: &'hir str,
+    pub trait_name_span: Span,
+    pub trait_type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub method_name: &'hir str,
+    pub method_name_span: Span,
+    pub method_type_arguments: Vec<&'hir HirTy<'hir>>,
+}
+
+impl<'hir> HirCallableSymbol<'hir> {
+    pub fn new_function(
+        name: &'hir str,
+        name_span: Span,
+        type_arguments: Vec<&'hir HirTy<'hir>>,
+    ) -> Self {
+        Self::Function(HirFunctionCallableSymbol {
+            name,
+            name_span,
+            type_arguments,
+        })
+    }
+
+    pub fn new_trait_function(
+        trait_name: &'hir str,
+        trait_name_span: Span,
+        trait_type_arguments: Vec<&'hir HirTy<'hir>>,
+        method_name: &'hir str,
+        method_name_span: Span,
+        method_type_arguments: Vec<&'hir HirTy<'hir>>,
+    ) -> Self {
+        Self::TraitFunction(HirTraitFunctionCallableSymbol {
+            trait_name,
+            trait_name_span,
+            trait_type_arguments,
+            method_name,
+            method_name_span,
+            method_type_arguments,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -189,7 +199,13 @@ pub struct HirCallExpr<'hir> {
     pub span: Span,
     pub callee: Box<HirExpr<'hir>>,
     pub arguments: Vec<HirExpr<'hir>>,
-    pub type_arguments: Vec<&'hir HirTy<'hir>>,
+    /// The type arguments explicitly passed by the user to the function part.
+    pub function_type_arguments: Vec<&'hir HirTy<'hir>>,
+    /// The type arguments explicitly passed by the user to the trait part.
+    ///
+    /// This MUST be empty if this is a call to a function, and not a function associated with a
+    /// trait.
+    pub trait_type_arguments: Vec<&'hir HirTy<'hir>>,
     /// The type of the result of the call expression.
     pub ty: &'hir HirTy<'hir>,
 }
@@ -216,29 +232,6 @@ pub struct HirGroupExpr<'hir> {
     pub span: Span,
     pub inner: Box<HirExpr<'hir>>,
     pub ty: &'hir HirTy<'hir>,
-}
-
-#[derive(Debug)]
-pub enum HirUnaryOp {
-    Not,
-    Neg,
-}
-
-#[derive(Debug)]
-pub enum HirBinaryOp {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    Eq,
-    Neq,
-    Lt,
-    Gt,
-    Lte,
-    Gte,
-    And,
-    Or,
 }
 
 /// A scalar type in the HIR.

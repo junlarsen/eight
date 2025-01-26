@@ -1,10 +1,10 @@
 mod typing_context;
 
 use crate::hir::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOpExpr, HirBooleanLiteralExpr, HirCallExpr,
-    HirCallableReferenceExpr, HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr,
-    HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr,
-    HirOffsetIndexExpr, HirReferenceExpr, HirStruct, HirTrait, HirUnaryOpExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirCallableReferenceExpr,
+    HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr, HirFunction,
+    HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr,
+    HirStruct, HirTrait,
 };
 use crate::hir::{
     HirBlockStmt, HirExprStmt, HirFunctionTy, HirIfStmt, HirLetStmt, HirLoopStmt, HirModule,
@@ -452,8 +452,6 @@ impl HirModuleTypeCheckerPass {
             HirExpr::Construct(e) => Self::enter_construct_expr(cx, e),
             HirExpr::AddressOf(e) => Self::enter_address_of_expr(cx, e),
             HirExpr::Deref(e) => Self::enter_deref_expr(cx, e),
-            HirExpr::UnaryOp(e) => Self::enter_unary_op_expr(cx, e),
-            HirExpr::BinaryOp(e) => Self::enter_binary_op_expr(cx, e),
         }
     }
 
@@ -475,8 +473,6 @@ impl HirModuleTypeCheckerPass {
             HirExpr::Construct(e) => Self::leave_construct_expr(cx, e),
             HirExpr::AddressOf(e) => Self::leave_address_of_expr(cx, e),
             HirExpr::Deref(e) => Self::leave_deref_expr(cx, e),
-            HirExpr::UnaryOp(e) => Self::leave_unary_op_expr(cx, e),
-            HirExpr::BinaryOp(e) => Self::leave_binary_op_expr(cx, e),
         }
     }
 
@@ -577,9 +573,10 @@ impl HirModuleTypeCheckerPass {
         if is_definitely_function {
             let mut node = HirBuilder::build_callable_reference_expr(
                 node.span,
-                HirCallableSymbol::Function(node.name, node.name_span),
+                // TODO: This vec![] should be filled if we ever support stuff like
+                // let k = id::<i32>
+                HirCallableSymbol::new_function(node.name, node.name_span, vec![]),
                 node.ty,
-                vec![],
             );
             let ty = node.ty;
             cx.infer_callable_reference_expr(&mut node, ty)?;
@@ -615,6 +612,10 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirCallableReferenceExpr<'hir>,
     ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = Self::visit_type(cx, node.ty)?;
+        substitute_if_changed!(
+            &mut node.symbol,
+            Self::enter_callable_symbol(cx, &mut node.symbol)?
+        );
         cx.infer_callable_reference_expr(node, node.ty)?;
         Ok(None)
     }
@@ -627,9 +628,33 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirCallableReferenceExpr<'hir>,
     ) -> HirResult<Option<HirExpr<'hir>>> {
         node.ty = cx.substitute(node.ty)?;
-        // Propagate the type arguments that were used in the instantiation of the callable.
-        for argument in node.type_arguments.iter_mut() {
-            *argument = cx.substitute(argument)?;
+        substitute_if_changed!(
+            &mut node.symbol,
+            Self::leave_callable_symbol(cx, &mut node.symbol)?
+        );
+        Ok(None)
+    }
+
+    pub fn enter_callable_symbol<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirCallableSymbol<'hir>,
+    ) -> HirResult<Option<HirCallableSymbol<'hir>>> {
+        if let HirCallableSymbol::TraitFunction(s) = node {
+            for argument in s.trait_type_arguments.iter_mut() {
+                *argument = Self::visit_type(cx, argument)?;
+            }
+        }
+        Ok(None)
+    }
+
+    pub fn leave_callable_symbol<'hir>(
+        cx: &mut TypingContext<'hir>,
+        node: &mut HirCallableSymbol<'hir>,
+    ) -> HirResult<Option<HirCallableSymbol<'hir>>> {
+        if let HirCallableSymbol::TraitFunction(s) = node {
+            for argument in s.trait_type_arguments.iter_mut() {
+                *argument = cx.substitute(argument)?;
+            }
         }
         Ok(None)
     }
@@ -774,6 +799,9 @@ impl HirModuleTypeCheckerPass {
             Self::leave_expr(cx, &mut node.callee)?,
             Box::new
         );
+        for arg in node.function_type_arguments.iter_mut() {
+            *arg = cx.substitute(arg)?;
+        }
         for arg in node.arguments.iter_mut() {
             substitute_if_changed!(arg, Self::leave_expr(cx, arg)?);
         }
@@ -869,73 +897,6 @@ impl HirModuleTypeCheckerPass {
         substitute_if_changed!(
             &mut node.inner,
             Self::leave_expr(cx, &mut node.inner)?,
-            Box::new
-        );
-        node.ty = cx.substitute(node.ty)?;
-        Ok(None)
-    }
-
-    /// Collect type constraints for an unary operation expression.
-    pub fn enter_unary_op_expr<'hir>(
-        cx: &mut TypingContext<'hir>,
-        node: &mut HirUnaryOpExpr<'hir>,
-    ) -> HirResult<Option<HirExpr<'hir>>> {
-        node.ty = Self::visit_type(cx, node.ty)?;
-        substitute_if_changed!(
-            &mut node.operand,
-            Self::enter_expr(cx, &mut node.operand)?,
-            Box::new
-        );
-        Ok(None)
-    }
-
-    /// Perform substitution for an unary operation expression.
-    pub fn leave_unary_op_expr<'hir>(
-        cx: &mut TypingContext<'hir>,
-        node: &mut HirUnaryOpExpr<'hir>,
-    ) -> HirResult<Option<HirExpr<'hir>>> {
-        substitute_if_changed!(
-            &mut node.operand,
-            Self::leave_expr(cx, &mut node.operand)?,
-            Box::new
-        );
-        node.ty = cx.substitute(node.ty)?;
-        Ok(None)
-    }
-
-    /// Collect type constraints for a binary operation expression.
-    pub fn enter_binary_op_expr<'hir>(
-        cx: &mut TypingContext<'hir>,
-        node: &mut HirBinaryOpExpr<'hir>,
-    ) -> HirResult<Option<HirExpr<'hir>>> {
-        node.ty = Self::visit_type(cx, node.ty)?;
-        substitute_if_changed!(
-            &mut node.lhs,
-            Self::enter_expr(cx, &mut node.lhs)?,
-            Box::new
-        );
-        substitute_if_changed!(
-            &mut node.rhs,
-            Self::enter_expr(cx, &mut node.rhs)?,
-            Box::new
-        );
-        cx.infer_binary_op_expr(node, node.ty)?;
-        Ok(None)
-    }
-
-    /// Perform substitution for a binary operation expression.
-    pub fn leave_binary_op_expr<'hir>(
-        cx: &mut TypingContext<'hir>,
-        node: &mut HirBinaryOpExpr<'hir>,
-    ) -> HirResult<Option<HirExpr<'hir>>> {
-        substitute_if_changed!(
-            &mut node.lhs,
-            Self::leave_expr(cx, &mut node.lhs)?,
-            Box::new
-        );
-        substitute_if_changed!(
-            &mut node.rhs,
-            Self::leave_expr(cx, &mut node.rhs)?,
             Box::new
         );
         node.ty = cx.substitute(node.ty)?;

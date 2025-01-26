@@ -1,9 +1,9 @@
 use crate::context::CompileContext;
 use crate::hir::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirCallableReferenceExpr, HirCallableSymbol, HirConstantIndexExpr,
-    HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr,
-    HirMetaTy, HirOffsetIndexExpr, HirReferenceExpr, HirTy, HirUnaryOp, HirUnaryOpExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirCallableReferenceExpr,
+    HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr,
+    HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr,
+    HirReferenceExpr, HirTy,
 };
 use crate::hir_error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
@@ -256,52 +256,109 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         match &expr.symbol {
-            HirCallableSymbol::Function(name, name_span) => {
-                // If the function refers to a function signature, we attempt to instantiate it if
-                // it is generic.
-                let Some(signature) = self.module_query_db.query_function_by_name(name) else {
-                    ice!("called infer() on a name that doesn't exist in the context");
-                };
-                // Non-generic functions are already "instantiated" and can be constrained directly.
-                if signature.type_parameters.is_empty() {
-                    let parameters = signature
-                        .parameters
-                        .iter()
-                        .map(|p| p.ty)
-                        .collect::<Vec<_>>();
-                    let ty = self.cc.hir_function_type(signature.return_type, parameters);
-                    self.constrain_eq(expectation, ty, expr.span, *name_span);
-                    return Ok(());
-                }
-                // Otherwise, we need to instantiate the generic parameters of the function, and
-                // substitute the parameters and return types if they refer to one of the generic
-                // type parameters.
-                let mut instantiations = HashMap::new();
-                let parameters = signature
-                    .parameters
-                    .iter()
-                    .map(|p| self.eliminate_type_variables_within_ty(&mut instantiations, p.ty))
-                    .collect::<Vec<_>>();
-                let return_type = self
-                    .eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
-
-                // Propagate the type arguments to the expression node itself. The leave function
-                // for HirCallableReferenceExpr will use this to substitute the type arguments with
-                // the concrete type arguments. This is also necessary for analysis of the node to
-                // determine if a call can be reduced into a compiler intrinsic.
-                for parameter in signature.type_parameters.iter() {
-                    expr.type_arguments.push(
-                        self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty),
-                    );
-                }
-
-                // Constrain the expression to the function type.
-                let ty = self.cc.hir_function_type(return_type, parameters);
-                self.constrain_eq(expectation, ty, expr.span, *name_span);
-                Ok(())
+            HirCallableSymbol::Function(s) => {
+                self.infer_function_callable_reference_expr(expr, expectation)
             }
-            _ => unimplemented!(),
+            HirCallableSymbol::TraitFunction(s) => {
+                self.infer_trait_function_callable_reference_expr(expr, expectation)
+            }
         }
+    }
+
+    fn infer_function_callable_reference_expr(
+        &mut self,
+        expr: &mut HirCallableReferenceExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
+    ) -> HirResult<()> {
+        let HirCallableSymbol::Function(sym) = &mut expr.symbol else {
+            ice!(
+                "called infer_function_callable_reference_expr() on non-function symbol reference"
+            );
+        };
+        // If the function refers to a function signature, we attempt to instantiate it if
+        // it is generic.
+        let Some(signature) = self.module_query_db.query_function_by_name(sym.name) else {
+            ice!("called infer() on a name that doesn't exist in the context");
+        };
+        // Non-generic functions are already "instantiated" and can be constrained directly.
+        if signature.type_parameters.is_empty() {
+            let parameters = signature
+                .parameters
+                .iter()
+                .map(|p| p.ty)
+                .collect::<Vec<_>>();
+            let ty = self.cc.hir_function_type(signature.return_type, parameters);
+            self.constrain_eq(expectation, ty, expr.span, sym.name_span);
+            self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
+            return Ok(());
+        }
+        // Otherwise, we need to instantiate the generic parameters of the function, and
+        // substitute the parameters and return types if they refer to one of the generic
+        // type parameters.
+        let mut instantiations = HashMap::new();
+        let parameters = signature
+            .parameters
+            .iter()
+            .map(|p| self.eliminate_type_variables_within_ty(&mut instantiations, p.ty))
+            .collect::<Vec<_>>();
+        let return_type =
+            self.eliminate_type_variables_within_ty(&mut instantiations, signature.return_type);
+
+        // Propagate the type arguments to the expression node itself. The leave function
+        // for HirCallableReferenceExpr will use this to substitute the type arguments with
+        // the concrete type arguments. This is also necessary for analysis of the node to
+        // determine if a call can be reduced into a compiler intrinsic.
+        for parameter in signature.type_parameters.iter() {
+            sym.type_arguments
+                .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
+        }
+        // Constrain the expression to the function type.
+        let ty = self.cc.hir_function_type(return_type, parameters);
+        self.constrain_eq(expectation, ty, expr.span, sym.name_span);
+        self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
+        Ok(())
+    }
+
+    fn infer_trait_function_callable_reference_expr(
+        &mut self,
+        expr: &mut HirCallableReferenceExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
+    ) -> HirResult<()> {
+        let HirCallableSymbol::TraitFunction(sym) = &mut expr.symbol else {
+            ice!("called infer_trait_function_callable_reference_expr() on non-trait function symbol reference");
+        };
+        let Some((trait_signature, method_signature)) = self
+            .module_query_db
+            .query_trait_and_signature_by_name(sym.trait_name, sym.method_name)
+        else {
+            ice!("called infer() on a name that doesn't exist in the context");
+        };
+        // Unlike functions, traits always have type parameters, so there is no point in checking
+        // if the signature is generic. Even if the trait function is not generic, we still need to
+        // instantiate the type parameters of the trait.
+        let mut instantiations = HashMap::new();
+        let parameters = method_signature
+            .parameters
+            .iter()
+            .map(|p| self.eliminate_type_variables_within_ty(&mut instantiations, p.ty))
+            .collect::<Vec<_>>();
+        let return_type = self
+            .eliminate_type_variables_within_ty(&mut instantiations, method_signature.return_type);
+        // Propagate the type arguments back to the method type parameters
+        for parameter in method_signature.type_parameters.iter() {
+            sym.method_type_arguments
+                .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
+        }
+        // Propagate the type arguments back to the trait type parameters
+        for parameter in trait_signature.type_parameters.iter() {
+            sym.trait_type_arguments
+                .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
+        }
+        // Constrain the expression to the function type.
+        let ty = self.cc.hir_function_type(return_type, parameters);
+        self.constrain_eq(expectation, ty, expr.span, sym.trait_name_span);
+        self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
+        Ok(())
     }
 
     /// Infer the type of an offset index expression.
@@ -345,48 +402,59 @@ impl<'hir> TypingContext<'hir> {
         let HirExpr::CallableReference(callee) = expr.callee.as_ref() else {
             ice!("managed to call an expression that was not reduced into a callable reference");
         };
-        let HirCallableSymbol::Function(name, name_span) = callee.symbol else {
-            unimplemented!("does not resolve trait or intrinsics yet")
-        };
-        // If the user provided type parameters, we need to constrain them to be equal to the types
-        // that will be backpropagated to the callee. If the count here is mismatched, then there's
-        // a user error.
-        if !expr.type_arguments.is_empty()
-            && callee.type_arguments.len() != expr.type_arguments.len()
-        {
-            return Err(HirError::WrongFunctionTypeArgumentCount(
-                WrongFunctionTypeArgumentCount {
-                    expected: callee.type_arguments.len(),
-                    actual: expr.type_arguments.len(),
-                    name: name.to_owned(),
-                    span: expr.span,
-                    // TODO: This does not point at the function declaration, but rather the
-                    // function call.
-                    function_declaration_loc: name_span,
-                },
-            ));
-        }
-        // Constrain each of the provided arguments to the type that is expected for the callee.
-        for (argument, type_argument) in expr.arguments.iter().zip(expr.type_arguments.iter()) {
-            self.constrain_eq(
-                type_argument,
-                argument.ty(),
-                argument.span(),
-                argument.span(),
-            );
-        }
+        match &callee.symbol {
+            HirCallableSymbol::Function(s) => {
+                // This should not have anything in the trait type arguments
+                assert!(expr.trait_type_arguments.is_empty());
+                // If the user provided type parameters, we need to constrain them to be equal to the types
+                // that will be backpropagated to the callee. If the count here is mismatched, then there's
+                // a user error.
+                if !expr.function_type_arguments.is_empty()
+                    && s.type_arguments.len() != expr.function_type_arguments.len()
+                {
+                    return Err(HirError::WrongFunctionTypeArgumentCount(
+                        WrongFunctionTypeArgumentCount {
+                            expected: s.type_arguments.len(),
+                            actual: expr.function_type_arguments.len(),
+                            name: s.name.to_string(),
+                            span: expr.span,
+                            // TODO: This does not point at the function declaration, but rather the
+                            // function call.
+                            function_declaration_loc: s.name_span,
+                        },
+                    ));
+                }
+                // Constrain each of the provided arguments to the type that is expected for the callee.
+                for (argument, type_argument) in expr
+                    .arguments
+                    .iter()
+                    .zip(expr.function_type_arguments.iter())
+                {
+                    self.constrain_eq(
+                        type_argument,
+                        argument.ty(),
+                        argument.span(),
+                        argument.span(),
+                    );
+                }
 
-        let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
-        let expected_signature = self.cc.hir_function_type(expectation, expected_args);
-        self.constrain_eq(
-            expected_signature,
-            expr.callee.ty(),
-            expr.span,
-            expr.callee.span(),
-        );
-        // Constrain the return type of the expression to the wanted type
-        self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
-        Ok(())
+                let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
+                let expected_signature = self.cc.hir_function_type(expectation, expected_args);
+                self.constrain_eq(
+                    expected_signature,
+                    expr.callee.ty(),
+                    expr.span,
+                    expr.callee.span(),
+                );
+                // Constrain the return type of the expression to the wanted type
+                self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
+                Ok(())
+            }
+            HirCallableSymbol::TraitFunction(s) => {
+                todo!("trait functions are not yet supported");
+                Ok(())
+            }
+        }
     }
 
     /// Infer the type of a construct expression.
@@ -494,84 +562,6 @@ impl<'hir> TypingContext<'hir> {
         Ok(())
     }
 
-    /// Infer the type of an unary operation expression.
-    ///
-    /// Unary operations traits are always fixed to two types: the operand type and the result type.
-    ///
-    /// This infers the following constraints:
-    /// ```text
-    /// Neg::neg<expr.ty, expectation>
-    /// ```
-    pub fn infer_unary_op_expr(
-        &mut self,
-        expr: &mut HirUnaryOpExpr<'hir>,
-        expectation: &'hir HirTy<'hir>,
-    ) -> HirResult<()> {
-        self.constrain_eq(expr.ty, expectation, expr.span, expr.operand.span());
-        let (trait_name, method_name) = match &expr.op {
-            HirUnaryOp::Not => (self.cc.intern_str("Not"), self.cc.intern_str("not")),
-            HirUnaryOp::Neg => (self.cc.intern_str("Neg"), self.cc.intern_str("neg")),
-        };
-        self.constrain_instance(
-            trait_name,
-            expr.span,
-            method_name,
-            expr.span,
-            vec![expr.operand.ty(), expectation],
-            expectation,
-        );
-        Ok(())
-    }
-
-    pub fn infer_binary_op_expr(
-        &mut self,
-        expr: &mut HirBinaryOpExpr<'hir>,
-        expectation: &'hir HirTy<'hir>,
-    ) -> HirResult<()> {
-        self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
-        let (trait_name, method_name) = match &expr.op {
-            HirBinaryOp::Add => (self.cc.intern_str("Add"), self.cc.intern_str("add")),
-            HirBinaryOp::Sub => (self.cc.intern_str("Sub"), self.cc.intern_str("sub")),
-            HirBinaryOp::Mul => (self.cc.intern_str("Mul"), self.cc.intern_str("mul")),
-            HirBinaryOp::Div => (self.cc.intern_str("Div"), self.cc.intern_str("div")),
-            HirBinaryOp::Rem => (self.cc.intern_str("Rem"), self.cc.intern_str("rem")),
-            HirBinaryOp::Eq => (self.cc.intern_str("Eq"), self.cc.intern_str("eq")),
-            HirBinaryOp::Neq => (self.cc.intern_str("Eq"), self.cc.intern_str("neq")),
-            HirBinaryOp::Lt => (self.cc.intern_str("Ord"), self.cc.intern_str("lt")),
-            HirBinaryOp::Gt => (self.cc.intern_str("Ord"), self.cc.intern_str("gt")),
-            HirBinaryOp::Lte => (self.cc.intern_str("Ord"), self.cc.intern_str("le")),
-            HirBinaryOp::Gte => (self.cc.intern_str("Ord"), self.cc.intern_str("ge")),
-            HirBinaryOp::And => (self.cc.intern_str("And"), self.cc.intern_str("and")),
-            HirBinaryOp::Or => (self.cc.intern_str("Or"), self.cc.intern_str("or")),
-        };
-        let arguments = match &expr.op {
-            HirBinaryOp::And
-            | HirBinaryOp::Or
-            | HirBinaryOp::Eq
-            | HirBinaryOp::Neq
-            | HirBinaryOp::Lt
-            | HirBinaryOp::Gt
-            | HirBinaryOp::Lte
-            | HirBinaryOp::Gte => vec![expr.lhs.ty(), expr.rhs.ty()],
-            HirBinaryOp::Add
-            | HirBinaryOp::Sub
-            | HirBinaryOp::Mul
-            | HirBinaryOp::Div
-            | HirBinaryOp::Rem => {
-                vec![expr.lhs.ty(), expr.rhs.ty(), expectation]
-            }
-        };
-        self.constrain_instance(
-            trait_name,
-            expr.span,
-            method_name,
-            expr.span,
-            arguments,
-            expectation,
-        );
-        Ok(())
-    }
-
     /// Infer the expression's type based on its expected type.
     ///
     /// This collects the necessary constraints on the expression's type based on its structure. The
@@ -595,8 +585,6 @@ impl<'hir> TypingContext<'hir> {
             HirExpr::AddressOf(e) => self.infer_address_of_expr(e, expectation),
             HirExpr::Deref(e) => self.infer_deref_expr(e, expectation),
             HirExpr::Group(e) => self.infer_group_expr(e, expectation),
-            HirExpr::UnaryOp(e) => self.infer_unary_op_expr(e, expectation),
-            HirExpr::BinaryOp(e) => self.infer_binary_op_expr(e, expectation),
         }
     }
 

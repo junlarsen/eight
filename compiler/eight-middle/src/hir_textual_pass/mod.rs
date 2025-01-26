@@ -8,11 +8,10 @@
 //! invents syntax not found in the base language, such as statement blocks and while loops.
 
 use crate::hir::{
-    HirAddressOfExpr, HirAssignExpr, HirBinaryOp, HirBinaryOpExpr, HirBooleanLiteralExpr,
-    HirCallExpr, HirCallableReferenceExpr, HirCallableSymbol, HirConstantIndexExpr,
-    HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr,
-    HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirUnaryOp,
-    HirUnaryOpExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirCallableReferenceExpr,
+    HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr,
+    HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction,
+    HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr,
 };
 use crate::hir::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature,
@@ -573,8 +572,6 @@ impl<'a> HirModuleTextualPass<'a> {
             HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(e),
             HirExpr::Assign(e) => self.visit_assign_expr(e),
-            HirExpr::UnaryOp(e) => self.visit_unary_op_expr(e),
-            HirExpr::BinaryOp(e) => self.visit_binary_op_expr(e),
             HirExpr::Reference(e) => self.visit_reference_expr(e),
             HirExpr::CallableReference(e) => self.visit_callable_reference_expr(e),
             HirExpr::ConstantIndex(e) => self.visit_constant_index_expr(e),
@@ -618,43 +615,6 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.visit_expr(&expr.rhs))
     }
 
-    pub fn visit_unary_op_expr<'hir: 'a>(
-        &'a self,
-        expr: &'hir HirUnaryOpExpr,
-    ) -> DocBuilder<Arena<'a>> {
-        self.arena
-            .text(match &expr.op {
-                HirUnaryOp::Not => "!",
-                HirUnaryOp::Neg => "-",
-            })
-            .append(self.visit_expr(&expr.operand))
-    }
-
-    pub fn visit_binary_op_expr<'hir: 'a>(
-        &'a self,
-        expr: &'hir HirBinaryOpExpr,
-    ) -> DocBuilder<Arena<'a>> {
-        self.visit_expr(&expr.lhs)
-            .append(self.arena.text(" "))
-            .append(self.arena.text(match &expr.op {
-                HirBinaryOp::Add => "+",
-                HirBinaryOp::Sub => "-",
-                HirBinaryOp::Mul => "*",
-                HirBinaryOp::Div => "/",
-                HirBinaryOp::Rem => "%",
-                HirBinaryOp::Eq => "==",
-                HirBinaryOp::Neq => "!=",
-                HirBinaryOp::Lt => "<",
-                HirBinaryOp::Gt => ">",
-                HirBinaryOp::Lte => "<=",
-                HirBinaryOp::Gte => ">=",
-                HirBinaryOp::And => "&&",
-                HirBinaryOp::Or => "||",
-            }))
-            .append(self.arena.text(" "))
-            .append(self.visit_expr(&expr.rhs))
-    }
-
     pub fn visit_reference_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirReferenceExpr,
@@ -667,41 +627,31 @@ impl<'a> HirModuleTextualPass<'a> {
         expr: &'hir HirCallableReferenceExpr,
     ) -> DocBuilder<Arena<'a>> {
         match &expr.symbol {
-            HirCallableSymbol::Function(name, span) => self
+            HirCallableSymbol::Function(s) => self
                 .arena
-                .text(*name)
+                .text(s.name)
                 .append(self.arena.text("::"))
                 .append(self.arena.text("<"))
                 .append(self.arena.intersperse(
-                    expr.type_arguments.iter().map(|a| self.visit_ty(a)),
+                    s.type_arguments.iter().map(|a| self.visit_ty(a)),
                     self.arena.text(","),
                 ))
                 .append(self.arena.text(">")),
-            HirCallableSymbol::TraitFunction(trait_name, type_arguments, name, span) => self
+            HirCallableSymbol::TraitFunction(s) => self
                 .arena
-                .text(*trait_name)
+                .text(s.trait_name)
                 .append(self.arena.text("<"))
                 .append(self.arena.intersperse(
-                    type_arguments.iter().map(|a| self.visit_ty(a)),
+                    s.trait_type_arguments.iter().map(|a| self.visit_ty(a)),
                     self.arena.text(","),
                 ))
                 .append(self.arena.text(">"))
                 .append(self.arena.text("::"))
-                .append(self.arena.text(*name))
+                .append(self.arena.text(s.method_name))
                 .append(self.arena.text("::"))
                 .append(self.arena.text("<"))
                 .append(self.arena.intersperse(
-                    expr.type_arguments.iter().map(|a| self.visit_ty(a)),
-                    self.arena.text(","),
-                ))
-                .append(self.arena.text(">")),
-            HirCallableSymbol::CompilerIntrinsic(name, _) => self
-                .arena
-                .as_string(name)
-                .append(self.arena.text("::"))
-                .append(self.arena.text("<"))
-                .append(self.arena.intersperse(
-                    expr.type_arguments.iter().map(|a| self.visit_ty(a)),
+                    s.method_type_arguments.iter().map(|a| self.visit_ty(a)),
                     self.arena.text(","),
                 ))
                 .append(self.arena.text(">")),
@@ -729,13 +679,6 @@ impl<'a> HirModuleTextualPass<'a> {
 
     pub fn visit_call_expr<'hir: 'a>(&'a self, expr: &'hir HirCallExpr) -> DocBuilder<Arena<'a>> {
         self.visit_expr(&expr.callee)
-            .append(self.arena.text("::"))
-            .append(self.arena.text("<"))
-            .append(self.arena.intersperse(
-                expr.type_arguments.iter().map(|a| self.visit_ty(a)),
-                self.arena.text(","),
-            ))
-            .append(self.arena.text(">"))
             .append(self.arena.text("("))
             .append(self.arena.intersperse(
                 expr.arguments.iter().map(|a| self.visit_expr(a)),

@@ -22,10 +22,5 @@ macro_rules! compiler_test_suite {
     }
 }
 
-
 compiler_test_suite!(ast, "ast-lower", ["--emit-ast", "--terminator=syntax"]);
-compiler_test_suite!(
-    hir,
-    "hir-lower",
-    ["--emit-hir", "--terminator=hir"]
-);
+compiler_test_suite!(hir, "hir-lower", ["--emit-hir", "--terminator=hir"]);
