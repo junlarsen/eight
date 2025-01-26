@@ -1,6 +1,6 @@
 //! The High-level Intermediate Representation.
 
-use crate::intrinsic::CompilerIntrinsic;
+use crate::builtin::CompilerBuiltin;
 use crate::LinkageType;
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -162,7 +162,7 @@ pub enum HirCallableSymbol<'hir> {
     /// Tuple of (trait_name, trait_arguments, name, name_span)
     TraitFunction(&'hir str, Vec<&'hir HirTy<'hir>>, &'hir str, Span),
     /// Call to a compiler intrinsic, such as the + operator for the builtin types.
-    CompilerIntrinsic(CompilerIntrinsic, Span),
+    CompilerIntrinsic(CompilerBuiltin, Span),
 }
 
 #[derive(Debug)]

@@ -6,7 +6,7 @@ use crate::hir::{
 use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirModule};
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::hir::{HirGroupExpr, HirTy};
-use crate::intrinsic::CompilerIntrinsic;
+use crate::builtin::CompilerBuiltin;
 use crate::mir::MirModule;
 use crate::mir::MirType;
 use crate::mir::MirValueId;
@@ -332,7 +332,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
-        candidate: CompilerIntrinsic,
+        candidate: CompilerBuiltin,
         expr: &'hir HirBinaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
         let lhs = self.visit_expr(b, cx, &expr.lhs)?;
@@ -341,10 +341,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let rhs_ty = b.data().get_value_type(rhs);
         sanity_check!(lhs_ty == rhs_ty, "lhs and rhs types must be equal");
         let inst = match candidate {
-            CompilerIntrinsic::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
-            CompilerIntrinsic::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
-            CompilerIntrinsic::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
-            CompilerIntrinsic::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
+            CompilerBuiltin::IntegerAdd => b.build_add(cx, lhs, rhs, lhs_ty, None),
+            CompilerBuiltin::IntegerSub => b.build_sub(cx, lhs, rhs, lhs_ty, None),
+            CompilerBuiltin::IntegerMul => b.build_mul(cx, lhs, rhs, lhs_ty, None),
+            CompilerBuiltin::IntegerDiv => b.build_div(cx, lhs, rhs, lhs_ty, None),
             _ => unimplemented!("binary operator {candidate:?} is not yet implemented"),
         };
         Ok(inst)
@@ -357,14 +357,14 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
-        candidate: CompilerIntrinsic,
+        candidate: CompilerBuiltin,
         expr: &'hir HirUnaryOpExpr<'hir>,
     ) -> MirResult<MirValueId> {
         let operand = self.visit_expr(b, cx, &expr.operand)?;
         let ty = b.data().get_value_type(operand);
         let inst = match candidate {
             // Negation of a number is implemented as subtraction from zero.
-            CompilerIntrinsic::IntegerNeg => {
+            CompilerBuiltin::IntegerNeg => {
                 let zero = b.build_constant_integer32(0, self.cc.mir_i32_type());
                 b.build_sub(cx, zero, operand, ty, None)
             }

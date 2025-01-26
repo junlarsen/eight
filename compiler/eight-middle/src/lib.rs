@@ -10,7 +10,7 @@ pub mod hir_query;
 pub mod hir_textual_pass;
 pub mod hir_type_check_pass;
 pub mod intern;
-pub mod intrinsic;
+pub mod builtin;
 pub mod mir;
 pub mod mir_builder;
 pub mod mir_error;
