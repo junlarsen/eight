@@ -18,7 +18,7 @@ pub struct CompileContext<'be> {
     hir_types: TypedInterner<'be, HirTyId, HirTy<'be>>,
 }
 
-impl<'be> Default for CompileContext<'be> {
+impl Default for CompileContext<'_> {
     fn default() -> Self {
         let alloc = Rc::new(Bump::new());
         Self {

@@ -23,7 +23,7 @@ pub enum AstItem<'ast> {
     Instance(AstInstanceItem<'ast>),
 }
 
-impl<'ast> AstItem<'ast> {
+impl AstItem<'_> {
     pub fn span(&self) -> Span {
         match self {
             AstItem::Function(f) => f.span,
@@ -127,7 +127,7 @@ pub enum AstStmt<'ast> {
     Expr(AstExprStmt<'ast>),
 }
 
-impl<'ast> AstStmt<'ast> {
+impl AstStmt<'_> {
     /// Get the span of the inner statement.
     pub fn span(&self) -> Span {
         match self {
@@ -220,7 +220,7 @@ pub enum AstExpr<'ast> {
     Group(AstGroupExpr<'ast>),
 }
 
-impl<'ast> AstExpr<'ast> {
+impl AstExpr<'_> {
     /// Get the span of the inner expression.
     pub fn span(&self) -> Span {
         match self {
@@ -356,7 +356,7 @@ pub enum AstType<'ast> {
     Boolean(AstBooleanType),
 }
 
-impl<'ast> AstType<'ast> {
+impl AstType<'_> {
     /// Get the span of the inner type.
     pub fn span(&self) -> Span {
         match self {

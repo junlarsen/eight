@@ -196,7 +196,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     }
 }
 
-impl<'a, 'ast> Parser<'a, 'ast> {
+impl<'ast> Parser<'_, 'ast> {
     /// Top-level entry for parsing a translation unit (file).
     pub fn parse(&mut self) -> ParseResult<AstTranslationUnit<'ast>> {
         self.parse_translation_unit()

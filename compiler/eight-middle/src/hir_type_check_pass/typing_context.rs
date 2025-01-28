@@ -51,7 +51,7 @@ pub struct TypingContext<'hir> {
     current_function: VecDeque<&'hir HirFunctionTy<'hir>>,
 }
 
-impl<'hir> Debug for TypingContext<'hir> {
+impl Debug for TypingContext<'_> {
     /// Debug implementation for TypingContext skipping the arena.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TypingContext")

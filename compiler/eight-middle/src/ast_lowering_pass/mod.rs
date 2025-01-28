@@ -46,7 +46,7 @@ pub struct AstLoweringPass<'ast, 'hir> {
     type_binding_index: u32,
 }
 
-impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
+impl<'hir> AstLoweringPass<'_, 'hir> {
     pub fn new(cc: &'hir CompileContext<'hir>) -> Self {
         Self {
             cc,

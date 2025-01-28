@@ -11,19 +11,19 @@ use std::hash::{Hash, Hasher};
 #[derive(Debug)]
 pub struct StableRef<'a, T: ?Sized>(&'a T);
 
-impl<'a, T: ?Sized> Hash for StableRef<'a, T> {
+impl<T: ?Sized> Hash for StableRef<'_, T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         std::ptr::hash(self.0 as *const T, state);
     }
 }
 
-impl<'a, T: ?Sized> PartialEq for StableRef<'a, T> {
+impl<T: ?Sized> PartialEq for StableRef<'_, T> {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self.0 as *const T, other.0 as *const T)
     }
 }
 
-impl<'a, T: ?Sized> Eq for StableRef<'a, T> {}
+impl<T: ?Sized> Eq for StableRef<'_, T> {}
 
 /// Efficient query cache for trait instances.
 ///

@@ -447,7 +447,7 @@ pub struct HirFunctionSignature<'hir> {
     pub return_type_annotation: Option<Span>,
 }
 
-impl<'hir> HirFunctionSignature<'hir> {
+impl HirFunctionSignature<'_> {
     pub fn is_generic(&self) -> bool {
         !self.type_parameters.is_empty()
     }
@@ -739,7 +739,7 @@ pub enum HirTy<'hir> {
     Uninitialized(HirUninitializedTy),
 }
 
-impl<'hir> HirTy<'hir> {
+impl HirTy<'_> {
     /// Determine if two types are trivially equal.
     ///
     /// Two types are trivially equal if they refer to the same type.
@@ -972,7 +972,7 @@ pub struct HirNominalTy<'hir> {
     pub name_span: Span,
 }
 
-impl<'hir> Display for HirNominalTy<'hir> {
+impl Display for HirNominalTy<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
     }

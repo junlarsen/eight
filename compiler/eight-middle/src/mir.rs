@@ -121,7 +121,7 @@ pub enum MirType<'mir> {
     Function(MirFunctionType<'mir>),
 }
 
-impl<'mir> MirType<'mir> {
+impl MirType<'_> {
     /// Get the size of the type in bytes.
     ///
     /// This is currently hard-coded for x86-64 and will need to be populated with target info once
@@ -473,7 +473,7 @@ pub struct MirBasicBlock<'mir> {
     pub instructions: Vec<MirInstructionId>,
 }
 
-impl<'mir> MirBasicBlock<'mir> {
+impl MirBasicBlock<'_> {
     pub fn insert(&mut self, instruction: MirInstructionId) {
         self.instructions.push(instruction);
     }
