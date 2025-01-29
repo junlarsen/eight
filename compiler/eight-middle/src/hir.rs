@@ -410,10 +410,7 @@ impl<'hir> HirModuleSignature<'hir> {
 
     pub fn add_instance(&mut self, signature: &'hir HirInstanceSignature<'hir>) {
         self.instances.push(signature);
-        let receiver = signature
-            .type_arguments
-            .first()
-            .unwrap_or_else(|| ice!("trait instance has no receiver"));
+        let receiver = signature.get_receiver_type();
         let trait_index = self
             .trait_instance_signature_cache
             .entry(signature.trait_name)
@@ -567,6 +564,14 @@ pub struct HirInstanceSignature<'hir> {
     pub trait_name_span: Span,
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
     pub methods: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
+}
+
+impl<'hir> HirInstanceSignature<'hir> {
+    pub fn get_receiver_type(&self) -> &'hir &HirTy<'hir> {
+        self.type_arguments
+            .first()
+            .unwrap_or_else(|| ice!("trait instance has no receiver type"))
+    }
 }
 
 #[derive(Debug)]
