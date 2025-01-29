@@ -2,8 +2,8 @@ use crate::context::CompileContext;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirCallableReferenceExpr,
     HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr,
-    HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirOffsetIndexExpr,
-    HirReferenceExpr, HirTy,
+    HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirModuleSignature,
+    HirOffsetIndexExpr, HirReferenceExpr, HirTy,
 };
 use crate::hir_error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
@@ -13,7 +13,6 @@ use crate::hir_error::{
     TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
     WrongFunctionTypeArgumentCount,
 };
-use crate::hir_query::HirSignatureQueryDatabase;
 use crate::hir_type_check_pass::{
     Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint,
     InstanceConstraint,
@@ -30,7 +29,7 @@ use std::fmt::Debug;
 pub struct TypingContext<'hir> {
     /// A reference to the Hir arena for allocating types.
     pub cc: &'hir CompileContext<'hir>,
-    pub module_query_db: &'hir HirSignatureQueryDatabase<'hir>,
+    pub signature: &'hir HirModuleSignature<'hir>,
 
     /// Collected constraints during inference, to be solved during unification.
     constraints: Vec<Constraint<'hir>>,
@@ -66,13 +65,10 @@ impl Debug for TypingContext<'_> {
 
 impl<'hir> TypingContext<'hir> {
     /// Create a new typing context given the HIR arena and module signature derived from the AST.
-    pub fn new(
-        cc: &'hir CompileContext<'hir>,
-        module_query_db: &'hir HirSignatureQueryDatabase<'hir>,
-    ) -> Self {
+    pub fn new(cc: &'hir CompileContext<'hir>, signature: &'hir HirModuleSignature<'hir>) -> Self {
         Self {
             cc,
-            module_query_db,
+            signature,
             constraints: Vec::new(),
             substitutions: Vec::new(),
             let_binding_context: Scope::default(),
@@ -256,10 +252,10 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         match &expr.symbol {
-            HirCallableSymbol::Function(s) => {
+            HirCallableSymbol::Function(_) => {
                 self.infer_function_callable_reference_expr(expr, expectation)
             }
-            HirCallableSymbol::TraitFunction(s) => {
+            HirCallableSymbol::TraitFunction(_) => {
                 self.infer_trait_function_callable_reference_expr(expr, expectation)
             }
         }
@@ -277,7 +273,7 @@ impl<'hir> TypingContext<'hir> {
         };
         // If the function refers to a function signature, we attempt to instantiate it if
         // it is generic.
-        let Some(signature) = self.module_query_db.query_function_by_name(sym.name) else {
+        let Some(signature) = self.signature.query_function_by_name(sym.name) else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
         // Non-generic functions are already "instantiated" and can be constrained directly.
@@ -328,7 +324,7 @@ impl<'hir> TypingContext<'hir> {
             ice!("called infer_trait_function_callable_reference_expr() on non-trait function symbol reference");
         };
         let Some((trait_signature, method_signature)) = self
-            .module_query_db
+            .signature
             .query_trait_and_signature_by_name(sym.trait_name, sym.method_name)
         else {
             ice!("called infer() on a name that doesn't exist in the context");
@@ -450,9 +446,8 @@ impl<'hir> TypingContext<'hir> {
                 self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
                 Ok(())
             }
-            HirCallableSymbol::TraitFunction(s) => {
+            HirCallableSymbol::TraitFunction(_) => {
                 todo!("trait functions are not yet supported");
-                Ok(())
             }
         }
     }
@@ -488,7 +483,7 @@ impl<'hir> TypingContext<'hir> {
             HirTy::Meta(_) => todo!("how to handle?"),
         };
         let ty = self
-            .module_query_db
+            .signature
             .query_struct_by_name(struct_type.name)
             .unwrap_or_else(|| ice!("struct type not found"));
         let mut visited_fields = HashSet::new();
@@ -777,7 +772,7 @@ impl<'hir> TypingContext<'hir> {
             }
             HirTy::Nominal(n) => {
                 let ty = self
-                    .module_query_db
+                    .signature
                     .query_struct_by_name(n.name)
                     .unwrap_or_else(|| ice!("struct type not found"));
                 let Some(struct_field) = ty.fields.get(constraint.field) else {
@@ -813,7 +808,7 @@ impl<'hir> TypingContext<'hir> {
     /// An instance constraint requires that there exists an instance of trait `name` that for the
     /// given types `type_arguments`.
     pub fn unify_instance(&mut self, constraint: InstanceConstraint<'hir>) -> HirResult<()> {
-        self.module_query_db
+        self.signature
             .query_trait_by_name(constraint.name)
             .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
                 name: constraint.name.to_owned(),
@@ -825,7 +820,7 @@ impl<'hir> TypingContext<'hir> {
             .map(|t| self.substitute(t))
             .collect::<HirResult<Vec<_>>>()?;
         let instance = self
-            .module_query_db
+            .signature
             .query_trait_instance_by_name_and_type_arguments(
                 constraint.name,
                 substitutions.as_slice(),

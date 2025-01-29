@@ -7,7 +7,6 @@ pub mod hir;
 pub mod hir_builder;
 pub mod hir_error;
 pub mod hir_lowering_pass;
-pub mod hir_query;
 pub mod hir_textual_pass;
 pub mod hir_type_check_pass;
 pub mod intern;

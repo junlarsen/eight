@@ -11,12 +11,10 @@ use eight_codegen_llvm::error::LLVMBackendError;
 use eight_diagnostics::ice;
 use eight_middle::context::CompileContext;
 use eight_middle::hir_error::HirError;
-use eight_middle::hir_query::HirSignatureQueryDatabase;
 use eight_middle::mir_error::MirError;
 use eight_syntax::arena::AstArena;
 use eight_syntax::error::ParseError;
 use miette::Diagnostic;
-use std::cell::OnceCell;
 use std::mem::ManuallyDrop;
 use thiserror::Error;
 
@@ -104,7 +102,6 @@ pub struct Pipeline<'c> {
     pub(crate) opts: PipelineOptions,
     pub(crate) cc: ManuallyDrop<CompileContext<'c>>,
     pub(crate) ast_arena: ManuallyDrop<AstArena<'c>>,
-    pub(crate) hir_query_database: OnceCell<HirSignatureQueryDatabase<'c>>,
 }
 
 impl<'c> Pipeline<'c> {
@@ -113,15 +110,7 @@ impl<'c> Pipeline<'c> {
             opts,
             cc: ManuallyDrop::new(CompileContext::new()),
             ast_arena: ManuallyDrop::new(AstArena::default()),
-            hir_query_database: OnceCell::new(),
         }
-    }
-
-    /// Get the HIR query database.
-    pub fn query_database(&self) -> &HirSignatureQueryDatabase {
-        self.hir_query_database.get().unwrap_or_else(|| {
-            ice!("failed to get query database, are you sure the hir lowering has been executed?")
-        })
     }
 
     /// Codegen passes run if the stop token is not set to MIR.

@@ -306,7 +306,7 @@ impl HirModuleTypeCheckerPass {
         for argument_index in 0..node.type_arguments.len() {
             // Match this type argument to the type parameters in the trait.
             let r#trait = cx
-                .module_query_db
+                .signature
                 .query_trait_by_name(node.name)
                 .unwrap_or_else(|| ice!(format!("trait {} not found", node.name)));
 
@@ -399,8 +399,8 @@ impl HirModuleTypeCheckerPass {
             return Ok(sub);
         }
         // Check if the name refers to a struct or a type.
-        if cx.module_query_db.query_struct_by_name(n.name).is_some()
-            || cx.module_query_db.query_type_by_name(n.name).is_some()
+        if cx.signature.query_struct_by_name(n.name).is_some()
+            || cx.signature.query_type_by_name(n.name).is_some()
         {
             return Ok(node);
         }
@@ -562,10 +562,7 @@ impl HirModuleTypeCheckerPass {
         node.ty = Self::visit_type(cx, node.ty)?;
         // See if the name resolves to a local let-binding or a function name.
         let is_local_reference = cx.find_let_binding(node.name).is_some();
-        let is_function_reference = cx
-            .module_query_db
-            .query_function_by_name(node.name)
-            .is_some();
+        let is_function_reference = cx.signature.query_function_by_name(node.name).is_some();
 
         // If this surely points to a function (remember let-bindings take priority because they
         // may shadow a function), we can add metadata to the expression.
