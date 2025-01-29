@@ -3,7 +3,7 @@
 use crate::LinkageType;
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -372,6 +372,10 @@ type TraitInstanceSignatureCache<'hir> = HashMap<
     HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceSignature<'hir>>>,
 >;
 
+/// Cache mapping from Type -> Instance
+type TypeInstanceSignatureCache<'hir> =
+    HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceSignature<'hir>>>;
+
 /// A signature representing the public surface of a module.
 ///
 /// It should be noted that the module signature is actually not mutated after it has been derived
@@ -383,12 +387,10 @@ pub struct HirModuleSignature<'hir> {
     pub structs: BTreeMap<&'hir str, &'hir HirStructSignature<'hir>>,
     pub types: BTreeMap<&'hir str, &'hir HirTypeSignature<'hir>>,
     pub traits: BTreeMap<&'hir str, &'hir HirTraitSignature<'hir>>,
-    /// Instances are stored in a flat list.
-    ///
-    /// Use the [`HirQueryDatabase`] to query instances by trait/types more efficiently.
     pub instances: Vec<&'hir HirInstanceSignature<'hir>>,
 
     trait_instance_signature_cache: TraitInstanceSignatureCache<'hir>,
+    type_instance_cache: TypeInstanceSignatureCache<'hir>,
 }
 
 impl<'hir> HirModuleSignature<'hir> {
@@ -411,12 +413,31 @@ impl<'hir> HirModuleSignature<'hir> {
     pub fn add_instance(&mut self, signature: &'hir HirInstanceSignature<'hir>) {
         self.instances.push(signature);
         let receiver = signature.get_receiver_type();
+        // Insert the signature into the Trait -> Instance -> Signature cache
         let trait_index = self
             .trait_instance_signature_cache
             .entry(signature.trait_name)
             .or_default();
         let instance_index = trait_index.entry(StableRef(receiver)).or_default();
         instance_index.push(signature);
+        // Insert the signature into the Type -> Instance cache
+        let type_index = self
+            .type_instance_cache
+            .entry(StableRef(receiver))
+            .or_default();
+        type_index.push(signature);
+    }
+
+    /// Query the module for all trait instances where the given type is the receiver.
+    pub fn query_trait_instances_by_type(
+        &self,
+        ty: &'hir HirTy<'hir>,
+    ) -> Vec<&'hir HirInstanceSignature<'hir>> {
+        let instances = self.type_instance_cache.get(&StableRef(ty));
+        if let Some(instances) = instances {
+            return instances.to_vec();
+        }
+        vec![]
     }
 
     /// Query the database for a trait instance that matches the given name and type arguments.
@@ -536,7 +557,7 @@ pub struct HirFunctionParameterSignature<'hir> {
     pub ty_annotation: Span,
 }
 
-/// A signature for a type parameter of a trait or a function.
+/// A signature _a type parameter of a trait or a function.
 #[derive(Debug)]
 pub struct HirTypeParameterSignature<'hir> {
     pub span: Span,
@@ -567,10 +588,83 @@ pub struct HirInstanceSignature<'hir> {
 }
 
 impl<'hir> HirInstanceSignature<'hir> {
+    /// Get the receiver type for this trait instance.
+    ///
+    /// This is currently the first type provided. In the future we might
+    /// introduce self types and `for` syntax.
     pub fn get_receiver_type(&self) -> &'hir &HirTy<'hir> {
         self.type_arguments
             .first()
             .unwrap_or_else(|| ice!("trait instance has no receiver type"))
+    }
+
+    /// Get the trait type parameters for this instance that show up in the
+    /// return type for the given method.
+    ///
+    /// This is useful for inference, where we need to know if we can use a
+    /// meta variable as inference for the method. In the trait `Add<A, B, R>`,
+    /// the R type is the only one showing up in the output.
+    ///
+    /// For this reason, we can safely tell that Add<i32, i32, _> is able to
+    /// resolve, and we can infer R using the method.
+    ///
+    /// Without this, it is not clear which types are sinks for a function and
+    /// it is harder to reason about whether a matching instance for some types
+    /// exists. We return a Vec here, because the output could be compound in
+    /// the future when we support generic types, e.g Map<K, V> as return type.
+    pub fn get_output_types_for_method(
+        &self,
+        method: &str,
+        trait_sig: &'hir HirTraitSignature<'hir>,
+    ) -> Vec<&'hir HirTy<'hir>> {
+        let Some(function) = self.methods.get(method) else {
+            ice!(format!(
+                "attempted to find output types for non-existent method {}",
+                method
+            ));
+        };
+        let mut outputs = HashSet::<StableRef<'hir, HirTy<'hir>>>::new();
+        fn visit<'hir>(
+            outputs: &mut HashSet<StableRef<'hir, HirTy<'hir>>>,
+            trait_parameters: &Vec<&'hir HirTy<'hir>>,
+            ty: &'hir HirTy<'hir>,
+        ) {
+            match ty {
+                // If the type is a type variable that also exists on the trait
+                // we must add it.
+                ty @ HirTy::Variable(_)
+                    if trait_parameters.iter().any(|t| t.is_trivially_equal(ty)) =>
+                {
+                    outputs.insert(StableRef(ty));
+                }
+                HirTy::Function(t) => {
+                    visit(outputs, trait_parameters, t.return_type);
+                    for p in t.parameters.iter() {
+                        visit(outputs, trait_parameters, p);
+                    }
+                }
+                HirTy::Pointer(t) => visit(outputs, trait_parameters, t.inner),
+                // If it's an unrelated type variable, or a non-composite type
+                // we just exit
+                HirTy::Integer32(_)
+                | HirTy::Variable(_)
+                | HirTy::Boolean(_)
+                | HirTy::Unit(_)
+                | HirTy::Meta(_)
+                | HirTy::Nominal(_)
+                | HirTy::Uninitialized(_) => {}
+            }
+        }
+
+        let trait_type_parameters = trait_sig
+            .type_parameters
+            .iter()
+            .map(|tp| tp.ty)
+            .collect::<Vec<_>>();
+        for tp in function.type_parameters.iter() {
+            visit(&mut outputs, &trait_type_parameters, tp.ty);
+        }
+        outputs.iter().map(|r| r.0).collect()
     }
 }
 
