@@ -3,7 +3,7 @@
 use crate::LinkageType;
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::{Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -348,6 +348,30 @@ impl<'hir> HirModule<'hir> {
     }
 }
 
+/// A stable reference that does hashing and comparison by pointer.
+#[derive(Debug)]
+pub struct StableRef<'a, T: ?Sized>(&'a T);
+
+impl<T: ?Sized> Hash for StableRef<'_, T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        std::ptr::hash(self.0 as *const T, state);
+    }
+}
+
+impl<T: ?Sized> PartialEq for StableRef<'_, T> {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.0 as *const T, other.0 as *const T)
+    }
+}
+
+impl<T: ?Sized> Eq for StableRef<'_, T> {}
+
+/// Cache mapping for TraitName -> ReceiverType -> Signature
+type TraitInstanceSignatureCache<'hir> = HashMap<
+    &'hir str,
+    HashMap<StableRef<'hir, HirTy<'hir>>, Vec<&'hir HirInstanceSignature<'hir>>>,
+>;
+
 /// A signature representing the public surface of a module.
 ///
 /// It should be noted that the module signature is actually not mutated after it has been derived
@@ -363,6 +387,8 @@ pub struct HirModuleSignature<'hir> {
     ///
     /// Use the [`HirQueryDatabase`] to query instances by trait/types more efficiently.
     pub instances: Vec<&'hir HirInstanceSignature<'hir>>,
+
+    trait_instance_signature_cache: TraitInstanceSignatureCache<'hir>,
 }
 
 impl<'hir> HirModuleSignature<'hir> {
@@ -384,21 +410,71 @@ impl<'hir> HirModuleSignature<'hir> {
 
     pub fn add_instance(&mut self, signature: &'hir HirInstanceSignature<'hir>) {
         self.instances.push(signature);
+        let receiver = signature
+            .type_arguments
+            .first()
+            .unwrap_or_else(|| ice!("trait instance has no receiver"));
+        let trait_index = self
+            .trait_instance_signature_cache
+            .entry(signature.trait_name)
+            .or_default();
+        let instance_index = trait_index.entry(StableRef(receiver)).or_default();
+        instance_index.push(signature);
     }
 
-    pub fn get_function(&self, name: &str) -> Option<&'hir HirFunctionSignature<'hir>> {
+    /// Query the database for a trait instance that matches the given name and type arguments.
+    ///
+    /// This does an optimized search by first finding the trait index, then linearly searching
+    /// through all instances that match the first type argument.
+    pub fn query_trait_instance_by_name_and_type_arguments(
+        &self,
+        trait_name: &str,
+        arguments: &[&'hir HirTy<'hir>],
+    ) -> Option<&'hir HirInstanceSignature<'hir>> {
+        let trait_index = self.trait_instance_signature_cache.get(trait_name)?;
+        let stable_ref = StableRef(*arguments.first()?);
+        let instance_index = trait_index.get(&stable_ref)?;
+        for instance in instance_index {
+            // TODO: Do best-match search here when we have generic types.
+            let is_suitable_match = instance.type_arguments.len() == arguments.len()
+                && instance
+                    .type_arguments
+                    .iter()
+                    .zip(arguments)
+                    .all(|(a, b)| a.is_trivially_equal(b) || b.is_meta());
+            if is_suitable_match {
+                return Some(instance);
+            }
+        }
+        None
+    }
+
+    /// Query for a trait and a signature that matches the names.
+    ///
+    /// As the name implies, this does not check against types.
+    pub fn query_trait_and_signature_by_name(
+        &self,
+        trait_name: &str,
+        method_name: &str,
+    ) -> Option<(&HirTraitSignature, &HirFunctionSignature)> {
+        let trait_sig = self.query_trait_by_name(trait_name)?;
+        let method_sig = trait_sig.methods.get(method_name)?;
+        Some((trait_sig, method_sig))
+    }
+
+    pub fn query_function_by_name(&self, name: &str) -> Option<&'hir HirFunctionSignature<'hir>> {
         self.functions.get(name).copied()
     }
 
-    pub fn get_struct(&self, name: &str) -> Option<&'hir HirStructSignature<'hir>> {
+    pub fn query_struct_by_name(&self, name: &str) -> Option<&'hir HirStructSignature<'hir>> {
         self.structs.get(name).copied()
     }
 
-    pub fn get_type(&self, name: &str) -> Option<&'hir HirTypeSignature<'hir>> {
+    pub fn query_type_by_name(&self, name: &str) -> Option<&'hir HirTypeSignature<'hir>> {
         self.types.get(name).copied()
     }
 
-    pub fn get_trait(&self, name: &str) -> Option<&'hir HirTraitSignature<'hir>> {
+    pub fn query_trait_by_name(&self, name: &str) -> Option<&'hir HirTraitSignature<'hir>> {
         self.traits.get(name).copied()
     }
 }
