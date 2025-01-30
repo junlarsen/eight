@@ -467,6 +467,24 @@ impl<'hir> HirModuleSignature<'hir> {
         None
     }
 
+    /// Query for all instances for a type where a given method is present.
+    pub fn query_instance_method_by_type(
+        &self,
+        receiver: &'hir HirTy<'hir>,
+        method_name: &str,
+    ) -> Vec<(&'hir HirInstanceSignature, &'hir HirFunctionSignature)> {
+        let Some(instances) = self.type_instance_cache.get(&StableRef(receiver)) else {
+            return vec![];
+        };
+        let mut methods = Vec::new();
+        for instance in instances {
+            if let Some(method_signature) = instance.methods.get(method_name) {
+                methods.push((*instance, *method_signature));
+            }
+        }
+        methods
+    }
+
     /// Query for a trait and a signature that matches the names.
     ///
     /// As the name implies, this does not check against types.
