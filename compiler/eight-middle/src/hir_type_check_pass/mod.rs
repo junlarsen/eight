@@ -17,6 +17,7 @@ use crate::hir_error::{
 };
 use eight_diagnostics::ice;
 use eight_span::Span;
+use std::char::REPLACEMENT_CHARACTER;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 pub use typing_context::TypingContext;
@@ -26,6 +27,7 @@ pub enum Constraint<'hir> {
     Equality(EqualityConstraint<'hir>),
     FieldProjection(FieldProjectionConstraint<'hir>),
     Instance(InstanceConstraint<'hir>),
+    Method(MethodConstraint<'hir>),
     Dereferenceable(DereferenceableConstraint<'hir>),
 }
 
@@ -55,15 +57,28 @@ pub struct FieldProjectionConstraint<'hir> {
 
 /// Represent a type class instance constraint.
 ///
-/// This constraint requires that there exists an instance of trait `name` that for the given types
-/// `type_arguments`.
+/// This constraint requires that there exists an instance of trait `name` with the given type
+/// parameters.
+///
+/// TODO: Consider making a separate receiver field.
 #[derive(Debug)]
 pub struct InstanceConstraint<'hir> {
     pub name: &'hir str,
     pub name_span: Span,
-    pub method: &'hir str,
-    pub method_span: Span,
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub expectation: &'hir HirTy<'hir>,
+}
+
+/// Represent a method constraint.
+///
+/// A method constraint simply says that some function must exist, accepting the following types.
+///
+/// TODO: Consider making a separate receiver field.
+#[derive(Debug)]
+pub struct MethodConstraint<'hir> {
+    pub name: &'hir str,
+    pub name_span: &'hir str,
+    pub argument_types: Vec<&'hir HirTy<'hir>>,
     pub expectation: &'hir HirTy<'hir>,
 }
 
@@ -636,9 +651,19 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirCallableSymbol<'hir>,
     ) -> HirResult<Option<HirCallableSymbol<'hir>>> {
-        if let HirCallableSymbol::TraitFunction(s) = node {
-            for argument in s.trait_type_arguments.iter_mut() {
-                *argument = Self::visit_type(cx, argument)?;
+        match node {
+            HirCallableSymbol::Function(sym) => {
+                for argument in sym.type_arguments.iter_mut() {
+                    *argument = Self::visit_type(cx, argument)?;
+                }
+            }
+            HirCallableSymbol::TraitFunction(sym) => {
+                for argument in sym.trait_type_arguments.iter_mut() {
+                    *argument = Self::visit_type(cx, argument)?;
+                }
+                for argument in sym.method_type_arguments.iter_mut() {
+                    *argument = Self::visit_type(cx, argument)?;
+                }
             }
         }
         Ok(None)
@@ -648,9 +673,19 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirCallableSymbol<'hir>,
     ) -> HirResult<Option<HirCallableSymbol<'hir>>> {
-        if let HirCallableSymbol::TraitFunction(s) = node {
-            for argument in s.trait_type_arguments.iter_mut() {
-                *argument = cx.substitute(argument)?;
+        match node {
+            HirCallableSymbol::Function(sym) => {
+                for argument in sym.type_arguments.iter_mut() {
+                    *argument = cx.substitute(argument)?;
+                }
+            }
+            HirCallableSymbol::TraitFunction(sym) => {
+                for argument in sym.trait_type_arguments.iter_mut() {
+                    *argument = cx.substitute(argument)?;
+                }
+                for argument in sym.method_type_arguments.iter_mut() {
+                    *argument = cx.substitute(argument)?;
+                }
             }
         }
         Ok(None)

@@ -442,24 +442,50 @@ impl<'hir> HirModuleSignature<'hir> {
 
     /// Query the database for a trait instance that matches the given name and type arguments.
     ///
-    /// This does an optimized search by first finding the trait index, then linearly searching
-    /// through all instances that match the first type argument.
-    pub fn query_trait_instance_by_name_and_type_arguments(
+    /// This search is primarily suitable for solving instance constraints. It returns a trait
+    /// instance where the given `arguments` match equally, or if the corresponding argument is a
+    /// meta variable.
+    ///
+    /// This flexibility allows us to partially resolve traits for method constraints, while also
+    /// early rejecting clear mismatches such as `[i32, i32, $0]` for `Add<i32, f32, f32>`.
+    ///
+    /// An alternative way would be to give associated types to traits allowing them to mark all
+    /// output candidates, but that is a consideration for another day.
+    pub fn query_trait_instance_by_name_and_partial_type_arguments(
         &self,
         trait_name: &str,
         arguments: &[&'hir HirTy<'hir>],
     ) -> Option<&'hir HirInstanceSignature<'hir>> {
+        /// Determine if two types are acceptably equal for trait instance qualification.
+        ///
+        /// This search works by allowing meta variables in any position.
+        fn visit<'hir>(expected: &'hir HirTy<'hir>, actual: &'hir HirTy<'hir>) -> bool {
+            match actual {
+                HirTy::Meta(_) => true,
+                HirTy::Function(t) => {
+                    visit(expected, t.return_type)
+                        && t.parameters.iter().all(|p| visit(expected, p))
+                }
+                HirTy::Pointer(t) => visit(expected, t.inner),
+                t @ HirTy::Integer32(_)
+                | t @ HirTy::Unit(_)
+                | t @ HirTy::Boolean(_)
+                | t @ HirTy::Nominal(_) => t.is_trivially_equal(expected),
+                HirTy::Variable(_) | HirTy::Uninitialized(_) => {
+                    ice!("cannot compare variable or uninit types here")
+                }
+            }
+        }
         let trait_index = self.trait_instance_signature_cache.get(trait_name)?;
         let stable_ref = StableRef(*arguments.first()?);
         let instance_index = trait_index.get(&stable_ref)?;
         for instance in instance_index {
-            // TODO: Do best-match search here when we have generic types.
             let is_suitable_match = instance.type_arguments.len() == arguments.len()
                 && instance
                     .type_arguments
                     .iter()
                     .zip(arguments)
-                    .all(|(a, b)| a.is_trivially_equal(b) || b.is_meta());
+                    .all(|(a, b)| visit(a, b));
             if is_suitable_match {
                 return Some(instance);
             }

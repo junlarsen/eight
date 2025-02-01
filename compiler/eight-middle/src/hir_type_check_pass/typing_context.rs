@@ -9,9 +9,8 @@ use crate::hir_error::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
     DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError, HirResult,
     InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
-    SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
-    TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
-    WrongFunctionTypeArgumentCount,
+    SelfReferentialTypeError, TraitDoesNotExistError, TraitMissingInstanceError, TypeMismatchError,
+    TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount,
 };
 use crate::hir_type_check_pass::{
     Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint,
@@ -22,6 +21,8 @@ use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
+
+use super::MethodConstraint;
 
 /// A context object for the type checker.
 ///
@@ -707,16 +708,12 @@ impl<'hir> TypingContext<'hir> {
         &mut self,
         name: &'hir str,
         name_span: Span,
-        method: &'hir str,
-        method_span: Span,
         type_arguments: Vec<&'hir HirTy<'hir>>,
         expectation: &'hir HirTy<'hir>,
     ) {
         let constraint = Constraint::Instance(InstanceConstraint {
             name,
             name_span,
-            method,
-            method_span,
             type_arguments,
             expectation,
         });
@@ -747,6 +744,7 @@ impl<'hir> TypingContext<'hir> {
                 Constraint::FieldProjection(c) => self.unify_field_projection(c)?,
                 Constraint::Instance(c) => self.unify_instance(c)?,
                 Constraint::Dereferenceable(c) => self.unify_dereferenceable(c)?,
+                Constraint::Method(c) => self.unify_method(c)?,
             }
         }
         Ok(())
@@ -814,14 +812,14 @@ impl<'hir> TypingContext<'hir> {
                 name: constraint.name.to_owned(),
                 span: constraint.name_span,
             }))?;
+        // At this point in time, there may be metavariables left over here, but that is ok.
         let substitutions = constraint
             .type_arguments
             .iter()
             .map(|t| self.substitute(t))
             .collect::<HirResult<Vec<_>>>()?;
-        let instance = self
-            .signature
-            .query_trait_instance_by_name_and_type_arguments(
+        self.signature
+            .query_trait_instance_by_name_and_partial_type_arguments(
                 constraint.name,
                 substitutions.as_slice(),
             )
@@ -834,32 +832,14 @@ impl<'hir> TypingContext<'hir> {
                 name: constraint.name.to_owned(),
                 span: constraint.name_span,
             }))?;
-
-        let method =
-            instance
-                .methods
-                .get(constraint.method)
-                .ok_or(HirError::TraitInstanceMissingFn(
-                    TraitInstanceMissingFnError {
-                        name: format!(
-                            "{}{}",
-                            constraint.method,
-                            HirTy::format_substitutable_type_parameter_list(
-                                substitutions.as_slice(),
-                            )
-                        ),
-                        method: constraint.method.to_owned(),
-                        span: constraint.method_span,
-                    },
-                ))?;
-        let constraint = EqualityConstraint {
-            expectation: constraint.expectation,
-            actual: method.return_type,
-            expectation_loc: Span::empty(),
-            actual_loc: Span::empty(),
-        };
-        self.unify_eq(constraint)?;
         Ok(())
+    }
+
+    /// Perform unification of a method constraint.
+    ///
+    /// This also discovers the method source (in this case, always traits)
+    pub fn unify_method(&mut self, constraint: MethodConstraint<'hir>) -> HirResult<()> {
+        todo!()
     }
 
     /// Perform unification of a dereferenceable constraint.
