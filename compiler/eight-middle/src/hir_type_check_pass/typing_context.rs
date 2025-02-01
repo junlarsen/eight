@@ -481,7 +481,7 @@ impl<'hir> TypingContext<'hir> {
             HirTy::Uninitialized(_) | HirTy::Variable(_) | HirTy::Function(_) => {
                 ice!("called infer_construct_expr on a type that doesn't exist")
             }
-            HirTy::Meta(_) => todo!("how to handle?"),
+            HirTy::Meta(_) => ice!("should be impossible to construct a meta type"),
         };
         let ty = self
             .signature
