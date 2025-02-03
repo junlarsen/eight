@@ -789,6 +789,7 @@ impl HirModuleTypeCheckerPass {
             Self::enter_expr(cx, &mut node.origin)?,
             Box::new
         );
+        cx.infer_constant_index_expr(node, node.ty)?;
         Ok(None)
     }
 
@@ -817,6 +818,15 @@ impl HirModuleTypeCheckerPass {
             Self::enter_expr(cx, &mut node.callee)?,
             Box::new
         );
+        for argument in node.arguments.iter_mut() {
+            substitute_if_changed!(argument, Self::enter_expr(cx, argument)?);
+        }
+        for arg in node.trait_type_arguments.iter_mut() {
+            *arg = Self::visit_type(cx, arg)?;
+        }
+        for arg in node.method_type_arguments.iter_mut() {
+            *arg = Self::visit_type(cx, arg)?;
+        }
         for arg in node.arguments.iter_mut() {
             substitute_if_changed!(arg, Self::enter_expr(cx, arg)?);
         }
@@ -834,6 +844,12 @@ impl HirModuleTypeCheckerPass {
             Self::leave_expr(cx, &mut node.callee)?,
             Box::new
         );
+        for argument in node.arguments.iter_mut() {
+            substitute_if_changed!(argument, Self::leave_expr(cx, argument)?);
+        }
+        for arg in node.trait_type_arguments.iter_mut() {
+            *arg = cx.substitute(arg)?;
+        }
         for arg in node.method_type_arguments.iter_mut() {
             *arg = cx.substitute(arg)?;
         }
