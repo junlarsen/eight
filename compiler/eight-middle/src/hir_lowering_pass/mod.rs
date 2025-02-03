@@ -51,13 +51,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         for function in module.body.functions.values() {
             let name = self.cc.intern_str(function.name);
             let Some(id) = module_builder.data().get_function_id(name) else {
-                ice!(format!("failed to find function id for {}", function.name));
+                ice!("failed to find function id for {}", function.name);
             };
             let Some(ty) = module_builder.data().get_function_type(id) else {
-                ice!(format!(
-                    "failed to find function type for {}",
-                    function.name
-                ));
+                ice!("failed to find function type for {}", function.name);
             };
             let mut builder = MirFunctionBuilder::new(self.cc, name, ty, id);
             self.visit_function(function, &mut builder, &module_builder)?;
@@ -218,7 +215,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ) -> MirResult<MirValueId> {
         // Arguments can be used directly, but locals need to be loaded.
         let id = self.locals.find(&expr.name).unwrap_or_else(|| {
-            ice!(format!("failed to find local value for {}", expr.name));
+            ice!("failed to find local value for {}", expr.name);
         });
         let value_ty = b.data().get_value_type(*id);
         let expected_ty = self.visit_ty(expr.ty)?;
@@ -242,10 +239,10 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 // TODO: Mangle the name along with the type arguments.
                 let name = self.cc.intern_str(s.name);
                 let id = cx.data().get_function_id(name).unwrap_or_else(|| {
-                    ice!(format!(
+                    ice!(
                         "failed to find function id for {} despite passing type checker",
                         name
-                    ));
+                    );
                 });
                 Ok(b.build_function_ref(id))
             }

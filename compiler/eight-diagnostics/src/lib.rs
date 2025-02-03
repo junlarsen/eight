@@ -1,13 +1,12 @@
 #[macro_export]
 macro_rules! ice {
-    ($message:expr) => {{
-        let message = $message;
+    ($($arg:tt)*) => {{
         let file = file!();
         let line = line!();
         let column = column!();
         panic!(
             "internal compiler error ({}:{}:{}):\n{}",
-            file, line, column, message
+            file, line, column, format_args!($($arg)*)
         )
     }};
 }

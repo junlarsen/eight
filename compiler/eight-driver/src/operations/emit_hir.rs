@@ -21,7 +21,7 @@ impl HirEmitOperation {
                     .body
                     .functions
                     .get(&name)
-                    .unwrap_or_else(|| ice!(format!("function {} not found", name)));
+                    .unwrap_or_else(|| ice!("function {} not found", name));
                 Ok(textual_pass.visit_function(function))
             }
         }

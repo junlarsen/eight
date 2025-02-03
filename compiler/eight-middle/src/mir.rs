@@ -365,7 +365,7 @@ impl<'mir> MirFunctionData<'mir> {
     pub fn get_instruction(&self, id: MirInstructionId) -> &MirInstruction<'mir> {
         self.instructions
             .get(&id)
-            .unwrap_or_else(|| ice!(format!("missing instruction {}", id.0)))
+            .unwrap_or_else(|| ice!("missing instruction {}", id.0))
     }
 
     /// Get the type the instruction evaluates to.
@@ -381,7 +381,7 @@ impl<'mir> MirFunctionData<'mir> {
     pub fn get_basic_block(&self, id: MirBasicBlockId) -> &MirBasicBlock<'mir> {
         self.blocks
             .get(&id)
-            .unwrap_or_else(|| ice!(format!("missing block {}", id.0)))
+            .unwrap_or_else(|| ice!("missing block {}", id.0))
     }
 
     pub fn values(&self) -> impl Iterator<Item = &MirValue<'mir>> {
@@ -392,7 +392,7 @@ impl<'mir> MirFunctionData<'mir> {
     pub fn get_value(&self, id: MirValueId) -> &MirValue<'mir> {
         self.values
             .get(&id)
-            .unwrap_or_else(|| ice!(format!("missing value {}", id.0)))
+            .unwrap_or_else(|| ice!("missing value {}", id.0))
     }
 
     /// Get the type of the value with the given id.
