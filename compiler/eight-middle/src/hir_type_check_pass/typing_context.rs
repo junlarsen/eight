@@ -516,6 +516,16 @@ impl<'hir> TypingContext<'hir> {
                     expr.trait_type_arguments.to_vec(),
                     expectation,
                 );
+                // TODO: Reduce this once first-class methods are supported.
+                self.constrain_method(
+                    sym.trait_name,
+                    sym.trait_name_span,
+                    sym.trait_type_arguments.to_vec(),
+                    sym.method_name,
+                    sym.method_name_span,
+                    expr.method_type_arguments.to_vec(),
+                    expectation,
+                );
                 Ok(())
             }
         }
@@ -788,6 +798,29 @@ impl<'hir> TypingContext<'hir> {
         self.constraints.push(constraint)
     }
 
+    /// Imply a new method constraint
+    pub fn constrain_method(
+        &mut self,
+        trait_name: &'hir str,
+        trait_name_span: Span,
+        trait_type_arguments: Vec<&'hir HirTy<'hir>>,
+        name: &'hir str,
+        name_span: Span,
+        method_type_arguments: Vec<&'hir HirTy<'hir>>,
+        expectation: &'hir HirTy<'hir>,
+    ) {
+        let constraint = Constraint::Method(MethodConstraint {
+            trait_name,
+            trait_name_span,
+            trait_type_arguments,
+            method_name: name,
+            method_name_span: name_span,
+            method_type_arguments,
+            expectation,
+        });
+        self.constraints.push(constraint)
+    }
+
     pub fn constrain_dereferenceable(
         &mut self,
         ty: &'hir HirTy<'hir>,
@@ -909,7 +942,43 @@ impl<'hir> TypingContext<'hir> {
     ///
     /// This also discovers the method source (in this case, always traits)
     pub fn unify_method(&mut self, constraint: MethodConstraint<'hir>) -> HirResult<()> {
-        todo!()
+        let trait_substitutions = constraint
+            .trait_type_arguments
+            .iter()
+            .map(|t| self.substitute(t))
+            .collect::<HirResult<Vec<_>>>()?;
+        let instance = self
+            .signature
+            .query_trait_instance_by_name_and_partial_type_arguments(
+                constraint.trait_name,
+                trait_substitutions.as_slice(),
+            )
+            .unwrap_or_else(|| ice!("trait instance not found"));
+        let method = instance
+            .methods
+            .get(&constraint.method_name)
+            .unwrap_or_else(|| {
+                ice!(format!(
+                    "trait instance does not have method {}",
+                    constraint.method_name
+                ))
+            });
+        let _ = constraint
+            .method_type_arguments
+            .iter()
+            .map(|t| self.substitute(t))
+            .collect::<HirResult<Vec<_>>>()?;
+        // TODO: Handle method type parameters.
+        let constraint = EqualityConstraint {
+            expectation: constraint.expectation,
+            expectation_loc: constraint.method_name_span,
+            actual: method.return_type,
+            actual_loc: method
+                .return_type_annotation
+                .unwrap_or(constraint.method_name_span),
+        };
+        self.unify_eq(constraint)?;
+        Ok(())
     }
 
     /// Perform unification of a dereferenceable constraint.

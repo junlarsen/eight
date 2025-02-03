@@ -75,9 +75,12 @@ pub struct InstanceConstraint<'hir> {
 /// TODO: Consider making a separate receiver field.
 #[derive(Debug)]
 pub struct MethodConstraint<'hir> {
-    pub name: &'hir str,
-    pub name_span: &'hir str,
-    pub argument_types: Vec<&'hir HirTy<'hir>>,
+    pub trait_name: &'hir str,
+    pub trait_name_span: Span,
+    pub trait_type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub method_name: &'hir str,
+    pub method_name_span: Span,
+    pub method_type_arguments: Vec<&'hir HirTy<'hir>>,
     pub expectation: &'hir HirTy<'hir>,
 }
 
