@@ -17,7 +17,6 @@ use crate::hir_error::{
 };
 use eight_diagnostics::ice;
 use eight_span::Span;
-use std::char::REPLACEMENT_CHARACTER;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 pub use typing_context::TypingContext;
@@ -831,7 +830,7 @@ impl HirModuleTypeCheckerPass {
             Self::leave_expr(cx, &mut node.callee)?,
             Box::new
         );
-        for arg in node.function_type_arguments.iter_mut() {
+        for arg in node.method_type_arguments.iter_mut() {
             *arg = cx.substitute(arg)?;
         }
         for arg in node.arguments.iter_mut() {

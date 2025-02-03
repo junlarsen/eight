@@ -123,6 +123,15 @@ pub enum HirCallableSymbol<'hir> {
     TraitFunction(HirTraitFunctionCallableSymbol<'hir>),
 }
 
+impl<'hir> HirCallableSymbol<'hir> {
+    pub fn instantiated_call_parameters(&self) -> &[&'hir HirTy<'hir>] {
+        match self {
+            HirCallableSymbol::Function(sym) => sym.instantiated_call_parameters.as_slice(),
+            HirCallableSymbol::TraitFunction(sym) => sym.instantiated_call_parameters.as_slice(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct HirFunctionCallableSymbol<'hir> {
     pub name: &'hir str,
@@ -131,6 +140,7 @@ pub struct HirFunctionCallableSymbol<'hir> {
     ///
     /// These are unknown to begin with, but can be filled in after unification.
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub instantiated_call_parameters: Vec<&'hir HirTy<'hir>>,
 }
 
 #[derive(Debug)]
@@ -141,6 +151,7 @@ pub struct HirTraitFunctionCallableSymbol<'hir> {
     pub method_name: &'hir str,
     pub method_name_span: Span,
     pub method_type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub instantiated_call_parameters: Vec<&'hir HirTy<'hir>>,
 }
 
 impl<'hir> HirCallableSymbol<'hir> {
@@ -153,6 +164,7 @@ impl<'hir> HirCallableSymbol<'hir> {
             name,
             name_span,
             type_arguments,
+            instantiated_call_parameters: Vec::new(),
         })
     }
 
@@ -171,6 +183,7 @@ impl<'hir> HirCallableSymbol<'hir> {
             method_name,
             method_name_span,
             method_type_arguments,
+            instantiated_call_parameters: Vec::new(),
         })
     }
 }
@@ -200,7 +213,7 @@ pub struct HirCallExpr<'hir> {
     pub callee: Box<HirExpr<'hir>>,
     pub arguments: Vec<HirExpr<'hir>>,
     /// The type arguments explicitly passed by the user to the function part.
-    pub function_type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub method_type_arguments: Vec<&'hir HirTy<'hir>>,
     /// The type arguments explicitly passed by the user to the trait part.
     ///
     /// This MUST be empty if this is a call to a function, and not a function associated with a

@@ -197,7 +197,7 @@ impl<'hir> HirBuilder {
             span,
             callee: Box::new(callee),
             arguments,
-            function_type_arguments,
+            method_type_arguments: function_type_arguments,
             trait_type_arguments,
             ty,
         }

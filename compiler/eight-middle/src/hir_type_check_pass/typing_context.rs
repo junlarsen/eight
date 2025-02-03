@@ -309,6 +309,8 @@ impl<'hir> TypingContext<'hir> {
             sym.type_arguments
                 .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
         }
+        // Propagate the type arguments so that we don't need to derive the `parameters` again.
+        sym.instantiated_call_parameters = parameters.to_vec();
         // Constrain the expression to the function type.
         let ty = self.cc.hir_function_type(return_type, parameters);
         self.constrain_eq(expectation, ty, expr.span, sym.name_span);
@@ -328,31 +330,35 @@ impl<'hir> TypingContext<'hir> {
             .signature
             .query_trait_and_signature_by_name(sym.trait_name, sym.method_name)
         else {
-            ice!("called infer() on a name that doesn't exist in the context");
+            ice!(format!(
+                "called infer() on '{}::{}' that doesn't exist in the context",
+                sym.trait_name, sym.method_name
+            ));
         };
-        // Unlike functions, traits always have type parameters, so there is no point in checking
-        // if the signature is generic. Even if the trait function is not generic, we still need to
-        // instantiate the type parameters of the trait.
+        // Instantiate all the generic types present on both the trait and the method.
         let mut instantiations = HashMap::new();
-        let parameters = method_signature
+        let instantiated_parameters = method_signature
             .parameters
             .iter()
             .map(|p| self.eliminate_type_variables_within_ty(&mut instantiations, p.ty))
             .collect::<Vec<_>>();
-        let return_type = self
+        let instantiated_return_type = self
             .eliminate_type_variables_within_ty(&mut instantiations, method_signature.return_type);
-        // Propagate the type arguments back to the method type parameters
+        // Propagate the type arguments back to the callable symbol.
         for parameter in method_signature.type_parameters.iter() {
             sym.method_type_arguments
                 .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
         }
-        // Propagate the type arguments back to the trait type parameters
         for parameter in trait_signature.type_parameters.iter() {
             sym.trait_type_arguments
                 .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
         }
+        // Propagate the type arguments so that we don't need to derive the parameter list again.
+        sym.instantiated_call_parameters = instantiated_parameters.to_vec();
         // Constrain the expression to the function type.
-        let ty = self.cc.hir_function_type(return_type, parameters);
+        let ty = self
+            .cc
+            .hir_function_type(instantiated_return_type, instantiated_parameters);
         self.constrain_eq(expectation, ty, expr.span, sym.trait_name_span);
         self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
         Ok(())
@@ -400,39 +406,44 @@ impl<'hir> TypingContext<'hir> {
             ice!("managed to call an expression that was not reduced into a callable reference");
         };
         match &callee.symbol {
-            HirCallableSymbol::Function(s) => {
+            HirCallableSymbol::Function(sym) => {
                 // This should not have anything in the trait type arguments
                 assert!(expr.trait_type_arguments.is_empty());
                 // If the user provided type parameters, we need to constrain them to be equal to the types
                 // that will be backpropagated to the callee. If the count here is mismatched, then there's
                 // a user error.
-                if !expr.function_type_arguments.is_empty()
-                    && s.type_arguments.len() != expr.function_type_arguments.len()
+                if !expr.method_type_arguments.is_empty()
+                    && sym.type_arguments.len() != expr.method_type_arguments.len()
                 {
                     return Err(HirError::WrongFunctionTypeArgumentCount(
                         WrongFunctionTypeArgumentCount {
-                            expected: s.type_arguments.len(),
-                            actual: expr.function_type_arguments.len(),
-                            name: s.name.to_string(),
+                            expected: sym.type_arguments.len(),
+                            actual: expr.method_type_arguments.len(),
+                            name: sym.name.to_string(),
                             span: expr.span,
                             // TODO: This does not point at the function declaration, but rather the
                             // function call.
-                            function_declaration_loc: s.name_span,
+                            function_declaration_loc: sym.name_span,
                         },
                     ));
                 }
-                // Constrain each of the provided arguments to the type that is expected for the callee.
-                for (argument, type_argument) in expr
-                    .arguments
+                // Constrain the argument types to the instantiated types of the function
+                for (parameter, argument) in sym
+                    .instantiated_call_parameters
                     .iter()
-                    .zip(expr.function_type_arguments.iter())
+                    .zip(expr.arguments.iter())
                 {
-                    self.constrain_eq(
-                        type_argument,
-                        argument.ty(),
-                        argument.span(),
-                        argument.span(),
-                    );
+                    self.constrain_eq(parameter, argument.ty(), argument.span(), argument.span());
+                }
+                // Fill in any missing types, and constrain them to be equal to the expected type.
+                expr.method_type_arguments
+                    .resize_with(sym.type_arguments.len(), || self.fresh_meta_variable());
+                for (parameter, argument) in sym
+                    .type_arguments
+                    .iter()
+                    .zip(expr.method_type_arguments.iter())
+                {
+                    self.constrain_eq(parameter, argument, expr.span, expr.span);
                 }
 
                 let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
@@ -447,8 +458,65 @@ impl<'hir> TypingContext<'hir> {
                 self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
                 Ok(())
             }
-            HirCallableSymbol::TraitFunction(_) => {
-                todo!("trait functions are not yet supported");
+            HirCallableSymbol::TraitFunction(sym) => {
+                // TODO: Add proper diagnostics here
+                assert!(
+                    expr.trait_type_arguments.is_empty()
+                        || expr.trait_type_arguments.len() == sym.trait_type_arguments.len()
+                );
+                assert!(
+                    expr.method_type_arguments.is_empty()
+                        || expr.method_type_arguments.len() == sym.method_type_arguments.len()
+                );
+
+                // Constrain the argument types to the instantiated types of the function
+                for (parameter, argument) in sym
+                    .instantiated_call_parameters
+                    .iter()
+                    .zip(expr.arguments.iter())
+                {
+                    self.constrain_eq(parameter, argument.ty(), argument.span(), argument.span());
+                }
+                // Fill in any missing types, and constrain them to be equal to the expected type.
+                expr.trait_type_arguments
+                    .resize_with(sym.trait_type_arguments.len(), || {
+                        self.fresh_meta_variable()
+                    });
+                for (parameter, argument) in sym
+                    .trait_type_arguments
+                    .iter()
+                    .zip(expr.trait_type_arguments.iter())
+                {
+                    self.constrain_eq(parameter, argument, expr.span, expr.span);
+                }
+                expr.method_type_arguments
+                    .resize_with(sym.method_type_arguments.len(), || {
+                        self.fresh_meta_variable()
+                    });
+                for (parameter, argument) in sym
+                    .method_type_arguments
+                    .iter()
+                    .zip(expr.method_type_arguments.iter())
+                {
+                    self.constrain_eq(parameter, argument, expr.span, expr.span);
+                }
+
+                let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
+                let expected_signature = self.cc.hir_function_type(expectation, expected_args);
+                self.constrain_eq(
+                    expected_signature,
+                    expr.callee.ty(),
+                    expr.span,
+                    expr.callee.span(),
+                );
+                self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
+                self.constrain_instance(
+                    sym.trait_name,
+                    sym.trait_name_span,
+                    expr.trait_type_arguments.to_vec(),
+                    expectation,
+                );
+                Ok(())
             }
         }
     }
@@ -812,12 +880,14 @@ impl<'hir> TypingContext<'hir> {
                 name: constraint.name.to_owned(),
                 span: constraint.name_span,
             }))?;
-        // At this point in time, there may be metavariables left over here, but that is ok.
         let substitutions = constraint
             .type_arguments
             .iter()
             .map(|t| self.substitute(t))
             .collect::<HirResult<Vec<_>>>()?;
+        // Ensure that there exists some instance of the trait that partially conforms to the given
+        // type arguments. By partially conforming, we mean that the parameters are either an exact
+        // match, or a meta type.
         self.signature
             .query_trait_instance_by_name_and_partial_type_arguments(
                 constraint.name,
