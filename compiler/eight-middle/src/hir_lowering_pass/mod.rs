@@ -6,7 +6,7 @@ use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirModule};
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::hir::{HirGroupExpr, HirTy};
 use crate::mir::MirModule;
-use crate::mir::MirType;
+use crate::mir::MirTy;
 use crate::mir::MirValueId;
 use crate::mir_builder::{MirFunctionBuilder, MirModuleContext};
 use crate::mir_error::MirResult;
@@ -41,7 +41,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 .iter()
                 .map(|p| self.visit_ty(p.ty))
                 .collect::<MirResult<Vec<_>>>()?;
-            let MirType::Function(ty) = self.cc.mir_function_type(return_type, parameters) else {
+            let MirTy::Function(ty) = self.cc.mir_function_type(return_type, parameters) else {
                 ice!("didnt get function type from arena");
             };
             let name = self.cc.intern_str(function.name);
@@ -220,7 +220,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let value_ty = b.data().get_value_type(*id);
         let expected_ty = self.visit_ty(expr.ty)?;
         // If it is a pointer type, we automatically dereference it.
-        if let MirType::Pointer(_) = value_ty {
+        if let MirTy::Pointer(_) = value_ty {
             let load = b.build_load(cx, *id, expected_ty, None);
             return Ok(load);
         }
@@ -280,7 +280,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ///
     /// The type system in MIR is substantially smaller and simpler than the language and HIR. This
     /// means we can do a lot of shortcutting here.
-    pub fn visit_ty(&self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirType<'mir>> {
+    pub fn visit_ty(&self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirTy<'mir>> {
         match node {
             HirTy::Integer32(_) => Ok(self.cc.mir_i32_type()),
             HirTy::Boolean(_) => Ok(self.cc.mir_bool_type()),

@@ -56,9 +56,9 @@ impl<'mir> MirModule<'mir> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct MirTypeId(u64);
+pub struct MirTyId(u64);
 
-impl MirTypeId {
+impl MirTyId {
     pub fn compute_i32_type_id() -> Self {
         let mut hasher = DefaultHasher::new();
         0x00.hash(&mut hasher);
@@ -77,7 +77,7 @@ impl MirTypeId {
         Self(hasher.finish())
     }
 
-    pub fn compute_function_type_id(return_type: &MirTypeId, parameters: &[MirTypeId]) -> Self {
+    pub fn compute_function_type_id(return_type: &MirTyId, parameters: &[MirTyId]) -> Self {
         let mut hasher = DefaultHasher::new();
         (0x10, return_type, parameters).hash(&mut hasher);
         Self(hasher.finish())
@@ -90,21 +90,21 @@ impl MirTypeId {
     }
 }
 
-impl<'mir> From<&'mir MirType<'mir>> for MirTypeId {
-    fn from(ty: &'mir MirType<'mir>) -> Self {
+impl<'mir> From<&'mir MirTy<'mir>> for MirTyId {
+    fn from(ty: &'mir MirTy<'mir>) -> Self {
         match ty {
-            MirType::Integer32(_) => MirTypeId::compute_i32_type_id(),
-            MirType::Bool(_) => MirTypeId::compute_bool_type_id(),
-            MirType::Void(_) => MirTypeId::compute_void_type_id(),
-            MirType::Pointer(_) => MirTypeId::compute_pointer_type_id(),
-            MirType::Function(ty) => {
+            MirTy::Integer32(_) => MirTyId::compute_i32_type_id(),
+            MirTy::Bool(_) => MirTyId::compute_bool_type_id(),
+            MirTy::Void(_) => MirTyId::compute_void_type_id(),
+            MirTy::Pointer(_) => MirTyId::compute_pointer_type_id(),
+            MirTy::Function(ty) => {
                 let parameters = ty
                     .parameters
                     .iter()
-                    .map(|p| MirTypeId::from(*p))
+                    .map(|p| MirTyId::from(*p))
                     .collect::<Vec<_>>();
-                MirTypeId::compute_function_type_id(
-                    &MirTypeId::from(ty.return_type),
+                MirTyId::compute_function_type_id(
+                    &MirTyId::from(ty.return_type),
                     parameters.as_slice(),
                 )
             }
@@ -113,7 +113,7 @@ impl<'mir> From<&'mir MirType<'mir>> for MirTypeId {
 }
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-pub enum MirType<'mir> {
+pub enum MirTy<'mir> {
     Integer32(MirInteger32Type),
     Bool(MirBoolType),
     Void(MirVoidType),
@@ -121,18 +121,18 @@ pub enum MirType<'mir> {
     Function(MirFunctionType<'mir>),
 }
 
-impl MirType<'_> {
+impl MirTy<'_> {
     /// Get the size of the type in bytes.
     ///
     /// This is currently hard-coded for x86-64 and will need to be populated with target info once
     /// that has been added.
     pub fn get_size(&self) -> usize {
         match self {
-            MirType::Integer32(_) => 32,
-            MirType::Bool(_) => 1,
-            MirType::Void(_) => 0,
-            MirType::Pointer(_) => 64,
-            MirType::Function(_) => unimplemented!(),
+            MirTy::Integer32(_) => 32,
+            MirTy::Bool(_) => 1,
+            MirTy::Void(_) => 0,
+            MirTy::Pointer(_) => 64,
+            MirTy::Function(_) => unimplemented!(),
         }
     }
 }
@@ -151,8 +151,8 @@ pub struct MirPointerType;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub struct MirFunctionType<'mir> {
-    pub return_type: &'mir MirType<'mir>,
-    pub parameters: Vec<&'mir MirType<'mir>>,
+    pub return_type: &'mir MirTy<'mir>,
+    pub parameters: Vec<&'mir MirTy<'mir>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -174,14 +174,14 @@ pub enum MirValue<'mir> {
 #[derive(Debug)]
 pub struct MirConstantInteger32<'mir> {
     pub value_id: MirValueId,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
     pub value: i32,
 }
 
 #[derive(Debug)]
 pub struct MirConstantBool<'mir> {
     pub value_id: MirValueId,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
     pub value: bool,
 }
 
@@ -189,7 +189,7 @@ pub struct MirConstantBool<'mir> {
 pub struct MirArgument<'mir> {
     pub value_id: MirValueId,
     pub name: &'mir str,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -217,7 +217,7 @@ pub enum MirInstruction<'mir> {
 }
 
 impl<'mir> MirInstruction<'mir> {
-    pub fn ty(&self) -> &'mir MirType<'mir> {
+    pub fn ty(&self) -> &'mir MirTy<'mir> {
         match self {
             MirInstruction::Alloca(i) => i.ty,
             MirInstruction::Load(i) => i.ty,
@@ -239,9 +239,9 @@ pub struct MirAllocaInstruction<'mir> {
     pub value_id: MirValueId,
     pub name: &'mir str,
     /// The type of the instruction itself. This is always the opaque pointer type for `mem.alloca`.
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
     /// The number (in bits) to allocate.
-    pub alloc_ty: &'mir MirType<'mir>,
+    pub alloc_ty: &'mir MirTy<'mir>,
 }
 
 /// The `mem.load` instruction.
@@ -251,7 +251,7 @@ pub struct MirLoadInstruction<'mir> {
     pub inst_id: MirInstructionId,
     pub name: &'mir str,
     /// The type being loaded
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
     pub src: MirValueId,
 }
 
@@ -262,9 +262,9 @@ pub struct MirStoreInstruction<'mir> {
     pub name: &'mir str,
     pub value: MirValueId,
     /// The result of a store is always void
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
     pub dest: MirValueId,
-    pub dest_ty: &'mir MirType<'mir>,
+    pub dest_ty: &'mir MirTy<'mir>,
 }
 
 /// The `fn.call` instruction.
@@ -276,7 +276,7 @@ pub struct MirCallInstruction<'mir> {
     pub callee: MirValueId,
     pub arguments: Vec<MirValueId>,
     /// The return type of the function.
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
 }
 
 /// The `arith.add` instruction.
@@ -293,7 +293,7 @@ pub struct MirAddInstruction<'mir> {
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
 }
 
 /// The `arith.sub` instruction.
@@ -306,7 +306,7 @@ pub struct MirSubInstruction<'mir> {
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
 }
 
 /// The `arith.mul` instruction.
@@ -319,7 +319,7 @@ pub struct MirMulInstruction<'mir> {
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
 }
 
 /// The `arith.div` instruction.
@@ -332,7 +332,7 @@ pub struct MirDivInstruction<'mir> {
     pub name: &'mir str,
     pub lhs: MirValueId,
     pub rhs: MirValueId,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
 }
 
 /// The `ptr.add` instruction.
@@ -344,7 +344,7 @@ pub struct MirPtrAddInstruction<'mir> {
     pub inst_id: MirInstructionId,
     pub value_id: MirValueId,
     pub name: &'mir str,
-    pub ty: &'mir MirType<'mir>,
+    pub ty: &'mir MirTy<'mir>,
     pub ptr: MirValueId,
     pub offset: MirValueId,
 }
@@ -369,7 +369,7 @@ impl<'mir> MirFunctionData<'mir> {
     }
 
     /// Get the type the instruction evaluates to.
-    pub fn get_instruction_type(&self, id: MirInstructionId) -> &'mir MirType<'mir> {
+    pub fn get_instruction_type(&self, id: MirInstructionId) -> &'mir MirTy<'mir> {
         self.get_instruction(id).ty()
     }
 
@@ -398,7 +398,7 @@ impl<'mir> MirFunctionData<'mir> {
     /// Get the type of the value with the given id.
     ///
     /// This function panics if the value does not exist.
-    pub fn get_value_type(&self, id: MirValueId) -> &'mir MirType<'mir> {
+    pub fn get_value_type(&self, id: MirValueId) -> &'mir MirTy<'mir> {
         match self.get_value(id) {
             MirValue::ConstantInteger32(i) => i.ty,
             MirValue::ConstantBool(i) => i.ty,

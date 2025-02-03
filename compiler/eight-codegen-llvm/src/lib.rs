@@ -5,7 +5,7 @@ use eight_diagnostics::ice;
 use eight_middle::mir::{
     MirAllocaInstruction, MirBasicBlock, MirBasicBlockId, MirCallInstruction, MirConstantBool,
     MirConstantInteger32, MirFunction, MirFunctionData, MirFunctionType, MirInstruction,
-    MirInstructionId, MirLoadInstruction, MirModule, MirModuleData, MirStoreInstruction, MirType,
+    MirInstructionId, MirLoadInstruction, MirModule, MirModuleData, MirStoreInstruction, MirTy,
     MirValue, MirValueId,
 };
 use inkwell::basic_block::BasicBlock;
@@ -289,18 +289,18 @@ impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
             .collect::<Vec<_>>()
             .into_boxed_slice();
         match node.return_type {
-            MirType::Void(_) => self.context.void_type().fn_type(&arguments, false),
+            MirTy::Void(_) => self.context.void_type().fn_type(&arguments, false),
             _ => self.visit_type(node.return_type).fn_type(&arguments, false),
         }
     }
 
     /// Translate a MIR type into an LLVM type.
-    pub fn visit_type(&mut self, node: &'mir MirType<'mir>) -> BasicTypeEnum<'l> {
+    pub fn visit_type(&mut self, node: &'mir MirTy<'mir>) -> BasicTypeEnum<'l> {
         match node {
-            MirType::Integer32(_) => self.context.i32_type().into(),
-            MirType::Bool(_) => self.context.bool_type().into(),
-            MirType::Pointer(_) => self.context.ptr_type(AddressSpace::default()).into(),
-            MirType::Function(_) | MirType::Void(_) => unimplemented!("cannot lower this type"),
+            MirTy::Integer32(_) => self.context.i32_type().into(),
+            MirTy::Bool(_) => self.context.bool_type().into(),
+            MirTy::Pointer(_) => self.context.ptr_type(AddressSpace::default()).into(),
+            MirTy::Function(_) | MirTy::Void(_) => unimplemented!("cannot lower this type"),
         }
     }
 }
