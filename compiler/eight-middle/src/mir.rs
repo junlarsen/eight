@@ -96,7 +96,7 @@ impl<'mir> From<&'mir MirType<'mir>> for MirTypeId {
             MirType::Integer32(_) => MirTypeId::compute_i32_type_id(),
             MirType::Bool(_) => MirTypeId::compute_bool_type_id(),
             MirType::Void(_) => MirTypeId::compute_void_type_id(),
-            MirType::Pointer(ty) => MirTypeId::compute_pointer_type_id(),
+            MirType::Pointer(_) => MirTypeId::compute_pointer_type_id(),
             MirType::Function(ty) => {
                 let parameters = ty
                     .parameters
