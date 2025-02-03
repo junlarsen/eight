@@ -25,7 +25,10 @@ impl<'a> MirModuleTextualPass<'a> {
         String::from_utf8(w).unwrap()
     }
 
-    pub fn visit_module<'mir: 'a>(&'a self, node: &'mir MirModule<'mir>) -> DocBuilder<Arena<'a>> {
+    pub fn visit_module<'mir: 'a>(
+        &'a self,
+        node: &'mir MirModule<'mir>,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("mir_module")
             .append(self.arena.space())
@@ -64,7 +67,7 @@ impl<'a> MirModuleTextualPass<'a> {
         &'a self,
         _: &'mir MirModuleData<'mir>,
         node: &'mir MirFunction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("mir_extern_function")
             .append(self.arena.space())
@@ -86,7 +89,7 @@ impl<'a> MirModuleTextualPass<'a> {
         &'a self,
         mcx: &'mir MirModuleData<'mir>,
         node: &'mir MirFunction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("mir_function")
             .append(self.arena.space())
@@ -126,7 +129,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirBasicBlock<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text(node.name)
             .append(self.arena.text(":"))
@@ -151,7 +154,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         match node {
             MirInstruction::Alloca(i) => self.visit_alloca_instruction(mcx, fcx, i),
             MirInstruction::Store(i) => self.visit_store_instruction(mcx, fcx, i),
@@ -170,7 +173,7 @@ impl<'a> MirModuleTextualPass<'a> {
         _: &'mir MirModuleData<'mir>,
         _: &'mir MirFunctionData<'mir>,
         node: &'mir MirAllocaInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
@@ -185,7 +188,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirStoreInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("mem.store")
             .append(self.arena.space())
@@ -200,7 +203,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirCallInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
@@ -227,7 +230,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirLoadInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
@@ -245,7 +248,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirAddInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
@@ -265,7 +268,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirSubInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
@@ -285,7 +288,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirMulInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
@@ -305,7 +308,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirDivInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("%")
             .append(self.arena.text(node.name))
@@ -325,7 +328,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirPtrAddInstruction<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("ptr.add")
             .append(self.arena.space())
@@ -342,7 +345,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirValue<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         match node {
             MirValue::ConstantInteger32(v) => self.visit_constant_integer_value(mcx, fcx, v),
             MirValue::ConstantBool(v) => self.visit_constant_bool_value(mcx, fcx, v),
@@ -357,7 +360,7 @@ impl<'a> MirModuleTextualPass<'a> {
         _: &'mir MirModuleData<'mir>,
         _: &'mir MirFunctionData<'mir>,
         node: &'mir MirConstantInteger32<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_type(node.ty)
             .append(self.arena.text(" "))
             .append(self.arena.text(node.value.to_string()))
@@ -368,7 +371,7 @@ impl<'a> MirModuleTextualPass<'a> {
         _: &'mir MirModuleData<'mir>,
         _: &'mir MirFunctionData<'mir>,
         node: &'mir MirConstantBool<'mir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_type(node.ty)
             .append(self.arena.text(" "))
             .append(self.arena.text(node.value.to_string()))
@@ -379,7 +382,7 @@ impl<'a> MirModuleTextualPass<'a> {
         _: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
         node: &'mir MirInstructionId,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_type(fcx.get_instruction(*node).ty())
             .append(self.arena.space())
             .append(self.arena.text("%"))
@@ -391,7 +394,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         _: &'mir MirFunctionData<'mir>,
         node: &'mir MirFunctionId,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text(
             mcx.get_function_by_id(*node)
                 .expect("missing function")
@@ -399,7 +402,7 @@ impl<'a> MirModuleTextualPass<'a> {
         )
     }
 
-    pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirType) -> DocBuilder<Arena<'a>> {
+    pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirType) -> DocBuilder<'a, Arena<'a>> {
         match ty {
             MirType::Integer32(_) => self.arena.text("i32"),
             MirType::Bool(_) => self.arena.text("bool"),
