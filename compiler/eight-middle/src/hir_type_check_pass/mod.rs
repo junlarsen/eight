@@ -246,10 +246,11 @@ impl HirModuleTypeCheckerPass {
 
         for (field_name, field_declaration) in node.signature.fields.iter() {
             let field_ty = node.instantiated_fields.get(field_name).unwrap_or_else(|| {
-                ice!(format!(
+                ice!(
                     "field {} not found in struct type {}",
-                    field_name, node.name
-                ))
+                    field_name,
+                    node.name
+                )
             });
             let is_directly_self_referential =
                 matches!(field_ty, HirTy::Nominal(n) if std::ptr::eq(n.name, node.name));
@@ -325,7 +326,7 @@ impl HirModuleTypeCheckerPass {
             let r#trait = cx
                 .signature
                 .query_trait_by_name(node.name)
-                .unwrap_or_else(|| ice!(format!("trait {} not found", node.name)));
+                .unwrap_or_else(|| ice!("trait {} not found", node.name));
 
             // This is an ownership workaround. Ideally this should be checked above the loop, but
             // works here, because instances are syntactically required to have at least one type
@@ -342,10 +343,10 @@ impl HirModuleTypeCheckerPass {
                 ));
             }
             let Some(type_parameter) = r#trait.type_parameters.get(argument_index) else {
-                ice!(format!(
+                ice!(
                     "type parameter at position {} did not exist after check",
                     argument_index
-                ));
+                );
             };
             // Hack around the borrow checker. This returns the exact same value, but the lifetime
             // of the reference is not tied to `r#trait` anymore.

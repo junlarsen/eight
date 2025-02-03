@@ -675,10 +675,10 @@ impl<'hir> HirInstanceSignature<'hir> {
         trait_sig: &'hir HirTraitSignature<'hir>,
     ) -> Vec<&'hir HirTy<'hir>> {
         let Some(function) = self.methods.get(method) else {
-            ice!(format!(
+            ice!(
                 "attempted to find output types for non-existent method {}",
                 method
-            ));
+            );
         };
         let mut outputs = HashSet::<StableRef<'hir, HirTy<'hir>>>::new();
         fn visit<'hir>(

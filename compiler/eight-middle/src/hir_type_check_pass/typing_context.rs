@@ -330,10 +330,11 @@ impl<'hir> TypingContext<'hir> {
             .signature
             .query_trait_and_signature_by_name(sym.trait_name, sym.method_name)
         else {
-            ice!(format!(
+            ice!(
                 "called infer() on '{}::{}' that doesn't exist in the context",
-                sym.trait_name, sym.method_name
-            ));
+                sym.trait_name,
+                sym.method_name
+            );
         };
         // Instantiate all the generic types present on both the trait and the method.
         let mut instantiations = HashMap::new();
@@ -958,10 +959,10 @@ impl<'hir> TypingContext<'hir> {
             .methods
             .get(&constraint.method_name)
             .unwrap_or_else(|| {
-                ice!(format!(
+                ice!(
                     "trait instance does not have method {}",
                     constraint.method_name
-                ))
+                )
             });
         let _ = constraint
             .method_type_arguments
