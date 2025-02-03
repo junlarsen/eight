@@ -56,42 +56,42 @@ impl<'be> CompileContext<'be> {
 
 /// Implementation block for the HIR components.
 impl<'be> CompileContext<'be> {
-    pub fn hir_pointer_type(&'be self, ty: &'be HirTy) -> &'be HirTy {
+    pub fn hir_pointer_type(&'be self, ty: &'be HirTy<'be>) -> &'be HirTy<'be> {
         let id = HirTyId::compute_pointer_ty_id(&HirTyId::from(ty));
         self.hir_types
             .get_interned(id, HirTy::Pointer(HirPointerTy { inner: ty }))
     }
 
-    pub fn hir_nominal_type(&'be self, name: &'be str, name_span: Span) -> &'be HirTy {
+    pub fn hir_nominal_type(&'be self, name: &'be str, name_span: Span) -> &'be HirTy<'be> {
         let id = HirTyId::compute_nominal_ty_id(name);
         self.hir_types
             .get_interned(id, HirTy::Nominal(HirNominalTy { name, name_span }))
     }
 
-    pub fn hir_integer32_type(&'be self) -> &'be HirTy {
+    pub fn hir_integer32_type(&'be self) -> &'be HirTy<'be> {
         let id = HirTyId::compute_integer32_ty_id();
         self.hir_types
             .get_interned(id, HirTy::Integer32(HirInteger32Ty {}))
     }
 
-    pub fn hir_boolean_type(&'be self) -> &'be HirTy {
+    pub fn hir_boolean_type(&'be self) -> &'be HirTy<'be> {
         let id = HirTyId::compute_boolean_ty_id();
         self.hir_types
             .get_interned(id, HirTy::Boolean(HirBooleanTy {}))
     }
 
-    pub fn hir_unit_type(&'be self) -> &'be HirTy {
+    pub fn hir_unit_type(&'be self) -> &'be HirTy<'be> {
         let id = HirTyId::compute_unit_ty_id();
         self.hir_types.get_interned(id, HirTy::Unit(HirUnitTy {}))
     }
 
-    pub fn hir_uninitialized_type(&'be self) -> &'be HirTy {
+    pub fn hir_uninitialized_type(&'be self) -> &'be HirTy<'be> {
         let id = HirTyId::compute_uninitialized_ty_id();
         self.hir_types
             .get_interned(id, HirTy::Uninitialized(HirUninitializedTy {}))
     }
 
-    pub fn hir_variable_type(&'be self, depth: u32, index: u32) -> &'be HirTy {
+    pub fn hir_variable_type(&'be self, depth: u32, index: u32) -> &'be HirTy<'be> {
         let id = HirTyId::compute_variable_ty_id(depth, index);
         self.hir_types
             .get_interned(id, HirTy::Variable(HirVariableTy { depth, index }))
@@ -101,7 +101,7 @@ impl<'be> CompileContext<'be> {
         &'be self,
         return_type: &'be HirTy,
         parameters: Vec<&'be HirTy>,
-    ) -> &'be HirTy {
+    ) -> &'be HirTy<'be> {
         let parameter_ids = parameters
             .iter()
             .map(|p| HirTyId::from(*p))
@@ -125,23 +125,23 @@ impl<'be> CompileContext<'be> {
 }
 
 impl<'be> CompileContext<'be> {
-    pub fn mir_i32_type(&'be self) -> &'be MirType {
+    pub fn mir_i32_type(&'be self) -> &'be MirType<'be> {
         let id = MirTypeId::compute_i32_type_id();
         self.mir_types
             .get_interned(id, MirType::Integer32(MirInteger32Type))
     }
 
-    pub fn mir_bool_type(&'be self) -> &'be MirType {
+    pub fn mir_bool_type(&'be self) -> &'be MirType<'be> {
         let id = MirTypeId::compute_bool_type_id();
         self.mir_types.get_interned(id, MirType::Bool(MirBoolType))
     }
 
-    pub fn mir_void_type(&'be self) -> &'be MirType {
+    pub fn mir_void_type(&'be self) -> &'be MirType<'be> {
         let id = MirTypeId::compute_void_type_id();
         self.mir_types.get_interned(id, MirType::Void(MirVoidType))
     }
 
-    pub fn mir_pointer_type(&'be self) -> &'be MirType {
+    pub fn mir_pointer_type(&'be self) -> &'be MirType<'be> {
         let id = MirTypeId::compute_pointer_type_id();
         self.mir_types
             .get_interned(id, MirType::Pointer(MirPointerType {}))
@@ -149,8 +149,8 @@ impl<'be> CompileContext<'be> {
 
     pub fn mir_function_type(
         &'be self,
-        return_type: &'be MirType,
-        parameters: Vec<&'be MirType>,
+        return_type: &'be MirType<'be>,
+        parameters: Vec<&'be MirType<'be>>,
     ) -> &'be MirType<'be> {
         let return_type_id = MirTypeId::from(return_type);
         let parameters_ids = parameters
