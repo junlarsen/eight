@@ -75,6 +75,20 @@ macro_rules! assert_matches {
             }
         }
     }};
+    ($expr:expr, $ty:pat if $cond:expr => $output:expr) => {
+        match $expr {
+            $ty if $cond => $output,
+            _ => {
+                assert!(
+                    false,
+                    "assertion failed: expected {:?} to match {:?}",
+                    $expr,
+                    stringify!($ty)
+                );
+                unreachable!();
+            }
+        }
+    };
 }
 
 #[cfg(test)]
@@ -111,5 +125,22 @@ mod tests {
         assert_some!(option);
         let option: Option<i32> = Some(42);
         assert_none!(option);
+    }
+
+    #[test]
+    fn test_assert_matches() {
+        let option = Some(42);
+        let v = assert_matches!(option, Some(v) => v);
+        assert_eq!(v, 42);
+        let v = assert_matches!(option, Some(x) if x == 42 => x);
+        assert_eq!(v, 42);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_assert_matches_fail() {
+        let option = Some(42);
+        let v = assert_matches!(option, Some(v) if v == 41 => v);
+        assert_eq!(v, 42);
     }
 }
