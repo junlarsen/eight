@@ -41,7 +41,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_module<'hir: 'a>(
         &'a self,
         module: &'hir HirModule<'hir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("hir_module")
             .append(self.arena.space())
@@ -167,7 +167,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_function<'hir: 'a>(
         &'a self,
         function: &'hir HirFunction,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text(if function.linkage_type == LinkageType::Eight {
                 "fn"
@@ -236,7 +236,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_instance<'hir: 'a>(
         &'a self,
         instance: &'hir HirInstance<'hir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("instance")
             .append(self.arena.space())
@@ -273,7 +273,7 @@ impl<'a> HirModuleTextualPass<'a> {
         &'a self,
         name: &'hir str,
         signature: &'hir HirFunctionSignature<'hir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("fn")
             .append(self.arena.space())
@@ -291,7 +291,7 @@ impl<'a> HirModuleTextualPass<'a> {
         &'a self,
         name: &'hir str,
         _: &'hir HirTypeSignature<'hir>,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("type")
             .append(self.arena.space())
@@ -303,7 +303,7 @@ impl<'a> HirModuleTextualPass<'a> {
         &'a self,
         name: &'hir str,
         ty: &'hir HirStructSignature,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("struct")
             .append(self.arena.space())
@@ -337,7 +337,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_function_parameter_list<'hir: 'a>(
         &'a self,
         parameters: &'hir [&'hir HirFunctionParameterSignature],
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("(")
             .append(self.arena.intersperse(
@@ -358,7 +358,7 @@ impl<'a> HirModuleTextualPass<'a> {
         &'a self,
         name: &'hir str,
         sig: &'hir HirInstanceSignature,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("instance")
             .append(self.arena.space())
@@ -393,7 +393,7 @@ impl<'a> HirModuleTextualPass<'a> {
         &'a self,
         name: &'hir str,
         sig: &'hir HirTraitSignature,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("trait")
             .append(self.arena.space())
@@ -422,7 +422,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_type_parameter_signature<'hir: 'a>(
         &'a self,
         parameters: &[&'hir HirTypeParameterSignature],
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         if parameters.is_empty() {
             return self.arena.nil();
         }
@@ -435,7 +435,7 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.text(">"))
     }
 
-    pub fn visit_stmt<'hir: 'a>(&'a self, stmt: &'hir HirStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_stmt<'hir: 'a>(&'a self, stmt: &'hir HirStmt) -> DocBuilder<'a, Arena<'a>> {
         match stmt {
             HirStmt::Let(s) => self.visit_let_stmt(s),
             HirStmt::Return(s) => self.visit_return_stmt(s),
@@ -448,7 +448,7 @@ impl<'a> HirModuleTextualPass<'a> {
         }
     }
 
-    pub fn visit_let_stmt<'hir: 'a>(&'a self, stmt: &'hir HirLetStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_let_stmt<'hir: 'a>(&'a self, stmt: &'hir HirLetStmt) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("let")
             .append(self.arena.space())
@@ -466,7 +466,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_return_stmt<'hir: 'a>(
         &'a self,
         stmt: &'hir HirReturnStmt,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         let mut doc = self.arena.text("return");
         if let Some(value) = &stmt.value {
             doc = doc
@@ -477,7 +477,10 @@ impl<'a> HirModuleTextualPass<'a> {
         doc
     }
 
-    pub fn visit_loop_stmt<'hir: 'a>(&'a self, stmt: &'hir HirLoopStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_loop_stmt<'hir: 'a>(
+        &'a self,
+        stmt: &'hir HirLoopStmt,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("while")
             .append(self.arena.space())
@@ -500,7 +503,7 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.text("}"))
     }
 
-    pub fn visit_if_stmt<'hir: 'a>(&'a self, stmt: &'hir HirIfStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_if_stmt<'hir: 'a>(&'a self, stmt: &'hir HirIfStmt) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("if")
             .append(self.arena.space())
@@ -538,19 +541,25 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.text("}"))
     }
 
-    pub fn visit_break_stmt(&'a self, _: &HirBreakStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_break_stmt(&'a self, _: &HirBreakStmt) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text("break").append(self.arena.text(";"))
     }
 
-    pub fn visit_continue_stmt(&'a self, _: &HirContinueStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_continue_stmt(&'a self, _: &HirContinueStmt) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text("continue").append(self.arena.text(";"))
     }
 
-    pub fn visit_expr_stmt<'hir: 'a>(&'a self, stmt: &'hir HirExprStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_expr_stmt<'hir: 'a>(
+        &'a self,
+        stmt: &'hir HirExprStmt,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_expr(&stmt.expr).append(self.arena.text(";"))
     }
 
-    pub fn visit_block_stmt<'hir: 'a>(&'a self, stmt: &'hir HirBlockStmt) -> DocBuilder<Arena<'a>> {
+    pub fn visit_block_stmt<'hir: 'a>(
+        &'a self,
+        stmt: &'hir HirBlockStmt,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("{")
             .append(
@@ -567,7 +576,7 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.text("}"))
     }
 
-    pub fn visit_expr<'hir: 'a>(&'a self, expr: &'hir HirExpr) -> DocBuilder<Arena<'a>> {
+    pub fn visit_expr<'hir: 'a>(&'a self, expr: &'hir HirExpr) -> DocBuilder<'a, Arena<'a>> {
         let inner = match expr {
             HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(e),
@@ -595,21 +604,21 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_integer_literal_expr<'hir: 'a>(
         &'a self,
         expr: &HirIntegerLiteralExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text(expr.value.to_string())
     }
 
     pub fn visit_boolean_literal_expr<'hir: 'a>(
         &'a self,
         expr: &HirBooleanLiteralExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text(expr.value.to_string())
     }
 
     pub fn visit_assign_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirAssignExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_expr(&expr.lhs)
             .append(self.arena.text(" = "))
             .append(self.visit_expr(&expr.rhs))
@@ -618,14 +627,14 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_reference_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirReferenceExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text(expr.name)
     }
 
     pub fn visit_callable_reference_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirCallableReferenceExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         match &expr.symbol {
             HirCallableSymbol::Function(s) => self
                 .arena
@@ -661,7 +670,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_constant_index_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirConstantIndexExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_expr(&expr.origin)
             .append(self.arena.text("."))
             .append(expr.index)
@@ -670,14 +679,17 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_offset_index_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirOffsetIndexExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_expr(&expr.origin)
             .append(self.arena.text("["))
             .append(self.visit_expr(&expr.index))
             .append(self.arena.text("]"))
     }
 
-    pub fn visit_call_expr<'hir: 'a>(&'a self, expr: &'hir HirCallExpr) -> DocBuilder<Arena<'a>> {
+    pub fn visit_call_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirCallExpr,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_expr(&expr.callee)
             .append(self.arena.text("("))
             .append(self.arena.intersperse(
@@ -690,7 +702,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_construct_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirConstructExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("new")
             .append(self.arena.space())
@@ -718,7 +730,7 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_construct_expr_argument<'hir: 'a>(
         &'a self,
         expr: &'hir HirConstructExprArgument,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text(expr.field)
             .append(self.arena.text(":"))
@@ -727,7 +739,10 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.text(","))
     }
 
-    pub fn visit_group_expr<'hir: 'a>(&'a self, expr: &'hir HirGroupExpr) -> DocBuilder<Arena<'a>> {
+    pub fn visit_group_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirGroupExpr,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("(")
             .append(self.visit_expr(&expr.inner))
@@ -737,15 +752,18 @@ impl<'a> HirModuleTextualPass<'a> {
     pub fn visit_address_of_expr<'hir: 'a>(
         &'a self,
         expr: &'hir HirAddressOfExpr,
-    ) -> DocBuilder<Arena<'a>> {
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text("&").append(self.visit_expr(&expr.inner))
     }
 
-    pub fn visit_deref_expr<'hir: 'a>(&'a self, expr: &'hir HirDerefExpr) -> DocBuilder<Arena<'a>> {
+    pub fn visit_deref_expr<'hir: 'a>(
+        &'a self,
+        expr: &'hir HirDerefExpr,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text("*").append(self.visit_expr(&expr.inner))
     }
 
-    pub fn visit_ty<'hir: 'a>(&'a self, ty: &'hir HirTy) -> DocBuilder<Arena<'a>> {
+    pub fn visit_ty<'hir: 'a>(&'a self, ty: &'hir HirTy) -> DocBuilder<'a, Arena<'a>> {
         match ty {
             HirTy::Integer32(_) => self.arena.text("i32"),
             HirTy::Boolean(_) => self.arena.text("bool"),
@@ -759,7 +777,10 @@ impl<'a> HirModuleTextualPass<'a> {
         }
     }
 
-    pub fn visit_variable_ty<'hir: 'a>(&'a self, ty: &'hir HirVariableTy) -> DocBuilder<Arena<'a>> {
+    pub fn visit_variable_ty<'hir: 'a>(
+        &'a self,
+        ty: &'hir HirVariableTy,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("$")
             .append(self.arena.text(ty.depth.to_string()))
@@ -767,7 +788,10 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.text(ty.index.to_string()))
     }
 
-    pub fn visit_function_ty<'hir: 'a>(&'a self, ty: &'hir HirFunctionTy) -> DocBuilder<Arena<'a>> {
+    pub fn visit_function_ty<'hir: 'a>(
+        &'a self,
+        ty: &'hir HirFunctionTy,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("fn")
             .append(self.arena.text("("))
@@ -780,19 +804,25 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.visit_ty(ty.return_type))
     }
 
-    pub fn visit_nominal_ty<'hir: 'a>(&'a self, ty: &'hir HirNominalTy) -> DocBuilder<Arena<'a>> {
+    pub fn visit_nominal_ty<'hir: 'a>(
+        &'a self,
+        ty: &'hir HirNominalTy,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text(ty.name)
     }
 
-    pub fn visit_pointer_ty<'hir: 'a>(&'a self, ty: &'hir HirPointerTy) -> DocBuilder<Arena<'a>> {
+    pub fn visit_pointer_ty<'hir: 'a>(
+        &'a self,
+        ty: &'hir HirPointerTy,
+    ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text("*").append(self.visit_ty(ty.inner))
     }
 
-    pub fn visit_uninitialized_ty<'hir: 'a>(&'a self, _: &HirTy) -> DocBuilder<Arena<'a>> {
+    pub fn visit_uninitialized_ty<'hir: 'a>(&'a self, _: &HirTy) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text("_")
     }
 
-    pub fn visit_meta_ty<'hir: 'a>(&'a self, ty: &'hir HirMetaTy) -> DocBuilder<Arena<'a>> {
+    pub fn visit_meta_ty<'hir: 'a>(&'a self, ty: &'hir HirMetaTy) -> DocBuilder<'a, Arena<'a>> {
         self.arena
             .text("?")
             .append(self.arena.text(ty.index.to_string()))
