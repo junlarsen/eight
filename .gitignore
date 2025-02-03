@@ -2,3 +2,6 @@
 /tests/**/Output
 
 .lit_test_times.txt
+
+# Scratch development file, if necessary
+scratch
