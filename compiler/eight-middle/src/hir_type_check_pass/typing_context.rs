@@ -428,14 +428,7 @@ impl<'hir> TypingContext<'hir> {
                         },
                     ));
                 }
-                // Constrain the argument types to the instantiated types of the function
-                for (parameter, argument) in sym
-                    .instantiated_call_parameters
-                    .iter()
-                    .zip(expr.arguments.iter())
-                {
-                    self.constrain_eq(parameter, argument.ty(), argument.span(), argument.span());
-                }
+
                 // Fill in any missing types, and constrain them to be equal to the expected type.
                 expr.method_type_arguments
                     .resize_with(sym.type_arguments.len(), || self.fresh_meta_variable());
@@ -445,6 +438,15 @@ impl<'hir> TypingContext<'hir> {
                     .zip(expr.method_type_arguments.iter())
                 {
                     self.constrain_eq(parameter, argument, expr.span, expr.span);
+                }
+
+                // Constrain the argument types to the instantiated types of the function
+                for (parameter, argument) in sym
+                    .instantiated_call_parameters
+                    .iter()
+                    .zip(expr.arguments.iter())
+                {
+                    self.constrain_eq(parameter, argument.ty(), argument.span(), argument.span());
                 }
 
                 let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
@@ -887,8 +889,8 @@ impl<'hir> TypingContext<'hir> {
                 let constraint = EqualityConstraint {
                     expectation: struct_field.ty,
                     expectation_loc: struct_field.span,
-                    actual_loc: n.name_span,
                     actual: constraint.expectation,
+                    actual_loc: n.name_span,
                 };
                 self.unify_eq(constraint)?;
                 Ok(())
@@ -948,6 +950,12 @@ impl<'hir> TypingContext<'hir> {
             .iter()
             .map(|t| self.substitute(t))
             .collect::<HirResult<Vec<_>>>()?;
+        let method_substitutions = constraint
+            .method_type_arguments
+            .iter()
+            .map(|t| self.substitute(t))
+            .collect::<HirResult<Vec<_>>>()?;
+
         let instance = self
             .signature
             .query_trait_instance_by_name_and_partial_type_arguments(
@@ -964,11 +972,22 @@ impl<'hir> TypingContext<'hir> {
                     constraint.method_name
                 )
             });
-        let _ = constraint
-            .method_type_arguments
+
+        // Ensure that the method type parameters are substituted for the provided type arguments.
+        for (param, arg) in method
+            .type_parameters
             .iter()
-            .map(|t| self.substitute(t))
-            .collect::<HirResult<Vec<_>>>()?;
+            .zip(method_substitutions.iter())
+        {
+            let constraint = EqualityConstraint {
+                expectation: param.ty,
+                actual: arg,
+                expectation_loc: param.span,
+                actual_loc: constraint.method_name_span,
+            };
+            self.unify_eq(constraint)?;
+        }
+
         // TODO: Handle method type parameters.
         let constraint = EqualityConstraint {
             expectation: constraint.expectation,
