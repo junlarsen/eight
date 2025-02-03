@@ -5,7 +5,7 @@ use crate::mir::{
     MirCallInstruction, MirConstantBool, MirConstantInteger32, MirDivInstruction, MirFunction,
     MirFunctionData, MirFunctionId, MirFunctionType, MirInstruction, MirInstructionId,
     MirLoadInstruction, MirModule, MirModuleData, MirMulInstruction, MirPtrAddInstruction,
-    MirStoreInstruction, MirSubInstruction, MirType, MirValue, MirValueId,
+    MirStoreInstruction, MirSubInstruction, MirTy, MirValue, MirValueId,
 };
 use eight_diagnostics::ice;
 pub struct MirModuleContext<'mir, 'hir> {
@@ -189,7 +189,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
 
 impl<'mir> MirFunctionBuilder<'mir> {
     /// Build a constant integer value.
-    pub fn build_constant_integer32(&mut self, value: i32, ty: &'mir MirType<'mir>) -> MirValueId {
+    pub fn build_constant_integer32(&mut self, value: i32, ty: &'mir MirTy<'mir>) -> MirValueId {
         let value_id = self.get_next_value_id();
         let inst = MirValue::ConstantInteger32(MirConstantInteger32 {
             value_id,
@@ -199,7 +199,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         self.build_value(value_id, inst)
     }
 
-    pub fn build_constant_bool(&mut self, value: bool, ty: &'mir MirType<'mir>) -> MirValueId {
+    pub fn build_constant_bool(&mut self, value: bool, ty: &'mir MirTy<'mir>) -> MirValueId {
         let value_id = self.get_next_value_id();
         let inst = MirValue::ConstantBool(MirConstantBool {
             value_id,
@@ -210,7 +210,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build an argument value
-    pub fn build_argument(&mut self, name: &'mir str, ty: &'mir MirType<'mir>) -> MirValueId {
+    pub fn build_argument(&mut self, name: &'mir str, ty: &'mir MirTy<'mir>) -> MirValueId {
         let value_id = self.get_next_value_id();
         let inst = MirValue::Argument(MirArgument { value_id, name, ty });
         self.build_value(value_id, inst)
@@ -227,7 +227,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
     pub fn build_alloca<'hir>(
         &mut self,
         _: &MirModuleContext<'mir, 'hir>,
-        ty: &'mir MirType<'mir>,
+        ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let inst_id = self.get_next_instruction_id();
@@ -272,7 +272,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         &mut self,
         _: &MirModuleContext<'mir, 'hir>,
         src: MirValueId,
-        ty: &'mir MirType<'mir>,
+        ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let inst_id = self.get_next_instruction_id();
@@ -295,7 +295,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         callee: MirValueId,
         arguments: Vec<MirValueId>,
-        return_ty: &'mir MirType<'mir>,
+        return_ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let inst_id = self.get_next_instruction_id();
@@ -319,7 +319,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         lhs: MirValueId,
         rhs: MirValueId,
-        ty: &'mir MirType<'mir>,
+        ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let inst_id = self.get_next_instruction_id();
@@ -343,7 +343,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         lhs: MirValueId,
         rhs: MirValueId,
-        ty: &'mir MirType<'mir>,
+        ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let inst_id = self.get_next_instruction_id();
@@ -367,7 +367,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         lhs: MirValueId,
         rhs: MirValueId,
-        ty: &'mir MirType<'mir>,
+        ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let inst_id = self.get_next_instruction_id();
@@ -391,7 +391,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         _: &MirModuleContext<'mir, 'hir>,
         lhs: MirValueId,
         rhs: MirValueId,
-        ty: &'mir MirType<'mir>,
+        ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueId {
         let inst_id = self.get_next_instruction_id();

@@ -3,7 +3,7 @@ use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirConstantBool,
     MirConstantInteger32, MirDivInstruction, MirFunction, MirFunctionData, MirFunctionId,
     MirInstruction, MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
-    MirStoreInstruction, MirSubInstruction, MirType, MirValue,
+    MirStoreInstruction, MirSubInstruction, MirTy, MirValue,
 };
 use crate::mir::{MirModule, MirModuleData};
 use eight_diagnostics::ice;
@@ -402,13 +402,13 @@ impl<'a> MirModuleTextualPass<'a> {
         )
     }
 
-    pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirType) -> DocBuilder<'a, Arena<'a>> {
+    pub fn visit_type<'mir: 'a>(&'a self, ty: &'mir MirTy) -> DocBuilder<'a, Arena<'a>> {
         match ty {
-            MirType::Integer32(_) => self.arena.text("i32"),
-            MirType::Bool(_) => self.arena.text("bool"),
-            MirType::Void(_) => self.arena.text("void"),
-            MirType::Pointer(_) => self.arena.text("ptr"),
-            MirType::Function(_) => unreachable!("should not print function types"),
+            MirTy::Integer32(_) => self.arena.text("i32"),
+            MirTy::Bool(_) => self.arena.text("bool"),
+            MirTy::Void(_) => self.arena.text("void"),
+            MirTy::Pointer(_) => self.arena.text("ptr"),
+            MirTy::Function(_) => unreachable!("should not print function types"),
         }
     }
 }
