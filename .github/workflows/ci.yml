@@ -1,0 +1,19 @@
+name: 'Continuous Integration'
+on:
+  push:
+    branches:
+      - trunk
+  pull_request:
+
+env:
+  LLVM_SYS_180_PREFIX: '/usr/lib/llvm-18'
+
+jobs:
+  verify:
+    name: 'Verify build'
+    timeout-minutes: 15
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - uses: 'actions/checkout@v4'
+      - run: sudo apt install llvm-18-dev llvm-18-tools clang-18 libpolly-18-dev
+      - run: cargo fmt --check
