@@ -8,7 +8,6 @@ info:
     - "--terminator=hir"
     - tests/hir-lower/instances.test
 input_file: compiler/eight-tests/tests/hir-lower/instances.test
-snapshot_kind: text
 ---
 success: false
 exit_code: 1
@@ -99,49 +98,49 @@ hir_module {
     // module intrinsic functions
     instance Ord<i32, i32> {
       fn lt<>(a: i32, b: i32) -> bool {
-        return ((i32_lt::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+        return ((i32_lt::<> as fn(i32, i32)->bool)((a as i32),(b as i32)) as bool);
       }
       fn gt<>(a: i32, b: i32) -> bool {
-        return ((i32_gt::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+        return ((i32_gt::<> as fn(i32, i32)->bool)((a as i32),(b as i32)) as bool);
       }
       fn le<>(a: i32, b: i32) -> bool {
-        return ((i32_le::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+        return ((i32_le::<> as fn(i32, i32)->bool)((a as i32),(b as i32)) as bool);
       }
       fn ge<>(a: i32, b: i32) -> bool {
-        return ((i32_ge::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+        return ((i32_ge::<> as fn(i32, i32)->bool)((a as i32),(b as i32)) as bool);
       }
     }
     instance Add<i32, i32, i32> {
       fn add<>(a: i32, b: i32) -> i32 {
-        return ((i32_add::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+        return ((i32_add::<> as fn(i32, i32)->i32)((a as i32),(b as i32)) as i32);
       }
     }
     instance Sub<i32, i32, i32> {
       fn sub<>(a: i32, b: i32) -> i32 {
-        return ((i32_sub::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+        return ((i32_sub::<> as fn(i32, i32)->i32)((a as i32),(b as i32)) as i32);
       }
     }
     instance Mul<i32, i32, i32> {
       fn mul<>(a: i32, b: i32) -> i32 {
-        return ((i32_mul::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+        return ((i32_mul::<> as fn(i32, i32)->i32)((a as i32),(b as i32)) as i32);
       }
     }
     instance Div<i32, i32, i32> {
       fn div<>(a: i32, b: i32) -> i32 {
-        return ((i32_div::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+        return ((i32_div::<> as fn(i32, i32)->i32)((a as i32),(b as i32)) as i32);
       }
     }
     instance Rem<i32, i32, i32> {
       fn rem<>(a: i32, b: i32) -> i32 {
-        return ((i32_rem::<> as fn(i32, i32)->i32)::<>((a as i32),(b as i32)) as i32);
+        return ((i32_rem::<> as fn(i32, i32)->i32)((a as i32),(b as i32)) as i32);
       }
     }
     instance Eq<i32, i32> {
       fn eq<>(a: i32, b: i32) -> bool {
-        return ((i32_eq::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+        return ((i32_eq::<> as fn(i32, i32)->bool)((a as i32),(b as i32)) as bool);
       }
       fn neq<>(a: i32, b: i32) -> bool {
-        return ((i32_neq::<> as fn(i32, i32)->bool)::<>((a as i32),(b as i32)) as bool);
+        return ((i32_neq::<> as fn(i32, i32)->bool)((a as i32),(b as i32)) as bool);
       }
     }
   

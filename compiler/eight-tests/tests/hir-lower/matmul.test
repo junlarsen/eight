@@ -5,11 +5,29 @@ trait Add<A, B, R> {
 trait Mul<A, B, R> {
   fn mul(a: A, b: B) -> R;
 }
+trait Div<A, B, R> {
+  fn div(a: A, b: B) -> R;
+}
+trait Ord<A, B> {
+  fn lt(a: A, b: B) -> bool;
+  fn gt(a: A, b: B) -> bool;
+  fn le(a: A, b: B) -> bool;
+  fn ge(a: A, b: B) -> bool;
+}
 instance Add<i32, i32, i32>  {
   intrinsic_fn add(a: i32, b: i32) -> i32;
 }
 instance Mul<i32, i32, i32> {
   intrinsic_fn mul(a: i32, b: i32) -> i32;
+}
+instance Div<i32, i32, i32> {
+  intrinsic_fn div(a: i32, b: i32) -> i32;
+}
+instance Ord<i32, i32> {
+  intrinsic_fn lt(a: i32, b: i32) -> bool;
+  intrinsic_fn gt(a: i32, b: i32) -> bool;
+  intrinsic_fn le(a: i32, b: i32) -> bool;
+  intrinsic_fn ge(a: i32, b: i32) -> bool;
 }
 
 struct Matrix {
