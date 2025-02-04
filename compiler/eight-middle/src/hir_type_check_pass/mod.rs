@@ -11,8 +11,9 @@ use crate::hir::{
     HirPointerTy, HirReturnStmt, HirStmt, HirTy,
 };
 use crate::hir_builder::HirBuilder;
-use crate::hir_error::{
-    HirError, HirResult, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
+use crate::HirResult;
+use eight_diagnostics::errors::hir::{
+    HirError, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
     WrongTraitTypeArgumentCount,
 };
 use eight_diagnostics::ice;

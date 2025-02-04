@@ -8,7 +8,6 @@
 //! of future lexer-related syntax errors. These will only be triggered by the parser upon
 //! attempting to consume further tokens.
 
-use crate::tok::Token;
 use eight_macros::declare_error_type;
 use eight_span::Span;
 use miette::Diagnostic;
@@ -24,9 +23,6 @@ declare_error_type! {
         UnexpectedToken(UnexpectedTokenError),
     }
 }
-
-/// Handy type alias for all parsing-related errors.
-pub type ParseResult<T> = Result<T, ParseError>;
 
 /// Signals that the parser has reached the end of the input stream.
 ///
@@ -86,7 +82,7 @@ pub struct UnexpectedCharacterError {
 #[diagnostic(code(syntax::unexpected_token))]
 #[error("found unexpected token during parsing")]
 pub struct UnexpectedTokenError {
-    pub token: Token,
+    pub token: String,
     #[label("was not expecting to find '{token}' in this position")]
     pub span: Span,
 }
