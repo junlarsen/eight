@@ -7,11 +7,12 @@ use crate::hir::{
     HirTraitSignature, HirType, HirTypeParameterSignature, HirTypeSignature,
 };
 use crate::hir_builder::HirBuilder;
-use crate::hir_error::{
-    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, HirResult, UnknownIntrinsicTypeError,
-};
 use crate::scope::Scope;
+use crate::HirResult;
 use crate::LinkageType;
+use eight_diagnostics::errors::hir::{
+    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, UnknownIntrinsicTypeError,
+};
 use eight_diagnostics::ice;
 use eight_span::Span;
 use eight_syntax::ast::{

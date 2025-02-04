@@ -9,9 +9,12 @@ use crate::ast::{
     AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType, AstTypeItem,
     AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
 };
-use crate::error::{ParseError, ParseResult, UnexpectedEndOfFileError, UnexpectedTokenError};
 use crate::lexer::Lexer;
 use crate::tok::{Token, TokenType};
+use crate::ParseResult;
+use eight_diagnostics::errors::syntax::{
+    ParseError, UnexpectedEndOfFileError, UnexpectedTokenError,
+};
 use eight_span::Span;
 
 pub struct ParserInput<'a> {
@@ -127,7 +130,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
             token if token.ty == *ty => Ok(token),
             _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                 span: token.span,
-                token,
+                token: token.to_string(),
             })),
         }
     }
@@ -237,7 +240,7 @@ impl<'ast> Parser<'_, 'ast> {
                 let token = self.eat()?;
                 return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                     span: token.span,
-                    token,
+                    token: token.to_string(),
                 }));
             }
         };
@@ -561,7 +564,7 @@ impl<'ast> Parser<'_, 'ast> {
                 TokenType::KeywordIntrinsicFn => Ok(p.parse_intrinsic_fn_item()?),
                 _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
                     span: token.span,
-                    token: token.clone(),
+                    token: token.to_string(),
                 })),
             }
         })?;
@@ -1233,7 +1236,7 @@ impl<'ast> Parser<'_, 'ast> {
         let token = self.eat()?;
         Err(ParseError::UnexpectedToken(UnexpectedTokenError {
             span: token.span,
-            token,
+            token: token.to_string(),
         }))
     }
 
@@ -1254,7 +1257,7 @@ impl<'ast> Parser<'_, 'ast> {
             }
             _ => Err(ParseError::from(UnexpectedTokenError {
                 span: token.span,
-                token,
+                token: token.to_string(),
             })),
         }
     }
@@ -1294,7 +1297,7 @@ impl<'ast> Parser<'_, 'ast> {
                 let token = self.eat()?;
                 Err(ParseError::from(UnexpectedTokenError {
                     span: token.span,
-                    token,
+                    token: token.to_string(),
                 }))
             }
         }
@@ -1335,7 +1338,7 @@ mod tests {
     use crate::ast::{
         AstBinaryOp, AstBreakStmt, AstContinueStmt, AstExpr, AstIdentifier, AstType, AstUnaryOp,
     };
-    use crate::error::{InvalidIntegerLiteralError, ParseError};
+    use eight_diagnostics::errors::syntax::{InvalidIntegerLiteralError, ParseError};
 
     use eight_macros::{assert_err, assert_matches, assert_none, assert_ok, assert_some};
     use eight_span::Span;

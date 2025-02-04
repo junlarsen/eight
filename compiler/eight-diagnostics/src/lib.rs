@@ -1,3 +1,5 @@
+pub mod errors;
+
 #[macro_export]
 macro_rules! ice {
     ($($arg:tt)*) => {{

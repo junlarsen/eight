@@ -9,6 +9,8 @@ serde = ["dep:serde"]
 
 [dependencies]
 eight-macros = { path = "../eight-macros" }
+eight-span = { path = "../eight-span" }
+
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }

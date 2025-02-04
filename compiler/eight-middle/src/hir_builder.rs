@@ -16,8 +16,7 @@ use crate::hir::{
     HirOffsetIndexExpr, HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature,
 };
 use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirTy};
-use crate::hir_error::HirError;
-use crate::LinkageType;
+use crate::{HirResult, LinkageType};
 use eight_span::Span;
 use std::collections::BTreeMap;
 
@@ -36,8 +35,8 @@ impl<'hir> HirBuilder {
     /// collect something into a vector.
     pub fn build_vec<A, B>(
         iter: impl IntoIterator<Item = A>,
-        f: impl FnMut(A) -> Result<B, HirError>,
-    ) -> Result<Vec<B>, HirError> {
+        f: impl FnMut(A) -> HirResult<B>,
+    ) -> HirResult<Vec<B>> {
         iter.into_iter().map(f).collect()
     }
 

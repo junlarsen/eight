@@ -9,9 +9,9 @@ use crate::mir::MirModule;
 use crate::mir::MirTy;
 use crate::mir::MirValueId;
 use crate::mir_builder::{MirFunctionBuilder, MirModuleContext};
-use crate::mir_error::MirResult;
 use crate::scope::Scope;
 use crate::LinkageType;
+use crate::MirResult;
 use eight_diagnostics::ice;
 
 pub struct MirModuleLoweringPass<'mir> {

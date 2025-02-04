@@ -33,9 +33,6 @@ declare_error_type! {
     }
 }
 
-/// Handy type alias for all HIR-related errors.
-pub type HirResult<T> = Result<T, HirError>;
-
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(code(sema::unknown_type))]
 #[error("{name} does not name a known type")]
