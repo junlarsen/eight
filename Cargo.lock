@@ -244,6 +244,7 @@ name = "eight-diagnostics"
 version = "0.1.0"
 dependencies = [
  "eight-macros",
+ "eight-span",
  "miette",
  "serde",
  "thiserror 2.0.11",

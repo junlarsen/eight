@@ -5,18 +5,19 @@ use crate::hir::{
     HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirModuleSignature,
     HirOffsetIndexExpr, HirReferenceExpr, HirTy,
 };
-use crate::hir_error::{
-    BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
-    DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError, HirResult,
-    InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
-    SelfReferentialTypeError, TraitDoesNotExistError, TraitMissingInstanceError, TypeMismatchError,
-    TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount,
-};
 use crate::hir_type_check_pass::{
     Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint,
     InstanceConstraint,
 };
 use crate::scope::Scope;
+use crate::HirResult;
+use eight_diagnostics::errors::hir::{
+    BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
+    DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError,
+    InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
+    SelfReferentialTypeError, TraitDoesNotExistError, TraitMissingInstanceError, TypeMismatchError,
+    TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount,
+};
 use eight_diagnostics::ice;
 use eight_span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
