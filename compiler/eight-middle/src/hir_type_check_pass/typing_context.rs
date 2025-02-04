@@ -305,9 +305,13 @@ impl<'hir> TypingContext<'hir> {
         // for HirCallableReferenceExpr will use this to substitute the type arguments with
         // the concrete type arguments. This is also necessary for analysis of the node to
         // determine if a call can be reduced into a compiler intrinsic.
-        for parameter in signature.type_parameters.iter() {
-            sym.type_arguments
-                .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
+        sym.type_arguments
+            .resize_with(signature.type_parameters.len(), || {
+                self.cc.hir_uninitialized_type()
+            });
+        for (idx, parameter) in signature.type_parameters.iter().enumerate() {
+            sym.type_arguments[idx] =
+                self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty);
         }
         // Propagate the type arguments so that we don't need to derive the `parameters` again.
         sym.instantiated_call_parameters = parameters.to_vec();
@@ -346,13 +350,21 @@ impl<'hir> TypingContext<'hir> {
         let instantiated_return_type = self
             .eliminate_type_variables_within_ty(&mut instantiations, method_signature.return_type);
         // Propagate the type arguments back to the callable symbol.
-        for parameter in method_signature.type_parameters.iter() {
-            sym.method_type_arguments
-                .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
+        sym.method_type_arguments
+            .resize_with(method_signature.type_parameters.len(), || {
+                self.cc.hir_uninitialized_type()
+            });
+        for (idx, parameter) in method_signature.type_parameters.iter().enumerate() {
+            sym.method_type_arguments[idx] =
+                self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty);
         }
-        for parameter in trait_signature.type_parameters.iter() {
-            sym.trait_type_arguments
-                .push(self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty));
+        sym.trait_type_arguments
+            .resize_with(trait_signature.type_parameters.len(), || {
+                self.cc.hir_uninitialized_type()
+            });
+        for (idx, parameter) in trait_signature.type_parameters.iter().enumerate() {
+            sym.trait_type_arguments[idx] =
+                self.eliminate_type_variables_within_ty(&mut instantiations, parameter.ty);
         }
         // Propagate the type arguments so that we don't need to derive the parameter list again.
         sym.instantiated_call_parameters = instantiated_parameters.to_vec();
