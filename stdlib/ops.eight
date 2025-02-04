@@ -24,10 +24,10 @@ trait Eq<A, B> {
 }
 
 trait Ord<A, B> {
-  fn lt(a: A, b: B) -> i32;
-  fn gt(a: A, b: B) -> i32;
-  fn le(a: A, b: B) -> i32;
-  fn ge(a: A, b: B) -> i32;
+  fn lt(a: A, b: B) -> bool;
+  fn gt(a: A, b: B) -> bool;
+  fn le(a: A, b: B) -> bool;
+  fn ge(a: A, b: B) -> bool;
 }
 
 trait Neg<A, R> {

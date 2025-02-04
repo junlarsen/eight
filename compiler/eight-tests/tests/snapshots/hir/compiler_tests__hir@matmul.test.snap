@@ -8,20 +8,111 @@ info:
     - "--terminator=hir"
     - tests/hir-lower/matmul.test
 input_file: compiler/eight-tests/tests/hir-lower/matmul.test
-snapshot_kind: text
 ---
 success: false
 exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: sema::trait_missing_instance
-
-  × trait Mul does not have instance Mul<_, i32, _>
-    ╭─[tests/hir-lower/matmul.test:25:23]
- 24 │     c: b.c,
- 25 │     buf: malloc(a.r * b.c * 4),
-    ·                       ───┬───
-    ·                          ╰── required instance Mul<_, i32, _> for trait Mul
- 26 │   };
-    ╰────
+hir_module {
+  declares {
+    // module types
+    
+    
+    // module struct types
+    struct Matrix {
+      buf: *i32,
+      c: i32,
+      r: i32,
+    }
+    
+    // module functions
+    fn malloc<$1'0>(size: i32) -> *$1'0;
+    fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix;
+    
+    // module traits
+    trait Add<$1'0, $1'1, $1'2> {
+      fn add(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Div<$1'0, $1'1, $1'2> {
+      fn div(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Mul<$1'0, $1'1, $1'2> {
+      fn mul(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Ord<$1'0, $1'1> {
+      fn ge(a: $1'0, b: $1'1) -> bool;
+      fn gt(a: $1'0, b: $1'1) -> bool;
+      fn le(a: $1'0, b: $1'1) -> bool;
+      fn lt(a: $1'0, b: $1'1) -> bool;
+    }
+    
+    // module instances
+    instance Add<i32, i32, i32> {
+      fn add(a: i32, b: i32) -> i32;
+    }
+    instance Mul<i32, i32, i32> {
+      fn mul(a: i32, b: i32) -> i32;
+    }
+    instance Div<i32, i32, i32> {
+      fn div(a: i32, b: i32) -> i32;
+    }
+    instance Ord<i32, i32> {
+      fn ge(a: i32, b: i32) -> bool;
+      fn gt(a: i32, b: i32) -> bool;
+      fn le(a: i32, b: i32) -> bool;
+      fn lt(a: i32, b: i32) -> bool;
+    }
+  }
+  
+  defining {
+    // module functions
+    fn matrix_matrix_multiply<>(a: Matrix, b: Matrix) -> Matrix {
+      let c: Matrix = (new Matrix {
+        r: ((a as Matrix).r as i32),
+        c: ((b as Matrix).c as i32),
+        buf: ((malloc::<i32> as fn(i32)->*i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)(((a as Matrix).r as i32),((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)(((b as Matrix).c as i32),(4 as i32)) as i32)) as i32)) as *i32),
+      } as Matrix);
+      {
+        let i: i32 = (0 as i32);
+        while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((i as i32),((a as Matrix).r as i32)) as bool)) {
+          {
+            let j: i32 = (0 as i32);
+            while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((j as i32),((b as Matrix).c as i32)) as bool)) {
+              let sum: i32 = (0 as i32);
+              {
+                let k: i32 = (0 as i32);
+                while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((k as i32),((a as Matrix).c as i32)) as bool)) {
+                  ((sum as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((sum as i32),((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((((a as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((i as i32),((a as Matrix).c as i32)) as i32),(k as i32)) as i32)] as i32),(((b as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((k as i32),((b as Matrix).c as i32)) as i32),(j as i32)) as i32)] as i32)) as i32)) as i32) as unit);
+                  ((k as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((k as i32),(1 as i32)) as i32) as unit);
+                }
+              }
+              ((((c as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((i as i32),((b as Matrix).c as i32)) as i32),(j as i32)) as i32)] as i32) = (sum as i32) as unit);
+              ((j as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((j as i32),(1 as i32)) as i32) as unit);
+            }
+          }
+          ((i as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
+        }
+      }
+      return (c as Matrix);
+    }
+    // module intrinsic functions
+    instance Add<i32, i32, i32> {
+      intrinsic_fn add<>(a: i32, b: i32) -> i32;
+    }
+    instance Mul<i32, i32, i32> {
+      intrinsic_fn mul<>(a: i32, b: i32) -> i32;
+    }
+    instance Div<i32, i32, i32> {
+      intrinsic_fn div<>(a: i32, b: i32) -> i32;
+    }
+    instance Ord<i32, i32> {
+      intrinsic_fn lt<>(a: i32, b: i32) -> bool;
+      intrinsic_fn gt<>(a: i32, b: i32) -> bool;
+      intrinsic_fn le<>(a: i32, b: i32) -> bool;
+      intrinsic_fn ge<>(a: i32, b: i32) -> bool;
+    }
+  
+  }
+}
+eightc: early termination due to: --terminator=hir

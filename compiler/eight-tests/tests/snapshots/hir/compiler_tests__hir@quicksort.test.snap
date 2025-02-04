@@ -8,20 +8,103 @@ info:
     - "--terminator=hir"
     - tests/hir-lower/quicksort.test
 input_file: compiler/eight-tests/tests/hir-lower/quicksort.test
-snapshot_kind: text
 ---
 success: false
 exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: sema::trait_does_not_exist
-
-  × trait Sub does not exist
-    ╭─[tests/hir-lower/quicksort.test:11:11]
- 10 │   let x = xs[r];
- 11 │   let i = l - 1;
-    ·           ──┬──
-    ·             ╰── required trait Sub to exist
- 12 │   for (let j = l; j < r; j = j + 1) {
-    ╰────
+hir_module {
+  declares {
+    // module types
+    
+    
+    // module struct types
+    
+    
+    // module functions
+    fn malloc<$1'0>(size: i32) -> *$1'0;
+    fn partition(xs: *i32, l: i32, r: i32) -> i32;
+    fn quicksort(xs: *i32, l: i32, r: i32) -> unit;
+    fn swap(a: *i32, b: *i32) -> unit;
+    
+    // module traits
+    trait Add<$1'0, $1'1, $1'2> {
+      fn add(a: $1'0, b: $1'1) -> $1'2;
+    }
+    trait Ord<$1'0, $1'1> {
+      fn ge(a: $1'0, b: $1'1) -> bool;
+      fn gt(a: $1'0, b: $1'1) -> bool;
+      fn le(a: $1'0, b: $1'1) -> bool;
+      fn lt(a: $1'0, b: $1'1) -> bool;
+    }
+    trait Sub<$1'0, $1'1, $1'2> {
+      fn sub(a: $1'0, b: $1'1) -> $1'2;
+    }
+    
+    // module instances
+    instance Add<i32, i32, i32> {
+      fn add(a: i32, b: i32) -> i32;
+    }
+    instance Sub<i32, i32, i32> {
+      fn sub(a: i32, b: i32) -> i32;
+    }
+    instance Ord<i32, i32> {
+      fn ge(a: i32, b: i32) -> bool;
+      fn gt(a: i32, b: i32) -> bool;
+      fn le(a: i32, b: i32) -> bool;
+      fn lt(a: i32, b: i32) -> bool;
+    }
+  }
+  
+  defining {
+    // module functions
+    fn partition<>(xs: *i32, l: i32, r: i32) -> i32 {
+      let x: i32 = ((xs as *i32)[(r as i32)] as i32);
+      let i: i32 = ((Sub<i32,i32,i32>::sub::<> as fn(i32, i32)->i32)((l as i32),(1 as i32)) as i32);
+      {
+        let j: i32 = (l as i32);
+        while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((j as i32),(r as i32)) as bool)) {
+          if (((Ord<i32,i32>::le::<> as fn(i32, i32)->bool)(((xs as *i32)[(j as i32)] as i32),(x as i32)) as bool)){
+            ((i as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
+            ((swap::<> as fn(*i32, *i32)->unit)((&((xs as *i32)[(i as i32)] as i32) as *i32),(&((xs as *i32)[(j as i32)] as i32) as *i32)) as unit);
+          } else {
+          
+          }
+          ((j as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((j as i32),(1 as i32)) as i32) as unit);
+        }
+      }
+      ((swap::<> as fn(*i32, *i32)->unit)((&((xs as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32)] as i32) as *i32),(&((xs as *i32)[(r as i32)] as i32) as *i32)) as unit);
+      return ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32);
+    }
+    fn quicksort<>(xs: *i32, l: i32, r: i32) -> unit {
+      if (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((l as i32),(r as i32)) as bool)){
+        let p: i32 = ((partition::<> as fn(*i32, i32, i32)->i32)((xs as *i32),(l as i32),(r as i32)) as i32);
+        ((quicksort::<> as fn(*i32, i32, i32)->unit)((xs as *i32),(l as i32),((Sub<i32,i32,i32>::sub::<> as fn(i32, i32)->i32)((p as i32),(1 as i32)) as i32)) as unit);
+        ((quicksort::<> as fn(*i32, i32, i32)->unit)((xs as *i32),((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((p as i32),(1 as i32)) as i32),(r as i32)) as unit);
+      } else {
+      
+      }
+    }
+    fn swap<>(a: *i32, b: *i32) -> unit {
+      let tmp: i32 = (*(a as *i32) as i32);
+      ((*(a as *i32) as i32) = (*(b as *i32) as i32) as unit);
+      ((*(b as *i32) as i32) = (tmp as i32) as unit);
+    }
+    // module intrinsic functions
+    instance Add<i32, i32, i32> {
+      intrinsic_fn add<>(a: i32, b: i32) -> i32;
+    }
+    instance Sub<i32, i32, i32> {
+      intrinsic_fn sub<>(a: i32, b: i32) -> i32;
+    }
+    instance Ord<i32, i32> {
+      intrinsic_fn lt<>(a: i32, b: i32) -> bool;
+      intrinsic_fn gt<>(a: i32, b: i32) -> bool;
+      intrinsic_fn le<>(a: i32, b: i32) -> bool;
+      intrinsic_fn ge<>(a: i32, b: i32) -> bool;
+    }
+  
+  }
+}
+eightc: early termination due to: --terminator=hir
