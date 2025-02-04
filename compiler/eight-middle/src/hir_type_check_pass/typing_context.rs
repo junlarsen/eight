@@ -15,8 +15,9 @@ use eight_diagnostics::errors::hir::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
     DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError,
     InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
-    SelfReferentialTypeError, TraitDoesNotExistError, TraitMissingInstanceError, TypeMismatchError,
-    TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount,
+    SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
+    TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
+    WrongFunctionTypeArgumentCount,
 };
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -976,16 +977,13 @@ impl<'hir> TypingContext<'hir> {
                 trait_substitutions.as_slice(),
             )
             .unwrap_or_else(|| ice!("trait instance not found"));
-        let method = instance
-            .methods
-            .get(&constraint.method_name)
-            .unwrap_or_else(|| {
-                ice!(
-                    "trait instance does not have method {}",
-                    constraint.method_name
-                )
-            });
-
+        let method = instance.methods.get(&constraint.method_name).ok_or(
+            HirError::TraitInstanceMissingFn(TraitInstanceMissingFnError {
+                name: constraint.trait_name.to_owned(),
+                method: constraint.method_name.to_owned(),
+                span: constraint.method_name_span,
+            }),
+        )?;
         // Ensure that the method type parameters are substituted for the provided type arguments.
         for (param, arg) in method
             .type_parameters

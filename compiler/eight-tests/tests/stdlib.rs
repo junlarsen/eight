@@ -14,7 +14,7 @@ fn test_evaluate_stdlib() {
                 .is_file()
         })
         .collect::<Vec<_>>();
-    files.sort_by(|a, b| a.path().cmp(&b.path()));
+    files.sort_by_key(|a| a.path());
     let mut buf = String::new();
     for file in files {
         let path = file.path();
