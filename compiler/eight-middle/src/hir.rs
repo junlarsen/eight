@@ -779,10 +779,6 @@ pub struct HirExprStmt<'hir> {
 #[derive(Debug)]
 pub struct HirLoopStmt<'hir> {
     pub span: Span,
-    /// The condition for the loop to continue.
-    ///
-    /// For infinite loops, this node should be a constant literal of boolean true.
-    pub condition: HirExpr<'hir>,
     pub body: Vec<HirStmt<'hir>>,
 }
 

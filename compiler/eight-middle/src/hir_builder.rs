@@ -117,16 +117,8 @@ impl<'hir> HirBuilder {
     }
 
     /// Build a HIR loop statement.
-    pub fn build_loop_stmt(
-        span: Span,
-        condition: HirExpr<'hir>,
-        body: Vec<HirStmt<'hir>>,
-    ) -> HirLoopStmt<'hir> {
-        HirLoopStmt {
-            span,
-            condition,
-            body,
-        }
+    pub fn build_loop_stmt(span: Span, body: Vec<HirStmt<'hir>>) -> HirLoopStmt<'hir> {
+        HirLoopStmt { span, body }
     }
 
     /// Build a HIR block statement.

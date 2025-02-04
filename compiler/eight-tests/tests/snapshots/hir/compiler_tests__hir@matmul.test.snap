@@ -75,23 +75,35 @@ hir_module {
       } as Matrix);
       {
         let i: i32 = (0 as i32);
-        while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((i as i32),((a as Matrix).r as i32)) as bool)) {
-          {
-            let j: i32 = (0 as i32);
-            while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((j as i32),((b as Matrix).c as i32)) as bool)) {
-              let sum: i32 = (0 as i32);
-              {
-                let k: i32 = (0 as i32);
-                while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((k as i32),((a as Matrix).c as i32)) as bool)) {
-                  ((sum as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((sum as i32),((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((((a as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((i as i32),((a as Matrix).c as i32)) as i32),(k as i32)) as i32)] as i32),(((b as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((k as i32),((b as Matrix).c as i32)) as i32),(j as i32)) as i32)] as i32)) as i32)) as i32) as unit);
-                  ((k as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((k as i32),(1 as i32)) as i32) as unit);
+        loop {
+          if (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((i as i32),((a as Matrix).r as i32)) as bool)){
+            {
+              let j: i32 = (0 as i32);
+              loop {
+                if (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((j as i32),((b as Matrix).c as i32)) as bool)){
+                  let sum: i32 = (0 as i32);
+                  {
+                    let k: i32 = (0 as i32);
+                    loop {
+                      if (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((k as i32),((a as Matrix).c as i32)) as bool)){
+                        ((sum as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((sum as i32),((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((((a as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((i as i32),((a as Matrix).c as i32)) as i32),(k as i32)) as i32)] as i32),(((b as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((k as i32),((b as Matrix).c as i32)) as i32),(j as i32)) as i32)] as i32)) as i32)) as i32) as unit);
+                        ((k as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((k as i32),(1 as i32)) as i32) as unit);
+                      } else {
+                        break;
+                      }
+                    }
+                  }
+                  ((((c as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((i as i32),((b as Matrix).c as i32)) as i32),(j as i32)) as i32)] as i32) = (sum as i32) as unit);
+                  ((j as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((j as i32),(1 as i32)) as i32) as unit);
+                } else {
+                  break;
                 }
               }
-              ((((c as Matrix).buf as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((i as i32),((b as Matrix).c as i32)) as i32),(j as i32)) as i32)] as i32) = (sum as i32) as unit);
-              ((j as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((j as i32),(1 as i32)) as i32) as unit);
             }
+            ((i as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
+          } else {
+            break;
           }
-          ((i as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
         }
       }
       return (c as Matrix);

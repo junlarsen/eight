@@ -482,11 +482,7 @@ impl<'a> HirModuleTextualPass<'a> {
         stmt: &'hir HirLoopStmt,
     ) -> DocBuilder<'a, Arena<'a>> {
         self.arena
-            .text("while")
-            .append(self.arena.space())
-            .append(self.arena.text("("))
-            .append(self.visit_expr(&stmt.condition))
-            .append(self.arena.text(")"))
+            .text("loop")
             .append(self.arena.space())
             .append(self.arena.text("{"))
             .append(

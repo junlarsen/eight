@@ -680,9 +680,12 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     ///
     /// {
     ///   let x = 1;
-    ///   loop (x < 10) {
+    ///   loop {
+    ///     if (!(x < 10)) {
+    ///       break;
+    ///     }
     ///     { foo(); }
-    ///     { x = x + 1; }
+    ///     x = x + 1;
     ///   }
     /// }
     /// ```
@@ -721,7 +724,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
                 ))
             });
         let increment = node.increment.map(|i| self.visit_expr(i)).transpose()?;
-        let body = HirBuilder::build_vec(node.body.iter(), |stmt| self.visit_stmt(stmt))?;
+        let mut body = HirBuilder::build_vec(node.body.iter(), |stmt| self.visit_stmt(stmt))?;
         // Build the new block statement with the loop
         let hir = HirStmt::Block(HirBuilder::build_block_stmt(
             node.span,
@@ -729,16 +732,23 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
                 initializer.map(HirStmt::Let).unwrap_or_else(|| {
                     HirStmt::Block(HirBuilder::build_block_stmt(Span::empty(), vec![]))
                 }),
-                HirStmt::Loop(HirBuilder::build_loop_stmt(node.span, condition, {
-                    let mut stmts = body;
-                    if let Some(i) = increment {
-                        stmts.push(HirStmt::Expr(HirExprStmt {
-                            span: i.span(),
-                            expr: i,
-                        }));
-                    }
-                    stmts
-                })),
+                HirStmt::Loop(HirBuilder::build_loop_stmt(
+                    node.span,
+                    vec![HirStmt::If(HirBuilder::build_if_stmt(
+                        node.span,
+                        condition,
+                        {
+                            if let Some(i) = increment {
+                                body.push(HirStmt::Expr(HirExprStmt {
+                                    span: i.span(),
+                                    expr: i,
+                                }));
+                            }
+                            body
+                        },
+                        vec![HirStmt::Break(HirBuilder::build_break_stmt(node.span))],
+                    ))],
+                )),
             ],
         ));
         self.loop_depth.pop_back();
