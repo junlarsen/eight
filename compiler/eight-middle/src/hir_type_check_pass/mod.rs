@@ -1047,12 +1047,6 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirLoopStmt<'hir>,
     ) -> HirResult<Option<HirStmt<'hir>>> {
-        substitute_if_changed!(
-            &mut node.condition,
-            Self::enter_expr(cx, &mut node.condition)?
-        );
-        // We also impose a new constraint that the condition must be a boolean
-        cx.infer(&mut node.condition, cx.cc.hir_boolean_type())?;
         cx.enter_let_binding_scope();
         for stmt in node.body.iter_mut() {
             substitute_if_changed!(stmt, Self::enter_stmt(cx, stmt)?);
@@ -1066,11 +1060,6 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirLoopStmt<'hir>,
     ) -> HirResult<Option<HirStmt<'hir>>> {
-        substitute_if_changed!(
-            &mut node.condition,
-            Self::leave_expr(cx, &mut node.condition)?
-        );
-        Self::leave_expr(cx, &mut node.condition)?;
         for stmt in node.body.iter_mut() {
             substitute_if_changed!(stmt, Self::leave_stmt(cx, stmt)?);
         }

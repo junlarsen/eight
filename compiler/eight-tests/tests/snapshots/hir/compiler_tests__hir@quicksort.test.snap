@@ -64,14 +64,18 @@ hir_module {
       let i: i32 = ((Sub<i32,i32,i32>::sub::<> as fn(i32, i32)->i32)((l as i32),(1 as i32)) as i32);
       {
         let j: i32 = (l as i32);
-        while (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((j as i32),(r as i32)) as bool)) {
-          if (((Ord<i32,i32>::le::<> as fn(i32, i32)->bool)(((xs as *i32)[(j as i32)] as i32),(x as i32)) as bool)){
-            ((i as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
-            ((swap::<> as fn(*i32, *i32)->unit)((&((xs as *i32)[(i as i32)] as i32) as *i32),(&((xs as *i32)[(j as i32)] as i32) as *i32)) as unit);
+        loop {
+          if (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((j as i32),(r as i32)) as bool)){
+            if (((Ord<i32,i32>::le::<> as fn(i32, i32)->bool)(((xs as *i32)[(j as i32)] as i32),(x as i32)) as bool)){
+              ((i as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
+              ((swap::<> as fn(*i32, *i32)->unit)((&((xs as *i32)[(i as i32)] as i32) as *i32),(&((xs as *i32)[(j as i32)] as i32) as *i32)) as unit);
+            } else {
+            
+            }
+            ((j as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((j as i32),(1 as i32)) as i32) as unit);
           } else {
-          
+            break;
           }
-          ((j as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((j as i32),(1 as i32)) as i32) as unit);
         }
       }
       ((swap::<> as fn(*i32, *i32)->unit)((&((xs as *i32)[((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32)] as i32) as *i32),(&((xs as *i32)[(r as i32)] as i32) as *i32)) as unit);
