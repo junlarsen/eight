@@ -18,3 +18,4 @@ jobs:
       - run: sudo apt install llvm-18-dev llvm-18-tools clang-18 libpolly-18-dev
       - run: cargo fmt --check
       - run: cargo build --all
+      - run: cargo test

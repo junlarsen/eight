@@ -5,14 +5,16 @@ use std::process::Command;
 #[test]
 fn test_evaluate_stdlib() {
     let path = Path::join(env!("CARGO_MANIFEST_DIR").as_ref(), "../../stdlib");
-    let files = std::fs::read_dir(path)
+    let mut files = std::fs::read_dir(path)
         .expect("failed to read stdlib directory")
         .filter_map(|f| f.ok())
         .filter(|f| {
             std::fs::metadata(f.path())
                 .expect("failed to stat file")
                 .is_file()
-        });
+        })
+        .collect::<Vec<_>>();
+    files.sort_by(|a, b| a.path().cmp(&b.path()));
     let mut buf = String::new();
     for file in files {
         let path = file.path();
