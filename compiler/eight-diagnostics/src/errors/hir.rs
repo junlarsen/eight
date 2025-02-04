@@ -22,6 +22,7 @@ declare_error_type! {
         UnknownIntrinsicType(UnknownIntrinsicTypeError),
         TraitInstanceMissingFn(TraitInstanceMissingFnError),
         TraitDoesNotExist(TraitDoesNotExistError),
+        TraitMethodDoesNotExist(TraitMethodDoesNotExistError),
         TraitMissingInstance(TraitMissingInstanceError),
         WrongTraitTypeArgumentCount(WrongTraitTypeArgumentCount),
         TypeParameterShadowsExisting(TypeParameterShadowsExisting),
@@ -185,6 +186,16 @@ pub struct TraitInstanceMissingFnError {
 pub struct TraitDoesNotExistError {
     pub name: String,
     #[label = "required trait {name} to exist"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug, PartialEq)]
+#[diagnostic(code(sema::trait_method_does_not_exist))]
+#[error("trait {trait_name} does not have method {method_name}")]
+pub struct TraitMethodDoesNotExistError {
+    pub trait_name: String,
+    pub method_name: String,
+    #[label = "required method {method_name} for trait {trait_name}"]
     pub span: Span,
 }
 

@@ -16,8 +16,8 @@ use eight_diagnostics::errors::hir::{
     DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError,
     InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
     SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
-    TraitMissingInstanceError, TypeMismatchError, TypeParameterShadowsExisting, UnknownFieldError,
-    WrongFunctionTypeArgumentCount,
+    TraitMethodDoesNotExistError, TraitMissingInstanceError, TypeMismatchError,
+    TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount,
 };
 use eight_diagnostics::ice;
 use eight_span::Span;
@@ -332,15 +332,20 @@ impl<'hir> TypingContext<'hir> {
         let HirCallableSymbol::TraitFunction(sym) = &mut expr.symbol else {
             ice!("called infer_trait_function_callable_reference_expr() on non-trait function symbol reference");
         };
-        let Some((trait_signature, method_signature)) = self
-            .signature
-            .query_trait_and_signature_by_name(sym.trait_name, sym.method_name)
-        else {
-            ice!(
-                "called infer() on '{}::{}' that doesn't exist in the context",
-                sym.trait_name,
-                sym.method_name
-            );
+        let Some(trait_signature) = self.signature.query_trait_by_name(sym.trait_name) else {
+            return Err(HirError::TraitDoesNotExist(TraitDoesNotExistError {
+                name: sym.trait_name.to_owned(),
+                span: sym.trait_name_span,
+            }));
+        };
+        let Some(method_signature) = trait_signature.methods.get(sym.method_name) else {
+            return Err(HirError::TraitMethodDoesNotExist(
+                TraitMethodDoesNotExistError {
+                    trait_name: sym.trait_name.to_owned(),
+                    method_name: sym.method_name.to_owned(),
+                    span: sym.method_name_span,
+                },
+            ));
         };
         // Instantiate all the generic types present on both the trait and the method.
         let mut instantiations = HashMap::new();
@@ -924,12 +929,6 @@ impl<'hir> TypingContext<'hir> {
     /// An instance constraint requires that there exists an instance of trait `name` that for the
     /// given types `type_arguments`.
     pub fn unify_instance(&mut self, constraint: InstanceConstraint<'hir>) -> HirResult<()> {
-        self.signature
-            .query_trait_by_name(constraint.name)
-            .ok_or(HirError::TraitDoesNotExist(TraitDoesNotExistError {
-                name: constraint.name.to_owned(),
-                span: constraint.name_span,
-            }))?;
         let substitutions = constraint
             .type_arguments
             .iter()
@@ -976,7 +975,8 @@ impl<'hir> TypingContext<'hir> {
                 constraint.trait_name,
                 trait_substitutions.as_slice(),
             )
-            .unwrap_or_else(|| ice!("trait instance not found"));
+            // TODO: This should emit an error
+            .unwrap_or_else(|| ice!("no suitable trait instance not found"));
         let method = instance.methods.get(&constraint.method_name).ok_or(
             HirError::TraitInstanceMissingFn(TraitInstanceMissingFnError {
                 name: constraint.trait_name.to_owned(),
