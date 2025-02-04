@@ -6,5 +6,7 @@ components = [
   "rustfmt",
   "clippy",
   "rust-std",
-  "rustc"
+  "rust-src",
+  "rustc",
+  "rust-analyzer",
 ]
