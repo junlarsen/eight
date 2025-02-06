@@ -15,5 +15,6 @@ pub fn execute_lit_command(_: LitArgs) {
     cmd.arg("tests");
     cmd.arg("-v");
     let mut child = cmd.spawn().expect("failed to spawn lit");
-    child.wait().expect("lit failed");
+    let status = child.wait().expect("lit failed");
+    std::process::exit(status.code().unwrap_or(1));
 }
