@@ -261,6 +261,7 @@ impl<'hir> TypingContext<'hir> {
             HirCallableSymbol::TraitFunction(_) => {
                 self.infer_trait_function_callable_reference_expr(expr, expectation)
             }
+            HirCallableSymbol::Intrinsic(_) => ice!("cannot infer type of intrinsic callable symbol"),
         }
     }
 
@@ -550,6 +551,7 @@ impl<'hir> TypingContext<'hir> {
                 );
                 Ok(())
             }
+            HirCallableSymbol::Intrinsic(_) => ice!("cannot infer type of intrinsic callable symbol"),
         }
     }
 

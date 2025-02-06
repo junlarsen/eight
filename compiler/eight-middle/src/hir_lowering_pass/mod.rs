@@ -235,9 +235,9 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ) -> MirResult<MirValueId> {
         match &expr.symbol {
             // If this is a simple function name, we can lower it to a specific function value.
-            HirCallableSymbol::Function(s) => {
+            HirCallableSymbol::Function(symbol) => {
                 // TODO: Mangle the name along with the type arguments.
-                let name = self.cc.intern_str(s.name);
+                let name = self.cc.intern_str(symbol.name);
                 let id = cx.data().get_function_id(name).unwrap_or_else(|| {
                     ice!(
                         "failed to find function id for {} despite passing type checker",
@@ -246,7 +246,8 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 });
                 Ok(b.build_function_ref(id))
             }
-            _ => unimplemented!(),
+            HirCallableSymbol::TraitFunction(_) => unimplemented!(),
+            HirCallableSymbol::Intrinsic(_) => unimplemented!(),
         }
     }
 

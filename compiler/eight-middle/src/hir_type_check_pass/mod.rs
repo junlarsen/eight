@@ -669,6 +669,9 @@ impl HirModuleTypeCheckerPass {
                     *argument = Self::visit_type(cx, argument)?;
                 }
             }
+            // These are constructed post-unification, so there is no way for these to be
+            // constructed before.
+            HirCallableSymbol::Intrinsic(_) => ice!("cannot visit intrinsic callable symbol"),
         }
         Ok(None)
     }
@@ -691,6 +694,7 @@ impl HirModuleTypeCheckerPass {
                     *argument = cx.substitute(argument)?;
                 }
             }
+            HirCallableSymbol::Intrinsic(_) => {}
         }
         Ok(None)
     }

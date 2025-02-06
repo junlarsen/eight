@@ -12,7 +12,7 @@ use std::fmt::Display;
 /// implemented as compiler intrinsics, and lowered into instructions like `arith.add` instead of
 /// function calls.
 #[derive(Debug)]
-pub enum CompilerBuiltin {
+pub enum CompilerIntrinsic {
     IntegerAdd,
     IntegerSub,
     IntegerMul,
@@ -24,8 +24,6 @@ pub enum CompilerBuiltin {
     IntegerGt,
     IntegerLte,
     IntegerGte,
-    IntegerAnd,
-    IntegerOr,
     BooleanAnd,
     BooleanOr,
     BooleanEq,
@@ -34,30 +32,28 @@ pub enum CompilerBuiltin {
     BooleanNot,
 }
 
-impl Display for CompilerBuiltin {
+impl Display for CompilerIntrinsic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             // Compiler intrinsics for the i32 type.
-            CompilerBuiltin::IntegerAdd => write!(f, "@@builtin_i32_add"),
-            CompilerBuiltin::IntegerSub => write!(f, "@@builtin_i32_sub"),
-            CompilerBuiltin::IntegerMul => write!(f, "@@builtin_i32_mul"),
-            CompilerBuiltin::IntegerDiv => write!(f, "@@builtin_i32_div"),
-            CompilerBuiltin::IntegerRem => write!(f, "@@builtin_i32_rem"),
-            CompilerBuiltin::IntegerEq => write!(f, "@@builtin_i32_eq"),
-            CompilerBuiltin::IntegerNeq => write!(f, "@@builtin_i32_neq"),
-            CompilerBuiltin::IntegerLt => write!(f, "@builtin_i32_lt"),
-            CompilerBuiltin::IntegerGt => write!(f, "@@builtin_i32_gt"),
-            CompilerBuiltin::IntegerLte => write!(f, "@@builtin_i32_lte"),
-            CompilerBuiltin::IntegerGte => write!(f, "@@builtin_i32_gte"),
-            CompilerBuiltin::IntegerAnd => write!(f, "@@builtin_i32_and"),
-            CompilerBuiltin::IntegerOr => write!(f, "@@builtin_i32_or"),
-            CompilerBuiltin::IntegerNeg => write!(f, "@@builtin_i32_neg"),
+            CompilerIntrinsic::IntegerAdd => write!(f, "@@builtin_i32_add"),
+            CompilerIntrinsic::IntegerSub => write!(f, "@@builtin_i32_sub"),
+            CompilerIntrinsic::IntegerMul => write!(f, "@@builtin_i32_mul"),
+            CompilerIntrinsic::IntegerDiv => write!(f, "@@builtin_i32_div"),
+            CompilerIntrinsic::IntegerRem => write!(f, "@@builtin_i32_rem"),
+            CompilerIntrinsic::IntegerEq => write!(f, "@@builtin_i32_eq"),
+            CompilerIntrinsic::IntegerNeq => write!(f, "@@builtin_i32_neq"),
+            CompilerIntrinsic::IntegerLt => write!(f, "@builtin_i32_lt"),
+            CompilerIntrinsic::IntegerGt => write!(f, "@@builtin_i32_gt"),
+            CompilerIntrinsic::IntegerLte => write!(f, "@@builtin_i32_lte"),
+            CompilerIntrinsic::IntegerGte => write!(f, "@@builtin_i32_gte"),
+            CompilerIntrinsic::IntegerNeg => write!(f, "@@builtin_i32_neg"),
             // Compiler intrinsics for the bool type.
-            CompilerBuiltin::BooleanAnd => write!(f, "@@builtin_bool_and"),
-            CompilerBuiltin::BooleanOr => write!(f, "@@builtin_bool_or"),
-            CompilerBuiltin::BooleanNot => write!(f, "@@builtin_bool_not"),
-            CompilerBuiltin::BooleanEq => write!(f, "@@builtin_bool_eq"),
-            CompilerBuiltin::BooleanNeq => write!(f, "@@builtin_bool_neq"),
+            CompilerIntrinsic::BooleanAnd => write!(f, "@@builtin_bool_and"),
+            CompilerIntrinsic::BooleanOr => write!(f, "@@builtin_bool_or"),
+            CompilerIntrinsic::BooleanNot => write!(f, "@@builtin_bool_not"),
+            CompilerIntrinsic::BooleanEq => write!(f, "@@builtin_bool_eq"),
+            CompilerIntrinsic::BooleanNeq => write!(f, "@@builtin_bool_neq"),
         }
     }
 }

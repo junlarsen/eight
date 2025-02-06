@@ -10,8 +10,7 @@
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirCallableReferenceExpr,
     HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument,
-    HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr,
-    HirOffsetIndexExpr, HirReferenceExpr,
+    HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr,
 };
 use crate::hir::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature,
@@ -660,6 +659,7 @@ impl<'a> HirModuleTextualPass<'a> {
                     self.arena.text(","),
                 ))
                 .append(self.arena.text(">")),
+            HirCallableSymbol::Intrinsic(intrinsic) => self.arena.text(intrinsic.to_string()),
         }
     }
 
