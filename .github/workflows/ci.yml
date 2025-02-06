@@ -16,6 +16,10 @@ jobs:
     steps:
       - uses: 'actions/checkout@v4'
       - run: sudo apt install llvm-18-dev llvm-18-tools clang-18 libpolly-18-dev
+      - run: echo "/usr/lib/llvm-18/bin" >> $GITHUB_PATH
+      - run: pipx install poetry==2.0.0
+      - run: poetry install
       - run: cargo fmt --check
       - run: cargo build --all
       - run: cargo test
+      - run: cargo xtask lit
