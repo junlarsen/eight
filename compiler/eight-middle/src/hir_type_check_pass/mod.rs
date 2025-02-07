@@ -549,24 +549,46 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirReferenceExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = Self::visit_type(cx, node.ty)?;
-        // See if the name resolves to a local let-binding or a function name.
-        let is_local_reference = cx.find_let_binding(node.name).is_some();
-        let is_function_reference = cx.signature.query_function_by_name(node.name).is_some();
+        // When nodes arrive from AST lowering, local kinds are assumed to be unknown unless proven
+        // otherwise. This means that if we come across a local reference, we might have to change
+        // the kind to a function if the name refers to a function in the current environment.
+        let mut substitute = None;
+        match &node.kind {
+            HirReferenceSymbol::Local(local) => {
+                // See if the name resolves to a local let-binding or a function name.
+                let is_local_reference = cx.find_let_binding(local.name).is_some();
+                let is_function_reference =
+                    cx.signature.query_function_by_name(local.name).is_some();
 
-        // If this surely points to a function (remember let-bindings take priority because they
-        // may shadow a function), we can add metadata to the expression.
-        let is_definitely_function = is_function_reference && !is_local_reference;
-        if is_definitely_function {
-            // TODO: This vec![] should be filled if we ever support stuff like let k = id::<i32>
-            node.kind = HirReferenceSymbol::new_function(node.name, node.name_span, vec![]);
+                // If this surely points to a function (remember let-bindings take priority because they
+                // may shadow a function), we can add metadata to the expression.
+                let is_definitely_function = is_function_reference && !is_local_reference;
+                if is_definitely_function {
+                    // TODO: This vec![] should be filled if we ever support stuff like let k = id::<i32>
+                    substitute = Some(HirReferenceSymbol::new_function(
+                        local.name,
+                        local.name_span,
+                        vec![],
+                    ));
+                }
+                // If we don't know where this name comes from, we have a type error.
+                if !is_local_reference && !is_function_reference {
+                    return Err(HirError::InvalidReference(InvalidReferenceError {
+                        name: local.name.to_owned(),
+                        span: local.name_span,
+                    }));
+                }
+            }
+            // If any of these show up, we don't have to do anything specific based on the current
+            // environment, and we can directly pass it down to inference.
+            HirReferenceSymbol::Function(_) => {}
+            HirReferenceSymbol::Intrinsic(_) => {}
+            HirReferenceSymbol::TraitMethod(_) => {}
         }
-        // If we don't know where this name comes from, we have a type error.
-        if !is_local_reference && !is_function_reference {
-            return Err(HirError::InvalidReference(InvalidReferenceError {
-                name: node.name.to_owned(),
-                span: node.name_span,
-            }));
+        if let Some(substitute) = substitute {
+            node.kind = substitute;
         }
+        Self::enter_reference_symbol(cx, &mut node.kind)?;
         cx.infer_reference_expr(node, node.ty)?;
         Ok(())
     }
@@ -577,6 +599,7 @@ impl HirModuleTypeCheckerPass {
         node: &mut HirReferenceExpr<'hir>,
     ) -> HirResult<()> {
         node.ty = cx.substitute(node.ty)?;
+        Self::leave_reference_symbol(cx, &mut node.kind)?;
         Ok(())
     }
 
@@ -598,7 +621,7 @@ impl HirModuleTypeCheckerPass {
                     *argument = Self::visit_type(cx, argument)?;
                 }
             }
-            HirReferenceSymbol::Local => {}
+            HirReferenceSymbol::Local(_) => {}
             // These are constructed post-unification, so there is no way for these to be
             // constructed before.
             HirReferenceSymbol::Intrinsic(_) => ice!("cannot visit intrinsic callable symbol"),
@@ -624,7 +647,7 @@ impl HirModuleTypeCheckerPass {
                     *argument = cx.substitute(argument)?;
                 }
             }
-            HirReferenceSymbol::Local | HirReferenceSymbol::Intrinsic(_) => {}
+            HirReferenceSymbol::Local(_) | HirReferenceSymbol::Intrinsic(_) => {}
         }
         Ok(())
     }

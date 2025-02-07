@@ -213,9 +213,9 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         expr: &'hir HirReferenceExpr<'hir>,
     ) -> MirResult<MirValueId> {
         match &expr.kind {
-            HirReferenceSymbol::Local => {
-                let id = self.locals.find(&expr.name).unwrap_or_else(|| {
-                    ice!("failed to find local value for {}", expr.name);
+            HirReferenceSymbol::Local(local) => {
+                let id = self.locals.find(&local.name).unwrap_or_else(|| {
+                    ice!("failed to find local value for {}", local.name);
                 });
                 let value_ty = b.data().get_value_type(*id);
                 let expected_ty = self.visit_ty(expr.ty)?;
