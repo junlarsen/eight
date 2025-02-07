@@ -1,3 +1,4 @@
+use crate::builtin::CompilerIntrinsic;
 use crate::context::CompileContext;
 use crate::hir::{
     HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
@@ -237,8 +238,12 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 });
                 Ok(b.build_function_ref(id))
             }
-            HirReferenceSymbol::Intrinsic(_) => unimplemented!(),
-            HirReferenceSymbol::TraitMethod(_) => unimplemented!(),
+            HirReferenceSymbol::Intrinsic(_) => {
+                ice!("called visit_reference_expr() on an intrinsic")
+            }
+            HirReferenceSymbol::TraitMethod(e) => {
+                unimplemented!("{:?}", e)
+            }
         }
     }
 
@@ -248,6 +253,11 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirCallExpr<'hir>,
     ) -> MirResult<MirValueId> {
+        // If the call is implemented as an intrinsic, we can lower it to a more efficient form, so
+        // we delegate to intrinsic lowering instead.
+        if expr.is_intrinsic() {
+            return self.visit_intrinsic_call_expr(b, cx, expr);
+        }
         let callee = self.visit_expr(b, cx, &expr.callee)?;
         let arguments = expr
             .arguments
@@ -257,6 +267,36 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         let return_ty = self.visit_ty(expr.ty)?;
         let call = b.build_call(cx, callee, arguments, return_ty, None);
         Ok(call)
+    }
+
+    pub fn visit_intrinsic_call_expr(
+        &mut self,
+        b: &mut MirFunctionBuilder<'mir>,
+        cx: &MirModuleContext<'mir, 'hir>,
+        expr: &'hir HirCallExpr<'hir>,
+    ) -> MirResult<MirValueId> {
+        let HirExpr::Reference(reference) = expr.callee.as_ref() else {
+            ice!("visit_intrinsic_call_expr called with non-reference callee");
+        };
+        let HirReferenceSymbol::Intrinsic(intrinsic) = &reference.kind else {
+            ice!("visit_intrinsic_call_expr called with non-intrinsic callee");
+        };
+        let arguments = expr
+            .arguments
+            .iter()
+            .map(|a| self.visit_expr(b, cx, a))
+            .collect::<MirResult<Vec<_>>>()?;
+        let ty = self.visit_ty(expr.ty)?;
+        let value = match intrinsic {
+            CompilerIntrinsic::IntegerAdd => b.build_add(cx, arguments[0], arguments[1], ty, None),
+            CompilerIntrinsic::IntegerSub => b.build_sub(cx, arguments[0], arguments[1], ty, None),
+            CompilerIntrinsic::IntegerMul => b.build_mul(cx, arguments[0], arguments[1], ty, None),
+            CompilerIntrinsic::IntegerDiv => b.build_div(cx, arguments[0], arguments[1], ty, None),
+
+            CompilerIntrinsic::IntegerNeg => b.build_neg(cx, arguments[0], ty, None),
+            _ => unimplemented!(),
+        };
+        Ok(value)
     }
 
     pub fn visit_group_expr(

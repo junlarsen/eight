@@ -409,6 +409,30 @@ impl<'mir> MirFunctionBuilder<'mir> {
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
+    /// Arithmetic negation is re-written as subtraction from zero.
+    pub fn build_neg<'hir>(
+        &mut self,
+        _: &MirModuleContext<'mir, 'hir>,
+        input: MirValueId,
+        ty: &'mir MirTy<'mir>,
+        name: Option<&'mir str>,
+    ) -> MirValueId {
+        let zero = self.build_constant_integer32(0, self.cc.mir_i32_type());
+        let inst_id = self.get_next_instruction_id();
+        let value_id = self.get_next_value_id();
+        let inst = MirInstruction::Sub(MirSubInstruction {
+            inst_id,
+            value_id,
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            ty,
+            lhs: zero,
+            rhs: input,
+        });
+        let inst = self.build_instruction(inst_id, inst);
+        self.insertion_point_mut().insert(inst);
+        self.build_value(value_id, MirValue::Instruction(inst))
+    }
+
     pub fn build_ptr_add_instruction(
         &mut self,
         ptr: MirValueId,
