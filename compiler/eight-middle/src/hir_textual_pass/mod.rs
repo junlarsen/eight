@@ -623,7 +623,7 @@ impl<'a> HirModuleTextualPass<'a> {
         expr: &'hir HirReferenceExpr,
     ) -> DocBuilder<'a, Arena<'a>> {
         match &expr.kind {
-            HirReferenceSymbol::Local => self.arena.text(expr.name),
+            HirReferenceSymbol::Local(s) => self.arena.text(s.name),
             HirReferenceSymbol::Function(s) => self
                 .arena
                 .text(s.name)

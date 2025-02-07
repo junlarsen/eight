@@ -315,17 +315,9 @@ impl<'hir> HirBuilder {
 
     pub fn build_reference_expr(
         span: Span,
-        name: &'hir str,
-        name_span: Span,
         ty: &'hir HirTy<'hir>,
         kind: HirReferenceSymbol<'hir>,
     ) -> HirReferenceExpr<'hir> {
-        HirReferenceExpr {
-            span,
-            name,
-            name_span,
-            ty,
-            kind,
-        }
+        HirReferenceExpr { span, ty, kind }
     }
 }

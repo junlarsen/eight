@@ -96,8 +96,6 @@ pub struct HirDerefExpr<'hir> {
 #[derive(Debug)]
 pub struct HirReferenceExpr<'hir> {
     pub span: Span,
-    pub name: &'hir str,
-    pub name_span: Span,
     /// The type of `name` in the current scope.
     pub ty: &'hir HirTy<'hir>,
     pub kind: HirReferenceSymbol<'hir>,
@@ -148,10 +146,16 @@ impl HirReferenceSymbol<'_> {
 /// requiring to have an undecided variant.
 #[derive(Debug)]
 pub enum HirReferenceSymbol<'hir> {
-    Local,
+    Local(HirLocalReferenceSymbol<'hir>),
     Function(HirFunctionReferenceSymbol<'hir>),
     TraitMethod(HirTraitMethodReferenceSymbol<'hir>),
     Intrinsic(CompilerIntrinsic),
+}
+
+#[derive(Debug)]
+pub struct HirLocalReferenceSymbol<'hir> {
+    pub name: &'hir str,
+    pub name_span: Span,
 }
 
 #[derive(Debug)]

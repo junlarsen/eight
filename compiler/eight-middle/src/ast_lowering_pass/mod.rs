@@ -1,9 +1,10 @@
 use crate::context::CompileContext;
 use crate::hir::{
     HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction, HirFunctionParameterSignature,
-    HirFunctionSignature, HirInstance, HirInstanceSignature, HirLetStmt, HirModule, HirModuleBody,
-    HirModuleSignature, HirStmt, HirStruct, HirStructFieldSignature, HirStructSignature, HirTrait,
-    HirTraitSignature, HirType, HirTypeParameterSignature, HirTypeSignature,
+    HirFunctionSignature, HirInstance, HirInstanceSignature, HirLetStmt, HirLocalReferenceSymbol,
+    HirModule, HirModuleBody, HirModuleSignature, HirStmt, HirStruct, HirStructFieldSignature,
+    HirStructSignature, HirTrait, HirTraitSignature, HirType, HirTypeParameterSignature,
+    HirTypeSignature,
 };
 use crate::hir::{HirReferenceSymbol, HirTy};
 use crate::hir_builder::HirBuilder;
@@ -239,15 +240,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.op_span,
             vec![],
         );
-        let reference = HirBuilder::build_reference_expr(
-            node.span,
-            // TODO: This is a placeholder name. The node needs restructuring around this, as this
-            //  should not even be required to be here.
-            self.cc.intern_str("__placeholder__"),
-            node.operand.span(),
-            self.cc.hir_uninitialized_type(),
-            symbol,
-        );
+        let reference =
+            HirBuilder::build_reference_expr(node.span, self.cc.hir_uninitialized_type(), symbol);
         Ok(HirExpr::Call(HirBuilder::build_call_expr(
             node.span,
             HirExpr::Reference(reference),
@@ -287,15 +281,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.op_span,
             vec![],
         );
-        let reference = HirBuilder::build_reference_expr(
-            node.span,
-            // TODO: This is a placeholder name. The node needs restructuring around this, as this
-            //  should not even be required to be here.
-            self.cc.intern_str("__placeholder__"),
-            node.lhs.span(),
-            self.cc.hir_uninitialized_type(),
-            symbol,
-        );
+        let reference =
+            HirBuilder::build_reference_expr(node.span, self.cc.hir_uninitialized_type(), symbol);
         Ok(HirExpr::Call(HirBuilder::build_call_expr(
             node.span,
             HirExpr::Reference(reference),
@@ -341,12 +328,13 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     ) -> HirResult<HirExpr<'hir>> {
         Ok(HirExpr::Reference(HirBuilder::build_reference_expr(
             node.span,
-            self.cc.intern_str(&node.name.name),
-            node.name.span,
             self.cc.hir_uninitialized_type(),
             // Assume that it is a local reference by default. The value here does not really matter
             // as the type checker will replace this as it sees fit.
-            HirReferenceSymbol::Local,
+            HirReferenceSymbol::Local(HirLocalReferenceSymbol {
+                name: self.cc.intern_str(&node.name.name),
+                name_span: node.name.span,
+            }),
         )))
     }
 

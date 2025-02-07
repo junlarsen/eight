@@ -242,7 +242,7 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         match &expr.kind {
-            HirReferenceSymbol::Local => self.infer_local_reference(expr, expectation),
+            HirReferenceSymbol::Local(_) => self.infer_local_reference(expr, expectation),
             HirReferenceSymbol::Function(_) => self.infer_function_reference(expr, expectation),
             HirReferenceSymbol::TraitMethod(_) => {
                 self.infer_trait_method_reference(expr, expectation)
@@ -258,11 +258,13 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirReferenceExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        assert!(matches!(expr.kind, HirReferenceSymbol::Local));
-        let Some(local_ty) = self.find_let_binding(expr.name) else {
+        let HirReferenceSymbol::Local(local) = &mut expr.kind else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
-        self.constrain_eq(expectation, local_ty, expr.span, expr.name_span);
+        let Some(local_ty) = self.find_let_binding(local.name) else {
+            ice!("called infer() on a name that doesn't exist in the context");
+        };
+        self.constrain_eq(expectation, local_ty, expr.span, local.name_span);
         Ok(())
     }
 
@@ -555,7 +557,9 @@ impl<'hir> TypingContext<'hir> {
             HirReferenceSymbol::Intrinsic(_) => {
                 ice!("cannot infer call() type of intrinsic callable symbol")
             }
-            HirReferenceSymbol::Local => ice!("cannot infer call() type of local callable symbol"),
+            HirReferenceSymbol::Local(_) => {
+                ice!("cannot infer call() type of local callable symbol")
+            }
         }
     }
 
