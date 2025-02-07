@@ -8,9 +8,9 @@
 //! invents syntax not found in the base language, such as statement blocks and while loops.
 
 use crate::hir::{
-    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirCallableReferenceExpr,
-    HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument,
-    HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr,
+    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
+    HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr,
+    HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol,
 };
 use crate::hir::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature,
@@ -577,7 +577,6 @@ impl<'a> HirModuleTextualPass<'a> {
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(e),
             HirExpr::Assign(e) => self.visit_assign_expr(e),
             HirExpr::Reference(e) => self.visit_reference_expr(e),
-            HirExpr::CallableReference(e) => self.visit_callable_reference_expr(e),
             HirExpr::ConstantIndex(e) => self.visit_constant_index_expr(e),
             HirExpr::OffsetIndex(e) => self.visit_offset_index_expr(e),
             HirExpr::Call(e) => self.visit_call_expr(e),
@@ -623,15 +622,9 @@ impl<'a> HirModuleTextualPass<'a> {
         &'a self,
         expr: &'hir HirReferenceExpr,
     ) -> DocBuilder<'a, Arena<'a>> {
-        self.arena.text(expr.name)
-    }
-
-    pub fn visit_callable_reference_expr<'hir: 'a>(
-        &'a self,
-        expr: &'hir HirCallableReferenceExpr,
-    ) -> DocBuilder<'a, Arena<'a>> {
-        match &expr.symbol {
-            HirCallableSymbol::Function(s) => self
+        match &expr.kind {
+            HirReferenceSymbol::Local(s) => self.arena.text(s.name),
+            HirReferenceSymbol::Function(s) => self
                 .arena
                 .text(s.name)
                 .append(self.arena.text("::"))
@@ -641,7 +634,7 @@ impl<'a> HirModuleTextualPass<'a> {
                     self.arena.text(","),
                 ))
                 .append(self.arena.text(">")),
-            HirCallableSymbol::TraitFunction(s) => self
+            HirReferenceSymbol::TraitMethod(s) => self
                 .arena
                 .text(s.trait_name)
                 .append(self.arena.text("<"))
@@ -659,7 +652,7 @@ impl<'a> HirModuleTextualPass<'a> {
                     self.arena.text(","),
                 ))
                 .append(self.arena.text(">")),
-            HirCallableSymbol::Intrinsic(intrinsic) => self.arena.text(intrinsic.to_string()),
+            HirReferenceSymbol::Intrinsic(intrinsic) => self.arena.text(intrinsic.to_string()),
         }
     }
 

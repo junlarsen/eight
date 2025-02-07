@@ -14,7 +14,6 @@ pub enum HirExpr<'hir> {
     BooleanLiteral(HirBooleanLiteralExpr<'hir>),
     Assign(HirAssignExpr<'hir>),
     Reference(HirReferenceExpr<'hir>),
-    CallableReference(HirCallableReferenceExpr<'hir>),
     ConstantIndex(HirConstantIndexExpr<'hir>),
     OffsetIndex(HirOffsetIndexExpr<'hir>),
     Call(HirCallExpr<'hir>),
@@ -36,7 +35,6 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::Construct(e) => e.span,
             HirExpr::Group(e) => e.span,
             HirExpr::Reference(e) => e.span,
-            HirExpr::CallableReference(e) => e.span,
             HirExpr::AddressOf(e) => e.span,
             HirExpr::Deref(e) => e.span,
         }
@@ -53,7 +51,6 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::Construct(e) => e.ty,
             HirExpr::Group(e) => e.ty,
             HirExpr::Reference(e) => e.ty,
-            HirExpr::CallableReference(e) => e.ty,
             HirExpr::AddressOf(e) => e.ty,
             HirExpr::Deref(e) => e.ty,
         }
@@ -99,24 +96,16 @@ pub struct HirDerefExpr<'hir> {
 #[derive(Debug)]
 pub struct HirReferenceExpr<'hir> {
     pub span: Span,
-    pub name: &'hir str,
-    pub name_span: Span,
     /// The type of `name` in the current scope.
     pub ty: &'hir HirTy<'hir>,
+    pub kind: HirReferenceSymbol<'hir>,
 }
 
-#[derive(Debug)]
-pub struct HirCallableReferenceExpr<'hir> {
-    pub span: Span,
-    pub symbol: HirCallableSymbol<'hir>,
-    pub ty: &'hir HirTy<'hir>,
-}
-
-impl HirCallableSymbol<'_> {
+impl HirReferenceSymbol<'_> {
     /// Try to convert this callable reference into a compiler intrinsic.
     #[rustfmt::skip]
     pub fn get_compiler_intrinsic_candidate(&self) -> Option<CompilerIntrinsic> {
-        let HirCallableSymbol::TraitFunction(symbol) = self else {
+        let HirReferenceSymbol::TraitMethod(symbol) = self else {
             return None
         };
         match (symbol.trait_name, symbol.method_name, symbol.method_type_arguments.as_slice()) {
@@ -144,21 +133,33 @@ impl HirCallableSymbol<'_> {
     }
 }
 
-/// A reference to a callable symbol.
+/// A reference to a symbol.
 ///
-/// A callable symbol is a function or a trait instance's implementation of a trait function. This
-/// distinction from [`HirReferenceExpr`] is important because it allows us to distinguish between
-/// values in scope and function, as well as making the distinction between trait functions and
-/// regular functions.
+/// A reference can be resolved into one of four categories:
+///
+/// 1. Local variable
+/// 2. Global function
+/// 3. Trait method
+/// 4. Compiler intrinsic
+///
+/// References are assumed to be local until proven otherwise. This simplifies things a bit by not
+/// requiring to have an undecided variant.
 #[derive(Debug)]
-pub enum HirCallableSymbol<'hir> {
-    Function(HirFunctionCallableSymbol<'hir>),
-    TraitFunction(HirTraitFunctionCallableSymbol<'hir>),
+pub enum HirReferenceSymbol<'hir> {
+    Local(HirLocalReferenceSymbol<'hir>),
+    Function(HirFunctionReferenceSymbol<'hir>),
+    TraitMethod(HirTraitMethodReferenceSymbol<'hir>),
     Intrinsic(CompilerIntrinsic),
 }
 
 #[derive(Debug)]
-pub struct HirFunctionCallableSymbol<'hir> {
+pub struct HirLocalReferenceSymbol<'hir> {
+    pub name: &'hir str,
+    pub name_span: Span,
+}
+
+#[derive(Debug)]
+pub struct HirFunctionReferenceSymbol<'hir> {
     pub name: &'hir str,
     pub name_span: Span,
     /// The type arguments that the callable reference was instantiated with.
@@ -169,7 +170,7 @@ pub struct HirFunctionCallableSymbol<'hir> {
 }
 
 #[derive(Debug)]
-pub struct HirTraitFunctionCallableSymbol<'hir> {
+pub struct HirTraitMethodReferenceSymbol<'hir> {
     pub trait_name: &'hir str,
     pub trait_name_span: Span,
     pub trait_type_arguments: Vec<&'hir HirTy<'hir>>,
@@ -179,13 +180,13 @@ pub struct HirTraitFunctionCallableSymbol<'hir> {
     pub instantiated_call_parameters: Vec<&'hir HirTy<'hir>>,
 }
 
-impl<'hir> HirCallableSymbol<'hir> {
+impl<'hir> HirReferenceSymbol<'hir> {
     pub fn new_function(
         name: &'hir str,
         name_span: Span,
         type_arguments: Vec<&'hir HirTy<'hir>>,
     ) -> Self {
-        Self::Function(HirFunctionCallableSymbol {
+        Self::Function(HirFunctionReferenceSymbol {
             name,
             name_span,
             type_arguments,
@@ -201,7 +202,7 @@ impl<'hir> HirCallableSymbol<'hir> {
         method_name_span: Span,
         method_type_arguments: Vec<&'hir HirTy<'hir>>,
     ) -> Self {
-        Self::TraitFunction(HirTraitFunctionCallableSymbol {
+        Self::TraitMethod(HirTraitMethodReferenceSymbol {
             trait_name,
             trait_name_span,
             trait_type_arguments,
