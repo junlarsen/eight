@@ -8,6 +8,8 @@ use crate::hir::{
     HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirModule, HirOffsetIndexExpr,
     HirReferenceExpr, HirReferenceSymbol, HirReturnStmt, HirStmt,
 };
+use crate::hir_builder::HirBuilder;
+use eight_diagnostics::ice;
 
 pub struct HirSimplifyPass<'be> {
     cc: &'be CompileContext<'be>,
@@ -134,10 +136,38 @@ impl<'be> HirSimplifyPass<'be> {
         self.visit_expr(&mut expr.index);
     }
 
+    /// Visit a call expression.
+    ///
+    /// We want to simplify or re-guide calls to functions or trait methods that can be optimized
+    /// or lowered into a more efficient form further down the line by turning them into calls to
+    /// compiler intrinsics.
     pub fn visit_call_expr(&mut self, expr: &mut HirCallExpr<'be>) {
         self.visit_expr(&mut expr.callee);
         for argument in expr.arguments.iter_mut() {
             self.visit_expr(argument);
+        }
+        // TODO: The compiler will currently not emit this, but in the future we might support
+        //   calling arbitrary pointers, in which case this should be valid.
+        let HirExpr::Reference(reference) = expr.callee.as_mut() else {
+            return;
+        };
+        // Potentially substitute the call with a compiler intrinsic.
+        let mut substitute = None;
+        match &reference.kind {
+            HirReferenceSymbol::TraitMethod(symbol) => {
+                if let Some(intrinsic) = symbol.get_compiler_intrinsic_candidate() {
+                    substitute = Some(intrinsic)
+                }
+            }
+            HirReferenceSymbol::Function(_) | HirReferenceSymbol::Intrinsic(_) => {}
+            HirReferenceSymbol::Local(_) => ice!("invoked call to a local variable"),
+        }
+        if let Some(substitute) = substitute {
+            expr.callee = Box::new(HirExpr::Reference(HirBuilder::build_reference_expr(
+                expr.span,
+                substitute.get_application_type(self.cc),
+                HirReferenceSymbol::Intrinsic(substitute),
+            )))
         }
     }
 

@@ -101,38 +101,6 @@ pub struct HirReferenceExpr<'hir> {
     pub kind: HirReferenceSymbol<'hir>,
 }
 
-impl HirReferenceSymbol<'_> {
-    /// Try to convert this callable reference into a compiler intrinsic.
-    #[rustfmt::skip]
-    pub fn get_compiler_intrinsic_candidate(&self) -> Option<CompilerIntrinsic> {
-        let HirReferenceSymbol::TraitMethod(symbol) = self else {
-            return None
-        };
-        match (symbol.trait_name, symbol.method_name, symbol.method_type_arguments.as_slice()) {
-            // Compiler intrinsics for the i32 type
-            ("Add", "add", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerAdd),
-            ("Sub", "sub", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerSub),
-            ("Mul", "mul", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerMul),
-            ("Div", "div", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerDiv),
-            ("Rem", "rem", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerRem),
-            ("Eq", "eq", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerEq),
-            ("Eq", "neq", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeq),
-            ("Ord", "lt", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLt),
-            ("Ord", "gt", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGt),
-            ("Ord", "le", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLte),
-            ("Ord", "ge", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGte),
-            ("Neg", "neg", &[HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeg),
-            // Compiler intrinsics for the bool type
-            ("Not", "not", &[HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanNot),
-            ("Eq", "eq", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanEq),
-            ("Eq", "neq", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanNeq),
-            ("And", "and", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanAnd),
-            ("Or", "or", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanOr),
-            _ => None
-        }
-    }
-}
-
 /// A reference to a symbol.
 ///
 /// A reference can be resolved into one of four categories:
@@ -150,34 +118,6 @@ pub enum HirReferenceSymbol<'hir> {
     Function(HirFunctionReferenceSymbol<'hir>),
     TraitMethod(HirTraitMethodReferenceSymbol<'hir>),
     Intrinsic(CompilerIntrinsic),
-}
-
-#[derive(Debug)]
-pub struct HirLocalReferenceSymbol<'hir> {
-    pub name: &'hir str,
-    pub name_span: Span,
-}
-
-#[derive(Debug)]
-pub struct HirFunctionReferenceSymbol<'hir> {
-    pub name: &'hir str,
-    pub name_span: Span,
-    /// The type arguments that the callable reference was instantiated with.
-    ///
-    /// These are unknown to begin with, but can be filled in after unification.
-    pub type_arguments: Vec<&'hir HirTy<'hir>>,
-    pub instantiated_call_parameters: Vec<&'hir HirTy<'hir>>,
-}
-
-#[derive(Debug)]
-pub struct HirTraitMethodReferenceSymbol<'hir> {
-    pub trait_name: &'hir str,
-    pub trait_name_span: Span,
-    pub trait_type_arguments: Vec<&'hir HirTy<'hir>>,
-    pub method_name: &'hir str,
-    pub method_name_span: Span,
-    pub method_type_arguments: Vec<&'hir HirTy<'hir>>,
-    pub instantiated_call_parameters: Vec<&'hir HirTy<'hir>>,
 }
 
 impl<'hir> HirReferenceSymbol<'hir> {
@@ -211,6 +151,63 @@ impl<'hir> HirReferenceSymbol<'hir> {
             method_type_arguments,
             instantiated_call_parameters: Vec::new(),
         })
+    }
+}
+
+#[derive(Debug)]
+pub struct HirLocalReferenceSymbol<'hir> {
+    pub name: &'hir str,
+    pub name_span: Span,
+}
+
+#[derive(Debug)]
+pub struct HirFunctionReferenceSymbol<'hir> {
+    pub name: &'hir str,
+    pub name_span: Span,
+    /// The type arguments that the callable reference was instantiated with.
+    ///
+    /// These are unknown to begin with, but can be filled in after unification.
+    pub type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub instantiated_call_parameters: Vec<&'hir HirTy<'hir>>,
+}
+
+#[derive(Debug)]
+pub struct HirTraitMethodReferenceSymbol<'hir> {
+    pub trait_name: &'hir str,
+    pub trait_name_span: Span,
+    pub trait_type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub method_name: &'hir str,
+    pub method_name_span: Span,
+    pub method_type_arguments: Vec<&'hir HirTy<'hir>>,
+    pub instantiated_call_parameters: Vec<&'hir HirTy<'hir>>,
+}
+
+impl HirTraitMethodReferenceSymbol<'_> {
+    /// Try to convert this callable reference into a compiler intrinsic.
+    #[rustfmt::skip]
+    pub fn get_compiler_intrinsic_candidate(&self) -> Option<CompilerIntrinsic> {
+        match (self.trait_name, self.method_name, self.trait_type_arguments.as_slice()) {
+            // Compiler intrinsics for the i32 type
+            ("Add", "add", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerAdd),
+            ("Sub", "sub", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerSub),
+            ("Mul", "mul", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerMul),
+            ("Div", "div", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerDiv),
+            ("Rem", "rem", &[HirTy::Integer32(_), HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerRem),
+            ("Eq", "eq", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerEq),
+            ("Eq", "neq", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeq),
+            ("Ord", "lt", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLt),
+            ("Ord", "gt", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGt),
+            ("Ord", "le", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLte),
+            ("Ord", "ge", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGte),
+            ("Neg", "neg", &[HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeg),
+            // Compiler intrinsics for the bool type
+            ("Not", "not", &[HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanNot),
+            ("Eq", "eq", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanEq),
+            ("Eq", "neq", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanNeq),
+            ("And", "and", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanAnd),
+            ("Or", "or", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanOr),
+            _ => None
+        }
     }
 }
 
