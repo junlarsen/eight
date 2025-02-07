@@ -199,7 +199,7 @@ impl HirTraitMethodReferenceSymbol<'_> {
             ("Ord", "gt", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGt),
             ("Ord", "le", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLte),
             ("Ord", "ge", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGte),
-            ("Neg", "neg", &[HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeg),
+            ("Neg", "neg", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeg),
             // Compiler intrinsics for the bool type
             ("Not", "not", &[HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanNot),
             ("Eq", "eq", &[HirTy::Boolean(_), HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanEq),
@@ -244,6 +244,16 @@ pub struct HirCallExpr<'hir> {
     pub trait_type_arguments: Vec<&'hir HirTy<'hir>>,
     /// The type of the result of the call expression.
     pub ty: &'hir HirTy<'hir>,
+}
+
+impl HirCallExpr<'_> {
+    /// Does this call expression call an intrinsic function?
+    pub fn is_intrinsic(&self) -> bool {
+        matches!(self.callee.as_ref(), HirExpr::Reference(r) if matches!(
+            r.kind,
+            HirReferenceSymbol::Intrinsic(_)
+        ))
+    }
 }
 
 #[derive(Debug)]
