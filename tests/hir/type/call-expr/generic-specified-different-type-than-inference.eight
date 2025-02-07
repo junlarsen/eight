@@ -1,4 +1,4 @@
-// RUN: %not %eightc %s --terminator=mir 2>&1 | %fc %s
+// RUN: not %eightc %s --terminator=mir 2>&1 | FileCheck %s
 
 intrinsic_fn id<T>(x: T) -> T;
 

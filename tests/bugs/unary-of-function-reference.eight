@@ -1,4 +1,4 @@
-// RUN: %not %eightc %s 2>&1 | %fc %s
+// RUN: not %eightc %s 2>&1 | FileCheck %s
 
 // This is technically legal, but you can't construct a function type in the
 // language. Maybe it's something worth keeping around for the future? Maybe it

@@ -1,4 +1,4 @@
-// RUN: %not %eightc --emit-hir --terminator=hir %s 2>&1 | %fc %s
+// RUN: not %eightc --emit-hir --terminator=hir %s 2>&1 | FileCheck %s
 
 struct Point {
   x: i32,
