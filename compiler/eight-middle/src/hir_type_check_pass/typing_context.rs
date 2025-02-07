@@ -1,9 +1,8 @@
 use crate::context::CompileContext;
 use crate::hir::{
-    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirCallableReferenceExpr,
-    HirCallableSymbol, HirConstantIndexExpr, HirConstructExpr, HirDerefExpr, HirExpr,
-    HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr, HirMetaTy, HirModuleSignature,
-    HirOffsetIndexExpr, HirReferenceExpr, HirTy,
+    HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
+    HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr,
+    HirMetaTy, HirModuleSignature, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol, HirTy,
 };
 use crate::hir_type_check_pass::{
     Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint,
@@ -242,6 +241,24 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirReferenceExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
+        match &expr.kind {
+            HirReferenceSymbol::Local => self.infer_local_reference(expr, expectation),
+            HirReferenceSymbol::Function(_) => self.infer_function_reference(expr, expectation),
+            HirReferenceSymbol::TraitMethod(_) => {
+                self.infer_trait_method_reference(expr, expectation)
+            }
+            HirReferenceSymbol::Intrinsic(_) => {
+                ice!("cannot infer type of intrinsic callable symbol")
+            }
+        }
+    }
+
+    pub fn infer_local_reference(
+        &mut self,
+        expr: &mut HirReferenceExpr<'hir>,
+        expectation: &'hir HirTy<'hir>,
+    ) -> HirResult<()> {
+        assert!(matches!(expr.kind, HirReferenceSymbol::Local));
         let Some(local_ty) = self.find_let_binding(expr.name) else {
             ice!("called infer() on a name that doesn't exist in the context");
         };
@@ -249,28 +266,12 @@ impl<'hir> TypingContext<'hir> {
         Ok(())
     }
 
-    pub fn infer_callable_reference_expr(
+    fn infer_function_reference(
         &mut self,
-        expr: &mut HirCallableReferenceExpr<'hir>,
+        expr: &mut HirReferenceExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        match &expr.symbol {
-            HirCallableSymbol::Function(_) => {
-                self.infer_function_callable_reference_expr(expr, expectation)
-            }
-            HirCallableSymbol::TraitFunction(_) => {
-                self.infer_trait_function_callable_reference_expr(expr, expectation)
-            }
-            HirCallableSymbol::Intrinsic(_) => ice!("cannot infer type of intrinsic callable symbol"),
-        }
-    }
-
-    fn infer_function_callable_reference_expr(
-        &mut self,
-        expr: &mut HirCallableReferenceExpr<'hir>,
-        expectation: &'hir HirTy<'hir>,
-    ) -> HirResult<()> {
-        let HirCallableSymbol::Function(sym) = &mut expr.symbol else {
+        let HirReferenceSymbol::Function(sym) = &mut expr.kind else {
             ice!(
                 "called infer_function_callable_reference_expr() on non-function symbol reference"
             );
@@ -325,12 +326,12 @@ impl<'hir> TypingContext<'hir> {
         Ok(())
     }
 
-    fn infer_trait_function_callable_reference_expr(
+    fn infer_trait_method_reference(
         &mut self,
-        expr: &mut HirCallableReferenceExpr<'hir>,
+        expr: &mut HirReferenceExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        let HirCallableSymbol::TraitFunction(sym) = &mut expr.symbol else {
+        let HirReferenceSymbol::TraitMethod(sym) = &mut expr.kind else {
             ice!("called infer_trait_function_callable_reference_expr() on non-trait function symbol reference");
         };
         let Some(trait_signature) = self.signature.query_trait_by_name(sym.trait_name) else {
@@ -423,11 +424,11 @@ impl<'hir> TypingContext<'hir> {
         expr: &mut HirCallExpr<'hir>,
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        let HirExpr::CallableReference(callee) = expr.callee.as_ref() else {
+        let HirExpr::Reference(callee) = expr.callee.as_ref() else {
             ice!("managed to call an expression that was not reduced into a callable reference");
         };
-        match &callee.symbol {
-            HirCallableSymbol::Function(sym) => {
+        match &callee.kind {
+            HirReferenceSymbol::Function(sym) => {
                 // This should not have anything in the trait type arguments
                 assert!(expr.trait_type_arguments.is_empty());
                 // If the user provided type parameters, we need to constrain them to be equal to the types
@@ -481,7 +482,7 @@ impl<'hir> TypingContext<'hir> {
                 self.constrain_eq(expectation, expr.ty, expr.span, expr.callee.span());
                 Ok(())
             }
-            HirCallableSymbol::TraitFunction(sym) => {
+            HirReferenceSymbol::TraitMethod(sym) => {
                 // TODO: Add proper diagnostics here
                 assert!(
                     expr.trait_type_arguments.is_empty()
@@ -551,7 +552,10 @@ impl<'hir> TypingContext<'hir> {
                 );
                 Ok(())
             }
-            HirCallableSymbol::Intrinsic(_) => ice!("cannot infer type of intrinsic callable symbol"),
+            HirReferenceSymbol::Intrinsic(_) => {
+                ice!("cannot infer call() type of intrinsic callable symbol")
+            }
+            HirReferenceSymbol::Local => ice!("cannot infer call() type of local callable symbol"),
         }
     }
 
@@ -675,7 +679,6 @@ impl<'hir> TypingContext<'hir> {
             HirExpr::BooleanLiteral(e) => self.infer_boolean_literal_expr(e, expectation),
             HirExpr::Assign(e) => self.infer_assign_expr(e, expectation),
             HirExpr::Reference(e) => self.infer_reference_expr(e, expectation),
-            HirExpr::CallableReference(e) => self.infer_callable_reference_expr(e, expectation),
             HirExpr::OffsetIndex(e) => self.infer_offset_index_expr(e, expectation),
             HirExpr::ConstantIndex(e) => self.infer_constant_index_expr(e, expectation),
             HirExpr::Call(e) => self.infer_call_expr(e, expectation),

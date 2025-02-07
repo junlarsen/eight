@@ -1,11 +1,11 @@
 use crate::context::CompileContext;
-use crate::hir::{HirCallableSymbol, HirTy};
 use crate::hir::{
     HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction, HirFunctionParameterSignature,
     HirFunctionSignature, HirInstance, HirInstanceSignature, HirLetStmt, HirModule, HirModuleBody,
     HirModuleSignature, HirStmt, HirStruct, HirStructFieldSignature, HirStructSignature, HirTrait,
     HirTraitSignature, HirType, HirTypeParameterSignature, HirTypeSignature,
 };
+use crate::hir::{HirReferenceSymbol, HirTy};
 use crate::hir_builder::HirBuilder;
 use crate::scope::Scope;
 use crate::HirResult;
@@ -231,7 +231,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             AstUnaryOp::Neg => ("Neg", "neg"),
             _ => ice!("visit_unary_op called addressof or deref operator"),
         };
-        let sym = HirCallableSymbol::new_trait_function(
+        let symbol = HirReferenceSymbol::new_trait_function(
             trait_name,
             node.op_span,
             vec![],
@@ -239,14 +239,18 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.op_span,
             vec![],
         );
-        let callable_reference = HirBuilder::build_callable_reference_expr(
+        let reference = HirBuilder::build_reference_expr(
             node.span,
-            sym,
+            // TODO: This is a placeholder name. The node needs restructuring around this, as this
+            //  should not even be required to be here.
+            self.cc.intern_str("__placeholder__"),
+            node.operand.span(),
             self.cc.hir_uninitialized_type(),
+            symbol,
         );
         Ok(HirExpr::Call(HirBuilder::build_call_expr(
             node.span,
-            HirExpr::CallableReference(callable_reference),
+            HirExpr::Reference(reference),
             vec![self.visit_expr(node.operand)?],
             // There are no explicit type arguments provided, besides, as we mentioned above, there
             // are no type parameters on these trait functions.
@@ -275,7 +279,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             AstBinaryOp::And => ("And", "and"),
             AstBinaryOp::Or => ("Or", "or"),
         };
-        let sym = HirCallableSymbol::new_trait_function(
+        let symbol = HirReferenceSymbol::new_trait_function(
             trait_name,
             node.op_span,
             vec![],
@@ -283,14 +287,18 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.op_span,
             vec![],
         );
-        let callable_reference = HirBuilder::build_callable_reference_expr(
+        let reference = HirBuilder::build_reference_expr(
             node.span,
-            sym,
+            // TODO: This is a placeholder name. The node needs restructuring around this, as this
+            //  should not even be required to be here.
+            self.cc.intern_str("__placeholder__"),
+            node.lhs.span(),
             self.cc.hir_uninitialized_type(),
+            symbol,
         );
         Ok(HirExpr::Call(HirBuilder::build_call_expr(
             node.span,
-            HirExpr::CallableReference(callable_reference),
+            HirExpr::Reference(reference),
             vec![self.visit_expr(node.lhs)?, self.visit_expr(node.rhs)?],
             // There are no explicit type arguments provided, besides, as we mentioned above, there
             // are no type parameters on these trait functions.
@@ -336,6 +344,9 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             self.cc.intern_str(&node.name.name),
             node.name.span,
             self.cc.hir_uninitialized_type(),
+            // Assume that it is a local reference by default. The value here does not really matter
+            // as the type checker will replace this as it sees fit.
+            HirReferenceSymbol::Local,
         )))
     }
 

@@ -2,9 +2,9 @@ use crate::context::CompileContext;
 use crate::hir::{
     HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
 };
-use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirModule};
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::hir::{HirGroupExpr, HirTy};
+use crate::hir::{HirModule, HirReferenceSymbol};
 use crate::mir::MirModule;
 use crate::mir::MirTy;
 use crate::mir::MirValueId;
@@ -167,7 +167,6 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         match expr {
             HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(b, cx, e),
             HirExpr::Reference(e) => self.visit_reference_expr(b, cx, e),
-            HirExpr::CallableReference(e) => self.visit_callable_reference_expr(b, cx, e),
             HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
             HirExpr::Group(e) => self.visit_group_expr(b, cx, e),
@@ -213,29 +212,21 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirReferenceExpr<'hir>,
     ) -> MirResult<MirValueId> {
-        // Arguments can be used directly, but locals need to be loaded.
-        let id = self.locals.find(&expr.name).unwrap_or_else(|| {
-            ice!("failed to find local value for {}", expr.name);
-        });
-        let value_ty = b.data().get_value_type(*id);
-        let expected_ty = self.visit_ty(expr.ty)?;
-        // If it is a pointer type, we automatically dereference it.
-        if let MirTy::Pointer(_) = value_ty {
-            let load = b.build_load(cx, *id, expected_ty, None);
-            return Ok(load);
-        }
-        Ok(*id)
-    }
-
-    pub fn visit_callable_reference_expr(
-        &mut self,
-        b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
-        expr: &'hir HirCallableReferenceExpr<'hir>,
-    ) -> MirResult<MirValueId> {
-        match &expr.symbol {
-            // If this is a simple function name, we can lower it to a specific function value.
-            HirCallableSymbol::Function(symbol) => {
+        match &expr.kind {
+            HirReferenceSymbol::Local => {
+                let id = self.locals.find(&expr.name).unwrap_or_else(|| {
+                    ice!("failed to find local value for {}", expr.name);
+                });
+                let value_ty = b.data().get_value_type(*id);
+                let expected_ty = self.visit_ty(expr.ty)?;
+                // If it is a pointer type, we automatically dereference it.
+                if let MirTy::Pointer(_) = value_ty {
+                    let load = b.build_load(cx, *id, expected_ty, None);
+                    return Ok(load);
+                }
+                Ok(*id)
+            }
+            HirReferenceSymbol::Function(symbol) => {
                 // TODO: Mangle the name along with the type arguments.
                 let name = self.cc.intern_str(symbol.name);
                 let id = cx.data().get_function_id(name).unwrap_or_else(|| {
@@ -246,8 +237,8 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
                 });
                 Ok(b.build_function_ref(id))
             }
-            HirCallableSymbol::TraitFunction(_) => unimplemented!(),
-            HirCallableSymbol::Intrinsic(_) => unimplemented!(),
+            HirReferenceSymbol::Intrinsic(_) => unimplemented!(),
+            HirReferenceSymbol::TraitMethod(_) => unimplemented!(),
         }
     }
 

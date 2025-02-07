@@ -15,7 +15,7 @@ use crate::hir::{
     HirInstance, HirInstanceSignature, HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt,
     HirOffsetIndexExpr, HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature,
 };
-use crate::hir::{HirCallableReferenceExpr, HirCallableSymbol, HirTy};
+use crate::hir::{HirReferenceSymbol, HirTy};
 use crate::{HirResult, LinkageType};
 use eight_span::Span;
 use std::collections::BTreeMap;
@@ -318,20 +318,14 @@ impl<'hir> HirBuilder {
         name: &'hir str,
         name_span: Span,
         ty: &'hir HirTy<'hir>,
+        kind: HirReferenceSymbol<'hir>,
     ) -> HirReferenceExpr<'hir> {
         HirReferenceExpr {
             span,
             name,
             name_span,
             ty,
+            kind,
         }
-    }
-
-    pub fn build_callable_reference_expr(
-        span: Span,
-        symbol: HirCallableSymbol<'hir>,
-        ty: &'hir HirTy<'hir>,
-    ) -> HirCallableReferenceExpr<'hir> {
-        HirCallableReferenceExpr { span, symbol, ty }
     }
 }
