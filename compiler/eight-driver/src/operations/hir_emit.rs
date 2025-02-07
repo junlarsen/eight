@@ -1,13 +1,13 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelinePass};
 use crate::query::{EmitQuery, HirEmitQuery};
 use eight_diagnostics::ice;
 use eight_middle::hir::HirModule;
 use eight_middle::hir_textual_pass::{Document, HirModuleTextualPass};
 
 /// Operation for emitting the HIR.
-pub struct HirEmitOperation;
+pub struct HirEmitPass;
 
-impl HirEmitOperation {
+impl HirEmitPass {
     pub fn decode<'c: 'p, 'p>(
         pipeline: &'c Pipeline<'c>,
         query: &HirEmitQuery,
@@ -28,7 +28,7 @@ impl HirEmitOperation {
     }
 }
 
-impl<'hir> PipelineOperation<'hir, HirModule<'hir>, HirModule<'hir>> for HirEmitOperation {
+impl<'hir> PipelinePass<'hir, HirModule<'hir>, HirModule<'hir>> for HirEmitPass {
     fn execute(
         pipeline: &'hir Pipeline<'hir>,
         input: HirModule<'hir>,

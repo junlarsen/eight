@@ -1,10 +1,10 @@
-use crate::pipeline::PipelineOperation;
+use crate::pipeline::PipelinePass;
 use eight_codegen_llvm::{LLVMCodeGeneratorContext, MirModuleLLVMCodeGeneratorPass};
 use eight_middle::mir::MirModule;
 
 /// Operation for generating LLVM IR from the MIR.
-pub struct CodegenLLVMOperation {}
-impl<'c> PipelineOperation<'c, MirModule<'c>, ()> for CodegenLLVMOperation {
+pub struct MirCodegenLLVMPass {}
+impl<'c> PipelinePass<'c, MirModule<'c>, ()> for MirCodegenLLVMPass {
     fn execute(
         _: &'c crate::pipeline::Pipeline<'c>,
         input: MirModule<'c>,

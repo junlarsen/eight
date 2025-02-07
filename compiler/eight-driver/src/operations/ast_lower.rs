@@ -1,11 +1,11 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelinePass};
 use eight_middle::ast_lowering_pass::AstLoweringPass;
 use eight_middle::hir::HirModule;
 use eight_syntax::ast::AstTranslationUnit;
 
 /// Operation for lowering the AST to HIR.
-pub struct SyntaxLowerOperation {}
-impl<'c> PipelineOperation<'c, AstTranslationUnit<'c>, HirModule<'c>> for SyntaxLowerOperation {
+pub struct AstLowerPass {}
+impl<'c> PipelinePass<'c, AstTranslationUnit<'c>, HirModule<'c>> for AstLowerPass {
     fn execute(
         pipeline: &'c Pipeline<'c>,
         input: AstTranslationUnit<'c>,

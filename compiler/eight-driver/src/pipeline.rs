@@ -1,11 +1,11 @@
-use crate::operations::codegen_llvm::CodegenLLVMOperation;
-use crate::operations::emit_ast::AstEmitOperation;
-use crate::operations::emit_hir::HirEmitOperation;
-use crate::operations::emit_mir::EmitMirOperation;
-use crate::operations::hir_lower::HirLowerOperation;
-use crate::operations::parse::ParseOperation;
-use crate::operations::syntax_lower::SyntaxLowerOperation;
-use crate::operations::type_check::TypeCheckOperation;
+use crate::operations::ast_emit::AstEmitPass;
+use crate::operations::ast_lower::AstLowerPass;
+use crate::operations::ast_parse::AstParsePass;
+use crate::operations::hir_emit::HirEmitPass;
+use crate::operations::hir_lower::HirLowerPass;
+use crate::operations::hir_type_check::HirTypeCheckPass;
+use crate::operations::mir_codegen_llvm::MirCodegenLLVMPass;
+use crate::operations::mir_emit::MirEmitPass;
 use crate::query::EmitQuery;
 use eight_codegen_llvm::error::LLVMBackendError;
 use eight_diagnostics::errors::hir::HirError;
@@ -25,27 +25,27 @@ pub fn execute_compilation_pipeline(
 ) -> Result<(), PipelineError> {
     let pipeline = Pipeline::new(opts);
     // Syntax passes are always ran, otherwise there's nothing for the compiler to do.
-    let module = ParseOperation::execute(&pipeline, input)?;
-    let module = AstEmitOperation::execute(&pipeline, module)?;
+    let module = AstParsePass::execute(&pipeline, input)?;
+    let module = AstEmitPass::execute(&pipeline, module)?;
     // Gate the HIR passes behind --terminator=syntax
     let module =
         pipeline.run_pass_collection_if(pipeline.is_requesting_hir(), move |pipeline| {
-            let module = SyntaxLowerOperation::execute(pipeline, module)?;
-            let module = TypeCheckOperation::execute(pipeline, module)?;
-            let module = HirEmitOperation::execute(pipeline, module)?;
+            let module = AstLowerPass::execute(pipeline, module)?;
+            let module = HirTypeCheckPass::execute(pipeline, module)?;
+            let module = HirEmitPass::execute(pipeline, module)?;
             Ok(module)
         })?;
     // Gate the MIR passes behind --terminator=hir
     let module =
         pipeline.run_pass_collection_if(pipeline.is_requesting_mir(), move |pipeline| {
-            let module = HirLowerOperation::execute(pipeline, module)?;
-            let module = EmitMirOperation::execute(pipeline, module)?;
+            let module = HirLowerPass::execute(pipeline, module)?;
+            let module = MirEmitPass::execute(pipeline, module)?;
             Ok(module)
         })?;
     // Gate the Codegen passes behind --terminator=mir
     let _: () =
         pipeline.run_pass_collection_if(pipeline.is_requesting_codegen(), move |pipeline| {
-            let _: () = CodegenLLVMOperation::execute(pipeline, module)?;
+            let _: () = MirCodegenLLVMPass::execute(pipeline, module)?;
             Ok(())
         })?;
     Ok(())
@@ -164,7 +164,7 @@ impl<'c> Pipeline<'c> {
 }
 
 /// Trait for executing an operation in the pipeline.
-pub trait PipelineOperation<'c, I, O> {
+pub trait PipelinePass<'c, I, O> {
     /// Execute the operation.
     ///
     /// The implementation itself should determine if it should run or not.

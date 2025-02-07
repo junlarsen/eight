@@ -1,11 +1,11 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelinePass};
 use eight_syntax::ast::AstTranslationUnit;
 use eight_syntax::lexer::Lexer;
 use eight_syntax::parser::Parser;
 
 /// Operation for parsing the input source into an AST.
-pub struct ParseOperation {}
-impl<'c, T: AsRef<str>> PipelineOperation<'c, T, AstTranslationUnit<'c>> for ParseOperation {
+pub struct AstParsePass {}
+impl<'c, T: AsRef<str>> PipelinePass<'c, T, AstTranslationUnit<'c>> for AstParsePass {
     fn execute(
         pipeline: &'c Pipeline<'c>,
         input: T,

@@ -1,12 +1,12 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelinePass};
 use crate::query::{EmitQuery, MirEmitQuery};
 use eight_diagnostics::ice;
 use eight_middle::mir::MirModule;
 use eight_middle::mir_textual_pass::{Document, MirModuleTextualPass};
 
-pub struct EmitMirOperation {}
+pub struct MirEmitPass {}
 
-impl EmitMirOperation {
+impl MirEmitPass {
     pub fn decode<'c: 'p, 'p>(
         pipeline: &'c Pipeline<'c>,
         query: &MirEmitQuery,
@@ -26,7 +26,7 @@ impl EmitMirOperation {
     }
 }
 
-impl<'c> PipelineOperation<'c, MirModule<'c>, MirModule<'c>> for EmitMirOperation {
+impl<'c> PipelinePass<'c, MirModule<'c>, MirModule<'c>> for MirEmitPass {
     fn execute(
         pipeline: &'c Pipeline<'c>,
         input: MirModule<'c>,
