@@ -1,4 +1,4 @@
-// RUN: %not %eightc --emit-mir --emit-query mir.fn.test_i32 --emit-query mir.fn.test_bool --terminator=mir %s 2>&1 | %fc %s
+// RUN: not %eightc --emit-mir --emit-query mir.fn.test_i32 --emit-query mir.fn.test_bool --terminator=mir %s 2>&1 | FileCheck %s
 
 fn test_i32() {
 // CHECK-LABEL: mir_function test_i32

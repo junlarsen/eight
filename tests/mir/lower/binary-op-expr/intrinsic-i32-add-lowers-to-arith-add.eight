@@ -1,4 +1,4 @@
-// RUN: %not %eightc --emit-mir --emit-query mir.fn.test --terminator=mir %s 2>&1 | %fc %s
+// RUN: not %eightc --emit-mir --emit-query mir.fn.test --terminator=mir %s 2>&1 | FileCheck %s
 
 trait Add<A, B, R> {
   fn add(a: A, b: B) -> R;
