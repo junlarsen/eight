@@ -1,10 +1,10 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelinePass};
 use eight_middle::hir::HirModule;
 use eight_middle::hir_type_check_pass::{HirModuleTypeCheckerPass, TypingContext};
 
 /// Operation for type checking the HIR.
-pub struct TypeCheckOperation {}
-impl<'c> PipelineOperation<'c, HirModule<'c>, HirModule<'c>> for TypeCheckOperation {
+pub struct HirTypeCheckPass {}
+impl<'c> PipelinePass<'c, HirModule<'c>, HirModule<'c>> for HirTypeCheckPass {
     fn execute(
         pipeline: &'c Pipeline<'c>,
         mut input: HirModule<'c>,

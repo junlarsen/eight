@@ -1,8 +1,8 @@
-pub mod codegen_llvm;
-pub mod emit_ast;
-pub mod emit_hir;
-pub mod emit_mir;
+pub mod ast_emit;
+pub mod ast_lower;
+pub mod ast_parse;
+pub mod hir_emit;
 pub mod hir_lower;
-pub mod parse;
-pub mod syntax_lower;
-pub mod type_check;
+pub mod hir_type_check;
+pub mod mir_codegen_llvm;
+pub mod mir_emit;

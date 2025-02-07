@@ -1,11 +1,9 @@
-use crate::pipeline::{Pipeline, PipelineError, PipelineOperation};
+use crate::pipeline::{Pipeline, PipelineError, PipelinePass};
 use eight_syntax::ast::AstTranslationUnit;
 
 /// Operation for emitting the AST.
-pub struct AstEmitOperation {}
-impl<'c> PipelineOperation<'c, AstTranslationUnit<'c>, AstTranslationUnit<'c>>
-    for AstEmitOperation
-{
+pub struct AstEmitPass {}
+impl<'c> PipelinePass<'c, AstTranslationUnit<'c>, AstTranslationUnit<'c>> for AstEmitPass {
     fn execute(
         pipeline: &'c Pipeline<'c>,
         input: AstTranslationUnit<'c>,
