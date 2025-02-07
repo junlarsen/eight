@@ -1,5 +1,7 @@
 //! Utilities for built-in compiler functions.
 
+use crate::context::CompileContext;
+use crate::hir::HirTy;
 use std::fmt::Display;
 
 /// A binary operator that is to be lowered using compiler intrinsics.
@@ -30,6 +32,48 @@ pub enum CompilerIntrinsic {
     BooleanNeq,
     IntegerNeg,
     BooleanNot,
+}
+
+impl<'hir> CompilerIntrinsic {
+    pub fn get_application_type(&self, cc: &'hir CompileContext<'hir>) -> &'hir HirTy<'hir> {
+        match self {
+            // Intrinsics of type fn(i32, i32) -> i32
+            CompilerIntrinsic::IntegerAdd
+            | CompilerIntrinsic::IntegerSub
+            | CompilerIntrinsic::IntegerMul
+            | CompilerIntrinsic::IntegerDiv
+            | CompilerIntrinsic::IntegerRem => cc.hir_function_type(
+                cc.hir_integer32_type(),
+                vec![cc.hir_integer32_type(), cc.hir_integer32_type()],
+            ),
+            // Intrinsics of type fn(i32, i32) -> bool
+            CompilerIntrinsic::IntegerEq
+            | CompilerIntrinsic::IntegerNeq
+            | CompilerIntrinsic::IntegerLt
+            | CompilerIntrinsic::IntegerGt
+            | CompilerIntrinsic::IntegerLte
+            | CompilerIntrinsic::IntegerGte => cc.hir_function_type(
+                cc.hir_boolean_type(),
+                vec![cc.hir_integer32_type(), cc.hir_integer32_type()],
+            ),
+            // Intrinsics of type fn(bool, bool) -> bool
+            CompilerIntrinsic::BooleanAnd
+            | CompilerIntrinsic::BooleanOr
+            | CompilerIntrinsic::BooleanEq
+            | CompilerIntrinsic::BooleanNeq => cc.hir_function_type(
+                cc.hir_boolean_type(),
+                vec![cc.hir_boolean_type(), cc.hir_boolean_type()],
+            ),
+            // Intrinsics of type fn(i32) -> i32
+            CompilerIntrinsic::IntegerNeg => {
+                cc.hir_function_type(cc.hir_integer32_type(), vec![cc.hir_integer32_type()])
+            }
+            // Intrinsics of type fn(bool) -> bool
+            CompilerIntrinsic::BooleanNot => {
+                cc.hir_function_type(cc.hir_boolean_type(), vec![cc.hir_boolean_type()])
+            }
+        }
+    }
 }
 
 impl Display for CompilerIntrinsic {

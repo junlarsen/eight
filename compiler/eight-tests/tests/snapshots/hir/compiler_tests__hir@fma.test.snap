@@ -67,14 +67,14 @@ hir_module {
     // module functions
     fn vec512_fma<>(x: vec512, y: vec512, acc: vec512) -> vec512 {
       let vs: vec512 = (new vec512 {
-        vs: ((malloc::<i32> as fn(i32)->*i32)(((Div<i32,i32,i32>::div::<> as fn(i32, i32)->i32)((512 as i32),(4 as i32)) as i32)) as *i32),
+        vs: ((malloc::<i32> as fn(i32)->*i32)(((@@builtin_i32_div as fn(i32, i32)->i32)((512 as i32),(4 as i32)) as i32)) as *i32),
       } as vec512);
       {
         let i: i32 = (0 as i32);
         loop {
-          if (((Ord<i32,i32>::lt::<> as fn(i32, i32)->bool)((i as i32),((Div<i32,i32,i32>::div::<> as fn(i32, i32)->i32)((512 as i32),(4 as i32)) as i32)) as bool)){
-            ((((vs as vec512).vs as *i32)[(i as i32)] as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)(((Mul<i32,i32,i32>::mul::<> as fn(i32, i32)->i32)((((x as vec512).vs as *i32)[(i as i32)] as i32),(((y as vec512).vs as *i32)[(i as i32)] as i32)) as i32),(((acc as vec512).vs as *i32)[(i as i32)] as i32)) as i32) as unit);
-            ((i as i32) = ((Add<i32,i32,i32>::add::<> as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
+          if (((@builtin_i32_lt as fn(i32, i32)->bool)((i as i32),((@@builtin_i32_div as fn(i32, i32)->i32)((512 as i32),(4 as i32)) as i32)) as bool)){
+            ((((vs as vec512).vs as *i32)[(i as i32)] as i32) = ((@@builtin_i32_add as fn(i32, i32)->i32)(((@@builtin_i32_mul as fn(i32, i32)->i32)((((x as vec512).vs as *i32)[(i as i32)] as i32),(((y as vec512).vs as *i32)[(i as i32)] as i32)) as i32),(((acc as vec512).vs as *i32)[(i as i32)] as i32)) as i32) as unit);
+            ((i as i32) = ((@@builtin_i32_add as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
           } else {
             break;
           }
