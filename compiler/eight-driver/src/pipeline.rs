@@ -3,6 +3,7 @@ use crate::operations::ast_lower::AstLowerPass;
 use crate::operations::ast_parse::AstParsePass;
 use crate::operations::hir_emit::HirEmitPass;
 use crate::operations::hir_lower::HirLowerPass;
+use crate::operations::hir_simplify::HirSimplifyPass;
 use crate::operations::hir_type_check::HirTypeCheckPass;
 use crate::operations::mir_codegen_llvm::MirCodegenLLVMPass;
 use crate::operations::mir_emit::MirEmitPass;
@@ -32,6 +33,7 @@ pub fn execute_compilation_pipeline(
         pipeline.run_pass_collection_if(pipeline.is_requesting_hir(), move |pipeline| {
             let module = AstLowerPass::execute(pipeline, module)?;
             let module = HirTypeCheckPass::execute(pipeline, module)?;
+            let module = HirSimplifyPass::execute(pipeline, module)?;
             let module = HirEmitPass::execute(pipeline, module)?;
             Ok(module)
         })?;
