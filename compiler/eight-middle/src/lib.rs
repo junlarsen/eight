@@ -9,6 +9,7 @@ pub mod context;
 pub mod hir;
 pub mod hir_builder;
 pub mod hir_lowering_pass;
+pub mod hir_simplify_pass;
 pub mod hir_textual_pass;
 pub mod hir_type_check_pass;
 pub mod intern;
