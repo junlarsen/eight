@@ -1,7 +1,7 @@
 Error: sema::wrong_trait_type_argument_count
 
   × trait Add requires 3 type arguments, but 2 were supplied
-   ╭─[/home/jun/source/junlarsen/eight/tests/ui/trait/instantiation-missing-type-arguments.eight:3:7]
+   ╭─[instantiation-missing-type-arguments.eight:3:7]
  2 │ 
  3 │ trait Add<A, B, R> {
    ·       ─┬─

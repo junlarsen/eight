@@ -85,7 +85,13 @@ fn main() -> miette::Result<()> {
             .expect("failed to read from stdin"),
         path => std::fs::read_to_string(path).expect("Failed to read input file"),
     };
-    let source_code = NamedSource::new(&args.input, source.clone());
+    let relative_input_path = pathdiff::diff_paths(
+        args.input.as_str(),
+        std::env::current_dir().expect("Failed to get current directory"),
+    )
+    .map(|p| p.to_string_lossy().to_string())
+    .unwrap_or_else(|| args.input.clone());
+    let source_code = NamedSource::new(&relative_input_path, source.clone());
 
     let result = || -> miette::Result<()> {
         let options = args.try_into()?;

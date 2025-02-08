@@ -10,6 +10,7 @@ name = "eightc"
 [dependencies]
 clap = { workspace = true }
 miette = { workspace = true, features = ["fancy"] }
+pathdiff = "0.2.3"
 ron = { workspace = true }
 thiserror = { workspace = true }
 nom = "7.1.3"
