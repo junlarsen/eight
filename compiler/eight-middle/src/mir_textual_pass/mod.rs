@@ -1,11 +1,14 @@
-use crate::mir::MirBasicBlock;
 use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirConstantBool,
-    MirConstantInteger32, MirDivInstruction, MirFunction, MirFunctionData, MirFunctionId,
-    MirInstruction, MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
-    MirStoreInstruction, MirSubInstruction, MirTy, MirValue,
+    MirConstantInteger32, MirDivInstruction, MirInstruction, MirInstructionRef, MirLoadInstruction,
+    MirMulInstruction, MirPtrAddInstruction, MirStoreInstruction, MirSubInstruction, MirTy,
+    MirValue,
 };
-use crate::mir::{MirModule, MirModuleData};
+use crate::mir_block::MirBasicBlock;
+use crate::mir_function::MirFunctionRef;
+use crate::mir_function::{MirFunction, MirFunctionData};
+use crate::mir_module::MirModule;
+use crate::mir_module::MirModuleData;
 use eight_diagnostics::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
@@ -90,6 +93,7 @@ impl<'a> MirModuleTextualPass<'a> {
         mcx: &'mir MirModuleData<'mir>,
         node: &'mir MirFunction<'mir>,
     ) -> DocBuilder<'a, Arena<'a>> {
+        let fcx = node.data();
         self.arena
             .text("mir_function")
             .append(self.arena.space())
@@ -114,9 +118,8 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.hardline())
             .append(
                 self.arena.intersperse(
-                    node.data()
-                        .blocks()
-                        .map(|b| self.visit_basic_block(mcx, node.data(), b)),
+                    fcx.get_blocks()
+                        .map(|b| self.visit_basic_block(mcx, fcx, b)),
                     self.arena.hardline(),
                 ),
             )
@@ -136,14 +139,16 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(
                 self.arena
                     .hardline()
-                    .append(
-                        self.arena.intersperse(
-                            node.instructions
-                                .iter()
-                                .map(|i| self.visit_instruction(mcx, fcx, fcx.get_instruction(*i))),
-                            self.arena.hardline(),
-                        ),
-                    )
+                    .append(self.arena.intersperse(
+                        fcx.get_block_instructions(&node.basic_block_id).map(|i| {
+                            self.visit_instruction(
+                                mcx,
+                                fcx,
+                                fcx.get_instruction(&i.instruction_id()),
+                            )
+                        }),
+                        self.arena.hardline(),
+                    ))
                     .nest(2)
                     .group(),
             )
@@ -192,10 +197,10 @@ impl<'a> MirModuleTextualPass<'a> {
         self.arena
             .text("mem.store")
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.value)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.value)))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.dest)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.dest)))
     }
 
     pub fn visit_call_instruction<'mir: 'a>(
@@ -212,13 +217,13 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_type(node.ty))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.callee)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.callee)))
             .append(self.arena.text("("))
             .append(
                 self.arena.intersperse(
                     node.arguments
                         .iter()
-                        .map(|a| self.visit_value(mcx, fcx, fcx.get_value(*a))),
+                        .map(|a| self.visit_value(mcx, fcx, fcx.get_value(a))),
                     self.arena.text(","),
                 ),
             )
@@ -240,7 +245,7 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.visit_type(node.ty))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.src)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.src)))
     }
 
     pub fn visit_add_instruction<'mir: 'a>(
@@ -257,10 +262,10 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_type(node.ty))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.lhs)))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.rhs)))
     }
 
     pub fn visit_sub_instruction<'mir: 'a>(
@@ -277,10 +282,10 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_type(node.ty))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.lhs)))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.rhs)))
     }
 
     pub fn visit_mul_instruction<'mir: 'a>(
@@ -297,10 +302,10 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_type(node.ty))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.lhs)))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.rhs)))
     }
 
     pub fn visit_div_instruction<'mir: 'a>(
@@ -317,10 +322,10 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_type(node.ty))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.lhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.lhs)))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.rhs)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.rhs)))
     }
 
     pub fn visit_ptr_add_instruction<'mir: 'a>(
@@ -334,10 +339,10 @@ impl<'a> MirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_type(node.ty))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.ptr)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.ptr)))
             .append(self.arena.text(","))
             .append(self.arena.space())
-            .append(self.visit_value(mcx, fcx, fcx.get_value(node.offset)))
+            .append(self.visit_value(mcx, fcx, fcx.get_value(&node.offset)))
     }
 
     pub fn visit_value<'mir: 'a>(
@@ -381,19 +386,19 @@ impl<'a> MirModuleTextualPass<'a> {
         &'a self,
         _: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
-        node: &'mir MirInstructionId,
+        node: &'mir MirInstructionRef,
     ) -> DocBuilder<'a, Arena<'a>> {
-        self.visit_type(fcx.get_instruction(*node).ty())
+        self.visit_type(fcx.get_instruction(node).ty())
             .append(self.arena.space())
             .append(self.arena.text("%"))
-            .append(self.arena.as_string(node.0))
+            .append(self.arena.as_string(node.id()))
     }
 
     pub fn visit_function_value<'mir: 'a>(
         &'a self,
         mcx: &'mir MirModuleData<'mir>,
         _: &'mir MirFunctionData<'mir>,
-        node: &'mir MirFunctionId,
+        node: &'mir MirFunctionRef,
     ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text(
             mcx.get_function_by_id(*node)

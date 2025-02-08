@@ -3,11 +3,15 @@ pub mod error;
 use crate::error::LLVMBackendResult;
 use eight_diagnostics::ice;
 use eight_middle::mir::{
-    MirAllocaInstruction, MirBasicBlock, MirBasicBlockId, MirCallInstruction, MirConstantBool,
-    MirConstantInteger32, MirFunction, MirFunctionData, MirFunctionType, MirInstruction,
-    MirInstructionId, MirLoadInstruction, MirModule, MirModuleData, MirStoreInstruction, MirTy,
-    MirValue, MirValueId,
+    MirAllocaInstruction, MirCallInstruction, MirConstantBool, MirConstantInteger32,
+    MirFunctionType, MirInstruction, MirInstructionRef, MirLoadInstruction, MirStoreInstruction,
+    MirTy, MirValue, MirValueRef,
 };
+use eight_middle::mir_block::MirBasicBlock;
+use eight_middle::mir_block::MirBasicBlockRef;
+use eight_middle::mir_function::MirFunction;
+use eight_middle::mir_function::MirFunctionData;
+use eight_middle::mir_module::{MirModule, MirModuleData};
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
@@ -41,9 +45,9 @@ pub struct MirModuleLLVMCodeGeneratorPass<'l> {
     module: Module<'l>,
     builder: Builder<'l>,
 
-    basic_block_cache: BTreeMap<MirBasicBlockId, BasicBlock<'l>>,
-    basic_value_cache: BTreeMap<MirValueId, BasicValueEnum<'l>>,
-    instruction_cache: BTreeMap<MirInstructionId, InstructionValue<'l>>,
+    basic_block_cache: BTreeMap<MirBasicBlockRef, BasicBlock<'l>>,
+    basic_value_cache: BTreeMap<MirValueRef, BasicValueEnum<'l>>,
+    instruction_cache: BTreeMap<MirInstructionRef, InstructionValue<'l>>,
 }
 
 impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
@@ -97,7 +101,7 @@ impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
         node: &'mir MirFunction<'mir>,
     ) -> LLVMBackendResult<()> {
         // Ensure all constant values are lowered into LLVM values
-        for value in node.data().values() {
+        for value in node.data().get_values() {
             match value {
                 MirValue::ConstantInteger32(v) => {
                     self.visit_constant_integer_value(node.data(), function, v)?
@@ -109,7 +113,7 @@ impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
             }
         }
 
-        for bb in node.data().blocks() {
+        for bb in node.data().get_blocks() {
             self.visit_basic_block(gcx, node.data(), function, bb)?;
         }
 
@@ -128,8 +132,8 @@ impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
     ) -> LLVMBackendResult<()> {
         let bb = self.context.append_basic_block(function, node.name);
         self.builder.position_at_end(bb);
-        for inst in node.instructions.iter() {
-            self.visit_instruction(gcx, fcx, function, fcx.get_instruction(*inst))?;
+        for inst in fcx.get_block_instructions(&node.basic_block_id) {
+            self.visit_instruction(gcx, fcx, function, inst)?;
         }
         Ok(())
     }
@@ -225,10 +229,10 @@ impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
         &mut self,
         mcx: &'mir MirModuleData,
         fcx: &'mir MirFunctionData,
-        function: FunctionValue<'l>,
+        _: FunctionValue<'l>,
         node: &'mir MirCallInstruction<'mir>,
     ) -> LLVMBackendResult<()> {
-        let MirValue::Function(id) = fcx.get_value(node.callee) else {
+        let MirValue::Function(id) = fcx.get_value(&node.callee) else {
             ice!("callee is not a function");
         };
         let function_name = mcx
