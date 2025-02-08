@@ -8,7 +8,7 @@ use crate::hir::{HirGroupExpr, HirTy};
 use crate::hir::{HirModule, HirReferenceSymbol};
 use crate::mir::MirModule;
 use crate::mir::MirTy;
-use crate::mir::MirValueId;
+use crate::mir::MirValueRef;
 use crate::mir_builder::{MirFunctionBuilder, MirModuleContext};
 use crate::scope::Scope;
 use crate::LinkageType;
@@ -18,7 +18,7 @@ use eight_diagnostics::ice;
 pub struct MirModuleLoweringPass<'mir> {
     cc: &'mir CompileContext<'mir>,
     /// Mapping between local names and their MIR value ids.
-    locals: Scope<&'mir str, MirValueId>,
+    locals: Scope<&'mir str, MirValueRef>,
 }
 
 impl<'mir> MirModuleLoweringPass<'mir> {
@@ -164,7 +164,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirExpr<'hir>,
-    ) -> MirResult<MirValueId> {
+    ) -> MirResult<MirValueRef> {
         match expr {
             HirExpr::IntegerLiteral(e) => self.visit_integer_literal_expr(b, cx, e),
             HirExpr::Reference(e) => self.visit_reference_expr(b, cx, e),
@@ -185,7 +185,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         _: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirIntegerLiteralExpr<'hir>,
-    ) -> MirResult<MirValueId> {
+    ) -> MirResult<MirValueRef> {
         let inst = b.build_constant_integer32(expr.value, self.cc.mir_i32_type());
         Ok(inst)
     }
@@ -195,7 +195,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         _: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirBooleanLiteralExpr<'hir>,
-    ) -> MirResult<MirValueId> {
+    ) -> MirResult<MirValueRef> {
         let inst = b.build_constant_bool(expr.value, self.cc.mir_bool_type());
         Ok(inst)
     }
@@ -212,7 +212,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirReferenceExpr<'hir>,
-    ) -> MirResult<MirValueId> {
+    ) -> MirResult<MirValueRef> {
         match &expr.kind {
             HirReferenceSymbol::Local(local) => {
                 let id = self.locals.find(&local.name).unwrap_or_else(|| {
@@ -252,7 +252,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirCallExpr<'hir>,
-    ) -> MirResult<MirValueId> {
+    ) -> MirResult<MirValueRef> {
         // If the call is implemented as an intrinsic, we can lower it to a more efficient form, so
         // we delegate to intrinsic lowering instead.
         if expr.is_intrinsic() {
@@ -274,7 +274,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirCallExpr<'hir>,
-    ) -> MirResult<MirValueId> {
+    ) -> MirResult<MirValueRef> {
         let HirExpr::Reference(reference) = expr.callee.as_ref() else {
             ice!("visit_intrinsic_call_expr called with non-reference callee");
         };
@@ -304,7 +304,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         b: &mut MirFunctionBuilder<'mir>,
         cx: &MirModuleContext<'mir, 'hir>,
         expr: &'hir HirGroupExpr<'hir>,
-    ) -> MirResult<MirValueId> {
+    ) -> MirResult<MirValueRef> {
         self.visit_expr(b, cx, &expr.inner)
     }
 

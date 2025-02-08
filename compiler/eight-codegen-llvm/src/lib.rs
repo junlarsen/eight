@@ -3,10 +3,10 @@ pub mod error;
 use crate::error::LLVMBackendResult;
 use eight_diagnostics::ice;
 use eight_middle::mir::{
-    MirAllocaInstruction, MirBasicBlock, MirBasicBlockId, MirCallInstruction, MirConstantBool,
+    MirAllocaInstruction, MirBasicBlock, MirBasicBlockRef, MirCallInstruction, MirConstantBool,
     MirConstantInteger32, MirFunction, MirFunctionData, MirFunctionType, MirInstruction,
-    MirInstructionId, MirLoadInstruction, MirModule, MirModuleData, MirStoreInstruction, MirTy,
-    MirValue, MirValueId,
+    MirInstructionRef, MirLoadInstruction, MirModule, MirModuleData, MirStoreInstruction, MirTy,
+    MirValue, MirValueRef,
 };
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
@@ -41,9 +41,9 @@ pub struct MirModuleLLVMCodeGeneratorPass<'l> {
     module: Module<'l>,
     builder: Builder<'l>,
 
-    basic_block_cache: BTreeMap<MirBasicBlockId, BasicBlock<'l>>,
-    basic_value_cache: BTreeMap<MirValueId, BasicValueEnum<'l>>,
-    instruction_cache: BTreeMap<MirInstructionId, InstructionValue<'l>>,
+    basic_block_cache: BTreeMap<MirBasicBlockRef, BasicBlock<'l>>,
+    basic_value_cache: BTreeMap<MirValueRef, BasicValueEnum<'l>>,
+    instruction_cache: BTreeMap<MirInstructionRef, InstructionValue<'l>>,
 }
 
 impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {

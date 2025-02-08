@@ -5,10 +5,10 @@ use std::ops::Deref;
 
 #[derive(Debug, Default)]
 pub struct MirModuleData<'mir> {
-    pub functions: BTreeMap<MirFunctionId, MirFunction<'mir>>,
-    pub function_types: BTreeMap<MirFunctionId, &'mir MirFunctionType<'mir>>,
-    pub function_names: BTreeMap<MirFunctionId, &'mir str>,
-    pub function_names_reverse: BTreeMap<&'mir str, MirFunctionId>,
+    pub functions: BTreeMap<MirFunctionRef, MirFunction<'mir>>,
+    pub function_types: BTreeMap<MirFunctionRef, &'mir MirFunctionType<'mir>>,
+    pub function_names: BTreeMap<MirFunctionRef, &'mir str>,
+    pub function_names_reverse: BTreeMap<&'mir str, MirFunctionRef>,
 }
 
 impl<'mir> MirModuleData<'mir> {
@@ -16,7 +16,7 @@ impl<'mir> MirModuleData<'mir> {
         self.functions.values()
     }
 
-    pub fn get_function_by_id(&self, id: MirFunctionId) -> Option<&MirFunction<'mir>> {
+    pub fn get_function_by_id(&self, id: MirFunctionRef) -> Option<&MirFunction<'mir>> {
         self.functions.get(&id)
     }
 
@@ -25,17 +25,17 @@ impl<'mir> MirModuleData<'mir> {
     }
 
     /// Get the function id for the given name.
-    pub fn get_function_id(&self, name: &'mir str) -> Option<MirFunctionId> {
+    pub fn get_function_id(&self, name: &'mir str) -> Option<MirFunctionRef> {
         self.function_names_reverse.get(name).copied()
     }
 
     /// Get the function name for the given id.
-    pub fn get_function_name(&self, id: MirFunctionId) -> Option<&'mir str> {
+    pub fn get_function_name(&self, id: MirFunctionRef) -> Option<&'mir str> {
         self.function_names.get(&id).copied()
     }
 
     /// Get the function type for the given id.
-    pub fn get_function_type(&self, id: MirFunctionId) -> Option<&'mir MirFunctionType<'mir>> {
+    pub fn get_function_type(&self, id: MirFunctionRef) -> Option<&'mir MirFunctionType<'mir>> {
         self.function_types.get(&id).copied()
     }
 }
@@ -156,7 +156,7 @@ pub struct MirFunctionType<'mir> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirValueId(pub usize);
+pub struct MirValueRef(pub usize);
 
 /// The kind of value that is being referenced.
 ///
@@ -166,36 +166,36 @@ pub enum MirValue<'mir> {
     ConstantInteger32(MirConstantInteger32<'mir>),
     ConstantBool(MirConstantBool<'mir>),
     Argument(MirArgument<'mir>),
-    Instruction(MirInstructionId),
-    Label(MirBasicBlockId),
-    Function(MirFunctionId),
+    Instruction(MirInstructionRef),
+    Label(MirBasicBlockRef),
+    Function(MirFunctionRef),
 }
 
 #[derive(Debug)]
 pub struct MirConstantInteger32<'mir> {
-    pub value_id: MirValueId,
+    pub value_id: MirValueRef,
     pub ty: &'mir MirTy<'mir>,
     pub value: i32,
 }
 
 #[derive(Debug)]
 pub struct MirConstantBool<'mir> {
-    pub value_id: MirValueId,
+    pub value_id: MirValueRef,
     pub ty: &'mir MirTy<'mir>,
     pub value: bool,
 }
 
 #[derive(Debug)]
 pub struct MirArgument<'mir> {
-    pub value_id: MirValueId,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
     pub ty: &'mir MirTy<'mir>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirInstructionId(pub usize);
+pub struct MirInstructionRef(pub usize);
 
-impl Deref for MirInstructionId {
+impl Deref for MirInstructionRef {
     type Target = usize;
 
     fn deref(&self) -> &Self::Target {
@@ -235,8 +235,8 @@ impl<'mir> MirInstruction<'mir> {
 /// The `mem.alloca` instruction.
 #[derive(Debug)]
 pub struct MirAllocaInstruction<'mir> {
-    pub inst_id: MirInstructionId,
-    pub value_id: MirValueId,
+    pub inst_id: MirInstructionRef,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
     /// The type of the instruction itself. This is always the opaque pointer type for `mem.alloca`.
     pub ty: &'mir MirTy<'mir>,
@@ -247,34 +247,34 @@ pub struct MirAllocaInstruction<'mir> {
 /// The `mem.load` instruction.
 #[derive(Debug)]
 pub struct MirLoadInstruction<'mir> {
-    pub value_id: MirValueId,
-    pub inst_id: MirInstructionId,
+    pub value_id: MirValueRef,
+    pub inst_id: MirInstructionRef,
     pub name: &'mir str,
     /// The type being loaded
     pub ty: &'mir MirTy<'mir>,
-    pub src: MirValueId,
+    pub src: MirValueRef,
 }
 
 /// The `mem.store` instruction.
 #[derive(Debug)]
 pub struct MirStoreInstruction<'mir> {
-    pub inst_id: MirInstructionId,
+    pub inst_id: MirInstructionRef,
     pub name: &'mir str,
-    pub value: MirValueId,
+    pub value: MirValueRef,
     /// The result of a store is always void
     pub ty: &'mir MirTy<'mir>,
-    pub dest: MirValueId,
+    pub dest: MirValueRef,
     pub dest_ty: &'mir MirTy<'mir>,
 }
 
 /// The `fn.call` instruction.
 #[derive(Debug)]
 pub struct MirCallInstruction<'mir> {
-    pub inst_id: MirInstructionId,
-    pub value_id: MirValueId,
+    pub inst_id: MirInstructionRef,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
-    pub callee: MirValueId,
-    pub arguments: Vec<MirValueId>,
+    pub callee: MirValueRef,
+    pub arguments: Vec<MirValueRef>,
     /// The return type of the function.
     pub ty: &'mir MirTy<'mir>,
 }
@@ -288,11 +288,11 @@ pub struct MirCallInstruction<'mir> {
 /// intrinsic.
 #[derive(Debug)]
 pub struct MirAddInstruction<'mir> {
-    pub inst_id: MirInstructionId,
-    pub value_id: MirValueId,
+    pub inst_id: MirInstructionRef,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
-    pub lhs: MirValueId,
-    pub rhs: MirValueId,
+    pub lhs: MirValueRef,
+    pub rhs: MirValueRef,
     pub ty: &'mir MirTy<'mir>,
 }
 
@@ -301,11 +301,11 @@ pub struct MirAddInstruction<'mir> {
 /// Same lowering rules as `MirAddInstruction`.
 #[derive(Debug)]
 pub struct MirSubInstruction<'mir> {
-    pub inst_id: MirInstructionId,
-    pub value_id: MirValueId,
+    pub inst_id: MirInstructionRef,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
-    pub lhs: MirValueId,
-    pub rhs: MirValueId,
+    pub lhs: MirValueRef,
+    pub rhs: MirValueRef,
     pub ty: &'mir MirTy<'mir>,
 }
 
@@ -314,11 +314,11 @@ pub struct MirSubInstruction<'mir> {
 /// Same lowering rules as `MirAddInstruction`.
 #[derive(Debug)]
 pub struct MirMulInstruction<'mir> {
-    pub inst_id: MirInstructionId,
-    pub value_id: MirValueId,
+    pub inst_id: MirInstructionRef,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
-    pub lhs: MirValueId,
-    pub rhs: MirValueId,
+    pub lhs: MirValueRef,
+    pub rhs: MirValueRef,
     pub ty: &'mir MirTy<'mir>,
 }
 
@@ -327,11 +327,11 @@ pub struct MirMulInstruction<'mir> {
 /// Same lowering rules as `MirAddInstruction`.
 #[derive(Debug)]
 pub struct MirDivInstruction<'mir> {
-    pub inst_id: MirInstructionId,
-    pub value_id: MirValueId,
+    pub inst_id: MirInstructionRef,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
-    pub lhs: MirValueId,
-    pub rhs: MirValueId,
+    pub lhs: MirValueRef,
+    pub rhs: MirValueRef,
     pub ty: &'mir MirTy<'mir>,
 }
 
@@ -341,19 +341,19 @@ pub struct MirDivInstruction<'mir> {
 /// field in a struct or general pointer arithmetic.
 #[derive(Debug)]
 pub struct MirPtrAddInstruction<'mir> {
-    pub inst_id: MirInstructionId,
-    pub value_id: MirValueId,
+    pub inst_id: MirInstructionRef,
+    pub value_id: MirValueRef,
     pub name: &'mir str,
     pub ty: &'mir MirTy<'mir>,
-    pub ptr: MirValueId,
-    pub offset: MirValueId,
+    pub ptr: MirValueRef,
+    pub offset: MirValueRef,
 }
 
 #[derive(Debug, Default)]
 pub struct MirFunctionData<'mir> {
-    pub blocks: BTreeMap<MirBasicBlockId, MirBasicBlock<'mir>>,
-    pub values: BTreeMap<MirValueId, MirValue<'mir>>,
-    pub instructions: BTreeMap<MirInstructionId, MirInstruction<'mir>>,
+    pub blocks: BTreeMap<MirBasicBlockRef, MirBasicBlock<'mir>>,
+    pub values: BTreeMap<MirValueRef, MirValue<'mir>>,
+    pub instructions: BTreeMap<MirInstructionRef, MirInstruction<'mir>>,
 }
 
 impl<'mir> MirFunctionData<'mir> {
@@ -362,14 +362,14 @@ impl<'mir> MirFunctionData<'mir> {
     }
 
     /// Get the instruction with the given id.
-    pub fn get_instruction(&self, id: MirInstructionId) -> &MirInstruction<'mir> {
+    pub fn get_instruction(&self, id: MirInstructionRef) -> &MirInstruction<'mir> {
         self.instructions
             .get(&id)
             .unwrap_or_else(|| ice!("missing instruction {}", id.0))
     }
 
     /// Get the type the instruction evaluates to.
-    pub fn get_instruction_type(&self, id: MirInstructionId) -> &'mir MirTy<'mir> {
+    pub fn get_instruction_type(&self, id: MirInstructionRef) -> &'mir MirTy<'mir> {
         self.get_instruction(id).ty()
     }
 
@@ -378,7 +378,7 @@ impl<'mir> MirFunctionData<'mir> {
     }
 
     /// Get the basic block with the given id.
-    pub fn get_basic_block(&self, id: MirBasicBlockId) -> &MirBasicBlock<'mir> {
+    pub fn get_basic_block(&self, id: MirBasicBlockRef) -> &MirBasicBlock<'mir> {
         self.blocks
             .get(&id)
             .unwrap_or_else(|| ice!("missing block {}", id.0))
@@ -389,7 +389,7 @@ impl<'mir> MirFunctionData<'mir> {
     }
 
     /// Get the value with the given id.
-    pub fn get_value(&self, id: MirValueId) -> &MirValue<'mir> {
+    pub fn get_value(&self, id: MirValueRef) -> &MirValue<'mir> {
         self.values
             .get(&id)
             .unwrap_or_else(|| ice!("missing value {}", id.0))
@@ -398,7 +398,7 @@ impl<'mir> MirFunctionData<'mir> {
     /// Get the type of the value with the given id.
     ///
     /// This function panics if the value does not exist.
-    pub fn get_value_type(&self, id: MirValueId) -> &'mir MirTy<'mir> {
+    pub fn get_value_type(&self, id: MirValueRef) -> &'mir MirTy<'mir> {
         match self.get_value(id) {
             MirValue::ConstantInteger32(i) => i.ty,
             MirValue::ConstantBool(i) => i.ty,
@@ -446,9 +446,9 @@ impl<'mir> MirFunction<'mir> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirFunctionId(pub usize);
+pub struct MirFunctionRef(pub usize);
 
-impl Deref for MirFunctionId {
+impl Deref for MirFunctionRef {
     type Target = usize;
 
     fn deref(&self) -> &Self::Target {
@@ -457,9 +457,9 @@ impl Deref for MirFunctionId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirBasicBlockId(pub usize);
+pub struct MirBasicBlockRef(pub usize);
 
-impl Deref for MirBasicBlockId {
+impl Deref for MirBasicBlockRef {
     type Target = usize;
 
     fn deref(&self) -> &Self::Target {
@@ -470,11 +470,11 @@ impl Deref for MirBasicBlockId {
 #[derive(Debug)]
 pub struct MirBasicBlock<'mir> {
     pub name: &'mir str,
-    pub instructions: Vec<MirInstructionId>,
+    pub instructions: Vec<MirInstructionRef>,
 }
 
 impl MirBasicBlock<'_> {
-    pub fn insert(&mut self, instruction: MirInstructionId) {
+    pub fn insert(&mut self, instruction: MirInstructionRef) {
         self.instructions.push(instruction);
     }
 }

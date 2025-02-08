@@ -1,8 +1,8 @@
 use crate::mir::MirBasicBlock;
 use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirConstantBool,
-    MirConstantInteger32, MirDivInstruction, MirFunction, MirFunctionData, MirFunctionId,
-    MirInstruction, MirInstructionId, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
+    MirConstantInteger32, MirDivInstruction, MirFunction, MirFunctionData, MirFunctionRef,
+    MirInstruction, MirInstructionRef, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
     MirStoreInstruction, MirSubInstruction, MirTy, MirValue,
 };
 use crate::mir::{MirModule, MirModuleData};
@@ -381,7 +381,7 @@ impl<'a> MirModuleTextualPass<'a> {
         &'a self,
         _: &'mir MirModuleData<'mir>,
         fcx: &'mir MirFunctionData<'mir>,
-        node: &'mir MirInstructionId,
+        node: &'mir MirInstructionRef,
     ) -> DocBuilder<'a, Arena<'a>> {
         self.visit_type(fcx.get_instruction(*node).ty())
             .append(self.arena.space())
@@ -393,7 +393,7 @@ impl<'a> MirModuleTextualPass<'a> {
         &'a self,
         mcx: &'mir MirModuleData<'mir>,
         _: &'mir MirFunctionData<'mir>,
-        node: &'mir MirFunctionId,
+        node: &'mir MirFunctionRef,
     ) -> DocBuilder<'a, Arena<'a>> {
         self.arena.text(
             mcx.get_function_by_id(*node)
