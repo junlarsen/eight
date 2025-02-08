@@ -1,6 +1,10 @@
-use crate::mir_block::MirBasicBlockRef;
-use crate::mir_function::MirFunctionRef;
+use eight_macros::declare_ref_type;
 use std::hash::{DefaultHasher, Hash, Hasher};
+
+declare_ref_type!(MirFunctionRef, usize);
+declare_ref_type!(MirBasicBlockRef, usize);
+declare_ref_type!(MirInstructionRef, usize);
+declare_ref_type!(MirValueRef, usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MirTyId(u64);
@@ -102,9 +106,6 @@ pub struct MirFunctionType<'mir> {
     pub parameters: Vec<&'mir MirTy<'mir>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirValueRef(pub usize);
-
 /// The kind of value that is being referenced.
 ///
 /// This is loosely modeled after the LLVM IR Value class.
@@ -139,19 +140,6 @@ pub struct MirArgument<'mir> {
     pub ty: &'mir MirTy<'mir>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirInstructionRef(usize);
-
-impl MirInstructionRef {
-    pub fn new(id: usize) -> Self {
-        Self(id)
-    }
-
-    pub fn id(&self) -> usize {
-        self.0
-    }
-}
-
 #[derive(Debug)]
 pub enum MirInstruction<'mir> {
     Alloca(MirAllocaInstruction<'mir>),
@@ -180,17 +168,17 @@ impl<'mir> MirInstruction<'mir> {
         }
     }
 
-    pub fn instruction_id(&self) -> MirInstructionRef {
+    pub fn instruction_id(&self) -> &MirInstructionRef {
         match self {
-            MirInstruction::Alloca(i) => i.inst_id,
-            MirInstruction::Load(i) => i.inst_id,
-            MirInstruction::Store(i) => i.inst_id,
-            MirInstruction::Call(i) => i.inst_id,
-            MirInstruction::Add(i) => i.inst_id,
-            MirInstruction::Sub(i) => i.inst_id,
-            MirInstruction::Mul(i) => i.inst_id,
-            MirInstruction::Div(i) => i.inst_id,
-            MirInstruction::PtrAdd(i) => i.inst_id,
+            MirInstruction::Alloca(i) => &i.inst_id,
+            MirInstruction::Load(i) => &i.inst_id,
+            MirInstruction::Store(i) => &i.inst_id,
+            MirInstruction::Call(i) => &i.inst_id,
+            MirInstruction::Add(i) => &i.inst_id,
+            MirInstruction::Sub(i) => &i.inst_id,
+            MirInstruction::Mul(i) => &i.inst_id,
+            MirInstruction::Div(i) => &i.inst_id,
+            MirInstruction::PtrAdd(i) => &i.inst_id,
         }
     }
 }

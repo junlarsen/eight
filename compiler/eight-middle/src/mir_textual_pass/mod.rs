@@ -1,3 +1,4 @@
+use crate::mir::MirFunctionRef;
 use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirCallInstruction, MirConstantBool,
     MirConstantInteger32, MirDivInstruction, MirInstruction, MirInstructionRef, MirLoadInstruction,
@@ -5,7 +6,6 @@ use crate::mir::{
     MirValue,
 };
 use crate::mir_block::MirBasicBlock;
-use crate::mir_function::MirFunctionRef;
 use crate::mir_function::{MirFunction, MirFunctionData};
 use crate::mir_module::MirModule;
 use crate::mir_module::MirModuleData;
@@ -144,7 +144,7 @@ impl<'a> MirModuleTextualPass<'a> {
                             self.visit_instruction(
                                 mcx,
                                 fcx,
-                                fcx.get_instruction(&i.instruction_id()),
+                                fcx.get_instruction(i.instruction_id()),
                             )
                         }),
                         self.arena.hardline(),

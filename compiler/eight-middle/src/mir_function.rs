@@ -1,9 +1,9 @@
 use crate::context::CompileContext;
 use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirArgument, MirCallInstruction, MirConstantBool,
-    MirConstantInteger32, MirDivInstruction, MirFunctionType, MirInstruction, MirInstructionRef,
-    MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction, MirStoreInstruction,
-    MirSubInstruction, MirTy, MirValue, MirValueRef,
+    MirConstantInteger32, MirDivInstruction, MirFunctionRef, MirFunctionType, MirInstruction,
+    MirInstructionRef, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
+    MirStoreInstruction, MirSubInstruction, MirTy, MirValue, MirValueRef,
 };
 use crate::mir_block::{MirBasicBlock, MirBasicBlockRef};
 use crate::mir_module::MirModuleContext;
@@ -43,19 +43,6 @@ impl<'mir> MirFunction<'mir> {
 
     pub fn ty(&self) -> &MirFunctionType<'mir> {
         self.ty
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirFunctionRef(usize);
-
-impl MirFunctionRef {
-    pub fn new(id: usize) -> Self {
-        Self(id)
-    }
-
-    pub fn id(&self) -> usize {
-        self.0
     }
 }
 
