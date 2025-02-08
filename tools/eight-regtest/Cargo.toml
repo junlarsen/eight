@@ -1,0 +1,11 @@
+[package]
+name = "eight-regtest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+clap = { workspace = true }
+similar = "2.7.0"
+termcolor = "1.4.1"
+thiserror = { workspace = true }

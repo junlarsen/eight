@@ -8,7 +8,6 @@ path = "src/bin/eightc.rs"
 name = "eightc"
 
 [dependencies]
-bumpalo = { workspace = true }
 clap = { workspace = true }
 miette = { workspace = true, features = ["fancy"] }
 ron = { workspace = true }
