@@ -1,0 +1,75 @@
+// RUN: not %eightc --emit-hir --emit-query hir.fn.test_i32_arith_binop --emit-query hir.fn.test_i32_ord_binop --emit-query hir.fn.test_i32_eq_binop --terminator=hir %s 2>&1 | FileCheck %s
+trait Add<A, B, R> { fn add(a: A, b: B) -> R; }
+trait Sub<A, B, R> { fn sub(a: A, b: B) -> R; }
+trait Div<A, B, R> { fn div(a: A, b: B) -> R; }
+trait Mul<A, B, R> { fn mul(a: A, b: B) -> R; }
+trait Rem<A, B, R> { fn rem(a: A, b: B) -> R; }
+
+instance Add<i32, i32, i32> { intrinsic_fn add(a: i32, b: i32) -> i32; }
+instance Sub<i32, i32, i32> { intrinsic_fn sub(a: i32, b: i32) -> i32; }
+instance Div<i32, i32, i32> { intrinsic_fn div(a: i32, b: i32) -> i32; }
+instance Mul<i32, i32, i32> { intrinsic_fn mul(a: i32, b: i32) -> i32; }
+instance Rem<i32, i32, i32> { intrinsic_fn rem(a: i32, b: i32) -> i32; }
+
+fn test_i32_arith_binop() {
+// CHECK-LABEL: fn test_i32_arith_binop
+  let binop_i32_add = 1 + 1;
+  let binop_i32_sub = 1 - 1;
+  let binop_i32_div = 1 / 1;
+  let binop_i32_mul = 1 * 1;
+  let binop_i32_rem = 1 % 1;
+
+// CHECK-NEXT: let binop_i32_add: i32 = [[EXPAND:\(+]]@@builtin_i32_add
+// CHECK-NEXT: let binop_i32_sub: i32 = [[EXPAND:\(+]]@@builtin_i32_sub
+// CHECK-NEXT: let binop_i32_div: i32 = [[EXPAND:\(+]]@@builtin_i32_div
+// CHECK-NEXT: let binop_i32_mul: i32 = [[EXPAND:\(+]]@@builtin_i32_mul
+// CHECK-NEXT: let binop_i32_rem: i32 = [[EXPAND:\(+]]@@builtin_i32_rem
+}
+
+trait Ord<A, B> {
+  fn lt(a: A, b: B) -> bool;
+  fn gt(a: A, b: B) -> bool;
+  fn le(a: A, b: B) -> bool;
+  fn ge(a: A, b: B) -> bool;
+}
+
+instance Ord<i32, i32> {
+  intrinsic_fn lt(a: i32, b: i32) -> bool;
+  intrinsic_fn gt(a: i32, b: i32) -> bool;
+  intrinsic_fn le(a: i32, b: i32) -> bool;
+  intrinsic_fn ge(a: i32, b: i32) -> bool;
+}
+
+fn test_i32_ord_binop() {
+// CHECK-LABEL: fn test_i32_ord_binop
+  let binop_i32_lt = 1 < 2;
+  let binop_i32_gt = 2 > 1;
+  let binop_i32_le = 1 <= 1;
+  let binop_i32_ge = 1 >= 1;
+
+
+// CHECK-NEXT: let binop_i32_lt: bool = [[EXPAND:\(+]]@@builtin_i32_lt
+// CHECK-NEXT: let binop_i32_gt: bool = [[EXPAND:\(+]]@@builtin_i32_gt
+// CHECK-NEXT: let binop_i32_le: bool = [[EXPAND:\(+]]@@builtin_i32_le
+// CHECK-NEXT: let binop_i32_ge: bool = [[EXPAND:\(+]]@@builtin_i32_ge
+}
+
+trait Eq<A, B> {
+  fn eq(a: A, b: B) -> bool;
+  fn neq(a: A, b: B) -> bool;
+}
+
+instance Eq<i32, i32> {
+  intrinsic_fn eq(a: i32, b: i32) -> bool;
+  intrinsic_fn neq(a: i32, b: i32) -> bool;
+}
+
+fn test_i32_eq_binop() {
+// CHECK-LABEL: fn test_i32_eq_binop
+  let binop_i32_eq = 1 == 1;
+  let binop_i32_neq = 1 != 2;
+
+// CHECK-NEXT: let binop_i32_eq: bool = [[EXPAND:\(+]]@@builtin_i32_eq
+// CHECK-NEXT: let binop_i32_neq: bool = [[EXPAND:\(+]]@@builtin_i32_neq
+}
+
