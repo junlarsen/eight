@@ -1,0 +1,11 @@
+// RUN: not %eightc --emit-hir --emit-query hir.fn.test_bool_unaryop --terminator=hir %s 2>&1 | FileCheck %s
+
+trait Not<A, R> { fn not(a: A) -> R; }
+instance Not<bool, bool> { intrinsic_fn not(a: bool) -> bool; }
+
+fn test_bool_unaryop() {
+// CHECK-LABEL: fn test_bool_unaryop
+  let unaryop_bool_not = !true;
+
+// CHECK-NEXT: let unaryop_bool_not: bool = [[EXPAND:\(+]]@@builtin_bool_not
+}
