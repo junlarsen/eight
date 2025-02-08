@@ -1,59 +1,153 @@
 use crate::context::CompileContext;
-use crate::hir::HirModule;
 use crate::mir::{
-    MirAddInstruction, MirAllocaInstruction, MirArgument, MirBasicBlock, MirBasicBlockRef,
-    MirCallInstruction, MirConstantBool, MirConstantInteger32, MirDivInstruction, MirFunction,
-    MirFunctionData, MirFunctionRef, MirFunctionType, MirInstruction, MirInstructionRef,
-    MirLoadInstruction, MirModule, MirModuleData, MirMulInstruction, MirPtrAddInstruction,
-    MirStoreInstruction, MirSubInstruction, MirTy, MirValue, MirValueRef,
+    MirAddInstruction, MirAllocaInstruction, MirArgument, MirCallInstruction, MirConstantBool,
+    MirConstantInteger32, MirDivInstruction, MirFunctionType, MirInstruction, MirInstructionRef,
+    MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction, MirStoreInstruction,
+    MirSubInstruction, MirTy, MirValue, MirValueRef,
 };
+use crate::mir_block::{MirBasicBlock, MirBasicBlockRef};
+use crate::mir_module::MirModuleContext;
 use eight_diagnostics::ice;
-pub struct MirModuleContext<'mir, 'hir> {
-    cc: &'mir CompileContext<'mir>,
-    hir_module: &'hir HirModule<'hir>,
-    data: MirModuleData<'mir>,
-    function_id: usize,
+use std::collections::{BTreeMap, BTreeSet};
+
+#[derive(Debug)]
+pub struct MirFunction<'mir> {
+    name: &'mir str,
+    ty: &'mir MirFunctionType<'mir>,
+    data: MirFunctionData<'mir>,
 }
 
-impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
-    pub fn new(cc: &'mir CompileContext<'mir>, hir_module: &'hir HirModule<'hir>) -> Self {
-        Self {
-            cc,
-            hir_module,
-            function_id: 0,
-            data: MirModuleData::default(),
-        }
-    }
-
-    pub fn build(self) -> MirModule<'mir> {
-        MirModule::new(self.data)
-    }
-
-    /// Reserve the next function id.
-    pub fn forward_declare_function(
-        &mut self,
-        name: &str,
+impl<'mir> MirFunction<'mir> {
+    pub fn new(
+        name: &'mir str,
         ty: &'mir MirFunctionType<'mir>,
-    ) -> MirFunctionRef {
-        let name = self.cc.intern_str(name);
-        let id = MirFunctionRef(self.function_id);
-        self.function_id += 1;
-        self.data.function_names.insert(id, name);
-        self.data.function_types.insert(id, ty);
-        self.data.function_names_reverse.insert(name, id);
-        id
+        data: MirFunctionData<'mir>,
+    ) -> Self {
+        Self { name, ty, data }
     }
 
-    pub fn data(&self) -> &MirModuleData<'mir> {
+    /// Is the function expected to be resolved at link time?
+    ///
+    /// Functions with empty bodies are considered external.
+    pub fn is_external(&self) -> bool {
+        self.data.blocks.is_empty()
+    }
+
+    pub fn data(&self) -> &MirFunctionData<'mir> {
         &self.data
     }
 
-    /// Provide the completed MIR function.
-    pub fn implement_function(&mut self, id: MirFunctionRef, fun: MirFunction<'mir>) {
-        if self.data.functions.contains_key(&id) {
-            ice!("function already implemented");
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    pub fn ty(&self) -> &MirFunctionType<'mir> {
+        self.ty
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct MirFunctionRef(usize);
+
+impl MirFunctionRef {
+    pub fn new(id: usize) -> Self {
+        Self(id)
+    }
+
+    pub fn id(&self) -> usize {
+        self.0
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct MirFunctionData<'mir> {
+    blocks: BTreeMap<MirBasicBlockRef, MirBasicBlock<'mir>>,
+    block_instructions: BTreeMap<MirBasicBlockRef, BTreeSet<MirInstructionRef>>,
+    values: BTreeMap<MirValueRef, MirValue<'mir>>,
+    instructions: BTreeMap<MirInstructionRef, MirInstruction<'mir>>,
+}
+
+impl<'mir> MirFunctionData<'mir> {
+    /// Get the block with the given id, or panic if it does not exist.
+    fn get_expected_block(&self, block: &MirBasicBlockRef) -> &MirBasicBlock<'mir> {
+        self.blocks
+            .get(block)
+            .unwrap_or_else(|| ice!("missing block {}", block.id()))
+    }
+
+    /// Get the instruction with the given id, or panic if it does not exist.
+    fn get_expected_instruction(&self, instruction: &MirInstructionRef) -> &MirInstruction<'mir> {
+        self.instructions
+            .get(instruction)
+            .unwrap_or_else(|| ice!("missing instruction {}", instruction.id()))
+    }
+
+    /// Get the block instructions with the given id, or panic if it does not exist.
+    fn get_expected_block_instructions(
+        &self,
+        block: &MirBasicBlockRef,
+    ) -> &BTreeSet<MirInstructionRef> {
+        self.block_instructions
+            .get(block)
+            .unwrap_or_else(|| ice!("missing block {}", block.id()))
+    }
+
+    /// Get the value with the given id, or panic if it does not exist.
+    fn get_expected_value(&self, value: &MirValueRef) -> &MirValue<'mir> {
+        self.values
+            .get(value)
+            .unwrap_or_else(|| ice!("missing value {}", value.0))
+    }
+}
+
+impl<'mir> MirFunctionData<'mir> {
+    /// Get the instruction with the given id.
+    pub fn get_instruction(&self, id: &MirInstructionRef) -> &MirInstruction<'mir> {
+        self.get_expected_instruction(id)
+    }
+
+    /// Get an iterator over the instructions in the given block.
+    ///
+    /// TODO: Evaluate the performance of this function.
+    pub fn get_block_instructions(
+        &self,
+        block: &MirBasicBlockRef,
+    ) -> impl Iterator<Item = &MirInstruction<'mir>> {
+        self.get_expected_block_instructions(block)
+            .iter()
+            .map(|i| self.get_instruction(i))
+    }
+
+    /// Get an iterator over the blocks in the function.
+    ///
+    /// TODO: Return these in topological order.
+    pub fn get_blocks(&self) -> impl Iterator<Item = &MirBasicBlock<'mir>> {
+        self.blocks.values()
+    }
+
+    /// Get the name of the given block.
+    pub fn get_block(&self, block: &MirBasicBlockRef) -> &MirBasicBlock<'mir> {
+        self.get_expected_block(block)
+    }
+
+    pub fn get_values(&self) -> impl Iterator<Item = &MirValue<'mir>> {
+        self.values.values()
+    }
+
+    /// Get the value with the given id.
+    pub fn get_value(&self, id: &MirValueRef) -> &MirValue<'mir> {
+        self.get_expected_value(id)
+    }
+
+    /// Get the type of the value with the given id.
+    pub fn get_value_type(&self, id: &MirValueRef) -> &'mir MirTy<'mir> {
+        match self.get_value(id) {
+            MirValue::ConstantInteger32(i) => i.ty,
+            MirValue::ConstantBool(i) => i.ty,
+            MirValue::Argument(a) => a.ty,
+            MirValue::Instruction(i) => self.get_expected_instruction(i).ty(),
+            MirValue::Function(_) | MirValue::Label(_) => unimplemented!(),
         }
-        self.data.functions.insert(id, fun);
     }
 }
 
@@ -105,30 +199,21 @@ impl<'mir> MirFunctionBuilder<'mir> {
     {
         MirFunction::new(self.name, self.ty, self.data)
     }
-}
 
-impl<'mir> MirFunctionBuilder<'mir> {
     /// Create a new basic block
     pub fn build_basic_block(&mut self, name: Option<&'mir str>) -> MirBasicBlockRef {
         let id = self.block_id;
         let name = name.unwrap_or_else(|| self.cc.intern_as_str(id));
-        let id = MirBasicBlockRef(id);
-        let block = MirBasicBlock {
-            name,
-            instructions: Vec::new(),
-        };
+        let id = MirBasicBlockRef::new(id);
+        let block = MirBasicBlock::new(id, name);
         self.data.blocks.insert(id, block);
         self.block_id += 1;
         id
     }
 
-    pub fn get_basic_block(&self, id: MirBasicBlockRef) -> Option<&MirBasicBlock<'mir>> {
-        self.data.blocks.get(&id)
-    }
-
     /// Get the next instruction id.
     fn get_next_instruction_id(&self) -> MirInstructionRef {
-        MirInstructionRef(self.instruction_id)
+        MirInstructionRef::new(self.instruction_id)
     }
 
     /// Build an instruction.
@@ -145,12 +230,8 @@ impl<'mir> MirFunctionBuilder<'mir> {
         id
     }
 
-    pub fn get_instruction(&self, id: MirInstructionRef) -> Option<&MirInstruction<'mir>> {
-        self.data.instructions.get(&id)
-    }
-
     /// Get the next value id.
-    pub fn get_next_value_id(&self) -> MirValueRef {
+    fn get_next_value_id(&self) -> MirValueRef {
         MirValueRef(self.value_id)
     }
 
@@ -164,21 +245,18 @@ impl<'mir> MirFunctionBuilder<'mir> {
         id
     }
 
-    pub fn get_value(&self, id: MirValueRef) -> Option<&MirValue<'mir>> {
-        self.data.values.get(&id)
-    }
-
-    /// Get a mutable reference to the insertion point.
-    fn insertion_point_mut<'c>(&'c mut self) -> &'c mut MirBasicBlock<'mir> {
-        let insertion_point = self.insertion_point.unwrap_or_else(|| {
-            ice!("cannot get insertion point without a selected block");
+    /// Insert the given instruction at the insertion point.
+    ///
+    /// This assumes that the instruction is allocated for the current function.
+    fn insert(&mut self, instruction: MirInstructionRef) {
+        let block = self.insertion_point.unwrap_or_else(|| {
+            ice!("cannot insert instruction without a selected block");
         });
         self.data
-            .blocks
-            .get_mut(&insertion_point)
-            .unwrap_or_else(|| {
-                ice!("insertion point is out of bounds");
-            })
+            .block_instructions
+            .entry(block)
+            .or_default()
+            .insert(instruction);
     }
 
     /// Set the insertion point to the given basic block id.
@@ -235,12 +313,12 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Alloca(MirAllocaInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             ty: self.cc.mir_pointer_type(),
             alloc_ty: ty,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -255,15 +333,15 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst_id = self.get_next_instruction_id();
         let inst = MirInstruction::Store(MirStoreInstruction {
             inst_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             ty: self.cc.mir_void_type(),
             // Stores are always into pointer types
-            dest_ty: self.data.get_value_type(value),
+            dest_ty: self.data.get_value_type(&value),
             value,
             dest,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         inst_id
     }
 
@@ -280,12 +358,12 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Load(MirLoadInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             ty,
             src,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -303,13 +381,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Call(MirCallInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             callee,
             arguments,
             ty: return_ty,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -327,13 +405,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Add(MirAddInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -351,13 +429,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Sub(MirSubInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -375,13 +453,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Mul(MirMulInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -399,13 +477,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Div(MirDivInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -423,13 +501,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Sub(MirSubInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
             ty,
             lhs: zero,
             rhs: input,
         });
         let inst = self.build_instruction(inst_id, inst);
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 
@@ -446,13 +524,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
             MirInstruction::PtrAdd(MirPtrAddInstruction {
                 inst_id,
                 value_id,
-                name: name.unwrap_or_else(|| self.cc.intern_as_str(*inst_id)),
+                name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
                 ty: self.cc.mir_pointer_type(),
                 ptr,
                 offset,
             }),
         );
-        self.insertion_point_mut().insert(inst);
+        self.insert(inst);
         self.build_value(value_id, MirValue::Instruction(inst))
     }
 }

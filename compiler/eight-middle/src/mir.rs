@@ -1,59 +1,6 @@
-use eight_diagnostics::ice;
-use std::collections::BTreeMap;
+use crate::mir_block::MirBasicBlockRef;
+use crate::mir_function::MirFunctionRef;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::ops::Deref;
-
-#[derive(Debug, Default)]
-pub struct MirModuleData<'mir> {
-    pub functions: BTreeMap<MirFunctionRef, MirFunction<'mir>>,
-    pub function_types: BTreeMap<MirFunctionRef, &'mir MirFunctionType<'mir>>,
-    pub function_names: BTreeMap<MirFunctionRef, &'mir str>,
-    pub function_names_reverse: BTreeMap<&'mir str, MirFunctionRef>,
-}
-
-impl<'mir> MirModuleData<'mir> {
-    pub fn functions(&self) -> impl Iterator<Item = &MirFunction<'mir>> {
-        self.functions.values()
-    }
-
-    pub fn get_function_by_id(&self, id: MirFunctionRef) -> Option<&MirFunction<'mir>> {
-        self.functions.get(&id)
-    }
-
-    pub fn get_function_by_name(&self, name: &'mir str) -> Option<&MirFunction<'mir>> {
-        self.functions.get(self.function_names_reverse.get(name)?)
-    }
-
-    /// Get the function id for the given name.
-    pub fn get_function_id(&self, name: &'mir str) -> Option<MirFunctionRef> {
-        self.function_names_reverse.get(name).copied()
-    }
-
-    /// Get the function name for the given id.
-    pub fn get_function_name(&self, id: MirFunctionRef) -> Option<&'mir str> {
-        self.function_names.get(&id).copied()
-    }
-
-    /// Get the function type for the given id.
-    pub fn get_function_type(&self, id: MirFunctionRef) -> Option<&'mir MirFunctionType<'mir>> {
-        self.function_types.get(&id).copied()
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct MirModule<'mir> {
-    data: MirModuleData<'mir>,
-}
-
-impl<'mir> MirModule<'mir> {
-    pub fn new(data: MirModuleData<'mir>) -> Self {
-        Self { data }
-    }
-
-    pub fn data(&self) -> &MirModuleData<'mir> {
-        &self.data
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MirTyId(u64);
@@ -193,13 +140,15 @@ pub struct MirArgument<'mir> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirInstructionRef(pub usize);
+pub struct MirInstructionRef(usize);
 
-impl Deref for MirInstructionRef {
-    type Target = usize;
+impl MirInstructionRef {
+    pub fn new(id: usize) -> Self {
+        Self(id)
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    pub fn id(&self) -> usize {
+        self.0
     }
 }
 
@@ -228,6 +177,20 @@ impl<'mir> MirInstruction<'mir> {
             MirInstruction::Mul(i) => i.ty,
             MirInstruction::Div(i) => i.ty,
             MirInstruction::PtrAdd(i) => i.ty,
+        }
+    }
+
+    pub fn instruction_id(&self) -> MirInstructionRef {
+        match self {
+            MirInstruction::Alloca(i) => i.inst_id,
+            MirInstruction::Load(i) => i.inst_id,
+            MirInstruction::Store(i) => i.inst_id,
+            MirInstruction::Call(i) => i.inst_id,
+            MirInstruction::Add(i) => i.inst_id,
+            MirInstruction::Sub(i) => i.inst_id,
+            MirInstruction::Mul(i) => i.inst_id,
+            MirInstruction::Div(i) => i.inst_id,
+            MirInstruction::PtrAdd(i) => i.inst_id,
         }
     }
 }
@@ -347,134 +310,4 @@ pub struct MirPtrAddInstruction<'mir> {
     pub ty: &'mir MirTy<'mir>,
     pub ptr: MirValueRef,
     pub offset: MirValueRef,
-}
-
-#[derive(Debug, Default)]
-pub struct MirFunctionData<'mir> {
-    pub blocks: BTreeMap<MirBasicBlockRef, MirBasicBlock<'mir>>,
-    pub values: BTreeMap<MirValueRef, MirValue<'mir>>,
-    pub instructions: BTreeMap<MirInstructionRef, MirInstruction<'mir>>,
-}
-
-impl<'mir> MirFunctionData<'mir> {
-    pub fn instructions(&self) -> impl Iterator<Item = &MirInstruction<'mir>> {
-        self.instructions.values()
-    }
-
-    /// Get the instruction with the given id.
-    pub fn get_instruction(&self, id: MirInstructionRef) -> &MirInstruction<'mir> {
-        self.instructions
-            .get(&id)
-            .unwrap_or_else(|| ice!("missing instruction {}", id.0))
-    }
-
-    /// Get the type the instruction evaluates to.
-    pub fn get_instruction_type(&self, id: MirInstructionRef) -> &'mir MirTy<'mir> {
-        self.get_instruction(id).ty()
-    }
-
-    pub fn blocks(&self) -> impl Iterator<Item = &MirBasicBlock<'mir>> {
-        self.blocks.values()
-    }
-
-    /// Get the basic block with the given id.
-    pub fn get_basic_block(&self, id: MirBasicBlockRef) -> &MirBasicBlock<'mir> {
-        self.blocks
-            .get(&id)
-            .unwrap_or_else(|| ice!("missing block {}", id.0))
-    }
-
-    pub fn values(&self) -> impl Iterator<Item = &MirValue<'mir>> {
-        self.values.values()
-    }
-
-    /// Get the value with the given id.
-    pub fn get_value(&self, id: MirValueRef) -> &MirValue<'mir> {
-        self.values
-            .get(&id)
-            .unwrap_or_else(|| ice!("missing value {}", id.0))
-    }
-
-    /// Get the type of the value with the given id.
-    ///
-    /// This function panics if the value does not exist.
-    pub fn get_value_type(&self, id: MirValueRef) -> &'mir MirTy<'mir> {
-        match self.get_value(id) {
-            MirValue::ConstantInteger32(i) => i.ty,
-            MirValue::ConstantBool(i) => i.ty,
-            MirValue::Argument(a) => a.ty,
-            MirValue::Instruction(i) => self.get_instruction_type(*i),
-            MirValue::Function(_) | MirValue::Label(_) => unimplemented!(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct MirFunction<'mir> {
-    name: &'mir str,
-    ty: &'mir MirFunctionType<'mir>,
-    data: MirFunctionData<'mir>,
-}
-
-impl<'mir> MirFunction<'mir> {
-    pub fn new(
-        name: &'mir str,
-        ty: &'mir MirFunctionType<'mir>,
-        data: MirFunctionData<'mir>,
-    ) -> Self {
-        Self { name, ty, data }
-    }
-
-    /// Is the function expected to be resolved at link time?
-    ///
-    /// Functions with empty bodies are considered external.
-    pub fn is_external(&self) -> bool {
-        self.data.blocks.is_empty()
-    }
-
-    pub fn data(&self) -> &MirFunctionData<'mir> {
-        &self.data
-    }
-
-    pub fn name(&self) -> &str {
-        self.name
-    }
-
-    pub fn ty(&self) -> &MirFunctionType<'mir> {
-        self.ty
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirFunctionRef(pub usize);
-
-impl Deref for MirFunctionRef {
-    type Target = usize;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct MirBasicBlockRef(pub usize);
-
-impl Deref for MirBasicBlockRef {
-    type Target = usize;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[derive(Debug)]
-pub struct MirBasicBlock<'mir> {
-    pub name: &'mir str,
-    pub instructions: Vec<MirInstructionRef>,
-}
-
-impl MirBasicBlock<'_> {
-    pub fn insert(&mut self, instruction: MirInstructionRef) {
-        self.instructions.push(instruction);
-    }
 }

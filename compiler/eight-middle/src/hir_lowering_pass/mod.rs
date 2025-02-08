@@ -6,10 +6,11 @@ use crate::hir::{
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::hir::{HirGroupExpr, HirTy};
 use crate::hir::{HirModule, HirReferenceSymbol};
-use crate::mir::MirModule;
 use crate::mir::MirTy;
 use crate::mir::MirValueRef;
-use crate::mir_builder::{MirFunctionBuilder, MirModuleContext};
+use crate::mir_function::MirFunctionBuilder;
+use crate::mir_module::MirModule;
+use crate::mir_module::MirModuleContext;
 use crate::scope::Scope;
 use crate::LinkageType;
 use crate::MirResult;
@@ -140,7 +141,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
         stmt: &'hir HirLetStmt<'hir>,
     ) -> MirResult<()> {
         let value = self.visit_expr(b, cx, &stmt.value)?;
-        let value_ty = b.data().get_value_type(value);
+        let value_ty = b.data().get_value_type(&value);
         let ptr = b.build_alloca(cx, value_ty, None);
         b.build_store(cx, value, ptr, None);
         let name = self.cc.intern_str(stmt.name);
@@ -215,17 +216,17 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     ) -> MirResult<MirValueRef> {
         match &expr.kind {
             HirReferenceSymbol::Local(local) => {
-                let id = self.locals.find(&local.name).unwrap_or_else(|| {
+                let value = self.locals.find(&local.name).unwrap_or_else(|| {
                     ice!("failed to find local value for {}", local.name);
                 });
-                let value_ty = b.data().get_value_type(*id);
+                let value_ty = b.data().get_value_type(value);
                 let expected_ty = self.visit_ty(expr.ty)?;
                 // If it is a pointer type, we automatically dereference it.
                 if let MirTy::Pointer(_) = value_ty {
-                    let load = b.build_load(cx, *id, expected_ty, None);
+                    let load = b.build_load(cx, *value, expected_ty, None);
                     return Ok(load);
                 }
-                Ok(*id)
+                Ok(*value)
             }
             HirReferenceSymbol::Function(symbol) => {
                 // TODO: Mangle the name along with the type arguments.

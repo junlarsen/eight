@@ -14,7 +14,9 @@ pub mod hir_textual_pass;
 pub mod hir_type_check_pass;
 pub mod intern;
 pub mod mir;
-pub mod mir_builder;
+pub mod mir_block;
+pub mod mir_function;
+pub mod mir_module;
 pub mod mir_textual_pass;
 pub mod scope;
 
