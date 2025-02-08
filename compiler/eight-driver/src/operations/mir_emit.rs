@@ -18,7 +18,7 @@ impl MirEmitPass {
                 let name = pipeline.cc.intern_str(name);
                 let function = module
                     .data()
-                    .get_function_by_name(name)
+                    .get_function(name)
                     .unwrap_or_else(|| ice!("function {} not found", name));
                 Ok(textual_pass.visit_function(module.data(), function))
             }

@@ -1,10 +1,11 @@
 use eight_macros::declare_ref_type;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-declare_ref_type!(MirFunctionRef, usize);
 declare_ref_type!(MirBasicBlockRef, usize);
 declare_ref_type!(MirInstructionRef, usize);
 declare_ref_type!(MirValueRef, usize);
+
+pub type MirFunctionRef<'mir> = &'mir str;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MirTyId(u64);
@@ -116,7 +117,7 @@ pub enum MirValue<'mir> {
     Argument(MirArgument<'mir>),
     Instruction(MirInstructionRef),
     Label(MirBasicBlockRef),
-    Function(MirFunctionRef),
+    Function(MirFunctionRef<'mir>),
 }
 
 #[derive(Debug)]

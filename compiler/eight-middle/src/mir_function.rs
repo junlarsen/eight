@@ -142,10 +142,9 @@ impl<'mir> MirFunctionData<'mir> {
 ///
 /// A MIR builder is responsible for building a complete MIR function.
 pub struct MirFunctionBuilder<'mir> {
-    id: MirFunctionRef,
     cc: &'mir CompileContext<'mir>,
     ty: &'mir MirFunctionType<'mir>,
-    name: &'mir str,
+    name: MirFunctionRef<'mir>,
     data: MirFunctionData<'mir>,
     block_id: usize,
     value_id: usize,
@@ -158,12 +157,10 @@ impl<'mir> MirFunctionBuilder<'mir> {
     /// Create a new MIR function builder based on a signature.
     pub fn new(
         cc: &'mir CompileContext<'mir>,
-        name: &'mir str,
+        name: MirFunctionRef<'mir>,
         ty: &'mir MirFunctionType<'mir>,
-        id: MirFunctionRef,
     ) -> Self {
         Self {
-            id,
             ty,
             name,
             cc,
@@ -282,16 +279,16 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build a reference to a function value.
-    pub fn build_function_ref(&mut self, id: MirFunctionRef) -> MirValueRef {
+    pub fn build_function_ref(&mut self, id: MirFunctionRef<'mir>) -> MirValueRef {
         let value_id = self.get_next_value_id();
         let inst = MirValue::Function(id);
         self.build_value(value_id, inst)
     }
 
     /// Build a `mem.alloca` instruction.
-    pub fn build_alloca<'hir>(
+    pub fn build_alloca(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueRef {
@@ -310,9 +307,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build a `mem.store` instruction.
-    pub fn build_store<'hir>(
+    pub fn build_store(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         value: MirValueRef,
         dest: MirValueRef,
         name: Option<&'mir str>,
@@ -333,9 +330,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build a `mem.load` instruction.
-    pub fn build_load<'hir>(
+    pub fn build_load(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         src: MirValueRef,
         ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
@@ -355,9 +352,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build a `fn.call` instruction.
-    pub fn build_call<'hir>(
+    pub fn build_call(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         callee: MirValueRef,
         arguments: Vec<MirValueRef>,
         return_ty: &'mir MirTy<'mir>,
@@ -379,9 +376,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build an `arith.add` instruction.
-    pub fn build_add<'hir>(
+    pub fn build_add(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         lhs: MirValueRef,
         rhs: MirValueRef,
         ty: &'mir MirTy<'mir>,
@@ -403,9 +400,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build an `arith.sub` instruction.
-    pub fn build_sub<'hir>(
+    pub fn build_sub(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         lhs: MirValueRef,
         rhs: MirValueRef,
         ty: &'mir MirTy<'mir>,
@@ -427,9 +424,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build an `arith.mul` instruction.
-    pub fn build_mul<'hir>(
+    pub fn build_mul(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         lhs: MirValueRef,
         rhs: MirValueRef,
         ty: &'mir MirTy<'mir>,
@@ -451,9 +448,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Build an `arith.div` instruction.
-    pub fn build_div<'hir>(
+    pub fn build_div(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         lhs: MirValueRef,
         rhs: MirValueRef,
         ty: &'mir MirTy<'mir>,
@@ -475,9 +472,9 @@ impl<'mir> MirFunctionBuilder<'mir> {
     }
 
     /// Arithmetic negation is re-written as subtraction from zero.
-    pub fn build_neg<'hir>(
+    pub fn build_neg(
         &mut self,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         input: MirValueRef,
         ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,

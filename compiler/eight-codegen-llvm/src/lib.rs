@@ -235,13 +235,7 @@ impl<'l, 'mir> MirModuleLLVMCodeGeneratorPass<'l> {
         let MirValue::Function(id) = fcx.get_value(&node.callee) else {
             ice!("callee is not a function");
         };
-        let function_name = mcx
-            .get_function_name(*id)
-            .expect("didnt find function name");
-        let callee = self
-            .module
-            .get_function(function_name)
-            .expect("function not found");
+        let callee = self.module.get_function(id).expect("function not found");
         let arguments = node
             .arguments
             .iter()

@@ -1,5 +1,4 @@
 use crate::context::CompileContext;
-use crate::hir::HirModule;
 use crate::mir::{MirFunctionRef, MirFunctionType};
 use crate::mir_function::MirFunction;
 use eight_diagnostics::ice;
@@ -12,15 +11,37 @@ use std::collections::BTreeMap;
 #[derive(Debug, Default)]
 pub struct MirModule<'mir> {
     data: MirModuleData<'mir>,
+    interface: MirModuleInterface<'mir>,
 }
 
 impl<'mir> MirModule<'mir> {
-    pub fn new(data: MirModuleData<'mir>) -> Self {
-        Self { data }
+    pub fn new(data: MirModuleData<'mir>, interface: MirModuleInterface<'mir>) -> Self {
+        Self { data, interface }
     }
 
     pub fn data(&self) -> &MirModuleData<'mir> {
         &self.data
+    }
+
+    pub fn interface(&self) -> &MirModuleInterface<'mir> {
+        &self.interface
+    }
+}
+
+/// The public API interface for a MIR module.
+#[derive(Debug, Default)]
+pub struct MirModuleInterface<'mir> {
+    functions: BTreeMap<&'mir str, &'mir MirFunctionType<'mir>>,
+}
+
+impl<'mir> MirModuleInterface<'mir> {
+    pub fn insert_function(&mut self, name: &'mir str, ty: &'mir MirFunctionType<'mir>) {
+        // TODO: Check for collisions
+        self.functions.insert(name, ty);
+    }
+
+    pub fn get_function(&self, name: &'mir str) -> Option<&'mir MirFunctionType<'mir>> {
+        self.functions.get(name).copied()
     }
 }
 
@@ -31,74 +52,33 @@ impl<'mir> MirModule<'mir> {
 /// point to through the MirModuleData.
 #[derive(Debug, Default)]
 pub struct MirModuleData<'mir> {
-    functions: BTreeMap<MirFunctionRef, MirFunction<'mir>>,
-    function_types: BTreeMap<MirFunctionRef, &'mir MirFunctionType<'mir>>,
-    function_names: BTreeMap<MirFunctionRef, &'mir str>,
-    function_names_reverse: BTreeMap<&'mir str, MirFunctionRef>,
+    functions: BTreeMap<&'mir str, MirFunction<'mir>>,
 }
 impl<'mir> MirModuleData<'mir> {
     pub fn functions(&self) -> impl Iterator<Item = &MirFunction<'mir>> {
         self.functions.values()
     }
 
-    pub fn get_function_by_id(&self, id: MirFunctionRef) -> Option<&MirFunction<'mir>> {
-        self.functions.get(&id)
-    }
-
-    pub fn get_function_by_name(&self, name: &'mir str) -> Option<&MirFunction<'mir>> {
-        self.functions.get(self.function_names_reverse.get(name)?)
-    }
-
-    /// Get the function id for the given name.
-    pub fn get_function_id(&self, name: &'mir str) -> Option<MirFunctionRef> {
-        self.function_names_reverse.get(name).copied()
-    }
-
-    /// Get the function name for the given id.
-    pub fn get_function_name(&self, id: MirFunctionRef) -> Option<&'mir str> {
-        self.function_names.get(&id).copied()
-    }
-
-    /// Get the function type for the given id.
-    pub fn get_function_type(&self, id: MirFunctionRef) -> Option<&'mir MirFunctionType<'mir>> {
-        self.function_types.get(&id).copied()
+    pub fn get_function(&self, name: &'mir str) -> Option<&MirFunction<'mir>> {
+        self.functions.get(name)
     }
 }
 
-pub struct MirModuleContext<'mir, 'hir> {
+pub struct MirModuleContext<'mir> {
     cc: &'mir CompileContext<'mir>,
-    hir_module: &'hir HirModule<'hir>,
     data: MirModuleData<'mir>,
-    function_id: usize,
 }
 
-impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
-    pub fn new(cc: &'mir CompileContext<'mir>, hir_module: &'hir HirModule<'hir>) -> Self {
+impl<'mir> MirModuleContext<'mir> {
+    pub fn new(cc: &'mir CompileContext<'mir>) -> Self {
         Self {
             cc,
-            hir_module,
-            function_id: 0,
             data: MirModuleData::default(),
         }
     }
 
-    pub fn build(self) -> MirModule<'mir> {
-        MirModule::new(self.data)
-    }
-
-    /// Reserve the next function id.
-    pub fn forward_declare_function(
-        &mut self,
-        name: &str,
-        ty: &'mir MirFunctionType<'mir>,
-    ) -> MirFunctionRef {
-        let name = self.cc.intern_str(name);
-        let id = MirFunctionRef::new(self.function_id);
-        self.function_id += 1;
-        self.data.function_names.insert(id, name);
-        self.data.function_types.insert(id, ty);
-        self.data.function_names_reverse.insert(name, id);
-        id
+    pub fn build(self, interface: MirModuleInterface<'mir>) -> MirModule<'mir> {
+        MirModule::new(self.data, interface)
     }
 
     pub fn data(&self) -> &MirModuleData<'mir> {
@@ -106,7 +86,7 @@ impl<'mir, 'hir> MirModuleContext<'mir, 'hir> {
     }
 
     /// Provide the completed MIR function.
-    pub fn implement_function(&mut self, id: MirFunctionRef, fun: MirFunction<'mir>) {
+    pub fn insert_function(&mut self, id: MirFunctionRef<'mir>, fun: MirFunction<'mir>) {
         if self.data.functions.contains_key(&id) {
             ice!("function already implemented");
         }

@@ -6,23 +6,23 @@ use crate::hir::{
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::hir::{HirGroupExpr, HirTy};
 use crate::hir::{HirModule, HirReferenceSymbol};
-use crate::mir::MirTy;
 use crate::mir::MirValueRef;
-use crate::mir_function::MirFunctionBuilder;
-use crate::mir_module::MirModule;
+use crate::mir::{MirFunctionRef, MirFunctionType, MirTy};
+use crate::mir_function::{MirFunction, MirFunctionBuilder};
 use crate::mir_module::MirModuleContext;
+use crate::mir_module::{MirModule, MirModuleInterface};
 use crate::scope::Scope;
 use crate::LinkageType;
 use crate::MirResult;
 use eight_diagnostics::ice;
 
-pub struct MirModuleLoweringPass<'mir> {
+pub struct HirModuleLoweringPass<'mir> {
     cc: &'mir CompileContext<'mir>,
     /// Mapping between local names and their MIR value ids.
     locals: Scope<&'mir str, MirValueRef>,
 }
 
-impl<'mir> MirModuleLoweringPass<'mir> {
+impl<'mir> HirModuleLoweringPass<'mir> {
     pub fn new(cc: &'mir CompileContext<'mir>) -> Self {
         Self {
             cc,
@@ -31,14 +31,13 @@ impl<'mir> MirModuleLoweringPass<'mir> {
     }
 }
 
-impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
+impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
     pub fn visit_module(&mut self, module: &'hir HirModule<'hir>) -> MirResult<MirModule<'mir>> {
-        let mut module_builder = MirModuleContext::new(self.cc, module);
-        // Forward declare all functions contained in the module
-        for function in module.body.functions.values() {
-            let return_type = self.visit_ty(function.signature.return_type)?;
-            let parameters = function
-                .signature
+        // Extract all items into the module interface
+        let mut interface = MirModuleInterface::default();
+        for (name, signature) in module.signature.functions.iter() {
+            let return_type = self.visit_ty(signature.return_type)?;
+            let parameters = signature
                 .parameters
                 .iter()
                 .map(|p| self.visit_ty(p.ty))
@@ -46,62 +45,62 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             let MirTy::Function(ty) = self.cc.mir_function_type(return_type, parameters) else {
                 ice!("didnt get function type from arena");
             };
-            let name = self.cc.intern_str(function.name);
-            module_builder.forward_declare_function(name, ty);
+            let name = self.cc.intern_str(name);
+            interface.insert_function(name, ty);
         }
+
+        let mut module_builder = MirModuleContext::new(self.cc);
         // Generate the MIR code for all functions
         for function in module.body.functions.values() {
             let name = self.cc.intern_str(function.name);
-            let Some(id) = module_builder.data().get_function_id(name) else {
-                ice!("failed to find function id for {}", function.name);
-            };
-            let Some(ty) = module_builder.data().get_function_type(id) else {
+            let Some(ty) = interface.get_function(name) else {
                 ice!("failed to find function type for {}", function.name);
             };
-            let mut builder = MirFunctionBuilder::new(self.cc, name, ty, id);
-            self.visit_function(function, &mut builder, &module_builder)?;
-            module_builder.implement_function(id, builder.build());
+            let mir_function = self.visit_function(function, name, ty, &module_builder)?;
+            module_builder.insert_function(name, mir_function);
         }
-        Ok(module_builder.build())
+        Ok(module_builder.build(interface))
     }
 
     pub fn visit_function(
         &mut self,
         node: &'hir HirFunction<'hir>,
-        b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
-    ) -> MirResult<()> {
-        // If the function is external, it doesn't get any code, and the code generator will assume
-        // that it must be externally defined and resolved at link time.
-        if node.linkage_type == LinkageType::External {
-            return Ok(());
-        }
+        name: MirFunctionRef<'mir>,
+        ty: &'mir MirFunctionType<'mir>,
+        cx: &MirModuleContext<'mir>,
+    ) -> MirResult<MirFunction<'mir>> {
         assert!(
-            !node.signature.is_generic(),
+            !(node.signature.is_generic() && matches!(node.linkage_type, LinkageType::Eight)),
             "cannot lower generic functions at this time"
         );
         self.locals.enter_scope();
-
-        let entry = b.build_basic_block(Some("entry"));
-        b.move_insertion_point(entry);
+        let mut function_builder = MirFunctionBuilder::new(self.cc, name, ty);
+        // If the function is external, it doesn't get any code, and the code generator will assume
+        // that it must be externally defined and resolved at link time.
+        if node.linkage_type == LinkageType::External {
+            return Ok(function_builder.build());
+        }
+        
+        let entry = function_builder.build_basic_block(Some("entry"));
+        function_builder.move_insertion_point(entry);
         for parameter in node.signature.parameters.iter() {
             let ty = self.visit_ty(parameter.ty)?;
             let name = self.cc.intern_str(parameter.name);
-            let argument = b.build_argument(name, ty);
+            let argument = function_builder.build_argument(name, ty);
             self.locals.add(name, argument);
         }
         for stmt in node.body.iter() {
-            self.visit_stmt(b, cx, stmt)?;
+            self.visit_stmt(&mut function_builder, cx, stmt)?;
         }
         self.locals.leave_scope();
-        Ok(())
+        Ok(function_builder.build())
     }
 
     /// Translate a statement into MIR.
     pub fn visit_stmt(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         stmt: &'hir HirStmt<'hir>,
     ) -> MirResult<()> {
         match stmt {
@@ -137,7 +136,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_let_stmt(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         stmt: &'hir HirLetStmt<'hir>,
     ) -> MirResult<()> {
         let value = self.visit_expr(b, cx, &stmt.value)?;
@@ -152,7 +151,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_expr_stmt(
         &mut self,
         builder: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         stmt: &'hir HirExprStmt<'hir>,
     ) -> MirResult<()> {
         let _ = self.visit_expr(builder, cx, &stmt.expr)?;
@@ -163,7 +162,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         expr: &'hir HirExpr<'hir>,
     ) -> MirResult<MirValueRef> {
         match expr {
@@ -184,7 +183,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_integer_literal_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         expr: &'hir HirIntegerLiteralExpr<'hir>,
     ) -> MirResult<MirValueRef> {
         let inst = b.build_constant_integer32(expr.value, self.cc.mir_i32_type());
@@ -194,7 +193,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_boolean_literal_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        _: &MirModuleContext<'mir, 'hir>,
+        _: &MirModuleContext<'mir>,
         expr: &'hir HirBooleanLiteralExpr<'hir>,
     ) -> MirResult<MirValueRef> {
         let inst = b.build_constant_bool(expr.value, self.cc.mir_bool_type());
@@ -211,7 +210,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_reference_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         expr: &'hir HirReferenceExpr<'hir>,
     ) -> MirResult<MirValueRef> {
         match &expr.kind {
@@ -231,13 +230,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
             HirReferenceSymbol::Function(symbol) => {
                 // TODO: Mangle the name along with the type arguments.
                 let name = self.cc.intern_str(symbol.name);
-                let id = cx.data().get_function_id(name).unwrap_or_else(|| {
-                    ice!(
-                        "failed to find function id for {} despite passing type checker",
-                        name
-                    );
-                });
-                Ok(b.build_function_ref(id))
+                Ok(b.build_function_ref(name))
             }
             HirReferenceSymbol::Intrinsic(_) => {
                 ice!("called visit_reference_expr() on an intrinsic")
@@ -251,7 +244,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_call_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         expr: &'hir HirCallExpr<'hir>,
     ) -> MirResult<MirValueRef> {
         // If the call is implemented as an intrinsic, we can lower it to a more efficient form, so
@@ -273,7 +266,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_intrinsic_call_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         expr: &'hir HirCallExpr<'hir>,
     ) -> MirResult<MirValueRef> {
         let HirExpr::Reference(reference) = expr.callee.as_ref() else {
@@ -303,7 +296,7 @@ impl<'hir, 'mir> MirModuleLoweringPass<'mir> {
     pub fn visit_group_expr(
         &mut self,
         b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir, 'hir>,
+        cx: &MirModuleContext<'mir>,
         expr: &'hir HirGroupExpr<'hir>,
     ) -> MirResult<MirValueRef> {
         self.visit_expr(b, cx, &expr.inner)
