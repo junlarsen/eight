@@ -73,7 +73,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     // Compare and print the diffs
-    let diff = TextDiff::from_lines(truth.as_str(), snapshot);
+    let diff = TextDiff::from_lines(snapshot, truth.as_str());
     let mut changed = false;
     for change in diff.iter_all_changes() {
         // To avoid bleeding the color onto the next line, we write the newline after the change
