@@ -24,8 +24,8 @@ pub enum CompilerIntrinsic {
     IntegerNeq,
     IntegerLt,
     IntegerGt,
-    IntegerLte,
-    IntegerGte,
+    IntegerLe,
+    IntegerGe,
     BooleanAnd,
     BooleanOr,
     BooleanEq,
@@ -51,8 +51,8 @@ impl<'hir> CompilerIntrinsic {
             | CompilerIntrinsic::IntegerNeq
             | CompilerIntrinsic::IntegerLt
             | CompilerIntrinsic::IntegerGt
-            | CompilerIntrinsic::IntegerLte
-            | CompilerIntrinsic::IntegerGte => cc.hir_function_type(
+            | CompilerIntrinsic::IntegerLe
+            | CompilerIntrinsic::IntegerGe => cc.hir_function_type(
                 cc.hir_boolean_type(),
                 vec![cc.hir_integer32_type(), cc.hir_integer32_type()],
             ),
@@ -87,10 +87,10 @@ impl Display for CompilerIntrinsic {
             CompilerIntrinsic::IntegerRem => write!(f, "@@builtin_i32_rem"),
             CompilerIntrinsic::IntegerEq => write!(f, "@@builtin_i32_eq"),
             CompilerIntrinsic::IntegerNeq => write!(f, "@@builtin_i32_neq"),
-            CompilerIntrinsic::IntegerLt => write!(f, "@builtin_i32_lt"),
+            CompilerIntrinsic::IntegerLt => write!(f, "@@builtin_i32_lt"),
             CompilerIntrinsic::IntegerGt => write!(f, "@@builtin_i32_gt"),
-            CompilerIntrinsic::IntegerLte => write!(f, "@@builtin_i32_lte"),
-            CompilerIntrinsic::IntegerGte => write!(f, "@@builtin_i32_gte"),
+            CompilerIntrinsic::IntegerLe => write!(f, "@@builtin_i32_le"),
+            CompilerIntrinsic::IntegerGe => write!(f, "@@builtin_i32_ge"),
             CompilerIntrinsic::IntegerNeg => write!(f, "@@builtin_i32_neg"),
             // Compiler intrinsics for the bool type.
             CompilerIntrinsic::BooleanAnd => write!(f, "@@builtin_bool_and"),

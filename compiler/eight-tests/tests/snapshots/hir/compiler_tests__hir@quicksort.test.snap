@@ -65,8 +65,8 @@ hir_module {
       {
         let j: i32 = (l as i32);
         loop {
-          if (((@builtin_i32_lt as fn(i32, i32)->bool)((j as i32),(r as i32)) as bool)){
-            if (((@@builtin_i32_lte as fn(i32, i32)->bool)(((xs as *i32)[(j as i32)] as i32),(x as i32)) as bool)){
+          if (((@@builtin_i32_lt as fn(i32, i32)->bool)((j as i32),(r as i32)) as bool)){
+            if (((@@builtin_i32_le as fn(i32, i32)->bool)(((xs as *i32)[(j as i32)] as i32),(x as i32)) as bool)){
               ((i as i32) = ((@@builtin_i32_add as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32) as unit);
               ((swap::<> as fn(*i32, *i32)->unit)((&((xs as *i32)[(i as i32)] as i32) as *i32),(&((xs as *i32)[(j as i32)] as i32) as *i32)) as unit);
             } else {
@@ -82,7 +82,7 @@ hir_module {
       return ((@@builtin_i32_add as fn(i32, i32)->i32)((i as i32),(1 as i32)) as i32);
     }
     fn quicksort<>(xs: *i32, l: i32, r: i32) -> unit {
-      if (((@builtin_i32_lt as fn(i32, i32)->bool)((l as i32),(r as i32)) as bool)){
+      if (((@@builtin_i32_lt as fn(i32, i32)->bool)((l as i32),(r as i32)) as bool)){
         let p: i32 = ((partition::<> as fn(*i32, i32, i32)->i32)((xs as *i32),(l as i32),(r as i32)) as i32);
         ((quicksort::<> as fn(*i32, i32, i32)->unit)((xs as *i32),(l as i32),((@@builtin_i32_sub as fn(i32, i32)->i32)((p as i32),(1 as i32)) as i32)) as unit);
         ((quicksort::<> as fn(*i32, i32, i32)->unit)((xs as *i32),((@@builtin_i32_add as fn(i32, i32)->i32)((p as i32),(1 as i32)) as i32),(r as i32)) as unit);

@@ -197,8 +197,8 @@ impl HirTraitMethodReferenceSymbol<'_> {
             ("Eq", "neq", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeq),
             ("Ord", "lt", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLt),
             ("Ord", "gt", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGt),
-            ("Ord", "le", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLte),
-            ("Ord", "ge", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGte),
+            ("Ord", "le", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerLe),
+            ("Ord", "ge", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerGe),
             ("Neg", "neg", &[HirTy::Integer32(_), HirTy::Integer32(_)]) => Some(CompilerIntrinsic::IntegerNeg),
             // Compiler intrinsics for the bool type
             ("Not", "not", &[HirTy::Boolean(_)]) => Some(CompilerIntrinsic::BooleanNot),

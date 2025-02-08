@@ -265,7 +265,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             AstBinaryOp::Div => ("Div", "div"),
             AstBinaryOp::Rem => ("Rem", "rem"),
             AstBinaryOp::Eq => ("Eq", "eq"),
-            AstBinaryOp::Neq => ("Neq", "neq"),
+            AstBinaryOp::Neq => ("Eq", "neq"),
             AstBinaryOp::Lt => ("Ord", "lt"),
             AstBinaryOp::Gt => ("Ord", "gt"),
             AstBinaryOp::Lte => ("Ord", "le"),
