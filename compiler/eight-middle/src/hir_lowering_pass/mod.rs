@@ -80,7 +80,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
         if node.linkage_type == LinkageType::External {
             return Ok(function_builder.build());
         }
-        
+
         let entry = function_builder.build_basic_block(Some("entry"));
         function_builder.move_insertion_point(entry);
         for parameter in node.signature.parameters.iter() {
