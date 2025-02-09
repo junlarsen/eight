@@ -2,12 +2,11 @@
 resolver = "2"
 members = [
     "compiler/eight-codegen-llvm",
-    "compiler/eight-diagnostics",
     "compiler/eight-driver",
     "compiler/eight-macros",
     "compiler/eight-middle",
     "compiler/eight-std",
-    "compiler/eight-span",
+    "compiler/eight-support",
     "compiler/eight-syntax",
     "compiler/eight-tests",
     "tools/eight-regtest",

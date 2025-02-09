@@ -1,4 +1,4 @@
-use eight_span::Span;
+use eight_support::span::Span;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 

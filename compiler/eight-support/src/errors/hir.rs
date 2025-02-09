@@ -1,5 +1,5 @@
+use crate::span::Span;
 use eight_macros::declare_error_type;
-use eight_span::Span;
 use miette::Diagnostic;
 use thiserror::Error;
 

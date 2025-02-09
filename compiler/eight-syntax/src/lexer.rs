@@ -1,11 +1,11 @@
 use crate::tok::{Token, TokenType};
 use crate::ParseResult;
-use eight_diagnostics::errors::syntax::{
+use eight_support::errors::syntax::{
     InvalidIntegerLiteralError, ParseError, UnexpectedCharacterError, UnexpectedEndOfFileError,
     UnfinishedTokenError,
 };
-use eight_diagnostics::ice;
-use eight_span::{SourcePosition, Span};
+use eight_support::ice;
+use eight_support::span::{SourcePosition, Span};
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -307,10 +307,10 @@ impl<'a> Lexer<'a> {
 mod tests {
     use crate::lexer::{Lexer, ParseError};
     use crate::tok::{Token, TokenType};
-    use eight_diagnostics::errors::syntax::{
+    use eight_support::errors::syntax::{
         InvalidIntegerLiteralError, UnexpectedCharacterError, UnfinishedTokenError,
     };
-    use eight_span::Span;
+    use eight_support::span::Span;
 
     macro_rules! assert_lexer_parse {
         ($input:expr, $($token:expr),*) => {

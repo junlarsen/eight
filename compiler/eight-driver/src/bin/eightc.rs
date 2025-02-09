@@ -1,10 +1,10 @@
 use clap::{Parser, ValueEnum};
-use eight_diagnostics::context::DiagnosticSource;
 use eight_driver::pipeline::{
     execute_compilation_pipeline, Pipeline, PipelineError, PipelineOptions, TerminationStep,
 };
 use eight_driver::query::{EmitQuery, QueryError};
 use eight_middle::context::CompileSession;
+use eight_support::context::DiagnosticSource;
 use std::io::Read;
 use std::path::PathBuf;
 

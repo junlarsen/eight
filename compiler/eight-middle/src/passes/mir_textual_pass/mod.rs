@@ -9,7 +9,7 @@ use crate::mir::{
     MirMulInstruction, MirPtrAddInstruction, MirStoreInstruction, MirSubInstruction, MirTy,
     MirValue,
 };
-use eight_diagnostics::ice;
+use eight_support::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 #[derive(Default)]

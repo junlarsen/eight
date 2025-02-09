@@ -4,9 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eight-diagnostics = { path = "../eight-diagnostics" }
 eight-macros = { path = "../eight-macros" }
-eight-span = { path = "../eight-span" }
+eight-support = { path = "../eight-support" }
 eight-syntax = { path = "../eight-syntax" }
 
 bumpalo = { workspace = true }

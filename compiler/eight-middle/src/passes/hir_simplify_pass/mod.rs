@@ -9,7 +9,7 @@ use crate::hir::{
     HirLetStmt, HirLoopStmt, HirModule, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol,
     HirReturnStmt, HirStmt,
 };
-use eight_diagnostics::ice;
+use eight_support::ice;
 
 pub struct HirSimplifyPass<'be> {
     session: &'be CompileSession<'be>,

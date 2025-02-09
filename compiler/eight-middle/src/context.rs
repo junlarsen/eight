@@ -7,8 +7,8 @@ use crate::mir::{
     MirBoolType, MirFunctionType, MirInteger32Type, MirPointerType, MirTy, MirTyId, MirVoidType,
 };
 use bumpalo::Bump;
-use eight_diagnostics::context::{DiagnosticContext, DiagnosticSource};
-use eight_span::Span;
+use eight_support::context::{DiagnosticContext, DiagnosticSource};
+use eight_support::span::Span;
 use std::rc::Rc;
 
 /// A shared context for the middle-end and backend components.

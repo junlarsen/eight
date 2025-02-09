@@ -10,7 +10,7 @@ use crate::passes::hir_type_check_pass::{
 };
 use crate::scope::Scope;
 use crate::HirResult;
-use eight_diagnostics::errors::hir::{
+use eight_support::errors::hir::{
     BindingReDeclaresName, ConstructingNonStructTypeError, ConstructingPointerTypeError,
     DereferenceOfNonPointerError, FunctionTypeMismatchError, HirError,
     InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
@@ -18,8 +18,8 @@ use eight_diagnostics::errors::hir::{
     TraitMethodDoesNotExistError, TraitMissingInstanceError, TypeMismatchError,
     TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount,
 };
-use eight_diagnostics::ice;
-use eight_span::Span;
+use eight_support::ice;
+use eight_support::span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 

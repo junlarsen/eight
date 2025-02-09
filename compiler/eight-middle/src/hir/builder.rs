@@ -17,7 +17,7 @@ use crate::hir::{
 };
 use crate::hir::{HirReferenceSymbol, HirTy};
 use crate::{HirResult, LinkageType};
-use eight_span::Span;
+use eight_support::span::Span;
 use std::collections::BTreeMap;
 
 /// A HIR node builder.

@@ -1,7 +1,7 @@
 use crate::context::CompileSession;
 use crate::mir::function::MirFunction;
 use crate::mir::{MirFunctionRef, MirFunctionType};
-use eight_diagnostics::ice;
+use eight_support::ice;
 use std::collections::BTreeMap;
 
 /// A module in the MIR representation.

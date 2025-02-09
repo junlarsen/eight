@@ -9,8 +9,7 @@ serde = ["dep:serde"]
 
 [dependencies]
 eight-macros = { path = "../eight-macros" }
-eight-diagnostics = { path = "../eight-diagnostics" }
-eight-span = { path = "../eight-span" }
+eight-support = { path = "../eight-support" }
 
 bumpalo = { workspace = true }
 serde = { workspace = true, optional = true }

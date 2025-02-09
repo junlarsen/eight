@@ -16,8 +16,8 @@ thiserror = { workspace = true }
 nom = "7.1.3"
 
 eight-middle = { path = "../eight-middle" }
+eight-support = { path = "../eight-support" }
 eight-syntax = { path = "../eight-syntax" }
-eight-diagnostics = { path = "../eight-diagnostics" }
 eight-codegen-llvm = { path = "../eight-codegen-llvm" }
 
 [dev-dependencies]

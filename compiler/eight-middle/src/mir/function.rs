@@ -7,7 +7,7 @@ use crate::mir::{
     MirInstructionRef, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
     MirStoreInstruction, MirSubInstruction, MirTy, MirValue, MirValueRef,
 };
-use eight_diagnostics::ice;
+use eight_support::ice;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug)]

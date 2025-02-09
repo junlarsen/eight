@@ -14,7 +14,7 @@ use crate::mir::{MirFunctionRef, MirFunctionType, MirTy};
 use crate::scope::Scope;
 use crate::LinkageType;
 use crate::MirResult;
-use eight_diagnostics::ice;
+use eight_support::ice;
 
 pub struct HirModuleLoweringPass<'mir> {
     session: &'mir CompileSession<'mir>,

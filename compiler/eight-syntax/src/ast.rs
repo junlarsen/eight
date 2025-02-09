@@ -1,4 +1,4 @@
-use eight_span::Span;
+use eight_support::span::Span;
 
 /// The top-level AST node representing a single translation unit.
 ///

@@ -59,7 +59,7 @@ impl Span {
     /// particularly useful when combining spans from two relevant tokens.
     ///
     /// ```
-    /// use eight_span::Span;
+    /// use eight_support::span::Span;
     ///
     /// let a = Span::new(0..10);
     /// let b = Span::new(5..15);

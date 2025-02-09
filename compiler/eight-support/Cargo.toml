@@ -1,5 +1,5 @@
 [package]
-name = "eight-span"
+name = "eight-support"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,5 +8,9 @@ default = ["serde"]
 serde = ["dep:serde"]
 
 [dependencies]
+
+eight-macros = { path = "../eight-macros" }
+
 miette = { workspace = true }
 serde = { workspace = true, optional = true }
+thiserror = { workspace = true }

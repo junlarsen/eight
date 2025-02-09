@@ -294,22 +294,11 @@ checksum = "feeef44e73baff3a26d371801df019877a9866a8c493d315ab00177843314f35"
 name = "eight-codegen-llvm"
 version = "0.1.0"
 dependencies = [
- "eight-diagnostics",
  "eight-macros",
  "eight-middle",
+ "eight-support",
  "inkwell",
  "miette",
- "thiserror 2.0.11",
-]
-
-[[package]]
-name = "eight-diagnostics"
-version = "0.1.0"
-dependencies = [
- "eight-macros",
- "eight-span",
- "miette",
- "serde",
  "thiserror 2.0.11",
 ]
 
@@ -319,9 +308,9 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "eight-codegen-llvm",
- "eight-diagnostics",
  "eight-macros",
  "eight-middle",
+ "eight-support",
  "eight-syntax",
  "miette",
  "nom",
@@ -343,9 +332,8 @@ name = "eight-middle"
 version = "0.1.0"
 dependencies = [
  "bumpalo",
- "eight-diagnostics",
  "eight-macros",
- "eight-span",
+ "eight-support",
  "eight-syntax",
  "pretty",
 ]
@@ -364,14 +352,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "eight-span"
-version = "0.1.0"
-dependencies = [
- "miette",
- "serde",
-]
-
-[[package]]
 name = "eight-std"
 version = "0.1.0"
 dependencies = [
@@ -379,13 +359,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "eight-support"
+version = "0.1.0"
+dependencies = [
+ "eight-macros",
+ "miette",
+ "serde",
+ "thiserror 2.0.11",
+]
+
+[[package]]
 name = "eight-syntax"
 version = "0.1.0"
 dependencies = [
  "bumpalo",
- "eight-diagnostics",
  "eight-macros",
- "eight-span",
+ "eight-support",
  "serde",
 ]
 

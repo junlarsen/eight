@@ -1,7 +1,7 @@
 //! Common types and functions for the middle-end of the compiler.
 
-use eight_diagnostics::errors::hir::HirError;
-use eight_diagnostics::errors::mir::MirError;
+use eight_support::errors::hir::HirError;
+use eight_support::errors::mir::MirError;
 
 pub mod builtin;
 pub mod context;

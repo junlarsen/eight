@@ -12,10 +12,8 @@ use crate::ast::{
 use crate::lexer::Lexer;
 use crate::tok::{Token, TokenType};
 use crate::ParseResult;
-use eight_diagnostics::errors::syntax::{
-    ParseError, UnexpectedEndOfFileError, UnexpectedTokenError,
-};
-use eight_span::Span;
+use eight_support::errors::syntax::{ParseError, UnexpectedEndOfFileError, UnexpectedTokenError};
+use eight_support::span::Span;
 
 pub struct ParserInput<'a> {
     lexer: &'a mut Lexer<'a>,
@@ -1338,10 +1336,10 @@ mod tests {
     use crate::ast::{
         AstBinaryOp, AstBreakStmt, AstContinueStmt, AstExpr, AstIdentifier, AstType, AstUnaryOp,
     };
-    use eight_diagnostics::errors::syntax::{InvalidIntegerLiteralError, ParseError};
+    use eight_support::errors::syntax::{InvalidIntegerLiteralError, ParseError};
 
     use eight_macros::{assert_err, assert_matches, assert_none, assert_ok, assert_some};
-    use eight_span::Span;
+    use eight_support::span::Span;
 
     macro_rules! assert_parse {
         ($input:expr, $body:expr) => {{

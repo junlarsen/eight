@@ -19,7 +19,7 @@ use crate::hir::{
     HirTraitSignature, HirTy, HirTypeParameterSignature, HirTypeSignature, HirVariableTy,
 };
 use crate::LinkageType;
-use eight_diagnostics::ice;
+use eight_support::ice;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 #[derive(Default)]

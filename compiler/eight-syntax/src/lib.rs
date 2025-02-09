@@ -1,4 +1,4 @@
-use eight_diagnostics::errors::syntax::ParseError;
+use eight_support::errors::syntax::ParseError;
 
 pub mod arena;
 pub mod ast;

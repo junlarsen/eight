@@ -10,12 +10,12 @@ use crate::hir::{
     HirPointerTy, HirReturnStmt, HirStmt, HirTy,
 };
 use crate::HirResult;
-use eight_diagnostics::errors::hir::{
+use eight_support::errors::hir::{
     HirError, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
     WrongTraitTypeArgumentCount,
 };
-use eight_diagnostics::ice;
-use eight_span::Span;
+use eight_support::ice;
+use eight_support::span::Span;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 pub use typing_context::TypingContext;

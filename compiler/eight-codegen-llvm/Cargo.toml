@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 eight-macros = { path = "../eight-macros" }
-eight-diagnostics = { path = "../eight-diagnostics" }
+eight-support = { path = "../eight-support" }
 eight-middle = { path = "../eight-middle" }
 
 inkwell = { version = "0.5.0", features = ["llvm18-0"] }

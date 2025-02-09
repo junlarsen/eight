@@ -2,8 +2,8 @@
 
 use crate::builtin::CompilerIntrinsic;
 use crate::LinkageType;
-use eight_diagnostics::ice;
-use eight_span::Span;
+use eight_support::ice;
+use eight_support::span::Span;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};

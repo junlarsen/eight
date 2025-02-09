@@ -1,4 +1,4 @@
-use eight_diagnostics::ice;
+use eight_support::ice;
 use std::collections::{BTreeMap, VecDeque};
 
 #[derive(Debug)]
