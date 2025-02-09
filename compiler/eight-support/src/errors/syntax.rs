@@ -9,20 +9,8 @@
 //! attempting to consume further tokens.
 
 use crate::span::Span;
-use eight_macros::declare_error_type;
 use miette::Diagnostic;
 use thiserror::Error;
-
-declare_error_type! {
-    #[error("parser error: {0}")]
-    pub enum ParseError {
-        UnexpectedEndOfFile(UnexpectedEndOfFileError),
-        UnfinishedToken(UnfinishedTokenError),
-        InvalidIntegerLiteral(InvalidIntegerLiteralError),
-        UnexpectedCharacter(UnexpectedCharacterError),
-        UnexpectedToken(UnexpectedTokenError),
-    }
-}
 
 /// Signals that the parser has reached the end of the input stream.
 ///

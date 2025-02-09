@@ -10,10 +10,9 @@ use crate::operations::mir_emit::MirEmitPass;
 use crate::query::EmitQuery;
 use eight_codegen_llvm::error::LLVMBackendError;
 use eight_middle::context::CompileSession;
-use eight_support::context::{DiagnosticContext, DiagnosticSource};
+use eight_support::context::{DiagnosticContext, DiagnosticSource, ErrorGuaranteed};
 use eight_support::errors::hir::HirError;
 use eight_support::errors::mir::MirError;
-use eight_support::errors::syntax::ParseError;
 use eight_support::ice;
 use eight_syntax::arena::AstArena;
 use miette::Diagnostic;
@@ -54,11 +53,6 @@ pub fn execute_compilation_pipeline<'session>(
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum PipelineError {
-    /// Error propagated from the parser.
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    ParseError(#[from] ParseError),
-
     /// Error propagated from the HIR passes.
     #[diagnostic(transparent)]
     #[error(transparent)]
@@ -73,6 +67,9 @@ pub enum PipelineError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     LLVMBackendError(#[from] LLVMBackendError),
+
+    #[error(transparent)]
+    ErrorGuaranteed(#[from] ErrorGuaranteed),
 
     /// Stop token to abort the compilation pipeline.
     #[error("compilation flags caused early termination: {0}")]
@@ -165,10 +162,10 @@ impl<'session> Pipeline<'session> {
         cond: bool,
         operation: impl FnOnce(&'session Pipeline<'session>) -> Result<O, PipelineError>,
     ) -> Result<O, PipelineError> {
-        if cond {
-            operation(self)
-        } else {
-            Err(self.get_terminator_error())
+        match (self.dcx().is_empty(), cond) {
+            (true, true) => Ok(operation(self)?),
+            (false, _) => Err(self.dcx().blanket().into()),
+            (_, false) => Err(self.get_terminator_error()),
         }
     }
 }

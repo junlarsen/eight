@@ -5,11 +5,13 @@ use std::cmp::min;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Mutex;
+use thiserror::Error;
 
 /// A token that indicates that an error occurred.
 ///
 /// The diagnostic associated with this error has been collected.
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Error, Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[error("error dispatched through diagnostic context")]
 pub struct ErrorGuaranteed(pub(crate) ());
 
 #[derive(Debug)]
@@ -58,26 +60,17 @@ impl DiagnosticContext {
             .is_empty()
     }
 
-    /// Emit a unrecoverable, non-fatal diagnostic.
-    pub fn emit_diagnostic(
-        &self,
-        diagnostic: impl Diagnostic + Sync + Send + 'static,
-    ) -> Option<ErrorGuaranteed> {
+    pub fn emit(&self, diagnostic: impl Diagnostic + Sync + Send + 'static) -> ErrorGuaranteed {
         let mut diagnostics = self
             .diagnostics
             .lock()
             .unwrap_or_else(|_| ice!("failed to acquire diagnostics lock"));
         diagnostics.push(Report::from(diagnostic));
         // At the moment we don't have warnings, so we always return an error here.
-        Some(ErrorGuaranteed(()))
+        ErrorGuaranteed(())
     }
 
-    /// Emit a fatal diagnostic, which will cause the compiler to exit immediately.
-    pub fn emit_fatal_diagnostic(
-        &self,
-        diagnostic: impl Diagnostic + Sync + Send + 'static,
-    ) -> ErrorGuaranteed {
-        self.emit_diagnostic(diagnostic);
+    pub fn blanket(&self) -> ErrorGuaranteed {
         ErrorGuaranteed(())
     }
 

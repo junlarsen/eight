@@ -11,8 +11,8 @@ use crate::ast::{
 };
 use crate::lexer::Lexer;
 use crate::tok::{Token, TokenType};
-use crate::ParseResult;
-use eight_support::errors::syntax::{ParseError, UnexpectedEndOfFileError, UnexpectedTokenError};
+use eight_support::context::{DiagnosticContext, ErrorGuaranteed};
+use eight_support::errors::syntax::{UnexpectedEndOfFileError, UnexpectedTokenError};
 use eight_support::span::Span;
 
 pub struct ParserInput<'a> {
@@ -22,43 +22,55 @@ pub struct ParserInput<'a> {
     /// If the parser for any reason needs more than LL(1) in the future, this can be replaced with
     /// a stack of tokens.
     la: Option<Token>,
+    dcx: &'a DiagnosticContext,
 }
 
 impl<'a> ParserInput<'a> {
-    pub fn new(lexer: &'a mut Lexer<'a>) -> Self {
-        Self { lexer, la: None }
+    pub fn new(lexer: &'a mut Lexer<'a>, dcx: &'a DiagnosticContext) -> Self {
+        Self {
+            lexer,
+            la: None,
+            dcx,
+        }
     }
 
     /// Perform a single token lookahead.
     ///
     /// This function will fail the entire parser if the lexer fails to produce a token, except when
     /// the lexer reaches the end of input.
-    pub fn lookahead(&mut self) -> ParseResult<Option<&Token>> {
+    pub fn lookahead(&mut self) -> Option<&Token> {
         if self.la.is_none() {
             self.la = loop {
                 match self.lexer.produce() {
-                    Ok(tok) if matches!(tok.ty, TokenType::Comment(_)) => continue,
-                    Ok(tok) => break Some(tok),
-                    Err(ParseError::UnexpectedEndOfFile(_)) => break None,
-                    Err(err) => return Err(err),
+                    Some(tok) if matches!(tok.ty, TokenType::Comment(_)) => continue,
+                    Some(tok) => break Some(tok),
+                    None => break None,
                 }
             };
         }
-        Ok(self.la.as_ref())
+        self.la.as_ref()
     }
 
     /// Consume the next token from the token stream.
     ///
     /// This does not optimistically peek at the next token. As with the `lookahead` function, this
     /// function will fail the entire parser if the lexer fails.
-    pub fn eat(&mut self) -> ParseResult<Token> {
+    pub fn eat(&mut self) -> Result<Token, ErrorGuaranteed> {
         if let Some(token) = self.la.take() {
             return Ok(token);
         }
         loop {
             match self.lexer.produce() {
-                Ok(tok) if matches!(tok.ty, TokenType::Comment(_)) => continue,
-                e => break e,
+                Some(tok) if matches!(tok.ty, TokenType::Comment(_)) => continue,
+                Some(tok) => break Ok(tok),
+                None => {
+                    if self.dcx.is_empty() {
+                        return Err(self.dcx.emit(UnexpectedEndOfFileError {
+                            span: Span::pos(self.lexer.pos()),
+                        }));
+                    }
+                    return Err(self.dcx.blanket());
+                }
             }
         }
     }
@@ -67,6 +79,7 @@ impl<'a> ParserInput<'a> {
 pub struct Parser<'a, 'ast> {
     input: ParserInput<'a>,
     arena: &'ast AstArena<'ast>,
+    dcx: &'a DiagnosticContext,
 }
 
 impl<'a, 'ast> Parser<'a, 'ast> {
@@ -74,45 +87,50 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     ///
     /// The current grammar will make consume the entire lexer, but in the future, we may support
     /// partial parsing, so taking ownership of the lexer is not a requirement.
-    pub fn new(lexer: &'a mut Lexer<'a>, arena: &'ast AstArena<'ast>) -> Self {
+    pub fn new(
+        lexer: &'a mut Lexer<'a>,
+        arena: &'ast AstArena<'ast>,
+        dcx: &'a DiagnosticContext,
+    ) -> Self {
         Self {
-            input: ParserInput::new(lexer),
+            input: ParserInput::new(lexer, dcx),
             arena,
+            dcx,
         }
     }
 
     /// Advance the lexer iterator by one, and return the advanced token.
-    pub fn eat(&mut self) -> ParseResult<Token> {
+    pub fn eat(&mut self) -> Result<Token, ErrorGuaranteed> {
         self.input.eat()
     }
 
     /// Peek at the next token in the source without consuming it.
     ///
     /// If the lexer fails here, we're just going to silently ignore it and return `None`.
-    pub fn lookahead(&mut self) -> ParseResult<Option<&Token>> {
-        let tok = self.input.lookahead()?;
-        if let Some(token) = tok {
-            return Ok(Some(token));
-        }
-        Ok(None)
+    pub fn lookahead(&mut self) -> Option<&Token> {
+        self.input.lookahead()
     }
 
     /// Peek at the next token in the source without consuming it.
     ///
     /// As indicated by the name, this function fails the parser if the lexer cannot produce a
     /// next token.
-    pub fn lookahead_or_err(&mut self) -> ParseResult<&Token> {
+    pub fn lookahead_or_err(&mut self) -> Result<&Token, ErrorGuaranteed> {
         let pos = self.input.lexer.pos();
-        self.input
-            .lookahead()?
-            .ok_or(ParseError::UnexpectedEndOfFile(UnexpectedEndOfFileError {
-                span: Span::new(pos..pos),
-            }))
+        if let Some(token) = self.input.lookahead() {
+            return Ok(token);
+        }
+        if self.dcx.is_empty() {
+            return Err(self.dcx.emit(UnexpectedEndOfFileError {
+                span: Span::pos(pos),
+            }));
+        }
+        Err(self.dcx.blanket())
     }
 
     /// Determine if the next token in the token stream matches the given type.
-    pub fn lookahead_check(&mut self, ty: &TokenType) -> ParseResult<bool> {
-        let token = self.lookahead()?;
+    pub fn lookahead_check(&mut self, ty: &TokenType) -> Result<bool, ErrorGuaranteed> {
+        let token = self.lookahead();
         match token {
             Some(token) if token.ty == *ty => Ok(true),
             _ => Ok(false),
@@ -122,11 +140,11 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     /// Consume the next token from the token stream and ensure it matches the given type.
     ///
     /// If the token doesn't match, the entire parser fails.
-    pub fn check(&mut self, ty: &TokenType) -> ParseResult<Token> {
+    pub fn check(&mut self, ty: &TokenType) -> Result<Token, ErrorGuaranteed> {
         let token = self.eat()?;
         match token {
             token if token.ty == *ty => Ok(token),
-            _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+            _ => Err(self.dcx.emit(UnexpectedTokenError {
                 span: token.span,
                 token: token.to_string(),
             })),
@@ -145,9 +163,9 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         delimiter: &TokenType,
         circuit_breaker: &TokenType,
         f: F,
-    ) -> ParseResult<Vec<T>>
+    ) -> Result<Vec<T>, ErrorGuaranteed>
     where
-        F: Fn(&mut Parser<'a, 'ast>) -> ParseResult<T>,
+        F: Fn(&mut Parser<'a, 'ast>) -> Result<T, ErrorGuaranteed>,
     {
         let mut items = Vec::new();
         while !self.lookahead_check(circuit_breaker)? {
@@ -165,12 +183,16 @@ impl<'a, 'ast> Parser<'a, 'ast> {
     /// result is wrapped in `Some`. Otherwise, the result is `None`.
     ///
     /// The combinator consumes the decision maker token before applying `f`.
-    pub fn parser_combinator_take_if<T, F, M>(&mut self, matcher: M, f: F) -> ParseResult<Option<T>>
+    pub fn parser_combinator_take_if<T, F, M>(
+        &mut self,
+        matcher: M,
+        f: F,
+    ) -> Result<Option<T>, ErrorGuaranteed>
     where
-        F: FnOnce(&mut Parser<'a, 'ast>) -> ParseResult<T>,
+        F: FnOnce(&mut Parser<'a, 'ast>) -> Result<T, ErrorGuaranteed>,
         M: FnOnce(&Token) -> bool,
     {
-        let token = self.lookahead()?;
+        let token = self.lookahead();
         match token {
             Some(token) if matcher(token) => Ok(Some(f(self)?)),
             _ => Ok(None),
@@ -185,9 +207,9 @@ impl<'a, 'ast> Parser<'a, 'ast> {
         &mut self,
         circuit_breaker: &TokenType,
         f: F,
-    ) -> ParseResult<Vec<T>>
+    ) -> Result<Vec<T>, ErrorGuaranteed>
     where
-        F: Fn(&mut Parser<'a, 'ast>) -> ParseResult<T>,
+        F: Fn(&mut Parser<'a, 'ast>) -> Result<T, ErrorGuaranteed>,
     {
         let mut items = Vec::new();
         while !self.lookahead_check(circuit_breaker)? {
@@ -199,7 +221,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
 
 impl<'ast> Parser<'_, 'ast> {
     /// Top-level entry for parsing a translation unit (file).
-    pub fn parse(&mut self) -> ParseResult<AstTranslationUnit<'ast>> {
+    pub fn parse(&mut self) -> Result<AstTranslationUnit<'ast>, ErrorGuaranteed> {
         self.parse_translation_unit()
     }
 
@@ -208,9 +230,9 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// translation_unit ::= item*
     /// ```
-    pub fn parse_translation_unit(&mut self) -> ParseResult<AstTranslationUnit<'ast>> {
+    pub fn parse_translation_unit(&mut self) -> Result<AstTranslationUnit<'ast>, ErrorGuaranteed> {
         let mut items = Vec::new();
-        while self.lookahead()?.is_some() {
+        while self.lookahead().is_some() {
             items.push(self.parse_item()?);
         }
         // The translation unit doesn't record a span
@@ -225,7 +247,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// item ::= fn_item | struct_item | intrinsic_fn_item | trait_item | instance_item
     /// ```
-    pub fn parse_item(&mut self) -> ParseResult<AstItem<'ast>> {
+    pub fn parse_item(&mut self) -> Result<AstItem<'ast>, ErrorGuaranteed> {
         let token = self.lookahead_or_err()?;
         let node = match token.ty {
             TokenType::KeywordFn => AstItem::Function(self.parse_fn_item()?),
@@ -236,7 +258,7 @@ impl<'ast> Parser<'_, 'ast> {
             TokenType::KeywordInstance => AstItem::Instance(self.parse_instance_item()?),
             _ => {
                 let token = self.eat()?;
-                return Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+                return Err(self.dcx.emit(UnexpectedTokenError {
                     span: token.span,
                     token: token.to_string(),
                 }));
@@ -253,7 +275,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///             OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
     ///             CLOSE_PAREN (ARROW type)? OPEN_BRACE stmt* CLOSE_BRACE
     /// ```
-    pub fn parse_fn_item(&mut self) -> ParseResult<AstFunctionItem<'ast>> {
+    pub fn parse_fn_item(&mut self) -> Result<AstFunctionItem<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordFn)?;
         let id = self.parse_identifier()?;
         let type_parameters = self
@@ -307,7 +329,9 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// fn_parameter_item ::= identifier COLON type
     /// ```
-    pub fn parse_fn_parameter_item(&mut self) -> ParseResult<&'ast AstFunctionParameterItem<'ast>> {
+    pub fn parse_fn_parameter_item(
+        &mut self,
+    ) -> Result<&'ast AstFunctionParameterItem<'ast>, ErrorGuaranteed> {
         let id = self.parse_identifier()?;
         self.check(&TokenType::Colon)?;
         let ty = self.parse_type()?;
@@ -324,7 +348,9 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// type_parameter_item ::= identifier
     /// ```
-    pub fn parse_type_parameter_item(&mut self) -> ParseResult<&'ast AstTypeParameterItem<'ast>> {
+    pub fn parse_type_parameter_item(
+        &mut self,
+    ) -> Result<&'ast AstTypeParameterItem<'ast>, ErrorGuaranteed> {
         let id = self.parse_identifier()?;
         let node = AstTypeParameterItem {
             span: id.span,
@@ -338,7 +364,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// struct_item ::= KEYWORD_STRUCT identifier OPEN_BRACE type_member_item* CLOSE_BRACE
     /// ```
-    pub fn parse_struct_item(&mut self) -> ParseResult<AstStructItem<'ast>> {
+    pub fn parse_struct_item(&mut self) -> Result<AstStructItem<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordStruct)?;
         let id = self.parse_identifier()?;
         self.check(&TokenType::OpenBrace)?;
@@ -358,7 +384,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// struct_member_item ::= identifier COLON type COMMA
     /// ```
-    pub fn parse_type_member_item(&mut self) -> ParseResult<AstStructMemberItem<'ast>> {
+    pub fn parse_type_member_item(&mut self) -> Result<AstStructMemberItem<'ast>, ErrorGuaranteed> {
         let id = self.parse_identifier()?;
         self.check(&TokenType::Colon)?;
         let ty = self.parse_type()?;
@@ -381,7 +407,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///                       OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
     ///                       ARROW type SEMICOLON
     /// ```
-    pub fn parse_intrinsic_fn_item(&mut self) -> ParseResult<AstFunctionItem<'ast>> {
+    pub fn parse_intrinsic_fn_item(&mut self) -> Result<AstFunctionItem<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordIntrinsicFn)?;
         let id = self.parse_identifier()?;
         let type_parameters = self
@@ -425,7 +451,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// intrinsic_type_item ::= KEYWORD_INTRINSIC_FN IDENTIFIER SEMICOLON
     /// ```
-    pub fn parse_intrinsic_type_item(&mut self) -> ParseResult<AstTypeItem<'ast>> {
+    pub fn parse_intrinsic_type_item(&mut self) -> Result<AstTypeItem<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordIntrinsicType)?;
         let id = self.parse_identifier()?;
         let end = self.check(&TokenType::Semicolon)?;
@@ -449,7 +475,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///                OPEN_ANGLE ((type_parameter_item COMMA)+ type_parameter_item) CLOSE_ANGLE
     ///                OPEN_BRACE trait_function_item* CLOSE_BRACE
     ///
-    pub fn parse_trait_item(&mut self) -> ParseResult<AstTraitItem<'ast>> {
+    pub fn parse_trait_item(&mut self) -> Result<AstTraitItem<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordTrait)?;
         let id = self.parse_identifier()?;
         let type_parameters = self
@@ -487,7 +513,9 @@ impl<'ast> Parser<'_, 'ast> {
     ///                         (OPEN_ANGLE ((type_parameter_item COMMA)+ type_parameter_item)? CLOSE_ANGLE)?
     ///                         OPEN_PAREN ((fn_parameter_item COMMA)+ fn_parameter_item)? CLOSE_PAREN
     ///                         (ARROW type)? SEMICOLON
-    pub fn parse_trait_function_item(&mut self) -> ParseResult<AstTraitFunctionItem<'ast>> {
+    pub fn parse_trait_function_item(
+        &mut self,
+    ) -> Result<AstTraitFunctionItem<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordFn)?;
         let id = self.parse_identifier()?;
         let type_parameters = self
@@ -536,7 +564,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///                   OPEN_ANGLE ((type (COMMA type)*)? CLOSE_ANGLE)?
     ///                   OPEN_BRACE fn_item* CLOSE_BRACE
     /// ```
-    pub fn parse_instance_item(&mut self) -> ParseResult<AstInstanceItem<'ast>> {
+    pub fn parse_instance_item(&mut self) -> Result<AstInstanceItem<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordInstance)?;
         let id = self.parse_identifier()?;
         let instantiation_type_parameters = self
@@ -560,7 +588,7 @@ impl<'ast> Parser<'_, 'ast> {
             match token.ty {
                 TokenType::KeywordFn => Ok(p.parse_fn_item()?),
                 TokenType::KeywordIntrinsicFn => Ok(p.parse_intrinsic_fn_item()?),
-                _ => Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+                _ => Err(self.dcx.emit(UnexpectedTokenError {
                     span: token.span,
                     token: token.to_string(),
                 })),
@@ -587,7 +615,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///        | if_stmt
     ///        | expr_stmt
     /// ```
-    pub fn parse_stmt(&mut self) -> ParseResult<AstStmt<'ast>> {
+    pub fn parse_stmt(&mut self) -> Result<AstStmt<'ast>, ErrorGuaranteed> {
         let next = self.lookahead_or_err()?;
         let node = match next.ty {
             TokenType::KeywordLet => AstStmt::Let(self.parse_let_stmt()?),
@@ -606,7 +634,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// let_stmt ::= KEYWORD_LET IDENTIFIER (COLON type)? EQUAL expr SEMICOLON
     /// ```
-    pub fn parse_let_stmt(&mut self) -> ParseResult<AstLetStmt<'ast>> {
+    pub fn parse_let_stmt(&mut self) -> Result<AstLetStmt<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordLet)?;
         let id = self.parse_identifier()?;
         let ty = self.parser_combinator_take_if(
@@ -633,7 +661,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// return_stmt ::= RETURN expr? SEMICOLON
     /// ```
-    pub fn parse_return_stmt(&mut self) -> ParseResult<AstReturnStmt<'ast>> {
+    pub fn parse_return_stmt(&mut self) -> Result<AstReturnStmt<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordReturn)?;
         let value =
             self.parser_combinator_take_if(|t| t.ty != TokenType::Semicolon, |p| p.parse_expr())?;
@@ -650,7 +678,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// for_stmt ::= FOR LPAREN for_stmt_initializer? SEMICOLON expr? SEMICOLON expr? RPAREN LBRACE stmt* RBRACE
     /// ```
-    pub fn parse_for_stmt(&mut self) -> ParseResult<AstForStmt<'ast>> {
+    pub fn parse_for_stmt(&mut self) -> Result<AstForStmt<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordFor)?;
         self.check(&TokenType::OpenParen)?;
         let initializer = self.parser_combinator_take_if(
@@ -682,7 +710,9 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// for_stmt_initializer ::= LET identifier EQUAL expr
     /// ```
-    pub fn parse_for_stmt_initializer(&mut self) -> ParseResult<AstForStmtInitializer<'ast>> {
+    pub fn parse_for_stmt_initializer(
+        &mut self,
+    ) -> Result<AstForStmtInitializer<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordLet)?;
         let name = self.parse_identifier()?;
         self.check(&TokenType::Equal)?;
@@ -700,7 +730,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// break_stmt ::= BREAK SEMICOLON
     /// ```
-    pub fn parse_break_stmt(&mut self) -> ParseResult<AstBreakStmt> {
+    pub fn parse_break_stmt(&mut self) -> Result<AstBreakStmt, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordBreak)?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstBreakStmt {
@@ -714,7 +744,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// continue_stmt ::= CONTINUE SEMICOLON
     /// ```
-    pub fn parse_continue_stmt(&mut self) -> ParseResult<AstContinueStmt> {
+    pub fn parse_continue_stmt(&mut self) -> Result<AstContinueStmt, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordContinue)?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstContinueStmt {
@@ -727,7 +757,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///
     /// ```text
     /// if_stmt ::= IF LPAREN expr RPAREN LBRACE stmt* RBRACE (ELSE LBRACE stmt* RBRACE)?
-    pub fn parse_if_stmt(&mut self) -> ParseResult<AstIfStmt<'ast>> {
+    pub fn parse_if_stmt(&mut self) -> Result<AstIfStmt<'ast>, ErrorGuaranteed> {
         let start = self.check(&TokenType::KeywordIf)?;
         self.check(&TokenType::OpenParen)?;
         let condition = self.parse_expr()?;
@@ -761,7 +791,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///
     /// ```text
     /// expr_stmt ::= expr SEMICOLON
-    pub fn parse_expr_stmt(&mut self) -> ParseResult<AstExprStmt<'ast>> {
+    pub fn parse_expr_stmt(&mut self) -> Result<AstExprStmt<'ast>, ErrorGuaranteed> {
         let expr = self.parse_expr()?;
         let end = self.check(&TokenType::Semicolon)?;
         let node = AstExprStmt {
@@ -797,7 +827,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// 13. Assign Expression
     ///
     /// [precedence_climber]: https://en.wikipedia.org/wiki/Operator-precedence_parser#Precedence_climbing_method
-    pub fn parse_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         self.parse_assign_expr()
     }
 
@@ -806,7 +836,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// assign_expr ::= logical_expr EQUAL assign_expr
     /// ```
-    pub fn parse_assign_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_assign_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let expr = self.parse_logical_or_expr()?;
 
         if self.lookahead_check(&TokenType::Equal)? {
@@ -828,7 +858,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// logical_or_expr ::= logical_and_expr (OR logical_and_expr)*
     /// ```
-    pub fn parse_logical_or_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_logical_or_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let lhs = self.parse_logical_and_expr()?;
 
         if self.lookahead_check(&TokenType::LogicalOr)? {
@@ -852,7 +882,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// logical_and_expr ::= comparison_expr (AND comparison_expr)*
     /// ```
-    pub fn parse_logical_and_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_logical_and_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let lhs = self.parse_comparison_expr()?;
 
         if self.lookahead_check(&TokenType::LogicalAnd)? {
@@ -877,7 +907,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// comparison_expr ::= additive_expr (comparison_op additive_expr)*
     /// comparison_op ::= EQUAL_EQUAL | BANG_EQUAL | LESS_THAN | GREATER_THAN | LESS_THAN_EQUAL | GREATER_THAN_EQUAL
     /// ```
-    pub fn parse_comparison_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_comparison_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let lhs = self.parse_additive_expr()?;
         let is_next_comparison = self.lookahead_check(&TokenType::EqualEqual)?
             || self.lookahead_check(&TokenType::BangEqual)?
@@ -917,7 +947,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// additive_expr ::= multiplicative_expr (additive_op multiplicative_expr)*
     /// additive_op ::= PLUS | MINUS
     /// ```
-    pub fn parse_additive_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_additive_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let lhs = self.parse_multiplicative_expr()?;
         let is_next_additive =
             self.lookahead_check(&TokenType::Plus)? || self.lookahead_check(&TokenType::Minus)?;
@@ -949,7 +979,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// multiplicative_expr ::= unary_expr (multiplicative_op unary_expr)*
     /// multiplicative_op ::= STAR | SLASH | PERCENT
     /// ```
-    pub fn parse_multiplicative_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_multiplicative_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let lhs = self.parse_unary_expr()?;
         let is_next_multiplicative = self.lookahead_check(&TokenType::Star)?
             || self.lookahead_check(&TokenType::Slash)?
@@ -983,7 +1013,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// unary_expr ::= unary_op unary_expr | group_expr
     /// unary_op ::= MINUS | BANG | DEREF | STAR
     /// ```
-    pub fn parse_unary_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_unary_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let token = self.lookahead_or_err()?;
 
         match token.ty {
@@ -1048,9 +1078,9 @@ impl<'ast> Parser<'_, 'ast> {
     ///                  | (COLON_COLON OPEN_ANGLE (type (COMMA type)*)? CLOSE_ANGLE OPEN_PAREN (expr (COMMA expr)*)? CLOSE_PAREN)
     ///                )?
     /// ```
-    pub fn parse_postfix_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_postfix_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         let mut callee = self.parse_construct_expr()?;
-        while let Some(token) = self.lookahead()? {
+        while let Some(token) = self.lookahead() {
             match token.ty {
                 TokenType::OpenBracket => {
                     self.check(&TokenType::OpenBracket)?;
@@ -1118,7 +1148,7 @@ impl<'ast> Parser<'_, 'ast> {
     ///                   (construct_expr_argument (COMMA construct_expr_argument)*)?
     ///                   CLOSE_BRACE
     /// ```
-    pub fn parse_construct_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_construct_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         if !self.lookahead_check(&TokenType::KeywordNew)? {
             return self.parse_reference_expr();
         }
@@ -1145,7 +1175,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// construct_expr_argument ::= identifier COLON expr
     pub fn parse_construct_expr_argument(
         &mut self,
-    ) -> ParseResult<AstConstructorExprArgument<'ast>> {
+    ) -> Result<AstConstructorExprArgument<'ast>, ErrorGuaranteed> {
         let id = self.parse_identifier()?;
         self.check(&TokenType::Colon)?;
         let expr = self.parse_expr()?;
@@ -1162,8 +1192,8 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// reference_expr ::= identifier | group_expr
     /// ```
-    pub fn parse_reference_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
-        let fut = self.lookahead()?;
+    pub fn parse_reference_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
+        let fut = self.lookahead();
         let is_reference = matches!(
             fut,
             Some(Token {
@@ -1187,9 +1217,9 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// integer_literal_expr ::= INTEGER_LITERAL
     /// ```
-    pub fn parse_literal_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_literal_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         if !self
-            .lookahead()?
+            .lookahead()
             .map(|t| t.ty.is_integer_literal() || t.ty.is_boolean_literal())
             .unwrap_or(true)
         {
@@ -1220,7 +1250,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// group_expr ::= OPEN_PAREN expr CLOSE_PAREN
     /// ```
-    pub fn parse_group_expr(&mut self) -> ParseResult<AstExpr<'ast>> {
+    pub fn parse_group_expr(&mut self) -> Result<AstExpr<'ast>, ErrorGuaranteed> {
         if self.lookahead_check(&TokenType::OpenParen)? {
             let start = self.check(&TokenType::OpenParen)?;
             let inner = self.parse_expr()?;
@@ -1232,7 +1262,7 @@ impl<'ast> Parser<'_, 'ast> {
             return Ok(AstExpr::Group(node));
         };
         let token = self.eat()?;
-        Err(ParseError::UnexpectedToken(UnexpectedTokenError {
+        Err(self.dcx.emit(UnexpectedTokenError {
             span: token.span,
             token: token.to_string(),
         }))
@@ -1243,7 +1273,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// identifier ::= IDENTIFIER
     /// ```
-    pub fn parse_identifier(&mut self) -> ParseResult<AstIdentifier> {
+    pub fn parse_identifier(&mut self) -> Result<AstIdentifier, ErrorGuaranteed> {
         let token = self.eat()?;
         match token {
             Token {
@@ -1253,7 +1283,7 @@ impl<'ast> Parser<'_, 'ast> {
                 let node = AstIdentifier { name: id, span };
                 Ok(node)
             }
-            _ => Err(ParseError::from(UnexpectedTokenError {
+            _ => Err(self.dcx.emit(UnexpectedTokenError {
                 span: token.span,
                 token: token.to_string(),
             })),
@@ -1268,7 +1298,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// builtin_unit_type ::= identifier<"unit">
     /// builtin_integer32_type ::= identifier<"i32">
     /// ```
-    pub fn parse_type(&mut self) -> ParseResult<AstType<'ast>> {
+    pub fn parse_type(&mut self) -> Result<AstType<'ast>, ErrorGuaranteed> {
         let token = self.lookahead_or_err()?;
         match &token.ty {
             // If it is a named type, we can test if it's matching one of the builtin types.
@@ -1293,7 +1323,7 @@ impl<'ast> Parser<'_, 'ast> {
             TokenType::Star => Ok(AstType::Pointer(self.parse_pointer_type()?)),
             _ => {
                 let token = self.eat()?;
-                Err(ParseError::from(UnexpectedTokenError {
+                Err(self.dcx.emit(UnexpectedTokenError {
                     span: token.span,
                     token: token.to_string(),
                 }))
@@ -1306,7 +1336,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// named_type ::= identifier
     /// ```
-    pub fn parse_named_type(&mut self) -> ParseResult<AstNamedType<'ast>> {
+    pub fn parse_named_type(&mut self) -> Result<AstNamedType<'ast>, ErrorGuaranteed> {
         let id = self.parse_identifier()?;
         let node = AstNamedType {
             span: id.span,
@@ -1320,7 +1350,7 @@ impl<'ast> Parser<'_, 'ast> {
     /// ```text
     /// pointer_type ::= STAR type
     /// ```
-    pub fn parse_pointer_type(&mut self) -> ParseResult<AstPointerType<'ast>> {
+    pub fn parse_pointer_type(&mut self) -> Result<AstPointerType<'ast>, ErrorGuaranteed> {
         let indirection = self.check(&TokenType::Star)?;
         let inner = self.parse_type()?;
         let node = AstPointerType {
@@ -1336,9 +1366,8 @@ mod tests {
     use crate::ast::{
         AstBinaryOp, AstBreakStmt, AstContinueStmt, AstExpr, AstIdentifier, AstType, AstUnaryOp,
     };
-    use eight_support::errors::syntax::{InvalidIntegerLiteralError, ParseError};
 
-    use eight_macros::{assert_err, assert_matches, assert_none, assert_ok, assert_some};
+    use eight_macros::{assert_matches, assert_none, assert_ok, assert_some};
     use eight_support::span::Span;
 
     macro_rules! assert_parse {
@@ -1347,13 +1376,16 @@ mod tests {
             use crate::lexer::Lexer;
             use crate::parser::Parser;
 
-            let mut lexer = Lexer::new($input);
+            let src = std::rc::Rc::new(eight_support::context::DiagnosticSource::Stdin(
+                $input.to_owned(),
+            ));
+            let dcx = eight_support::context::DiagnosticContext::new(src.clone(), 16);
+            let mut lexer = Lexer::new(src.as_ref().source(), &dcx);
             let arena = AstArena::default();
-            let mut parser = Parser::new(&mut lexer, &arena);
+            let mut parser = Parser::new(&mut lexer, &arena, &dcx);
             $body(&mut parser);
             // Ensure there are no more items in the parser
-            let next = assert_ok!(parser.lookahead());
-            assert!(next.is_none(), "expected end of stream, got {:?}", next);
+            eight_macros::assert_none!(parser.lookahead());
         }};
     }
 
@@ -2041,19 +2073,6 @@ mod tests {
             let production = p.parse_expr();
             let production = assert_ok!(production);
             assert!(matches!(&production, AstExpr::Assign(_)));
-        });
-    }
-
-    #[test]
-    fn test_parse_invalid_literal() {
-        assert_parse!("let k = 1234773457276345671237572345", |p: &mut Parser| {
-            let production = p.parse_let_stmt();
-            let production = assert_err!(production);
-            assert!(
-                matches!(production, ParseError::InvalidIntegerLiteral(InvalidIntegerLiteralError {
-                    span, ..
-                }) if span.low == 8 && span.high == 36)
-            );
         });
     }
 

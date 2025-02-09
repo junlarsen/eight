@@ -1,10 +1,10 @@
-Error: syntax::unexpected_character
+Error: syntax::unfinished_token
 
-  × found illegal character during parsing
-   ╭─[unterminated-token.eight:3:2]
+  × expected another '|' character here
+   ╭─[unterminated-token.eight:3:1]
  2 │ 
  3 │ |
-   ·  ┬
-   ·  ╰─┤ the character '
-   ·    │ ' does not parse into any tokens
+   · ┬
+   · ╰── this alone does not form a valid token
    ╰────
+  help: did you forget to add a '|' character here?
