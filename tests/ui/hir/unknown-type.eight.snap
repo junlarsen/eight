@@ -1,0 +1,11 @@
+Error: sema::unknown_type
+
+  × Banana does not name a known type
+   ╭─[unknown-type.eight:6:16]
+ 5 │ fn main() {
+ 6 │   let bananas: Banana = get_id();
+   ·                ───┬──
+   ·                   ╰── could not find type Banana
+ 7 │ }
+   ╰────
+

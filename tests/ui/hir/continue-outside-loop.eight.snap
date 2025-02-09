@@ -1,0 +1,11 @@
+Error: sema::continue_outside_loop
+
+  × continue statement outside of loop
+   ╭─[continue-outside-loop.eight:4:3]
+ 3 │ fn test() -> bool {
+ 4 │   continue;
+   ·   ────┬────
+   ·       ╰── there is no enclosing loop
+ 5 │ }
+   ╰────
+

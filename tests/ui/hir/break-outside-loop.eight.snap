@@ -1,0 +1,11 @@
+Error: sema::break_outside_loop
+
+  × break statement outside of loop
+   ╭─[break-outside-loop.eight:4:3]
+ 3 │ fn main() -> i32 {
+ 4 │   break;
+   ·   ───┬──
+   ·      ╰── there is no enclosing loop
+ 5 │ }
+   ╰────
+

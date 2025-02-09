@@ -1,0 +1,5 @@
+// RUN: not %eightc %s 2>&1 | %regtest test %s
+
+fn main() -> i32 {
+  return somebody_help_i_got_a_bad_reference;
+}

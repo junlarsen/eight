@@ -1,0 +1,5 @@
+// RUN: not %eightc %s 2>&1 | %regtest test %s
+
+fn main() -> i32 {
+  break;
+}

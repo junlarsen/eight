@@ -1,0 +1,7 @@
+// RUN: not %eightc %s 2>&1 | %regtest test %s
+
+intrinsic_fn get_id<T>() -> T;
+
+fn main() {
+  let bananas: Banana = get_id();
+}

@@ -1,0 +1,11 @@
+Error: sema::invalid_reference
+
+  × invalid reference to somebody_help_i_got_a_bad_reference
+   ╭─[invalid-reference.eight:4:10]
+ 3 │ fn main() -> i32 {
+ 4 │   return somebody_help_i_got_a_bad_reference;
+   ·          ─────────────────┬─────────────────
+   ·                           ╰── no value in scope named somebody_help_i_got_a_bad_reference
+ 5 │ }
+   ╰────
+

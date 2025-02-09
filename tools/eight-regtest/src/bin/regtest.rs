@@ -112,7 +112,7 @@ fn verify(args: CommandVerifyArgs) -> anyhow::Result<()> {
         clearscreen::clear()?;
         let base_path = get_base_path(&path);
         let state = get_snapshot_state(&base_path)?;
-        let (previous, snapshot) = match &state {
+        let (previous, current) = match &state {
             SnapshotState::Verified(s) | SnapshotState::Unverified(s) => ("", s.as_str()),
             SnapshotState::PreviouslyRegressed(r, s) => (r.as_str(), s.as_str()),
             SnapshotState::Fresh => unreachable!(
@@ -120,7 +120,7 @@ fn verify(args: CommandVerifyArgs) -> anyhow::Result<()> {
             ),
         };
 
-        let (_, diff) = get_annotated_diff(previous, snapshot);
+        let (_, diff) = get_annotated_diff(current, previous);
         println!(
             "{} {}",
             "Displaying diff for snapshot file".cyan(),
