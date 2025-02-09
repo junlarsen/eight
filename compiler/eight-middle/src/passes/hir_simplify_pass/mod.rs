@@ -5,9 +5,9 @@ use crate::hir::builder::HirBuilder;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBlockStmt, HirBooleanLiteralExpr, HirBreakStmt,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirContinueStmt,
-    HirDerefExpr, HirExpr, HirExprStmt, HirFunction, HirGroupExpr, HirIfStmt, HirInstance,
-    HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirModule, HirOffsetIndexExpr,
-    HirReferenceExpr, HirReferenceSymbol, HirReturnStmt, HirStmt,
+    HirDerefExpr, HirExpr, HirExprStmt, HirFunction, HirIfStmt, HirInstance, HirIntegerLiteralExpr,
+    HirLetStmt, HirLoopStmt, HirModule, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol,
+    HirReturnStmt, HirStmt,
 };
 use eight_diagnostics::ice;
 
@@ -106,7 +106,6 @@ impl<'be> HirSimplifyPass<'be> {
             HirExpr::OffsetIndex(e) => self.visit_offset_index_expr(e),
             HirExpr::Call(e) => self.visit_call_expr(e),
             HirExpr::Construct(e) => self.visit_construct_expr(e),
-            HirExpr::Group(e) => self.visit_group_expr(e),
             HirExpr::AddressOf(e) => self.visit_address_of_expr(e),
             HirExpr::Deref(e) => self.visit_deref_expr(e),
         }
@@ -179,10 +178,6 @@ impl<'be> HirSimplifyPass<'be> {
 
     pub fn visit_construct_expr_argument(&mut self, expr: &mut HirConstructExprArgument<'be>) {
         self.visit_expr(&mut expr.expr);
-    }
-
-    pub fn visit_group_expr(&mut self, expr: &mut HirGroupExpr<'be>) {
-        self.visit_expr(&mut expr.inner);
     }
 
     pub fn visit_address_of_expr(&mut self, expr: &mut HirAddressOfExpr<'be>) {
