@@ -1,8 +1,9 @@
 use clap::{Parser, Subcommand};
 use eight_regtest::{
-    get_annotated_diff, get_regressed_snapshot_path, get_snapshot_state, get_unverified_snapshots,
-    get_updated_snapshot_path, get_verified_snapshot_path, SnapshotState,
+    get_annotated_diff, get_base_path, get_regressed_snapshot_path, get_snapshot_state,
+    get_unverified_snapshots, get_updated_snapshot_path, get_verified_snapshot_path, SnapshotState,
 };
+use inquire::Select;
 use owo_colors::OwoColorize;
 use std::io::Read;
 
@@ -105,7 +106,53 @@ fn test(args: CommandTestArgs) -> anyhow::Result<()> {
 /// 3. REJECT: The snapshot file is deleted. Consequently, future `regtest test` runs will end up
 ///    creating the snapshot file again.
 fn verify(args: CommandVerifyArgs) -> anyhow::Result<()> {
+    let options = ["ACCEPT", "IGNORE", "REJECT"];
     let unverified_snapshots = get_unverified_snapshots(&args.directory)?;
-    dbg!(&unverified_snapshots);
+    for path in unverified_snapshots {
+        clearscreen::clear()?;
+        let base_path = get_base_path(&path);
+        let state = get_snapshot_state(&base_path)?;
+        let (previous, snapshot) = match &state {
+            SnapshotState::Verified(s) | SnapshotState::Unverified(s) => ("", s.as_str()),
+            SnapshotState::PreviouslyRegressed(r, s) => (r.as_str(), s.as_str()),
+            SnapshotState::Fresh => unreachable!(
+                "should not be possible to have just-verified snapshot in verification step"
+            ),
+        };
+
+        let (_, diff) = get_annotated_diff(previous, snapshot);
+        println!(
+            "{} {}",
+            "Displaying diff for snapshot file".cyan(),
+            path.display()
+        );
+        println!("{}", diff);
+        let answer = Select::new("Select action for snapshot", options.to_vec()).prompt()?;
+        match answer {
+            "ACCEPT" => {
+                // Move the unverified snapshot to the verified snapshot path, and potentially
+                // delete a regressed snapshot if it exists.
+                std::fs::rename(&path, get_verified_snapshot_path(&base_path))?;
+                if matches!(state, SnapshotState::PreviouslyRegressed(_, _)) {
+                    let regressed_snapshot_path = get_regressed_snapshot_path(&base_path);
+                    std::fs::remove_file(&regressed_snapshot_path)?;
+                }
+            }
+            "REJECT" => {
+                std::fs::remove_file(&path)?;
+                // If we rejected a regression, we move the regressed snapshot back to .snap
+                if matches!(state, SnapshotState::PreviouslyRegressed(_, _)) {
+                    let regressed_snapshot_path = get_regressed_snapshot_path(&base_path);
+                    std::fs::rename(
+                        &regressed_snapshot_path,
+                        get_verified_snapshot_path(&base_path),
+                    )?;
+                }
+            }
+            // Do nothing
+            "IGNORE" => {}
+            _ => unreachable!(),
+        }
+    }
     Ok(())
 }
