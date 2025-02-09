@@ -62,6 +62,15 @@ fn test(args: CommandTestArgs) -> anyhow::Result<()> {
         std::process::exit(0);
     }
 
+    // If there were no changes, but we had a former regression, we can move back the files
+    if !changed && matches!(snapshot_state, SnapshotState::PreviouslyRegressed(_, _)) {
+        let regressed_snapshot_path = get_regressed_snapshot_path(&args.snapshot);
+        let verified_snapshot_path = get_verified_snapshot_path(&args.snapshot);
+        let updated_snapshot_path = get_updated_snapshot_path(&args.snapshot);
+        std::fs::rename(regressed_snapshot_path, verified_snapshot_path)?;
+        std::fs::remove_file(&updated_snapshot_path)?;
+    }
+
     // Otherwise, we let the user know that the snapshot file has changed.
     match snapshot_state {
         SnapshotState::Fresh => println!("{}\n", "A new snapshot has been created".cyan()),
