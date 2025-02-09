@@ -3,6 +3,7 @@ use miette::{Diagnostic, NamedSource, Report};
 use std::borrow::Cow;
 use std::cmp::min;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -27,20 +28,20 @@ impl DiagnosticSource {
 ///
 /// Diagnostics can either recoverable, unrecoverable (but still allow compilation to continue in
 /// order to collect more diagnostics), or fatal (the compiler should exit immediately).
-pub struct DiagnosticContext<'src> {
+pub struct DiagnosticContext {
     diagnostics: Mutex<Vec<Report>>,
-    src: &'src DiagnosticSource,
+    src: Rc<DiagnosticSource>,
 }
 
-impl<'src> DiagnosticContext<'src> {
+impl DiagnosticContext {
     /// Create a new diagnostic context.
     ///
     /// The `max_diagnostic_count` parameter specifies the maximum number of diagnostics that can
     /// be collected.
-    pub fn new(src: &'src DiagnosticSource, max_diagnostic_count: usize) -> Self {
+    pub fn new(src: Rc<DiagnosticSource>, max_diagnostic_count: usize) -> Self {
         Self {
-            diagnostics: Mutex::new(Vec::with_capacity(min(max_diagnostic_count, 16))),
             src,
+            diagnostics: Mutex::new(Vec::with_capacity(min(max_diagnostic_count, 16))),
         }
     }
 
@@ -75,7 +76,7 @@ impl<'src> DiagnosticContext<'src> {
             .unwrap_or_else(|_| ice!("failed to acquire diagnostics lock"));
 
         for report in diagnostics.drain(..) {
-            let (source_name, source) = match &self.src {
+            let (source_name, source) = match self.src.as_ref() {
                 DiagnosticSource::File(path, source) => (path.to_string_lossy(), source),
                 DiagnosticSource::Stdin(source) => (Cow::Borrowed("stdin"), source),
             };

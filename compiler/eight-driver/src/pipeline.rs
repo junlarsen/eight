@@ -101,27 +101,25 @@ pub struct PipelineOptions {
 /// A compilation pipeline for the compiler.
 pub struct Pipeline<'session> {
     pub(crate) opts: PipelineOptions,
-    pub(crate) session: ManuallyDrop<CompileSession<'session>>,
+    pub(crate) session: &'session CompileSession<'session>,
     pub(crate) ast_arena: ManuallyDrop<AstArena<'session>>,
-    source: &'session DiagnosticSource,
 }
 
 impl<'session> Pipeline<'session> {
-    pub fn new(opts: PipelineOptions, source: &'session DiagnosticSource) -> Self {
+    pub fn new(opts: PipelineOptions, session: &'session CompileSession<'session>) -> Self {
         Self {
             opts,
-            source,
-            session: ManuallyDrop::new(CompileSession::new(source)),
+            session,
             ast_arena: ManuallyDrop::new(AstArena::default()),
         }
     }
 
     /// Get the source for the pipeline.
     pub fn source(&self) -> &DiagnosticSource {
-        self.source
+        self.session.src()
     }
 
-    pub fn dcx(&self) -> &DiagnosticContext<'session> {
+    pub fn dcx(&self) -> &DiagnosticContext {
         self.session.dcx()
     }
 

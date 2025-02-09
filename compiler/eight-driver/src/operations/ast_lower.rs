@@ -10,7 +10,7 @@ impl<'c> PipelinePass<'c, AstTranslationUnit<'c>, HirModule<'c>> for AstLowerPas
         pipeline: &'c Pipeline<'c>,
         input: AstTranslationUnit<'c>,
     ) -> Result<HirModule<'c>, PipelineError> {
-        let mut lowering_pass = AstLoweringPass::new(&pipeline.session);
+        let mut lowering_pass = AstLoweringPass::new(pipeline.session);
         let module = lowering_pass.visit_translation_unit(&input)?;
         Ok(module)
     }

@@ -4,6 +4,7 @@ use eight_driver::pipeline::{
     execute_compilation_pipeline, Pipeline, PipelineError, PipelineOptions, TerminationStep,
 };
 use eight_driver::query::{EmitQuery, QueryError};
+use eight_middle::context::CompileSession;
 use std::io::Read;
 use std::path::PathBuf;
 
@@ -99,7 +100,8 @@ fn main() -> miette::Result<()> {
     };
 
     let options = args.try_into()?;
-    let pipeline = Pipeline::new(options, &source);
+    let session = CompileSession::new(source);
+    let pipeline = Pipeline::new(options, &session);
     match execute_compilation_pipeline(&pipeline) {
         Err(PipelineError::StopToken(msg)) => {
             eprintln!("eightc: early termination due to: {}", msg);

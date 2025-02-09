@@ -13,18 +13,21 @@ use std::rc::Rc;
 
 /// A shared context for the middle-end and backend components.
 pub struct CompileSession<'session> {
-    dcx: DiagnosticContext<'session>,
+    src: Rc<DiagnosticSource>,
+    dcx: DiagnosticContext,
     allocator: Rc<Bump>,
     strings: StringInterner<'session>,
     mir_types: TypedInterner<'session, MirTyId, MirTy<'session>>,
     hir_types: TypedInterner<'session, HirTyId, HirTy<'session>>,
 }
 
-impl<'be> CompileSession<'be> {
-    pub fn new(source: &'be DiagnosticSource) -> Self {
-        let dcx = DiagnosticContext::new(source, 16);
+impl<'session> CompileSession<'session> {
+    pub fn new(source: DiagnosticSource) -> Self {
+        let src = Rc::new(source);
+        let dcx = DiagnosticContext::new(src.clone(), 16);
         let alloc = Rc::new(Bump::new());
         Self {
+            src,
             dcx,
             strings: StringInterner::new(alloc.clone()),
             mir_types: TypedInterner::new(alloc.clone()),
@@ -34,25 +37,29 @@ impl<'be> CompileSession<'be> {
     }
 
     /// Get a reference to the diagnostic context.
-    pub fn dcx(&self) -> &DiagnosticContext<'be> {
+    pub fn dcx(&self) -> &DiagnosticContext {
         &self.dcx
+    }
+
+    pub fn src(&self) -> &DiagnosticSource {
+        &self.src
     }
 
     /// Allocate a value into the arena.
     ///
     /// This can be used to allocate things that should be dropped automatically when the compiler
     /// exits, and that are fine being non-owning references.
-    pub fn arena_alloc<T>(&'be self, v: T) -> &'be T {
+    pub fn arena_alloc<T>(&'session self, v: T) -> &'session T {
         self.allocator.alloc(v)
     }
 
     /// Intern a string into the context.
-    pub fn intern_str<T: AsRef<str>>(&'be self, name: T) -> &'be str {
+    pub fn intern_str<T: AsRef<str>>(&'session self, name: T) -> &'session str {
         self.strings.get(name.as_ref())
     }
 
     /// Intern something that can be converted to a string into the context.
-    pub fn intern_as_str<T: ToString>(&'be self, name: T) -> &'be str {
+    pub fn intern_as_str<T: ToString>(&'session self, name: T) -> &'session str {
         self.intern_str(name.to_string())
     }
 }

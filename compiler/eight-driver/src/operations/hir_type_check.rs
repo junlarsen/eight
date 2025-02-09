@@ -9,7 +9,7 @@ impl<'c> PipelinePass<'c, HirModule<'c>, HirModule<'c>> for HirTypeCheckPass {
         pipeline: &'c Pipeline<'c>,
         mut input: HirModule<'c>,
     ) -> Result<HirModule<'c>, PipelineError> {
-        let mut typing_context = TypingContext::new(&pipeline.session, input.signature);
+        let mut typing_context = TypingContext::new(pipeline.session, input.signature);
         HirModuleTypeCheckerPass::visit(&mut input, &mut typing_context)?;
         Ok(input)
     }

@@ -11,7 +11,7 @@ impl<'c> PipelinePass<'c, HirModule<'c>, MirModule<'c>> for HirLowerPass {
         pipeline: &'c Pipeline<'c>,
         input: HirModule<'c>,
     ) -> Result<MirModule<'c>, PipelineError> {
-        let mut lowering_pass = HirModuleLoweringPass::new(&pipeline.session);
+        let mut lowering_pass = HirModuleLoweringPass::new(pipeline.session);
         let module = lowering_pass.visit_module(&input)?;
         Ok(module)
     }
