@@ -6,6 +6,12 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Mutex;
 
+/// A token that indicates that an error occurred.
+///
+/// The diagnostic associated with this error has been collected.
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub struct ErrorGuaranteed(pub(crate) ());
+
 #[derive(Debug)]
 pub enum DiagnosticSource {
     File(PathBuf, String),
@@ -53,19 +59,26 @@ impl DiagnosticContext {
     }
 
     /// Emit a unrecoverable, non-fatal diagnostic.
-    pub fn emit_diagnostic(&self, diagnostic: impl Diagnostic + Sync + Send + 'static) {
+    pub fn emit_diagnostic(
+        &self,
+        diagnostic: impl Diagnostic + Sync + Send + 'static,
+    ) -> Option<ErrorGuaranteed> {
         let mut diagnostics = self
             .diagnostics
             .lock()
             .unwrap_or_else(|_| ice!("failed to acquire diagnostics lock"));
         diagnostics.push(Report::from(diagnostic));
+        // At the moment we don't have warnings, so we always return an error here.
+        Some(ErrorGuaranteed(()))
     }
 
     /// Emit a fatal diagnostic, which will cause the compiler to exit immediately.
-    pub fn emit_fatal_diagnostic(&self, diagnostic: impl Diagnostic + Sync + Send + 'static) -> ! {
+    pub fn emit_fatal_diagnostic(
+        &self,
+        diagnostic: impl Diagnostic + Sync + Send + 'static,
+    ) -> ErrorGuaranteed {
         self.emit_diagnostic(diagnostic);
-        self.report();
-        std::process::exit(1);
+        ErrorGuaranteed(())
     }
 
     /// Report all the collected diagnostics to stderr.

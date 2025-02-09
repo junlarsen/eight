@@ -107,8 +107,14 @@ fn main() -> miette::Result<()> {
             eprintln!("eightc: early termination due to: {}", msg);
             std::process::exit(1);
         }
-        Err(e) => pipeline.dcx().emit_fatal_diagnostic(e),
+        // This is here for legacy reasons. Eventually this will be removed.
+        Err(e) => {
+            pipeline.dcx().emit_fatal_diagnostic(e);
+        }
         _ => {}
     };
+    if !pipeline.dcx().is_empty() {
+        pipeline.dcx().report();
+    }
     std::process::exit(pipeline.dcx().is_empty() as i32);
 }
