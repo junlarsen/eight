@@ -6,7 +6,6 @@ use eight_diagnostics::errors::mir::MirError;
 pub mod builtin;
 pub mod context;
 pub mod hir;
-pub mod hir_builder;
 pub mod intern;
 pub mod mir;
 pub mod passes;

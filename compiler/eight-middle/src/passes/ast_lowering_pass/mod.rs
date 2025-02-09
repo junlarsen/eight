@@ -1,4 +1,5 @@
 use crate::context::CompileContext;
+use crate::hir::builder::HirBuilder;
 use crate::hir::{
     HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction, HirFunctionParameterSignature,
     HirFunctionSignature, HirInstance, HirInstanceSignature, HirLetStmt, HirLocalReferenceSymbol,
@@ -7,7 +8,6 @@ use crate::hir::{
     HirTypeSignature,
 };
 use crate::hir::{HirReferenceSymbol, HirTy};
-use crate::hir_builder::HirBuilder;
 use crate::scope::Scope;
 use crate::HirResult;
 use crate::LinkageType;

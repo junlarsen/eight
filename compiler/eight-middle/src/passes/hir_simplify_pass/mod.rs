@@ -1,6 +1,7 @@
 //! Simplification pass for HIR.
 
 use crate::context::CompileContext;
+use crate::hir::builder::HirBuilder;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBlockStmt, HirBooleanLiteralExpr, HirBreakStmt,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirContinueStmt,
@@ -8,7 +9,6 @@ use crate::hir::{
     HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirModule, HirOffsetIndexExpr,
     HirReferenceExpr, HirReferenceSymbol, HirReturnStmt, HirStmt,
 };
-use crate::hir_builder::HirBuilder;
 use eight_diagnostics::ice;
 
 pub struct HirSimplifyPass<'be> {

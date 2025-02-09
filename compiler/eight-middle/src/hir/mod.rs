@@ -8,6 +8,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
+pub mod builder;
+
 #[derive(Debug)]
 pub enum HirExpr<'hir> {
     IntegerLiteral(HirIntegerLiteralExpr<'hir>),
