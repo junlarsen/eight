@@ -1,5 +1,6 @@
 [alias]
 xtask = "run --package eight-xtask --"
+regtest = "run --package eight-regtest -- verify"
 
 [env]
 CARGO_WORKSPACE_DIR = { value = "", relative = true }
