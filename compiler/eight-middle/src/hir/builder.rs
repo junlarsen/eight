@@ -11,9 +11,9 @@
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBlockStmt, HirBooleanLiteralExpr, HirBreakStmt,
     HirCallExpr, HirConstantIndexExpr, HirConstructExpr, HirConstructExprArgument, HirContinueStmt,
-    HirDerefExpr, HirExpr, HirExprStmt, HirFunction, HirFunctionSignature, HirGroupExpr, HirIfStmt,
-    HirInstance, HirInstanceSignature, HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt,
-    HirOffsetIndexExpr, HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature,
+    HirDerefExpr, HirExpr, HirExprStmt, HirFunction, HirFunctionSignature, HirIfStmt, HirInstance,
+    HirInstanceSignature, HirIntegerLiteralExpr, HirLetStmt, HirLoopStmt, HirOffsetIndexExpr,
+    HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature,
 };
 use crate::hir::{HirReferenceSymbol, HirTy};
 use crate::{HirResult, LinkageType};
@@ -221,19 +221,6 @@ impl<'hir> HirBuilder {
             field,
             field_span,
             expr: Box::new(expr),
-        }
-    }
-
-    /// Build a group expression
-    pub fn build_group_expr(
-        span: Span,
-        inner: HirExpr<'hir>,
-        ty: &'hir HirTy<'hir>,
-    ) -> HirGroupExpr<'hir> {
-        HirGroupExpr {
-            span,
-            inner: Box::new(inner),
-            ty,
         }
     }
 

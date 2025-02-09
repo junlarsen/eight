@@ -1,10 +1,10 @@
 use crate::builtin::CompilerIntrinsic;
 use crate::context::CompileContext;
+use crate::hir::HirTy;
 use crate::hir::{
     HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
 };
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
-use crate::hir::{HirGroupExpr, HirTy};
 use crate::hir::{HirModule, HirReferenceSymbol};
 use crate::mir::function::{MirFunction, MirFunctionBuilder};
 use crate::mir::module::MirModuleContext;
@@ -170,7 +170,6 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
             HirExpr::Reference(e) => self.visit_reference_expr(b, cx, e),
             HirExpr::Call(e) => self.visit_call_expr(b, cx, e),
             HirExpr::BooleanLiteral(e) => self.visit_boolean_literal_expr(b, cx, e),
-            HirExpr::Group(e) => self.visit_group_expr(b, cx, e),
             HirExpr::AddressOf(_)
             | HirExpr::Deref(_)
             | HirExpr::ConstantIndex(_)
@@ -291,15 +290,6 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
             _ => unimplemented!(),
         };
         Ok(value)
-    }
-
-    pub fn visit_group_expr(
-        &mut self,
-        b: &mut MirFunctionBuilder<'mir>,
-        cx: &MirModuleContext<'mir>,
-        expr: &'hir HirGroupExpr<'hir>,
-    ) -> MirResult<MirValueRef> {
-        self.visit_expr(b, cx, &expr.inner)
     }
 
     /// Translate a type into MIR.

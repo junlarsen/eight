@@ -20,7 +20,6 @@ pub enum HirExpr<'hir> {
     OffsetIndex(HirOffsetIndexExpr<'hir>),
     Call(HirCallExpr<'hir>),
     Construct(HirConstructExpr<'hir>),
-    Group(HirGroupExpr<'hir>),
     AddressOf(HirAddressOfExpr<'hir>),
     Deref(HirDerefExpr<'hir>),
 }
@@ -35,7 +34,6 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::OffsetIndex(e) => e.span,
             HirExpr::Call(e) => e.span,
             HirExpr::Construct(e) => e.span,
-            HirExpr::Group(e) => e.span,
             HirExpr::Reference(e) => e.span,
             HirExpr::AddressOf(e) => e.span,
             HirExpr::Deref(e) => e.span,
@@ -51,7 +49,6 @@ impl<'hir> HirExpr<'hir> {
             HirExpr::OffsetIndex(e) => e.ty,
             HirExpr::Call(e) => e.ty,
             HirExpr::Construct(e) => e.ty,
-            HirExpr::Group(e) => e.ty,
             HirExpr::Reference(e) => e.ty,
             HirExpr::AddressOf(e) => e.ty,
             HirExpr::Deref(e) => e.ty,
@@ -273,13 +270,6 @@ pub struct HirConstructExprArgument<'hir> {
     pub field: &'hir str,
     pub field_span: Span,
     pub expr: Box<HirExpr<'hir>>,
-}
-
-#[derive(Debug)]
-pub struct HirGroupExpr<'hir> {
-    pub span: Span,
-    pub inner: Box<HirExpr<'hir>>,
-    pub ty: &'hir HirTy<'hir>,
 }
 
 #[derive(Debug)]

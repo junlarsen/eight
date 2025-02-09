@@ -1,8 +1,8 @@
 use crate::context::CompileContext;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
-    HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr,
-    HirMetaTy, HirModuleSignature, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol, HirTy,
+    HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirIntegerLiteralExpr, HirMetaTy,
+    HirModuleSignature, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol, HirTy,
 };
 use crate::passes::hir_type_check_pass::{
     Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint,
@@ -657,17 +657,6 @@ impl<'hir> TypingContext<'hir> {
         Ok(())
     }
 
-    /// Infer the type of a group expression.
-    pub fn infer_group_expr(
-        &mut self,
-        expr: &mut HirGroupExpr<'hir>,
-        expectation: &'hir HirTy<'hir>,
-    ) -> HirResult<()> {
-        self.infer(&mut expr.inner, expectation)?;
-        self.constrain_eq(expectation, expr.ty, expr.span, expr.inner.span());
-        Ok(())
-    }
-
     /// Infer the expression's type based on its expected type.
     ///
     /// This collects the necessary constraints on the expression's type based on its structure. The
@@ -689,7 +678,6 @@ impl<'hir> TypingContext<'hir> {
             HirExpr::Construct(e) => self.infer_construct_expr(e, expectation),
             HirExpr::AddressOf(e) => self.infer_address_of_expr(e, expectation),
             HirExpr::Deref(e) => self.infer_deref_expr(e, expectation),
-            HirExpr::Group(e) => self.infer_group_expr(e, expectation),
         }
     }
 

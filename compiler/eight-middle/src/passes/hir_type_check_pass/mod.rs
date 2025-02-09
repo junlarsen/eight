@@ -2,9 +2,8 @@ mod typing_context;
 
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
-    HirConstructExpr, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr, HirInstance,
-    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol, HirStruct,
-    HirTrait,
+    HirConstructExpr, HirDerefExpr, HirExpr, HirFunction, HirInstance, HirIntegerLiteralExpr,
+    HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol, HirStruct, HirTrait,
 };
 use crate::hir::{
     HirBlockStmt, HirExprStmt, HirFunctionTy, HirIfStmt, HirLetStmt, HirLoopStmt, HirModule,
@@ -441,7 +440,6 @@ impl HirModuleTypeCheckerPass {
         match node {
             HirExpr::IntegerLiteral(e) => Self::enter_integer_literal_expr(cx, e),
             HirExpr::BooleanLiteral(e) => Self::enter_boolean_literal_expr(cx, e),
-            HirExpr::Group(e) => Self::enter_group_expr(cx, e),
             HirExpr::Reference(e) => Self::enter_reference_expr(cx, e),
             HirExpr::Assign(e) => Self::enter_assign_expr(cx, e),
             HirExpr::OffsetIndex(e) => Self::enter_offset_index_expr(cx, e),
@@ -461,7 +459,6 @@ impl HirModuleTypeCheckerPass {
         match node {
             HirExpr::IntegerLiteral(e) => Self::leave_integer_literal_expr(cx, e),
             HirExpr::BooleanLiteral(e) => Self::leave_boolean_literal_expr(cx, e),
-            HirExpr::Group(e) => Self::leave_group_expr(cx, e),
             HirExpr::Reference(e) => Self::leave_reference_expr(cx, e),
             HirExpr::Assign(e) => Self::leave_assign_expr(cx, e),
             HirExpr::OffsetIndex(e) => Self::leave_offset_index_expr(cx, e),
@@ -511,29 +508,6 @@ impl HirModuleTypeCheckerPass {
         cx: &mut TypingContext<'hir>,
         node: &mut HirBooleanLiteralExpr<'hir>,
     ) -> HirResult<()> {
-        node.ty = cx.substitute(node.ty)?;
-        Ok(())
-    }
-
-    /// Collect type constraints for a group expression.
-    ///
-    /// The grouping expression's type is inferred from the inner expression.
-    pub fn enter_group_expr<'hir>(
-        cx: &mut TypingContext<'hir>,
-        node: &mut HirGroupExpr<'hir>,
-    ) -> HirResult<()> {
-        node.ty = Self::visit_type(cx, node.ty)?;
-        Self::enter_expr(cx, &mut node.inner)?;
-        cx.infer_group_expr(node, node.ty)?;
-        Ok(())
-    }
-
-    /// Perform substitution for a group expression.
-    pub fn leave_group_expr<'hir>(
-        cx: &mut TypingContext<'hir>,
-        node: &mut HirGroupExpr<'hir>,
-    ) -> HirResult<()> {
-        Self::leave_expr(cx, &mut node.inner)?;
         node.ty = cx.substitute(node.ty)?;
         Ok(())
     }

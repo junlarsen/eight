@@ -9,8 +9,8 @@
 
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
-    HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirGroupExpr,
-    HirInstance, HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol,
+    HirConstructExpr, HirConstructExprArgument, HirDerefExpr, HirExpr, HirFunction, HirInstance,
+    HirIntegerLiteralExpr, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol,
 };
 use crate::hir::{
     HirBlockStmt, HirBreakStmt, HirContinueStmt, HirExprStmt, HirFunctionParameterSignature,
@@ -581,7 +581,6 @@ impl<'a> HirModuleTextualPass<'a> {
             HirExpr::OffsetIndex(e) => self.visit_offset_index_expr(e),
             HirExpr::Call(e) => self.visit_call_expr(e),
             HirExpr::Construct(e) => self.visit_construct_expr(e),
-            HirExpr::Group(e) => self.visit_group_expr(e),
             HirExpr::AddressOf(e) => self.visit_address_of_expr(e),
             HirExpr::Deref(e) => self.visit_deref_expr(e),
         };
@@ -726,16 +725,6 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.space())
             .append(self.visit_expr(&expr.expr))
             .append(self.arena.text(","))
-    }
-
-    pub fn visit_group_expr<'hir: 'a>(
-        &'a self,
-        expr: &'hir HirGroupExpr,
-    ) -> DocBuilder<'a, Arena<'a>> {
-        self.arena
-            .text("(")
-            .append(self.visit_expr(&expr.inner))
-            .append(self.arena.text(")"))
     }
 
     pub fn visit_address_of_expr<'hir: 'a>(

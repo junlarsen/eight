@@ -170,12 +170,12 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         ))
     }
 
+    /// Visit a group expression.
+    ///
+    /// These are eliminated completely, because the tree structure makes the order of evaluation
+    /// explicit.
     pub fn visit_group_expr(&mut self, node: &'ast AstGroupExpr) -> HirResult<HirExpr<'hir>> {
-        Ok(HirExpr::Group(HirBuilder::build_group_expr(
-            node.span,
-            self.visit_expr(node.inner)?,
-            self.cc.hir_uninitialized_type(),
-        )))
+        self.visit_expr(node.inner)
     }
 
     pub fn visit_integer_literal_expr(
