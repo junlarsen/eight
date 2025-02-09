@@ -9,9 +9,6 @@ pub mod hir;
 pub mod hir_builder;
 pub mod intern;
 pub mod mir;
-pub mod mir_block;
-pub mod mir_function;
-pub mod mir_module;
 pub mod passes;
 pub mod scope;
 

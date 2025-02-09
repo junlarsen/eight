@@ -1,6 +1,6 @@
 use crate::context::CompileContext;
+use crate::mir::function::MirFunction;
 use crate::mir::{MirFunctionRef, MirFunctionType};
-use crate::mir_function::MirFunction;
 use eight_diagnostics::ice;
 use std::collections::BTreeMap;
 

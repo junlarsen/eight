@@ -2,16 +2,16 @@ pub mod error;
 
 use crate::error::LLVMBackendResult;
 use eight_diagnostics::ice;
+use eight_middle::mir::block::MirBasicBlock;
+use eight_middle::mir::block::MirBasicBlockRef;
+use eight_middle::mir::function::MirFunction;
+use eight_middle::mir::function::MirFunctionData;
+use eight_middle::mir::module::{MirModule, MirModuleData};
 use eight_middle::mir::{
     MirAllocaInstruction, MirCallInstruction, MirConstantBool, MirConstantInteger32,
     MirFunctionType, MirInstruction, MirInstructionRef, MirLoadInstruction, MirStoreInstruction,
     MirTy, MirValue, MirValueRef,
 };
-use eight_middle::mir_block::MirBasicBlock;
-use eight_middle::mir_block::MirBasicBlockRef;
-use eight_middle::mir_function::MirFunction;
-use eight_middle::mir_function::MirFunctionData;
-use eight_middle::mir_module::{MirModule, MirModuleData};
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::context::Context;

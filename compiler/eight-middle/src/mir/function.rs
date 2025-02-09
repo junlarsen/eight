@@ -1,12 +1,12 @@
 use crate::context::CompileContext;
+use crate::mir::block::{MirBasicBlock, MirBasicBlockRef};
+use crate::mir::module::MirModuleContext;
 use crate::mir::{
     MirAddInstruction, MirAllocaInstruction, MirArgument, MirCallInstruction, MirConstantBool,
     MirConstantInteger32, MirDivInstruction, MirFunctionRef, MirFunctionType, MirInstruction,
     MirInstructionRef, MirLoadInstruction, MirMulInstruction, MirPtrAddInstruction,
     MirStoreInstruction, MirSubInstruction, MirTy, MirValue, MirValueRef,
 };
-use crate::mir_block::{MirBasicBlock, MirBasicBlockRef};
-use crate::mir_module::MirModuleContext;
 use eight_diagnostics::ice;
 use std::collections::{BTreeMap, BTreeSet};
 

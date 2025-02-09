@@ -6,11 +6,11 @@ use crate::hir::{
 use crate::hir::{HirExprStmt, HirFunction, HirLetStmt, HirStmt};
 use crate::hir::{HirGroupExpr, HirTy};
 use crate::hir::{HirModule, HirReferenceSymbol};
+use crate::mir::function::{MirFunction, MirFunctionBuilder};
+use crate::mir::module::MirModuleContext;
+use crate::mir::module::{MirModule, MirModuleInterface};
 use crate::mir::MirValueRef;
 use crate::mir::{MirFunctionRef, MirFunctionType, MirTy};
-use crate::mir_function::{MirFunction, MirFunctionBuilder};
-use crate::mir_module::MirModuleContext;
-use crate::mir_module::{MirModule, MirModuleInterface};
 use crate::scope::Scope;
 use crate::LinkageType;
 use crate::MirResult;

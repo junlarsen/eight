@@ -1,6 +1,10 @@
 use eight_macros::declare_ref_type;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
+pub mod block;
+pub mod function;
+pub mod module;
+
 declare_ref_type!(MirBasicBlockRef, usize);
 declare_ref_type!(MirInstructionRef, usize);
 declare_ref_type!(MirValueRef, usize);
