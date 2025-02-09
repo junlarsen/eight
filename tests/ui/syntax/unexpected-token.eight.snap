@@ -1,0 +1,10 @@
+Error: syntax::unexpected_token
+
+  × found unexpected token during parsing
+   ╭─[unexpected-token.eight:3:11]
+ 2 │ 
+ 3 │ fn test() unexpected_token {
+   ·           ────────┬───────
+   ·                   ╰── was not expecting to find 'unexpected_token' in this position
+   ╰────
+

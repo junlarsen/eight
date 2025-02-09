@@ -1,0 +1,12 @@
+Error: syntax::invalid_integer_literal
+
+  × found illegal i32 literal
+   ╭─[too-long-integer.eight:4:11]
+ 3 │ fn test() {
+ 4 │   let k = 1234773457276345671237572345;
+   ·           ──────────────┬─────────────
+   ·                         ╰── the maximum value that can be represented by an i32 is 2147483647
+ 5 │ }
+   ╰────
+  help: did you mean to specify a larger integer type?
+

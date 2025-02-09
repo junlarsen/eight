@@ -1,0 +1,5 @@
+// RUN: not %eightc %s 2>&1 | %regtest %s.snap
+
+fn test() {
+  let k = 1234773457276345671237572345;
+}

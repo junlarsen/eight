@@ -1,6 +1,0 @@
-// RUN: not %eightc %s 2>&1 | FileCheck %s
-
-fn foo() -> *
-
-// CHECK-LABEL: syntax::unexpected_end_of_file
-// CHECK: expected more characters after this

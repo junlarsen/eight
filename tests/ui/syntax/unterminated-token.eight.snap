@@ -1,0 +1,11 @@
+Error: syntax::unexpected_character
+
+  × found illegal character during parsing
+   ╭─[unterminated-token.eight:3:2]
+ 2 │ 
+ 3 │ |
+   ·  ┬
+   ·  ╰─┤ the character '
+   ·    │ ' does not parse into any tokens
+   ╰────
+
