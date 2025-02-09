@@ -13,9 +13,7 @@ eight-diagnostics = { path = "../eight-diagnostics" }
 eight-span = { path = "../eight-span" }
 
 bumpalo = { workspace = true }
-miette = { workspace = true }
 serde = { workspace = true, optional = true }
-thiserror = { workspace = true }
 
 [dev-dependencies]
 eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }

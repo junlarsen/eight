@@ -347,9 +347,7 @@ dependencies = [
  "eight-macros",
  "eight-span",
  "eight-syntax",
- "miette",
  "pretty",
- "thiserror 2.0.11",
 ]
 
 [[package]]
@@ -388,26 +386,15 @@ dependencies = [
  "eight-diagnostics",
  "eight-macros",
  "eight-span",
- "miette",
  "serde",
- "thiserror 2.0.11",
 ]
 
 [[package]]
 name = "eight-tests"
 version = "0.1.0"
 dependencies = [
- "eight-diagnostics",
- "eight-driver",
- "eight-macros",
- "eight-middle",
- "eight-span",
- "eight-syntax",
  "insta",
  "insta-cmd",
- "miette",
- "ron 0.8.1",
- "serde",
 ]
 
 [[package]]

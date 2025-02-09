@@ -10,9 +10,7 @@ eight-span = { path = "../eight-span" }
 eight-syntax = { path = "../eight-syntax" }
 
 bumpalo = { workspace = true }
-miette = { workspace = true }
 pretty = { workspace = true }
-thiserror = { workspace = true }
 
 [dev-dependencies]
 eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }

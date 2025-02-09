@@ -3,19 +3,6 @@ name = "eight-tests"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-eight-driver = { path = "../eight-driver" }
-eight-diagnostics = { path = "../eight-diagnostics" }
-eight-macros = { path = "../eight-macros" }
-eight-span = { path = "../eight-span" }
-eight-syntax = { path = "../eight-syntax" }
-eight-middle = { path = "../eight-middle" }
-
-miette = { workspace = true }
-serde = { workspace = true, optional = true }
-
 [dev-dependencies]
-eight-macros = { path = "../eight-macros", features = ["assertion-macros"] }
 insta = { workspace = true }
 insta-cmd = { workspace = true }
-ron = { workspace = true }
