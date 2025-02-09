@@ -8,4 +8,3 @@ Error: sema::dereference_of_non_pointer
    ·               ╰── i32 is not dereferenceable
  5 │ }
    ╰────
-

@@ -8,4 +8,3 @@ Error: sema::invalid_struct_field_reference
    ·                  ╰── unknown field baz
  9 │ }
    ╰────
-

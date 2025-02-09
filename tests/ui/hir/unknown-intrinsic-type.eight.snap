@@ -7,4 +7,3 @@ Error: sema::unknown_intrinsic_type_type
    ·                ─┬─
    ·                 ╰── could not find type i69
    ╰────
-

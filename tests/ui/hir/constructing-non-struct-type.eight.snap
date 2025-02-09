@@ -8,4 +8,3 @@ Error: sema::constructing_non_struct_type
    ·                  ╰── the type i32 is not a struct type
  5 │ }
    ╰────
-

@@ -9,6 +9,7 @@ use crate::operations::mir_codegen_llvm::MirCodegenLLVMPass;
 use crate::operations::mir_emit::MirEmitPass;
 use crate::query::EmitQuery;
 use eight_codegen_llvm::error::LLVMBackendError;
+use eight_diagnostics::context::DiagnosticSource;
 use eight_diagnostics::errors::hir::HirError;
 use eight_diagnostics::errors::mir::MirError;
 use eight_diagnostics::errors::syntax::ParseError;
@@ -22,11 +23,11 @@ use thiserror::Error;
 /// Execute the entire compilation pipeline.
 pub fn execute_compilation_pipeline(
     opts: PipelineOptions,
-    input: &str,
+    input: &DiagnosticSource,
 ) -> Result<(), PipelineError> {
     let pipeline = Pipeline::new(opts);
     // Syntax passes are always ran, otherwise there's nothing for the compiler to do.
-    let module = AstParsePass::execute(&pipeline, input)?;
+    let module = AstParsePass::execute(&pipeline, input.source())?;
     let module = AstEmitPass::execute(&pipeline, module)?;
     // Gate the HIR passes behind --terminator=syntax
     let module =

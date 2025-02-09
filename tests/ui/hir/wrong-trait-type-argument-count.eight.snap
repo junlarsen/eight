@@ -14,4 +14,3 @@ Error: sema::wrong_trait_type_argument_count
    ·           ╰── supplied 2 type arguments
  8 │   intrinsic_fn add(a: i32, b: i32) -> i32;
    ╰────
-

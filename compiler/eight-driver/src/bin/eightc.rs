@@ -1,10 +1,11 @@
 use clap::{Parser, ValueEnum};
+use eight_diagnostics::context::{DiagnosticContext, DiagnosticSource};
 use eight_driver::pipeline::{
     execute_compilation_pipeline, PipelineError, PipelineOptions, TerminationStep,
 };
 use eight_driver::query::{EmitQuery, QueryError};
-use miette::NamedSource;
-use std::io::BufRead;
+use std::io::Read;
+use std::path::PathBuf;
 
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
@@ -76,35 +77,36 @@ impl TryInto<PipelineOptions> for EightCompilerArgs {
 
 fn main() -> miette::Result<()> {
     let args = EightCompilerArgs::parse();
-
     let source = match args.input.as_str() {
-        "-" => std::io::stdin()
-            .lock()
-            .lines()
-            .collect::<Result<String, _>>()
-            .expect("failed to read from stdin"),
-        path => std::fs::read_to_string(path).expect("Failed to read input file"),
+        "-" => {
+            let mut source = String::new();
+            std::io::stdin()
+                .lock()
+                .read_to_string(&mut source)
+                .expect("failed to read from stdin");
+            DiagnosticSource::Stdin(source)
+        }
+        path => {
+            let path = PathBuf::from(path);
+            let source = std::fs::read_to_string(&path).expect("Failed to read input file");
+            let diagnostic_path = pathdiff::diff_paths(
+                args.input.as_str(),
+                std::env::current_dir().expect("Failed to get current directory"),
+            )
+            .unwrap_or(path);
+            DiagnosticSource::File(diagnostic_path, source)
+        }
     };
-    let relative_input_path = pathdiff::diff_paths(
-        args.input.as_str(),
-        std::env::current_dir().expect("Failed to get current directory"),
-    )
-    .map(|p| p.to_string_lossy().to_string())
-    .unwrap_or_else(|| args.input.clone());
-    let source_code = NamedSource::new(&relative_input_path, source.clone());
 
-    let result = || -> miette::Result<()> {
-        let options = args.try_into()?;
-        match execute_compilation_pipeline(options, &source) {
-            Ok(_) => Ok(()),
-            Err(PipelineError::StopToken(msg)) => {
-                eprintln!("eightc: early termination due to: {}", msg);
-                std::process::exit(1);
-            }
-            Err(e) => Err(e),
-        }?;
-        Ok(())
-    }();
-    result.map_err(|e| e.with_source_code(source_code))?;
-    Ok(())
+    let dcx = DiagnosticContext::new(&source, 16);
+    let options = args.try_into()?;
+    match execute_compilation_pipeline(options, &source) {
+        Err(PipelineError::StopToken(msg)) => {
+            eprintln!("eightc: early termination due to: {}", msg);
+            std::process::exit(1);
+        }
+        Err(e) => dcx.emit_fatal_diagnostic(e),
+        _ => {}
+    };
+    std::process::exit(dcx.is_empty() as i32);
 }

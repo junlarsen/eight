@@ -8,4 +8,3 @@ Error: sema::unknown_type
    ·                   ╰── could not find type Banana
  7 │ }
    ╰────
-

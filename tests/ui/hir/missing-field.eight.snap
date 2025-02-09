@@ -14,4 +14,3 @@ Error: sema::missing_field
    ·                  ╰── construction does not name field bar
  9 │ }
    ╰────
-

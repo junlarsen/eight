@@ -8,4 +8,3 @@ Error: sema::invalid_reference
    ·                           ╰── no value in scope named somebody_help_i_got_a_bad_reference
  5 │ }
    ╰────
-

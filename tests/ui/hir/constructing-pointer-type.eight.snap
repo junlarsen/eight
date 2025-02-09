@@ -9,4 +9,3 @@ Error: sema::constructing_pointer_type
  9 │ }
    ╰────
   help: did you mean to construct the inner type?
-
