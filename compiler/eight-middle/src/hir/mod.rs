@@ -439,11 +439,11 @@ type TypeInstanceSignatureCache<'hir> =
 /// intended to be query-only.
 #[derive(Debug, Default)]
 pub struct HirModuleSignature<'hir> {
-    pub functions: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
-    pub structs: BTreeMap<&'hir str, &'hir HirStructSignature<'hir>>,
-    pub types: BTreeMap<&'hir str, &'hir HirTypeSignature<'hir>>,
-    pub traits: BTreeMap<&'hir str, &'hir HirTraitSignature<'hir>>,
-    pub instances: Vec<&'hir HirInstanceSignature<'hir>>,
+    functions: BTreeMap<&'hir str, &'hir HirFunctionSignature<'hir>>,
+    structs: BTreeMap<&'hir str, &'hir HirStructSignature<'hir>>,
+    types: BTreeMap<&'hir str, &'hir HirTypeSignature<'hir>>,
+    traits: BTreeMap<&'hir str, &'hir HirTraitSignature<'hir>>,
+    instances: Vec<&'hir HirInstanceSignature<'hir>>,
 
     trait_instance_signature_cache: TraitInstanceSignatureCache<'hir>,
     type_instance_cache: TypeInstanceSignatureCache<'hir>,
@@ -594,6 +594,33 @@ impl<'hir> HirModuleSignature<'hir> {
 
     pub fn query_trait_by_name(&self, name: &str) -> Option<&'hir HirTraitSignature<'hir>> {
         self.traits.get(name).copied()
+    }
+
+    /// Iterate over all instances in the signature.
+    pub fn query_instances(&self) -> impl Iterator<Item = &&HirInstanceSignature<'hir>> {
+        self.instances.iter()
+    }
+
+    /// Iterate over all functions in the signature.
+    pub fn query_traits(&self) -> impl Iterator<Item = (&&'hir str, &&HirTraitSignature<'hir>)> {
+        self.traits.iter()
+    }
+
+    /// Iterate over all functions in the signature.
+    pub fn query_functions(
+        &self,
+    ) -> impl Iterator<Item = (&&'hir str, &&HirFunctionSignature<'hir>)> {
+        self.functions.iter()
+    }
+
+    /// Iterate over all types in the signature.
+    pub fn query_types(&self) -> impl Iterator<Item = (&&'hir str, &&HirTypeSignature<'hir>)> {
+        self.types.iter()
+    }
+
+    /// Iterate over all structs in the signature.
+    pub fn query_structs(&self) -> impl Iterator<Item = (&&'hir str, &&HirStructSignature<'hir>)> {
+        self.structs.iter()
     }
 }
 
