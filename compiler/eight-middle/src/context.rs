@@ -7,32 +7,35 @@ use crate::mir::{
     MirBoolType, MirFunctionType, MirInteger32Type, MirPointerType, MirTy, MirTyId, MirVoidType,
 };
 use bumpalo::Bump;
+use eight_diagnostics::context::{DiagnosticContext, DiagnosticSource};
 use eight_span::Span;
 use std::rc::Rc;
 
 /// A shared context for the middle-end and backend components.
-pub struct CompileSession<'be> {
+pub struct CompileSession<'session> {
+    dcx: DiagnosticContext<'session>,
     allocator: Rc<Bump>,
-    strings: StringInterner<'be>,
-    mir_types: TypedInterner<'be, MirTyId, MirTy<'be>>,
-    hir_types: TypedInterner<'be, HirTyId, HirTy<'be>>,
-}
-
-impl Default for CompileSession<'_> {
-    fn default() -> Self {
-        let alloc = Rc::new(Bump::new());
-        Self {
-            allocator: Rc::new(Bump::new()),
-            strings: StringInterner::new(alloc.clone()),
-            mir_types: TypedInterner::new(alloc.clone()),
-            hir_types: TypedInterner::new(alloc),
-        }
-    }
+    strings: StringInterner<'session>,
+    mir_types: TypedInterner<'session, MirTyId, MirTy<'session>>,
+    hir_types: TypedInterner<'session, HirTyId, HirTy<'session>>,
 }
 
 impl<'be> CompileSession<'be> {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(source: &'be DiagnosticSource) -> Self {
+        let dcx = DiagnosticContext::new(source, 16);
+        let alloc = Rc::new(Bump::new());
+        Self {
+            dcx,
+            strings: StringInterner::new(alloc.clone()),
+            mir_types: TypedInterner::new(alloc.clone()),
+            hir_types: TypedInterner::new(alloc.clone()),
+            allocator: alloc,
+        }
+    }
+
+    /// Get a reference to the diagnostic context.
+    pub fn dcx(&self) -> &DiagnosticContext<'be> {
+        &self.dcx
     }
 
     /// Allocate a value into the arena.

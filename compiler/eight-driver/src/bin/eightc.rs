@@ -1,7 +1,7 @@
 use clap::{Parser, ValueEnum};
-use eight_diagnostics::context::{DiagnosticContext, DiagnosticSource};
+use eight_diagnostics::context::DiagnosticSource;
 use eight_driver::pipeline::{
-    execute_compilation_pipeline, PipelineError, PipelineOptions, TerminationStep,
+    execute_compilation_pipeline, Pipeline, PipelineError, PipelineOptions, TerminationStep,
 };
 use eight_driver::query::{EmitQuery, QueryError};
 use std::io::Read;
@@ -98,15 +98,15 @@ fn main() -> miette::Result<()> {
         }
     };
 
-    let dcx = DiagnosticContext::new(&source, 16);
     let options = args.try_into()?;
-    match execute_compilation_pipeline(options, &source) {
+    let pipeline = Pipeline::new(options, &source);
+    match execute_compilation_pipeline(&pipeline) {
         Err(PipelineError::StopToken(msg)) => {
             eprintln!("eightc: early termination due to: {}", msg);
             std::process::exit(1);
         }
-        Err(e) => dcx.emit_fatal_diagnostic(e),
+        Err(e) => pipeline.dcx().emit_fatal_diagnostic(e),
         _ => {}
     };
-    std::process::exit(dcx.is_empty() as i32);
+    std::process::exit(pipeline.dcx().is_empty() as i32);
 }

@@ -9,7 +9,7 @@ use crate::operations::mir_codegen_llvm::MirCodegenLLVMPass;
 use crate::operations::mir_emit::MirEmitPass;
 use crate::query::EmitQuery;
 use eight_codegen_llvm::error::LLVMBackendError;
-use eight_diagnostics::context::DiagnosticSource;
+use eight_diagnostics::context::{DiagnosticContext, DiagnosticSource};
 use eight_diagnostics::errors::hir::HirError;
 use eight_diagnostics::errors::mir::MirError;
 use eight_diagnostics::errors::syntax::ParseError;
@@ -21,14 +21,12 @@ use std::mem::ManuallyDrop;
 use thiserror::Error;
 
 /// Execute the entire compilation pipeline.
-pub fn execute_compilation_pipeline(
-    opts: PipelineOptions,
-    input: &DiagnosticSource,
+pub fn execute_compilation_pipeline<'session>(
+    pipeline: &'session Pipeline<'session>,
 ) -> Result<(), PipelineError> {
-    let pipeline = Pipeline::new(opts);
     // Syntax passes are always ran, otherwise there's nothing for the compiler to do.
-    let module = AstParsePass::execute(&pipeline, input.source())?;
-    let module = AstEmitPass::execute(&pipeline, module)?;
+    let module = AstParsePass::execute(pipeline, pipeline.source().source())?;
+    let module = AstEmitPass::execute(pipeline, module)?;
     // Gate the HIR passes behind --terminator=syntax
     let module =
         pipeline.run_pass_collection_if(pipeline.is_requesting_hir(), move |pipeline| {
@@ -101,19 +99,30 @@ pub struct PipelineOptions {
 }
 
 /// A compilation pipeline for the compiler.
-pub struct Pipeline<'c> {
+pub struct Pipeline<'session> {
     pub(crate) opts: PipelineOptions,
-    pub(crate) session: ManuallyDrop<CompileSession<'c>>,
-    pub(crate) ast_arena: ManuallyDrop<AstArena<'c>>,
+    pub(crate) session: ManuallyDrop<CompileSession<'session>>,
+    pub(crate) ast_arena: ManuallyDrop<AstArena<'session>>,
+    source: &'session DiagnosticSource,
 }
 
-impl<'c> Pipeline<'c> {
-    pub fn new(opts: PipelineOptions) -> Self {
+impl<'session> Pipeline<'session> {
+    pub fn new(opts: PipelineOptions, source: &'session DiagnosticSource) -> Self {
         Self {
             opts,
-            session: ManuallyDrop::new(CompileSession::new()),
+            source,
+            session: ManuallyDrop::new(CompileSession::new(source)),
             ast_arena: ManuallyDrop::new(AstArena::default()),
         }
+    }
+
+    /// Get the source for the pipeline.
+    pub fn source(&self) -> &DiagnosticSource {
+        self.source
+    }
+
+    pub fn dcx(&self) -> &DiagnosticContext<'session> {
+        self.session.dcx()
     }
 
     /// Codegen passes run if the stop token is not set to MIR.
@@ -154,9 +163,9 @@ impl<'c> Pipeline<'c> {
     /// This is used for grouping passes under conditions. This can for example, disable codegen if
     /// compiler arguments specify to not run the backend.
     pub fn run_pass_collection_if<O>(
-        &'c self,
+        &'session self,
         cond: bool,
-        operation: impl FnOnce(&'c Pipeline<'c>) -> Result<O, PipelineError>,
+        operation: impl FnOnce(&'session Pipeline<'session>) -> Result<O, PipelineError>,
     ) -> Result<O, PipelineError> {
         if cond {
             operation(self)
