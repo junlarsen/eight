@@ -10,6 +10,8 @@ path = "src/bin/regtest.rs"
 [dependencies]
 anyhow = "1.0.95"
 clap = { workspace = true }
+clearscreen = "4.0.1"
+inquire = "0.7.5"
 owo-colors = "4.1.0"
 similar = "2.7.0"
 thiserror = { workspace = true }

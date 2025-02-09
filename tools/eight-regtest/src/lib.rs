@@ -42,6 +42,29 @@ pub enum SnapshotState {
     PreviouslyRegressed(String, String),
 }
 
+/// Get the base path of the given snapshot file.
+///
+/// This effectively reverses the operation of either of the following:
+///
+/// 1. `get_updated_snapshot_path`
+/// 2. `get_verified_snapshot_path`
+/// 3. `get_regressed_snapshot_path`
+pub fn get_base_path<P: AsRef<Path>>(path: P) -> PathBuf {
+    let mut path = path.as_ref().to_owned();
+    let component = path
+        .components()
+        .last()
+        .expect("path must have at least one component");
+    let component = component
+        .as_os_str()
+        .to_string_lossy()
+        .replace(".snap", "")
+        .replace(".tmpsnap", "")
+        .replace(".regsnap", "");
+    path.set_file_name(component);
+    path
+}
+
 pub fn get_verified_snapshot_path<P: AsRef<Path>>(path: P) -> PathBuf {
     let mut buf = path.as_ref().as_os_str().to_owned();
     buf.push(".snap");
@@ -129,15 +152,15 @@ pub fn get_annotated_diff(truth: &str, snapshot: &str) -> (bool, String) {
         let c = change.to_string().replace('\n', "");
         match change.tag() {
             similar::ChangeTag::Equal => {
-                buf.push_str(&c);
+                buf.push_str(&format!(" {}", c));
             }
             similar::ChangeTag::Delete => {
                 changed = true;
-                buf.push_str(&format!("-{}", c.red()));
+                buf.push_str(&format!("-{}", c).red().to_string());
             }
             similar::ChangeTag::Insert => {
                 changed = true;
-                buf.push_str(&format!("+{}", c.green()));
+                buf.push_str(&format!("+{}", c).green().to_string());
             }
         };
         buf.push('\n');
@@ -175,4 +198,47 @@ pub fn get_unverified_snapshots<P: AsRef<Path>>(path: P) -> Result<Vec<PathBuf>,
     }
     visit(path.as_ref(), &mut buf)?;
     Ok(buf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_base_path() {
+        let path = Path::new("/home/user/project/src/main.rs.tmpsnap");
+        assert_eq!(
+            get_base_path(path),
+            Path::new("/home/user/project/src/main.rs")
+        );
+
+        let path = Path::new("/home/user/project/src/main.rs.snap");
+        assert_eq!(
+            get_base_path(path),
+            Path::new("/home/user/project/src/main.rs")
+        );
+
+        let path = Path::new("/home/user/project/src/main.rs.regsnap");
+        assert_eq!(
+            get_base_path(path),
+            Path::new("/home/user/project/src/main.rs")
+        );
+    }
+
+    #[test]
+    fn test_get_derived_snapshot_paths() {
+        let path = Path::new("/home/user/project/src/main.rs");
+        assert_eq!(
+            get_updated_snapshot_path(path),
+            Path::new("/home/user/project/src/main.rs.tmpsnap")
+        );
+        assert_eq!(
+            get_verified_snapshot_path(path),
+            Path::new("/home/user/project/src/main.rs.snap")
+        );
+        assert_eq!(
+            get_regressed_snapshot_path(path),
+            Path::new("/home/user/project/src/main.rs.regsnap")
+        );
+    }
 }
