@@ -9,7 +9,8 @@ impl<'c> PipelinePass<'c, HirModule<'c>, HirModule<'c>> for HirSimplifyPass {
         pipeline: &'c Pipeline<'c>,
         mut input: HirModule<'c>,
     ) -> Result<HirModule<'c>, PipelineError> {
-        let mut lowering_pass = eight_middle::hir_simplify_pass::HirSimplifyPass::new(&pipeline.cc);
+        let mut lowering_pass =
+            eight_middle::passes::hir_simplify_pass::HirSimplifyPass::new(&pipeline.cc);
         lowering_pass.visit_module(&mut input);
         Ok(input)
     }

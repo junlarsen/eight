@@ -3,21 +3,16 @@
 use eight_diagnostics::errors::hir::HirError;
 use eight_diagnostics::errors::mir::MirError;
 
-pub mod ast_lowering_pass;
 pub mod builtin;
 pub mod context;
 pub mod hir;
 pub mod hir_builder;
-pub mod hir_lowering_pass;
-pub mod hir_simplify_pass;
-pub mod hir_textual_pass;
-pub mod hir_type_check_pass;
 pub mod intern;
 pub mod mir;
 pub mod mir_block;
 pub mod mir_function;
 pub mod mir_module;
-pub mod mir_textual_pass;
+pub mod passes;
 pub mod scope;
 
 pub type HirResult<T> = Result<T, HirError>;

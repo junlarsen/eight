@@ -4,7 +4,7 @@ use crate::hir::{
     HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirGroupExpr, HirIntegerLiteralExpr,
     HirMetaTy, HirModuleSignature, HirOffsetIndexExpr, HirReferenceExpr, HirReferenceSymbol, HirTy,
 };
-use crate::hir_type_check_pass::{
+use crate::passes::hir_type_check_pass::{
     Constraint, DereferenceableConstraint, EqualityConstraint, FieldProjectionConstraint,
     InstanceConstraint,
 };

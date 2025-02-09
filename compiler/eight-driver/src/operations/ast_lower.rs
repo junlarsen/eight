@@ -1,6 +1,6 @@
 use crate::pipeline::{Pipeline, PipelineError, PipelinePass};
-use eight_middle::ast_lowering_pass::AstLoweringPass;
 use eight_middle::hir::HirModule;
+use eight_middle::passes::ast_lowering_pass::AstLoweringPass;
 use eight_syntax::ast::AstTranslationUnit;
 
 /// Operation for lowering the AST to HIR.
