@@ -1,0 +1,11 @@
+Error: sema::invalid_field_reference_of_non_struct
+
+  × type i32 is not a struct type and does not have fields
+   ╭─[invalid-field-reference-of-non-struct.eight:4:13]
+ 3 │ fn main(a: i32) {
+ 4 │   let b = a.foo;
+   ·             ─┬─
+   ·              ╰── unknown field foo
+ 5 │ }
+   ╰────
+

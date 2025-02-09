@@ -1,0 +1,11 @@
+Error: sema::dereference_of_non_pointer
+
+  × type i32 is not a pointer type, and cannot be dereferenced
+   ╭─[dereference-of-non-pointer.eight:4:13]
+ 3 │ fn main() {
+ 4 │   let foo = *(1);
+   ·             ──┬─
+   ·               ╰── i32 is not dereferenceable
+ 5 │ }
+   ╰────
+

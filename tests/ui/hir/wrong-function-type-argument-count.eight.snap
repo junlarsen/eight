@@ -1,0 +1,12 @@
+Error: sema::wrong_function_type_argument_count
+
+  × function foo requires 1 type arguments, but 2 were supplied
+   ╭─[wrong-function-type-argument-count.eight:6:13]
+ 5 │ fn main() {
+ 6 │   let foo = foo::<i32, bool>(1, 2);
+   ·             ───────────┬──────────┬
+   ·                        │          ╰── declares 1 type arguments
+   ·                        ╰── supplied 2 type arguments
+ 7 │ }
+   ╰────
+

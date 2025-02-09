@@ -1,0 +1,17 @@
+Error: sema::missing_field
+
+  × the field bar is missing in construction of Foo
+   ╭─[missing-field.eight:4:3]
+ 3 │ struct Foo {
+ 4 │   bar: i32,
+   ·   ────┬────
+   ·       ╰── field bar defined here
+ 5 │ }
+ 6 │ 
+ 7 │ fn main() {
+ 8 │   let foo = new Foo {};
+   ·             ─────┬────
+   ·                  ╰── construction does not name field bar
+ 9 │ }
+   ╰────
+

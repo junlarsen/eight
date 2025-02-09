@@ -1,0 +1,11 @@
+Error: sema::function_type_mismatch
+
+  × function types do not take the same number of arguments
+   ╭─[function-type-mismatch.eight:6:15]
+ 5 │ fn main() {
+ 6 │   let dummy = get_i32(1);
+   ·               ─────┬────
+   ·                    ╰── the function has type fn() -> i32
+ 7 │ }
+   ╰────
+

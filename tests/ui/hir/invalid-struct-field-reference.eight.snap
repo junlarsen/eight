@@ -1,0 +1,11 @@
+Error: sema::invalid_struct_field_reference
+
+  × invalid field reference to baz in type Foo
+   ╭─[invalid-struct-field-reference.eight:8:17]
+ 7 │ fn main(foo: Foo) {
+ 8 │   let bar = foo.baz;
+   ·                 ─┬─
+   ·                  ╰── unknown field baz
+ 9 │ }
+   ╰────
+

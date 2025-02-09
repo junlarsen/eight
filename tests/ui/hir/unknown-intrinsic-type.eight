@@ -1,0 +1,3 @@
+// RUN: not %eightc %s 2>&1 | %regtest test %s
+
+intrinsic_type i69;

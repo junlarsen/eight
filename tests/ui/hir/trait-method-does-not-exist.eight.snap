@@ -1,0 +1,11 @@
+Error: sema::trait_method_does_not_exist
+
+  × trait Add does not have method add
+    ╭─[trait-method-does-not-exist.eight:11:13]
+ 10 │ fn main() {
+ 11 │   let a = 1 + 2;
+    ·             ┬
+    ·             ╰── required method add for trait Add
+ 12 │ }
+    ╰────
+

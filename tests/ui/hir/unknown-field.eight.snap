@@ -1,0 +1,11 @@
+Error: sema::unknown_field
+
+  × the type Foo does not have a field named giggles
+   ╭─[unknown-field.eight:8:23]
+ 7 │ fn main() {
+ 8 │   let foo = new Foo { giggles: 123 };
+   ·                       ───┬───
+   ·                          ╰── this field does not exist
+ 9 │ }
+   ╰────
+

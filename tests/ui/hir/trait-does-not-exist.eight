@@ -1,0 +1,6 @@
+// RUN: not %eightc %s 2>&1 | %regtest test %s
+
+fn main() {
+  // Trait Add does not exist here
+  let a = 1 + 2;
+}

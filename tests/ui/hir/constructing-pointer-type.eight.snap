@@ -1,0 +1,12 @@
+Error: sema::constructing_pointer_type
+
+  × cannot construct a pointer type
+   ╭─[constructing-pointer-type.eight:8:13]
+ 7 │ fn main() {
+ 8 │   let foo = new *Foo {};
+   ·             ─────┬─────
+   ·                  ╰── type *Foo is a pointer type and cannot be constructed
+ 9 │ }
+   ╰────
+  help: did you mean to construct the inner type?
+
