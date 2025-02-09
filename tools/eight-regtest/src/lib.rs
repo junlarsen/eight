@@ -133,8 +133,21 @@ pub fn get_snapshot_state<P: AsRef<Path>>(path: P) -> Result<SnapshotState, RegT
                 .read_to_string(&mut snapshot)?;
             Ok(SnapshotState::Verified(snapshot))
         }
-        // Neither file exists, so we should create a fresh snapshot file.
-        (false, false) => Ok(SnapshotState::Fresh),
+        (false, false) => {
+            // If the regression file exists, we should use that.
+            let regressed_snapshot_path = get_regressed_snapshot_path(path.as_ref());
+            if std::fs::exists(&regressed_snapshot_path)? {
+                let mut regressed_snapshot = String::new();
+                std::fs::File::open(&regressed_snapshot_path)?
+                    .read_to_string(&mut regressed_snapshot)?;
+                return Ok(SnapshotState::PreviouslyRegressed(
+                    regressed_snapshot,
+                    String::new(),
+                ));
+            }
+            // Otherwise, there's no past record of this snapshot
+            Ok(SnapshotState::Fresh)
+        }
     }
 }
 
