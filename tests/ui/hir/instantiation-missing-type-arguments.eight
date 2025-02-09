@@ -1,4 +1,4 @@
-// RUN: not %eightc %s 2>&1 | %regtest %s.snap
+// RUN: not %eightc %s 2>&1 | %regtest test %s
 
 trait Add<A, B, R> {
   fn add(a: A, b: B) -> R;

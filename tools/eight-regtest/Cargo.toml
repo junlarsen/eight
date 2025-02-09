@@ -3,9 +3,13 @@ name = "eight-regtest"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "eight-regtest"
+path = "src/bin/regtest.rs"
+
 [dependencies]
 anyhow = "1.0.95"
 clap = { workspace = true }
+owo-colors = "4.1.0"
 similar = "2.7.0"
-termcolor = "1.4.1"
 thiserror = { workspace = true }
