@@ -1,6 +1,6 @@
 //! Utilities for built-in compiler functions.
 
-use crate::context::CompileContext;
+use crate::context::CompileSession;
 use crate::hir::HirTy;
 use std::fmt::Display;
 
@@ -35,16 +35,16 @@ pub enum CompilerIntrinsic {
 }
 
 impl<'hir> CompilerIntrinsic {
-    pub fn get_application_type(&self, cc: &'hir CompileContext<'hir>) -> &'hir HirTy<'hir> {
+    pub fn get_application_type(&self, session: &'hir CompileSession<'hir>) -> &'hir HirTy<'hir> {
         match self {
             // Intrinsics of type fn(i32, i32) -> i32
             CompilerIntrinsic::IntegerAdd
             | CompilerIntrinsic::IntegerSub
             | CompilerIntrinsic::IntegerMul
             | CompilerIntrinsic::IntegerDiv
-            | CompilerIntrinsic::IntegerRem => cc.hir_function_type(
-                cc.hir_integer32_type(),
-                vec![cc.hir_integer32_type(), cc.hir_integer32_type()],
+            | CompilerIntrinsic::IntegerRem => session.hir_function_type(
+                session.hir_integer32_type(),
+                vec![session.hir_integer32_type(), session.hir_integer32_type()],
             ),
             // Intrinsics of type fn(i32, i32) -> bool
             CompilerIntrinsic::IntegerEq
@@ -52,26 +52,26 @@ impl<'hir> CompilerIntrinsic {
             | CompilerIntrinsic::IntegerLt
             | CompilerIntrinsic::IntegerGt
             | CompilerIntrinsic::IntegerLe
-            | CompilerIntrinsic::IntegerGe => cc.hir_function_type(
-                cc.hir_boolean_type(),
-                vec![cc.hir_integer32_type(), cc.hir_integer32_type()],
+            | CompilerIntrinsic::IntegerGe => session.hir_function_type(
+                session.hir_boolean_type(),
+                vec![session.hir_integer32_type(), session.hir_integer32_type()],
             ),
             // Intrinsics of type fn(bool, bool) -> bool
             CompilerIntrinsic::BooleanAnd
             | CompilerIntrinsic::BooleanOr
             | CompilerIntrinsic::BooleanEq
-            | CompilerIntrinsic::BooleanNeq => cc.hir_function_type(
-                cc.hir_boolean_type(),
-                vec![cc.hir_boolean_type(), cc.hir_boolean_type()],
+            | CompilerIntrinsic::BooleanNeq => session.hir_function_type(
+                session.hir_boolean_type(),
+                vec![session.hir_boolean_type(), session.hir_boolean_type()],
             ),
             // Intrinsics of type fn(i32) -> i32
-            CompilerIntrinsic::IntegerNeg => {
-                cc.hir_function_type(cc.hir_integer32_type(), vec![cc.hir_integer32_type()])
-            }
+            CompilerIntrinsic::IntegerNeg => session.hir_function_type(
+                session.hir_integer32_type(),
+                vec![session.hir_integer32_type()],
+            ),
             // Intrinsics of type fn(bool) -> bool
-            CompilerIntrinsic::BooleanNot => {
-                cc.hir_function_type(cc.hir_boolean_type(), vec![cc.hir_boolean_type()])
-            }
+            CompilerIntrinsic::BooleanNot => session
+                .hir_function_type(session.hir_boolean_type(), vec![session.hir_boolean_type()]),
         }
     }
 }

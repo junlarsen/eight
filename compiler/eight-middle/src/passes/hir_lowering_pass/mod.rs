@@ -1,5 +1,5 @@
 use crate::builtin::CompilerIntrinsic;
-use crate::context::CompileContext;
+use crate::context::CompileSession;
 use crate::hir::HirTy;
 use crate::hir::{
     HirBooleanLiteralExpr, HirCallExpr, HirExpr, HirIntegerLiteralExpr, HirReferenceExpr,
@@ -17,15 +17,15 @@ use crate::MirResult;
 use eight_diagnostics::ice;
 
 pub struct HirModuleLoweringPass<'mir> {
-    cc: &'mir CompileContext<'mir>,
+    session: &'mir CompileSession<'mir>,
     /// Mapping between local names and their MIR value ids.
     locals: Scope<&'mir str, MirValueRef>,
 }
 
 impl<'mir> HirModuleLoweringPass<'mir> {
-    pub fn new(cc: &'mir CompileContext<'mir>) -> Self {
+    pub fn new(session: &'mir CompileSession<'mir>) -> Self {
         Self {
-            cc,
+            session,
             locals: Scope::default(),
         }
     }
@@ -42,17 +42,18 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
                 .iter()
                 .map(|p| self.visit_ty(p.ty))
                 .collect::<MirResult<Vec<_>>>()?;
-            let MirTy::Function(ty) = self.cc.mir_function_type(return_type, parameters) else {
+            let MirTy::Function(ty) = self.session.mir_function_type(return_type, parameters)
+            else {
                 ice!("didnt get function type from arena");
             };
-            let name = self.cc.intern_str(name);
+            let name = self.session.intern_str(name);
             interface.insert_function(name, ty);
         }
 
-        let mut module_builder = MirModuleContext::new(self.cc);
+        let mut module_builder = MirModuleContext::new(self.session);
         // Generate the MIR code for all functions
         for function in module.body.functions.values() {
-            let name = self.cc.intern_str(function.name);
+            let name = self.session.intern_str(function.name);
             let Some(ty) = interface.get_function(name) else {
                 ice!("failed to find function type for {}", function.name);
             };
@@ -74,7 +75,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
             "cannot lower generic functions at this time"
         );
         self.locals.enter_scope();
-        let mut function_builder = MirFunctionBuilder::new(self.cc, name, ty);
+        let mut function_builder = MirFunctionBuilder::new(self.session, name, ty);
         // If the function is external, it doesn't get any code, and the code generator will assume
         // that it must be externally defined and resolved at link time.
         if node.linkage_type == LinkageType::External {
@@ -85,7 +86,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
         function_builder.move_insertion_point(entry);
         for parameter in node.signature.parameters.iter() {
             let ty = self.visit_ty(parameter.ty)?;
-            let name = self.cc.intern_str(parameter.name);
+            let name = self.session.intern_str(parameter.name);
             let argument = function_builder.build_argument(name, ty);
             self.locals.add(name, argument);
         }
@@ -143,7 +144,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
         let value_ty = b.data().get_value_type(&value);
         let ptr = b.build_alloca(cx, value_ty, None);
         b.build_store(cx, value, ptr, None);
-        let name = self.cc.intern_str(stmt.name);
+        let name = self.session.intern_str(stmt.name);
         self.locals.add(name, ptr);
         Ok(())
     }
@@ -185,7 +186,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
         _: &MirModuleContext<'mir>,
         expr: &'hir HirIntegerLiteralExpr<'hir>,
     ) -> MirResult<MirValueRef> {
-        let inst = b.build_constant_integer32(expr.value, self.cc.mir_i32_type());
+        let inst = b.build_constant_integer32(expr.value, self.session.mir_i32_type());
         Ok(inst)
     }
 
@@ -195,7 +196,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
         _: &MirModuleContext<'mir>,
         expr: &'hir HirBooleanLiteralExpr<'hir>,
     ) -> MirResult<MirValueRef> {
-        let inst = b.build_constant_bool(expr.value, self.cc.mir_bool_type());
+        let inst = b.build_constant_bool(expr.value, self.session.mir_bool_type());
         Ok(inst)
     }
 
@@ -228,7 +229,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
             }
             HirReferenceSymbol::Function(symbol) => {
                 // TODO: Mangle the name along with the type arguments.
-                let name = self.cc.intern_str(symbol.name);
+                let name = self.session.intern_str(symbol.name);
                 Ok(b.build_function_ref(name))
             }
             HirReferenceSymbol::Intrinsic(_) => {
@@ -298,10 +299,10 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
     /// means we can do a lot of shortcutting here.
     pub fn visit_ty(&self, node: &'hir HirTy<'hir>) -> MirResult<&'mir MirTy<'mir>> {
         match node {
-            HirTy::Integer32(_) => Ok(self.cc.mir_i32_type()),
-            HirTy::Boolean(_) => Ok(self.cc.mir_bool_type()),
-            HirTy::Unit(_) => Ok(self.cc.mir_void_type()),
-            HirTy::Pointer(_) => Ok(self.cc.mir_pointer_type()),
+            HirTy::Integer32(_) => Ok(self.session.mir_i32_type()),
+            HirTy::Boolean(_) => Ok(self.session.mir_bool_type()),
+            HirTy::Unit(_) => Ok(self.session.mir_void_type()),
+            HirTy::Pointer(_) => Ok(self.session.mir_pointer_type()),
             HirTy::Function(_)
             | HirTy::Nominal(_)
             | HirTy::Variable(_)

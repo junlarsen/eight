@@ -11,14 +11,14 @@ use eight_span::Span;
 use std::rc::Rc;
 
 /// A shared context for the middle-end and backend components.
-pub struct CompileContext<'be> {
+pub struct CompileSession<'be> {
     allocator: Rc<Bump>,
     strings: StringInterner<'be>,
     mir_types: TypedInterner<'be, MirTyId, MirTy<'be>>,
     hir_types: TypedInterner<'be, HirTyId, HirTy<'be>>,
 }
 
-impl Default for CompileContext<'_> {
+impl Default for CompileSession<'_> {
     fn default() -> Self {
         let alloc = Rc::new(Bump::new());
         Self {
@@ -30,7 +30,7 @@ impl Default for CompileContext<'_> {
     }
 }
 
-impl<'be> CompileContext<'be> {
+impl<'be> CompileSession<'be> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -55,7 +55,7 @@ impl<'be> CompileContext<'be> {
 }
 
 /// Implementation block for the HIR components.
-impl<'be> CompileContext<'be> {
+impl<'be> CompileSession<'be> {
     pub fn hir_pointer_type(&'be self, ty: &'be HirTy<'be>) -> &'be HirTy<'be> {
         let id = HirTyId::compute_pointer_ty_id(&HirTyId::from(ty));
         self.hir_types
@@ -124,7 +124,7 @@ impl<'be> CompileContext<'be> {
     }
 }
 
-impl<'be> CompileContext<'be> {
+impl<'be> CompileSession<'be> {
     pub fn mir_i32_type(&'be self) -> &'be MirTy<'be> {
         let id = MirTyId::compute_i32_type_id();
         self.mir_types

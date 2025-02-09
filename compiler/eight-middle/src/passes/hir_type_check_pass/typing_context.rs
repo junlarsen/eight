@@ -1,4 +1,4 @@
-use crate::context::CompileContext;
+use crate::context::CompileSession;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
     HirConstructExpr, HirDerefExpr, HirExpr, HirFunctionTy, HirIntegerLiteralExpr, HirMetaTy,
@@ -30,7 +30,7 @@ use super::MethodConstraint;
 /// This object represents the state of the type checker.
 pub struct TypingContext<'hir> {
     /// A reference to the Hir arena for allocating types.
-    pub cc: &'hir CompileContext<'hir>,
+    pub session: &'hir CompileSession<'hir>,
     pub signature: &'hir HirModuleSignature<'hir>,
 
     /// Collected constraints during inference, to be solved during unification.
@@ -67,9 +67,12 @@ impl Debug for TypingContext<'_> {
 
 impl<'hir> TypingContext<'hir> {
     /// Create a new typing context given the HIR arena and module signature derived from the AST.
-    pub fn new(cc: &'hir CompileContext<'hir>, signature: &'hir HirModuleSignature<'hir>) -> Self {
+    pub fn new(
+        session: &'hir CompileSession<'hir>,
+        signature: &'hir HirModuleSignature<'hir>,
+    ) -> Self {
         Self {
-            cc,
+            session,
             signature,
             constraints: Vec::new(),
             substitutions: Vec::new(),
@@ -197,7 +200,7 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.cc.hir_integer32_type(),
+            self.session.hir_integer32_type(),
             expr.span,
             expr.span,
         );
@@ -212,7 +215,7 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.cc.hir_boolean_type(),
+            self.session.hir_boolean_type(),
             expr.span,
             expr.span,
         );
@@ -227,7 +230,7 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         self.constrain_eq(
             expectation,
-            self.cc.hir_unit_type(),
+            self.session.hir_unit_type(),
             expr.span,
             expr.lhs.span(),
         );
@@ -290,7 +293,9 @@ impl<'hir> TypingContext<'hir> {
                 .iter()
                 .map(|p| p.ty)
                 .collect::<Vec<_>>();
-            let ty = self.cc.hir_function_type(signature.return_type, parameters);
+            let ty = self
+                .session
+                .hir_function_type(signature.return_type, parameters);
             self.constrain_eq(expectation, ty, expr.span, sym.name_span);
             self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
             return Ok(());
@@ -313,7 +318,7 @@ impl<'hir> TypingContext<'hir> {
         // determine if a call can be reduced into a compiler intrinsic.
         sym.type_arguments
             .resize_with(signature.type_parameters.len(), || {
-                self.cc.hir_uninitialized_type()
+                self.session.hir_uninitialized_type()
             });
         for (idx, parameter) in signature.type_parameters.iter().enumerate() {
             sym.type_arguments[idx] =
@@ -322,7 +327,7 @@ impl<'hir> TypingContext<'hir> {
         // Propagate the type arguments so that we don't need to derive the `parameters` again.
         sym.instantiated_call_parameters = parameters.to_vec();
         // Constrain the expression to the function type.
-        let ty = self.cc.hir_function_type(return_type, parameters);
+        let ty = self.session.hir_function_type(return_type, parameters);
         self.constrain_eq(expectation, ty, expr.span, sym.name_span);
         self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
         Ok(())
@@ -363,7 +368,7 @@ impl<'hir> TypingContext<'hir> {
         // Propagate the type arguments back to the callable symbol.
         sym.method_type_arguments
             .resize_with(method_signature.type_parameters.len(), || {
-                self.cc.hir_uninitialized_type()
+                self.session.hir_uninitialized_type()
             });
         for (idx, parameter) in method_signature.type_parameters.iter().enumerate() {
             sym.method_type_arguments[idx] =
@@ -371,7 +376,7 @@ impl<'hir> TypingContext<'hir> {
         }
         sym.trait_type_arguments
             .resize_with(trait_signature.type_parameters.len(), || {
-                self.cc.hir_uninitialized_type()
+                self.session.hir_uninitialized_type()
             });
         for (idx, parameter) in trait_signature.type_parameters.iter().enumerate() {
             sym.trait_type_arguments[idx] =
@@ -381,7 +386,7 @@ impl<'hir> TypingContext<'hir> {
         sym.instantiated_call_parameters = instantiated_parameters.to_vec();
         // Constrain the expression to the function type.
         let ty = self
-            .cc
+            .session
             .hir_function_type(instantiated_return_type, instantiated_parameters);
         self.constrain_eq(expectation, ty, expr.span, sym.trait_name_span);
         self.constrain_eq(expr.ty, expectation, expr.span, expr.span);
@@ -396,13 +401,13 @@ impl<'hir> TypingContext<'hir> {
     ) -> HirResult<()> {
         // The index must be an integer type
         self.constrain_eq(
-            self.cc.hir_integer32_type(),
+            self.session.hir_integer32_type(),
             expr.index.ty(),
             expr.span,
             expr.index.span(),
         );
         // The origin must be a pointer of the element type
-        let elem_ptr_ty = self.cc.hir_pointer_type(expectation);
+        let elem_ptr_ty = self.session.hir_pointer_type(expectation);
         self.constrain_eq(elem_ptr_ty, expr.origin.ty(), expr.span, expr.origin.span());
         // The resulting type must be the element type
         self.constrain_eq(expectation, expr.ty, expr.span, expr.origin.span());
@@ -473,7 +478,7 @@ impl<'hir> TypingContext<'hir> {
                 }
 
                 let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
-                let expected_signature = self.cc.hir_function_type(expectation, expected_args);
+                let expected_signature = self.session.hir_function_type(expectation, expected_args);
                 self.constrain_eq(
                     expected_signature,
                     expr.callee.ty(),
@@ -528,7 +533,7 @@ impl<'hir> TypingContext<'hir> {
                 }
 
                 let expected_args = expr.arguments.iter().map(|a| a.ty()).collect::<Vec<_>>();
-                let expected_signature = self.cc.hir_function_type(expectation, expected_args);
+                let expected_signature = self.session.hir_function_type(expectation, expected_args);
                 self.constrain_eq(
                     expected_signature,
                     expr.callee.ty(),
@@ -639,7 +644,7 @@ impl<'hir> TypingContext<'hir> {
         expectation: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         // &a means that e is *inner, and expectation is *inner
-        let result_ty = self.cc.hir_pointer_type(expr.inner.ty());
+        let result_ty = self.session.hir_pointer_type(expr.inner.ty());
         self.constrain_eq(expectation, result_ty, expr.span, expr.inner.span());
         self.constrain_eq(expr.ty, result_ty, expr.span, expr.inner.span());
         Ok(())
@@ -709,12 +714,12 @@ impl<'hir> TypingContext<'hir> {
                     .map(|p| self.substitute(p))
                     .collect::<HirResult<Vec<_>>>()?;
                 let return_type = self.substitute(f.return_type)?;
-                Ok(self.cc.hir_function_type(return_type, parameters))
+                Ok(self.session.hir_function_type(return_type, parameters))
             }
             // We substitute pointer types by substituting the inner type
             HirTy::Pointer(p) => {
                 let inner = self.substitute(p.inner)?;
-                Ok(self.cc.hir_pointer_type(inner))
+                Ok(self.session.hir_pointer_type(inner))
             }
             // Anything else is not a type variable or a constructor type, so there is nothing to
             // be done here.
@@ -1153,7 +1158,7 @@ impl<'hir> TypingContext<'hir> {
     /// Create a fresh meta variable.
     pub fn fresh_meta_variable(&mut self) -> &'hir HirTy<'hir> {
         let index = self.substitutions.len() as u32;
-        let ty = self.cc.hir_meta_type(index);
+        let ty = self.session.hir_meta_type(index);
         self.substitutions.push(ty);
         ty
     }
@@ -1174,7 +1179,7 @@ impl<'hir> TypingContext<'hir> {
                 .or_insert_with(|| self.fresh_meta_variable()),
             HirTy::Pointer(p) => {
                 let inner = self.eliminate_type_variables_within_ty(instantiations, p.inner);
-                self.cc.hir_pointer_type(inner)
+                self.session.hir_pointer_type(inner)
             }
             HirTy::Meta(_)
             | HirTy::Boolean(_)

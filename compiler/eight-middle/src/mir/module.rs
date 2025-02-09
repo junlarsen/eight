@@ -1,4 +1,4 @@
-use crate::context::CompileContext;
+use crate::context::CompileSession;
 use crate::mir::function::MirFunction;
 use crate::mir::{MirFunctionRef, MirFunctionType};
 use eight_diagnostics::ice;
@@ -65,14 +65,14 @@ impl<'mir> MirModuleData<'mir> {
 }
 
 pub struct MirModuleContext<'mir> {
-    cc: &'mir CompileContext<'mir>,
+    session: &'mir CompileSession<'mir>,
     data: MirModuleData<'mir>,
 }
 
 impl<'mir> MirModuleContext<'mir> {
-    pub fn new(cc: &'mir CompileContext<'mir>) -> Self {
+    pub fn new(session: &'mir CompileSession<'mir>) -> Self {
         Self {
-            cc,
+            session,
             data: MirModuleData::default(),
         }
     }

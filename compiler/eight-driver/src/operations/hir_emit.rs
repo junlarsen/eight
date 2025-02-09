@@ -16,7 +16,7 @@ impl HirEmitPass {
     ) -> Result<Document<'p>, PipelineError> {
         match query {
             HirEmitQuery::Function(name) => {
-                let name = pipeline.cc.intern_str(name);
+                let name = pipeline.session.intern_str(name);
                 let function = module
                     .body
                     .functions

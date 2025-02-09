@@ -15,7 +15,7 @@ impl MirEmitPass {
     ) -> Result<Document<'p>, PipelineError> {
         match query {
             MirEmitQuery::Function(name) => {
-                let name = pipeline.cc.intern_str(name);
+                let name = pipeline.session.intern_str(name);
                 let function = module
                     .data()
                     .get_function(name)

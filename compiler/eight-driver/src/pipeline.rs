@@ -14,7 +14,7 @@ use eight_diagnostics::errors::hir::HirError;
 use eight_diagnostics::errors::mir::MirError;
 use eight_diagnostics::errors::syntax::ParseError;
 use eight_diagnostics::ice;
-use eight_middle::context::CompileContext;
+use eight_middle::context::CompileSession;
 use eight_syntax::arena::AstArena;
 use miette::Diagnostic;
 use std::mem::ManuallyDrop;
@@ -103,7 +103,7 @@ pub struct PipelineOptions {
 /// A compilation pipeline for the compiler.
 pub struct Pipeline<'c> {
     pub(crate) opts: PipelineOptions,
-    pub(crate) cc: ManuallyDrop<CompileContext<'c>>,
+    pub(crate) session: ManuallyDrop<CompileSession<'c>>,
     pub(crate) ast_arena: ManuallyDrop<AstArena<'c>>,
 }
 
@@ -111,7 +111,7 @@ impl<'c> Pipeline<'c> {
     pub fn new(opts: PipelineOptions) -> Self {
         Self {
             opts,
-            cc: ManuallyDrop::new(CompileContext::new()),
+            session: ManuallyDrop::new(CompileSession::new()),
             ast_arena: ManuallyDrop::new(AstArena::default()),
         }
     }

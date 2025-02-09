@@ -1,6 +1,6 @@
 //! Simplification pass for HIR.
 
-use crate::context::CompileContext;
+use crate::context::CompileSession;
 use crate::hir::builder::HirBuilder;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBlockStmt, HirBooleanLiteralExpr, HirBreakStmt,
@@ -12,12 +12,12 @@ use crate::hir::{
 use eight_diagnostics::ice;
 
 pub struct HirSimplifyPass<'be> {
-    cc: &'be CompileContext<'be>,
+    session: &'be CompileSession<'be>,
 }
 
 impl<'be> HirSimplifyPass<'be> {
-    pub fn new(cc: &'be CompileContext<'be>) -> Self {
-        Self { cc }
+    pub fn new(session: &'be CompileSession<'be>) -> Self {
+        Self { session }
     }
 }
 
@@ -164,7 +164,7 @@ impl<'be> HirSimplifyPass<'be> {
         if let Some(substitute) = substitute {
             expr.callee = Box::new(HirExpr::Reference(HirBuilder::build_reference_expr(
                 expr.span,
-                substitute.get_application_type(self.cc),
+                substitute.get_application_type(self.session),
                 HirReferenceSymbol::Intrinsic(substitute),
             )))
         }

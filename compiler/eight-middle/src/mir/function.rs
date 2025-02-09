@@ -1,4 +1,4 @@
-use crate::context::CompileContext;
+use crate::context::CompileSession;
 use crate::mir::block::{MirBasicBlock, MirBasicBlockRef};
 use crate::mir::module::MirModuleContext;
 use crate::mir::{
@@ -142,7 +142,7 @@ impl<'mir> MirFunctionData<'mir> {
 ///
 /// A MIR builder is responsible for building a complete MIR function.
 pub struct MirFunctionBuilder<'mir> {
-    cc: &'mir CompileContext<'mir>,
+    session: &'mir CompileSession<'mir>,
     ty: &'mir MirFunctionType<'mir>,
     name: MirFunctionRef<'mir>,
     data: MirFunctionData<'mir>,
@@ -156,14 +156,14 @@ pub struct MirFunctionBuilder<'mir> {
 impl<'mir> MirFunctionBuilder<'mir> {
     /// Create a new MIR function builder based on a signature.
     pub fn new(
-        cc: &'mir CompileContext<'mir>,
+        session: &'mir CompileSession<'mir>,
         name: MirFunctionRef<'mir>,
         ty: &'mir MirFunctionType<'mir>,
     ) -> Self {
         Self {
             ty,
             name,
-            cc,
+            session,
             data: MirFunctionData::default(),
             block_id: 0,
             value_id: 0,
@@ -187,7 +187,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
     /// Create a new basic block
     pub fn build_basic_block(&mut self, name: Option<&'mir str>) -> MirBasicBlockRef {
         let id = self.block_id;
-        let name = name.unwrap_or_else(|| self.cc.intern_as_str(id));
+        let name = name.unwrap_or_else(|| self.session.intern_as_str(id));
         let id = MirBasicBlockRef::new(id);
         let block = MirBasicBlock::new(id, name);
         self.data.blocks.insert(id, block);
@@ -297,8 +297,8 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Alloca(MirAllocaInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
-            ty: self.cc.mir_pointer_type(),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
+            ty: self.session.mir_pointer_type(),
             alloc_ty: ty,
         });
         let inst = self.build_instruction(inst_id, inst);
@@ -317,8 +317,8 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst_id = self.get_next_instruction_id();
         let inst = MirInstruction::Store(MirStoreInstruction {
             inst_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
-            ty: self.cc.mir_void_type(),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
+            ty: self.session.mir_void_type(),
             // Stores are always into pointer types
             dest_ty: self.data.get_value_type(&value),
             value,
@@ -342,7 +342,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Load(MirLoadInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
             ty,
             src,
         });
@@ -365,7 +365,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Call(MirCallInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
             callee,
             arguments,
             ty: return_ty,
@@ -389,7 +389,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Add(MirAddInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
@@ -413,7 +413,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Sub(MirSubInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
@@ -437,7 +437,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Mul(MirMulInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
@@ -461,7 +461,7 @@ impl<'mir> MirFunctionBuilder<'mir> {
         let inst = MirInstruction::Div(MirDivInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
             lhs,
             rhs,
             ty,
@@ -479,13 +479,13 @@ impl<'mir> MirFunctionBuilder<'mir> {
         ty: &'mir MirTy<'mir>,
         name: Option<&'mir str>,
     ) -> MirValueRef {
-        let zero = self.build_constant_integer32(0, self.cc.mir_i32_type());
+        let zero = self.build_constant_integer32(0, self.session.mir_i32_type());
         let inst_id = self.get_next_instruction_id();
         let value_id = self.get_next_value_id();
         let inst = MirInstruction::Sub(MirSubInstruction {
             inst_id,
             value_id,
-            name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
+            name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
             ty,
             lhs: zero,
             rhs: input,
@@ -508,8 +508,8 @@ impl<'mir> MirFunctionBuilder<'mir> {
             MirInstruction::PtrAdd(MirPtrAddInstruction {
                 inst_id,
                 value_id,
-                name: name.unwrap_or_else(|| self.cc.intern_as_str(inst_id.id())),
-                ty: self.cc.mir_pointer_type(),
+                name: name.unwrap_or_else(|| self.session.intern_as_str(inst_id.id())),
+                ty: self.session.mir_pointer_type(),
                 ptr,
                 offset,
             }),

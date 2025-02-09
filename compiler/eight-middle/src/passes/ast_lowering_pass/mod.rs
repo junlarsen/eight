@@ -1,4 +1,4 @@
-use crate::context::CompileContext;
+use crate::context::CompileSession;
 use crate::hir::builder::HirBuilder;
 use crate::hir::{
     HirConstructExprArgument, HirExpr, HirExprStmt, HirFunction, HirFunctionParameterSignature,
@@ -36,7 +36,7 @@ use std::collections::{BTreeMap, VecDeque};
 /// fresh type variable. This is to allow the type checker to generate a fresh type variable for
 /// each type parameter for the local context.
 pub struct AstLoweringPass<'ast, 'hir> {
-    cc: &'hir CompileContext<'hir>,
+    session: &'hir CompileSession<'hir>,
     loop_depth: VecDeque<&'ast AstForStmt<'ast>>,
 
     /// When traversing the AST, we replace any generic syntax with De Bruijn indexed type
@@ -49,9 +49,9 @@ pub struct AstLoweringPass<'ast, 'hir> {
 }
 
 impl<'hir> AstLoweringPass<'_, 'hir> {
-    pub fn new(cc: &'hir CompileContext<'hir>) -> Self {
+    pub fn new(session: &'hir CompileSession<'hir>) -> Self {
         Self {
-            cc,
+            session,
             loop_depth: VecDeque::new(),
             type_binding_context: Scope::default(),
             type_binding_depth: 0,
@@ -88,7 +88,7 @@ impl<'hir> AstLoweringPass<'_, 'hir> {
     pub fn fresh_type_variable(&mut self) -> &'hir HirTy<'hir> {
         let depth = self.type_binding_depth;
         let index = self.type_binding_index;
-        let ty = self.cc.hir_variable_type(depth, index);
+        let ty = self.session.hir_variable_type(depth, index);
         self.type_binding_index += 1;
         ty
     }
@@ -97,7 +97,7 @@ impl<'hir> AstLoweringPass<'_, 'hir> {
     pub fn drain_type_parameters(&mut self, tys: &[&AstTypeParameterItem]) {
         for ty in tys {
             let type_variable = self.fresh_type_variable();
-            let key = self.cc.intern_str(&ty.name.name);
+            let key = self.session.intern_str(&ty.name.name);
             self.type_binding_context.add(key, type_variable);
         }
     }
@@ -125,7 +125,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.span,
             self.visit_expr(node.lhs)?,
             self.visit_expr(node.rhs)?,
-            self.cc.hir_uninitialized_type(),
+            self.session.hir_uninitialized_type(),
         )))
     }
 
@@ -140,7 +140,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
                 .collect::<HirResult<Vec<_>>>()?,
             // TODO: Populate this
             vec![],
-            self.cc.hir_uninitialized_type(),
+            self.session.hir_uninitialized_type(),
         )))
     }
 
@@ -154,7 +154,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             HirBuilder::build_vec(node.arguments.iter(), |a| {
                 self.visit_constructor_expr_argument(a)
             })?,
-            self.cc.hir_uninitialized_type(),
+            self.session.hir_uninitialized_type(),
         )))
     }
 
@@ -164,7 +164,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     ) -> HirResult<HirConstructExprArgument<'hir>> {
         Ok(HirBuilder::build_construct_expr_argument(
             node.span,
-            self.cc.intern_str(&node.field.name),
+            self.session.intern_str(&node.field.name),
             node.field.span,
             self.visit_expr(node.expr)?,
         ))
@@ -186,7 +186,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             HirBuilder::build_integer_literal_expr(
                 node.span,
                 node.value,
-                self.cc.hir_uninitialized_type(),
+                self.session.hir_uninitialized_type(),
             ),
         ))
     }
@@ -199,7 +199,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             HirBuilder::build_boolean_literal_expr(
                 node.span,
                 node.value,
-                self.cc.hir_uninitialized_type(),
+                self.session.hir_uninitialized_type(),
             ),
         ))
     }
@@ -215,7 +215,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             return Ok(HirExpr::AddressOf(HirBuilder::build_address_of_expr(
                 node.span,
                 self.visit_expr(node.operand)?,
-                self.cc.hir_uninitialized_type(),
+                self.session.hir_uninitialized_type(),
             )));
         }
         // TODO: Consider if we should allow overloading of dereference
@@ -223,7 +223,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             return Ok(HirExpr::Deref(HirBuilder::build_deref_expr(
                 node.span,
                 self.visit_expr(node.operand)?,
-                self.cc.hir_uninitialized_type(),
+                self.session.hir_uninitialized_type(),
             )));
         }
 
@@ -240,8 +240,11 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.op_span,
             vec![],
         );
-        let reference =
-            HirBuilder::build_reference_expr(node.span, self.cc.hir_uninitialized_type(), symbol);
+        let reference = HirBuilder::build_reference_expr(
+            node.span,
+            self.session.hir_uninitialized_type(),
+            symbol,
+        );
         Ok(HirExpr::Call(HirBuilder::build_call_expr(
             node.span,
             HirExpr::Reference(reference),
@@ -250,7 +253,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             // are no type parameters on these trait functions.
             vec![],
             vec![],
-            self.cc.hir_uninitialized_type(),
+            self.session.hir_uninitialized_type(),
         )))
     }
 
@@ -281,8 +284,11 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.op_span,
             vec![],
         );
-        let reference =
-            HirBuilder::build_reference_expr(node.span, self.cc.hir_uninitialized_type(), symbol);
+        let reference = HirBuilder::build_reference_expr(
+            node.span,
+            self.session.hir_uninitialized_type(),
+            symbol,
+        );
         Ok(HirExpr::Call(HirBuilder::build_call_expr(
             node.span,
             HirExpr::Reference(reference),
@@ -291,7 +297,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             // are no type parameters on these trait functions.
             vec![],
             vec![],
-            self.cc.hir_uninitialized_type(),
+            self.session.hir_uninitialized_type(),
         )))
     }
 
@@ -303,9 +309,9 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             HirBuilder::build_constant_index_expr(
                 node.span,
                 self.visit_expr(node.origin)?,
-                self.cc.intern_str(&node.index.name),
+                self.session.intern_str(&node.index.name),
                 node.index.span,
-                self.cc.hir_uninitialized_type(),
+                self.session.hir_uninitialized_type(),
             ),
         ))
     }
@@ -318,7 +324,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.span,
             self.visit_expr(node.origin)?,
             self.visit_expr(node.index)?,
-            self.cc.hir_uninitialized_type(),
+            self.session.hir_uninitialized_type(),
         )))
     }
 
@@ -328,11 +334,11 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     ) -> HirResult<HirExpr<'hir>> {
         Ok(HirExpr::Reference(HirBuilder::build_reference_expr(
             node.span,
-            self.cc.hir_uninitialized_type(),
+            self.session.hir_uninitialized_type(),
             // Assume that it is a local reference by default. The value here does not really matter
             // as the type checker will replace this as it sees fit.
             HirReferenceSymbol::Local(HirLocalReferenceSymbol {
-                name: self.cc.intern_str(&node.name.name),
+                name: self.session.intern_str(&node.name.name),
                 name_span: node.name.span,
             }),
         )))
@@ -351,7 +357,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
         // We can now intern the module signature since it is immutable
         Ok(HirModule::new(
-            self.cc.arena_alloc(module_signature),
+            self.session.arena_alloc(module_signature),
             module_body,
         ))
     }
@@ -369,25 +375,25 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         match node {
             AstItem::Function(f) => {
                 let fun = self.visit_function_item(f)?;
-                let name = self.cc.intern_str(&f.name.name);
+                let name = self.session.intern_str(&f.name.name);
                 module_signature.add_function(name, fun.signature);
                 module_body.functions.insert(name, fun);
             }
             AstItem::Struct(t) => {
                 let r#struct = self.visit_struct_item(t)?;
-                let name = self.cc.intern_str(&t.name.name);
+                let name = self.session.intern_str(&t.name.name);
                 module_signature.add_struct(name, r#struct.signature);
                 module_body.structs.insert(name, r#struct);
             }
             AstItem::Type(s) => {
                 let r#type = self.visit_type_item(s)?;
-                let name = self.cc.intern_str(&s.name.name);
+                let name = self.session.intern_str(&s.name.name);
                 module_signature.add_type(name, r#type.signature);
                 module_body.types.insert(name, r#type);
             }
             AstItem::Trait(t) => {
                 let r#trait = self.visit_trait_item(t)?;
-                let name = self.cc.intern_str(&t.name.name);
+                let name = self.session.intern_str(&t.name.name);
                 module_signature.add_trait(name, r#trait.signature);
                 module_body.traits.insert(name, r#trait);
             }
@@ -413,12 +419,12 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         let return_type_annotation = node.return_type.map(|t| t.span());
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
-            None => self.cc.hir_unit_type(),
+            None => self.session.hir_unit_type(),
         };
         let parameters =
             HirBuilder::build_vec(node.parameters.iter(), |p| self.visit_function_parameter(p))?;
         let body = HirBuilder::build_vec(node.body.iter(), |stmt| self.visit_stmt(stmt))?;
-        let signature = self.cc.arena_alloc(HirFunctionSignature {
+        let signature = self.session.arena_alloc(HirFunctionSignature {
             span: node.span,
             parameters,
             type_parameters,
@@ -433,7 +439,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         self.leave_type_binding_scope();
         Ok(HirBuilder::build_function(
             node.span,
-            self.cc.intern_str(&node.name.name),
+            self.session.intern_str(&node.name.name),
             node.name.span,
             signature,
             body,
@@ -445,9 +451,9 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         &mut self,
         node: &'ast AstFunctionParameterItem,
     ) -> HirResult<&'hir HirFunctionParameterSignature<'hir>> {
-        let name = self.cc.intern_str(&node.name.name);
+        let name = self.session.intern_str(&node.name.name);
         let ty = self.visit_type(node.ty)?;
-        let hir = self.cc.arena_alloc(HirFunctionParameterSignature {
+        let hir = self.session.arena_alloc(HirFunctionParameterSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -461,12 +467,12 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         &mut self,
         node: &'ast AstTypeParameterItem,
     ) -> HirResult<&'hir HirTypeParameterSignature<'hir>> {
-        let name = self.cc.intern_str(&node.name.name);
-        let key = self.cc.intern_str(&node.name.name);
+        let name = self.session.intern_str(&node.name.name);
+        let key = self.session.intern_str(&node.name.name);
         let ty = self
             .find_type_binding(key)
             .unwrap_or_else(|| ice!("failed to find allocated type"));
-        let hir = self.cc.arena_alloc(HirTypeParameterSignature {
+        let hir = self.session.arena_alloc(HirTypeParameterSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -476,15 +482,15 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     }
 
     pub fn visit_type_item(&mut self, node: &'ast AstTypeItem) -> HirResult<HirType<'hir>> {
-        let name = self.cc.intern_str(&node.name.name);
-        let signature = self.cc.arena_alloc(HirTypeSignature {
+        let name = self.session.intern_str(&node.name.name);
+        let signature = self.session.arena_alloc(HirTypeSignature {
             span: node.span,
             name,
             name_span: node.name.span,
             ty: match node.name.name.as_str() {
-                "i32" => self.cc.hir_integer32_type(),
-                "bool" => self.cc.hir_boolean_type(),
-                "unit" => self.cc.hir_unit_type(),
+                "i32" => self.session.hir_integer32_type(),
+                "bool" => self.session.hir_boolean_type(),
+                "unit" => self.session.hir_unit_type(),
                 _ => {
                     return Err(HirError::UnknownIntrinsicType(UnknownIntrinsicTypeError {
                         name: node.name.name.to_owned(),
@@ -506,17 +512,17 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         self.enter_type_binding_scope();
         self.drain_type_parameters(node.type_parameters.iter().as_slice());
 
-        let name = self.cc.intern_str(&node.name.name);
+        let name = self.session.intern_str(&node.name.name);
         let type_parameters = HirBuilder::build_vec(node.type_parameters.iter(), |p| {
             self.visit_type_parameter_item(p)
         })?;
         let mut members = BTreeMap::new();
         for member in node.members.iter() {
             let signature = self.visit_trait_function_item(member)?;
-            let name = self.cc.intern_str(&member.name.name);
+            let name = self.session.intern_str(&member.name.name);
             members.insert(name, signature);
         }
-        let signature = self.cc.arena_alloc(HirTraitSignature {
+        let signature = self.session.arena_alloc(HirTraitSignature {
             span: node.span,
             type_parameters,
             name,
@@ -526,7 +532,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         self.leave_type_binding_scope();
         Ok(HirBuilder::build_trait(
             node.span,
-            self.cc.intern_str(&node.name.name),
+            self.session.intern_str(&node.name.name),
             node.name.span,
             signature,
         ))
@@ -546,10 +552,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             HirBuilder::build_vec(node.parameters.iter(), |p| self.visit_function_parameter(p))?;
         let return_type = match &node.return_type {
             Some(t) => self.visit_type(t)?,
-            None => self.cc.hir_unit_type(),
+            None => self.session.hir_unit_type(),
         };
         let return_type_annotation = node.return_type.map(|t| t.span());
-        let signature = self.cc.arena_alloc(HirFunctionSignature {
+        let signature = self.session.arena_alloc(HirFunctionSignature {
             span: node.span,
             parameters,
             type_parameters,
@@ -565,13 +571,13 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         &mut self,
         node: &'ast AstInstanceItem,
     ) -> HirResult<HirInstance<'hir>> {
-        let name = self.cc.intern_str(&node.name.name);
+        let name = self.session.intern_str(&node.name.name);
         let type_arguments =
             HirBuilder::build_vec(node.instantiation_type_parameters.iter(), |t| {
                 self.visit_type(t)
             })?;
         let members = HirBuilder::build_vec(node.members.iter(), |m| self.visit_function_item(m))?;
-        let signature = self.cc.arena_alloc(HirInstanceSignature {
+        let signature = self.session.arena_alloc(HirInstanceSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -582,7 +588,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         });
         Ok(HirBuilder::build_instance(
             node.span,
-            self.cc.intern_str(&node.name.name),
+            self.session.intern_str(&node.name.name),
             node.name.span,
             type_arguments,
             members,
@@ -604,21 +610,21 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     /// type Node = { value: i32, left: *Node, right: *Node, }
     /// ```
     pub fn visit_struct_item(&mut self, node: &'ast AstStructItem) -> HirResult<HirStruct<'hir>> {
-        let name = self.cc.intern_str(&node.name.name);
+        let name = self.session.intern_str(&node.name.name);
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {
             let ty = self.visit_type(member.ty)?;
-            let field = self.cc.arena_alloc(HirStructFieldSignature {
+            let field = self.session.arena_alloc(HirStructFieldSignature {
                 span: member.span,
-                name: self.cc.intern_str(&member.name.name),
+                name: self.session.intern_str(&member.name.name),
                 name_span: member.name.span,
                 ty,
                 ty_annotation: member.ty.span(),
             });
-            let field_name = self.cc.intern_str(&member.name.name);
+            let field_name = self.session.intern_str(&member.name.name);
             fields.insert(field_name, field);
         }
-        let signature = self.cc.arena_alloc(HirStructSignature {
+        let signature = self.session.arena_alloc(HirStructSignature {
             span: node.span,
             name,
             name_span: node.name.span,
@@ -647,10 +653,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     }
 
     pub fn visit_let_stmt(&mut self, node: &'ast AstLetStmt) -> HirResult<HirStmt<'hir>> {
-        let name = self.cc.intern_str(&node.name.name);
+        let name = self.session.intern_str(&node.name.name);
         let ty = match &node.ty {
             Some(t) => self.visit_type(t)?,
-            None => self.cc.hir_uninitialized_type(),
+            None => self.session.hir_uninitialized_type(),
         };
         let value = self.visit_expr(node.value)?;
         Ok(HirStmt::Let(HirBuilder::build_let_stmt(
@@ -702,9 +708,9 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             .map(|i| -> HirResult<HirLetStmt> {
                 Ok(HirBuilder::build_let_stmt(
                     i.span,
-                    self.cc.intern_str(&i.name.name),
+                    self.session.intern_str(&i.name.name),
                     i.name.span,
-                    self.cc.hir_uninitialized_type(),
+                    self.session.hir_uninitialized_type(),
                     None,
                     self.visit_expr(i.initializer)?,
                 ))
@@ -719,7 +725,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
                 HirExpr::BooleanLiteral(HirBuilder::build_boolean_literal_expr(
                     Span::empty(),
                     true,
-                    self.cc.hir_uninitialized_type(),
+                    self.session.hir_uninitialized_type(),
                 ))
             });
         let increment = node.increment.map(|i| self.visit_expr(i)).transpose()?;
@@ -812,19 +818,19 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     #[allow(clippy::only_used_in_recursion)]
     pub fn visit_type(&mut self, node: &'ast AstType) -> HirResult<&'hir HirTy<'hir>> {
         let ty = match node {
-            AstType::Unit(_) => self.cc.hir_unit_type(),
-            AstType::Integer32(_) => self.cc.hir_integer32_type(),
-            AstType::Boolean(_) => self.cc.hir_boolean_type(),
+            AstType::Unit(_) => self.session.hir_unit_type(),
+            AstType::Integer32(_) => self.session.hir_integer32_type(),
+            AstType::Boolean(_) => self.session.hir_boolean_type(),
             AstType::Named(t) => {
-                let key = self.cc.intern_str(&t.name.name);
+                let key = self.session.intern_str(&t.name.name);
                 match self.find_type_binding(key) {
                     Some(ty) => ty,
                     _ => self
-                        .cc
-                        .hir_nominal_type(self.cc.intern_str(&t.name.name), t.name.span),
+                        .session
+                        .hir_nominal_type(self.session.intern_str(&t.name.name), t.name.span),
                 }
             }
-            AstType::Pointer(t) => self.cc.hir_pointer_type(self.visit_type(t.inner)?),
+            AstType::Pointer(t) => self.session.hir_pointer_type(self.visit_type(t.inner)?),
         };
         Ok(ty)
     }
