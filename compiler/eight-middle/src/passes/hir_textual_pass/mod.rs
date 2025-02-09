@@ -59,7 +59,7 @@ impl<'a> HirModuleTextualPass<'a> {
                             .append(
                                 self.arena
                                     .intersperse(
-                                        module.signature.types.iter().map(|(name, sig)| {
+                                        module.signature.query_types().map(|(name, sig)| {
                                             self.visit_type_signature(name, sig)
                                         }),
                                         self.arena.hardline(),
@@ -71,7 +71,7 @@ impl<'a> HirModuleTextualPass<'a> {
                                     .append(
                                         self.arena
                                             .intersperse(
-                                                module.signature.structs.iter().map(
+                                                module.signature.query_structs().map(
                                                     |(name, sig)| {
                                                         self.visit_struct_signature(name, sig)
                                                     },
@@ -83,7 +83,7 @@ impl<'a> HirModuleTextualPass<'a> {
                                             .append(self.arena.text("// module functions"))
                                             .append(self.arena.hardline())
                                             .append(self.arena.intersperse(
-                                                module.signature.functions.iter().map(
+                                                module.signature.query_functions().map(
                                                     |(name, sig)| {
                                                         self.visit_function_signature(name, sig)
                                                     },
@@ -95,7 +95,7 @@ impl<'a> HirModuleTextualPass<'a> {
                                             .append("// module traits")
                                             .append(self.arena.hardline())
                                             .append(self.arena.intersperse(
-                                                module.signature.traits.iter().map(
+                                                module.signature.query_traits().map(
                                                     |(name, sig)| {
                                                         self.visit_trait_signature(name, sig)
                                                     },
@@ -107,7 +107,7 @@ impl<'a> HirModuleTextualPass<'a> {
                                             .append(self.arena.text("// module instances"))
                                             .append(self.arena.hardline())
                                             .append(self.arena.intersperse(
-                                                module.signature.instances.iter().map(|sig| {
+                                                module.signature.query_instances().map(|sig| {
                                                     self.visit_instance_signature(
                                                         sig.trait_name,
                                                         sig,

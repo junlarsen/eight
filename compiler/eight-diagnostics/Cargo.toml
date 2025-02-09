@@ -11,6 +11,6 @@ serde = ["dep:serde"]
 eight-macros = { path = "../eight-macros" }
 eight-span = { path = "../eight-span" }
 
-miette = { workspace = true }
+miette = { workspace = true, features = ["fancy"] }
 serde = { workspace = true, optional = true }
 thiserror = { workspace = true }

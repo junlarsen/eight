@@ -9,4 +9,3 @@ Error: syntax::invalid_integer_literal
  5 │ }
    ╰────
   help: did you mean to specify a larger integer type?
-

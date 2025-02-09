@@ -8,4 +8,3 @@ Error: sema::infinitely_recursive_type
    ·       ╰── type Foo has an infinite recursion in field bar
  5 │ }
    ╰────
-

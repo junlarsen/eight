@@ -9,4 +9,3 @@ Error: sema::type_mismatch
    ·                        ╰── the expression has type i32
  7 │ }
    ╰────
-

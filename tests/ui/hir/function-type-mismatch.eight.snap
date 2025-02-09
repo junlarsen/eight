@@ -8,4 +8,3 @@ Error: sema::function_type_mismatch
    ·                    ╰── the function has type fn() -> i32
  7 │ }
    ╰────
-

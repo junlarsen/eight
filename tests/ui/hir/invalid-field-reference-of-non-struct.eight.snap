@@ -8,4 +8,3 @@ Error: sema::invalid_field_reference_of_non_struct
    ·              ╰── unknown field foo
  5 │ }
    ╰────
-

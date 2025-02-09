@@ -8,4 +8,3 @@ Error: sema::trait_instance_missing_fn
     ·             ╰── trait instance Add does not derive method add
  11 │ }
     ╰────
-

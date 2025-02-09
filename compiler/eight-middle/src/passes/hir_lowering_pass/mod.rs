@@ -35,7 +35,7 @@ impl<'hir, 'mir> HirModuleLoweringPass<'mir> {
     pub fn visit_module(&mut self, module: &'hir HirModule<'hir>) -> MirResult<MirModule<'mir>> {
         // Extract all items into the module interface
         let mut interface = MirModuleInterface::default();
-        for (name, signature) in module.signature.functions.iter() {
+        for (name, signature) in module.signature.query_functions() {
             let return_type = self.visit_ty(signature.return_type)?;
             let parameters = signature
                 .parameters

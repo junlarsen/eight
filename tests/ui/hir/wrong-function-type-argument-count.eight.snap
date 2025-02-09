@@ -9,4 +9,3 @@ Error: sema::wrong_function_type_argument_count
    ·                        ╰── supplied 2 type arguments
  7 │ }
    ╰────
-
