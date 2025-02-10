@@ -10,8 +10,8 @@ impl<'c, T: AsRef<str>> PipelinePass<'c, T, AstTranslationUnit<'c>> for AstParse
         pipeline: &'c Pipeline<'c>,
         input: T,
     ) -> Result<AstTranslationUnit<'c>, PipelineError> {
-        let mut lexer = Lexer::new(input.as_ref());
-        let mut parser = Parser::new(&mut lexer, &pipeline.ast_arena);
+        let mut lexer = Lexer::new(input.as_ref(), pipeline.dcx());
+        let mut parser = Parser::new(&mut lexer, &pipeline.ast_arena, pipeline.dcx());
         let translation_unit = parser.parse()?;
         Ok(translation_unit)
     }

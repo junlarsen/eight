@@ -4,7 +4,7 @@ Error: syntax::unexpected_end_of_file
    ╭─[unexpected-end-of-file.eight:3:14]
  2 │ 
  3 │ fn foo() -> *
-   ·              ▲
+   ·              ┬
    ·              ╰── required more input to parse
    ╰────
   help: add more input to form a valid program

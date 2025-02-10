@@ -108,8 +108,8 @@ fn main() -> miette::Result<()> {
             std::process::exit(1);
         }
         // This is here for legacy reasons. Eventually this will be removed.
-        Err(e) => {
-            pipeline.dcx().emit_fatal_diagnostic(e);
+        Err(e) if !matches!(e, PipelineError::ErrorGuaranteed(_)) => {
+            pipeline.dcx().emit(e);
         }
         _ => {}
     };
