@@ -1,7 +1,7 @@
 //! Common types and functions for the middle-end of the compiler.
 
+use eight_support::context::ErrorGuaranteed;
 use eight_support::errors::hir::HirError;
-use eight_support::errors::mir::MirError;
 
 pub mod builtin;
 pub mod context;
@@ -12,7 +12,7 @@ pub mod passes;
 pub mod scope;
 
 pub type HirResult<T> = Result<T, HirError>;
-pub type MirResult<T> = Result<T, MirError>;
+pub type MirResult<T> = Result<T, ErrorGuaranteed>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum LinkageType {

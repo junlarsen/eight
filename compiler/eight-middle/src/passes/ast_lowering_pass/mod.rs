@@ -11,9 +11,10 @@ use crate::hir::{HirReferenceSymbol, HirTy};
 use crate::scope::Scope;
 use crate::HirResult;
 use crate::LinkageType;
-use eight_support::errors::hir::{
-    BreakOutsideLoopError, ContinueOutsideLoopError, HirError, UnknownIntrinsicTypeError,
+use eight_support::diagnostics::{
+    BreakOutsideLoopError, ContinueOutsideLoopError, UnknownIntrinsicTypeError,
 };
+use eight_support::errors::hir::HirError;
 use eight_support::ice;
 use eight_support::span::Span;
 use eight_syntax::ast::{

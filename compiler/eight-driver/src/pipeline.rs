@@ -12,7 +12,6 @@ use eight_codegen_llvm::error::LLVMBackendError;
 use eight_middle::context::CompileSession;
 use eight_support::context::{DiagnosticContext, DiagnosticSource, ErrorGuaranteed};
 use eight_support::errors::hir::HirError;
-use eight_support::errors::mir::MirError;
 use eight_support::ice;
 use eight_syntax::arena::AstArena;
 use miette::Diagnostic;
@@ -57,11 +56,6 @@ pub enum PipelineError {
     #[diagnostic(transparent)]
     #[error(transparent)]
     HirError(#[from] HirError),
-
-    /// Error propagated from the MIR passes.
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    MirError(#[from] MirError),
 
     /// Error propagated from the LLVM backend.
     #[error(transparent)]

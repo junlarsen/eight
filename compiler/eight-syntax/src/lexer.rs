@@ -1,6 +1,6 @@
 use crate::tok::{Token, TokenType};
 use eight_support::context::{DiagnosticContext, ErrorGuaranteed};
-use eight_support::errors::syntax::{
+use eight_support::diagnostics::{
     InvalidIntegerLiteralError, UnexpectedCharacterError, UnfinishedTokenError,
 };
 use eight_support::ice;
