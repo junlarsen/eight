@@ -351,6 +351,7 @@ pub struct AstIdentifier {
 pub enum AstType<'ast> {
     Unit(AstUnitType),
     Integer32(AstInteger32Type),
+    Ptr(AstPtrType),
     Pointer(AstPointerType<'ast>),
     Named(AstNamedType<'ast>),
     Boolean(AstBooleanType),
@@ -363,6 +364,7 @@ impl AstType<'_> {
             AstType::Unit(t) => t.span,
             AstType::Integer32(t) => t.span,
             AstType::Pointer(t) => t.span,
+            AstType::Ptr(t) => t.span,
             AstType::Named(t) => t.span,
             AstType::Boolean(t) => t.span,
         }
@@ -384,6 +386,12 @@ pub struct AstInteger32Type {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug)]
 pub struct AstBooleanType {
+    pub span: Span,
+}
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug)]
+pub struct AstPtrType {
     pub span: Span,
 }
 

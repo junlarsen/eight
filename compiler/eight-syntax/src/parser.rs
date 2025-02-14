@@ -5,9 +5,9 @@ use crate::ast::{
     AstContinueStmt, AstDotIndexExpr, AstExpr, AstExprStmt, AstForStmt, AstForStmtInitializer,
     AstFunctionItem, AstFunctionParameterItem, AstGroupExpr, AstIdentifier, AstIfStmt,
     AstInstanceItem, AstInteger32Type, AstIntegerLiteralExpr, AstItem, AstLetStmt, AstNamedType,
-    AstPointerType, AstReferenceExpr, AstReturnStmt, AstStmt, AstStructItem, AstStructMemberItem,
-    AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType, AstTypeItem,
-    AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
+    AstPointerType, AstPtrType, AstReferenceExpr, AstReturnStmt, AstStmt, AstStructItem,
+    AstStructMemberItem, AstTraitFunctionItem, AstTraitItem, AstTranslationUnit, AstType,
+    AstTypeItem, AstTypeParameterItem, AstUnaryOp, AstUnaryOpExpr, AstUnitType,
 };
 use crate::lexer::Lexer;
 use crate::tok::{Token, TokenType};
@@ -1318,6 +1318,11 @@ impl<'ast> Parser<'_, 'ast> {
                     let node = AstUnitType { span: id.span };
                     Ok(AstType::Unit(node))
                 }
+                "ptr" => {
+                    let id = self.parse_identifier()?;
+                    let node = AstPtrType { span: id.span };
+                    Ok(AstType::Ptr(node))
+                }
                 _ => Ok(AstType::Named(self.parse_named_type()?)),
             },
             TokenType::Star => Ok(AstType::Pointer(self.parse_pointer_type()?)),
@@ -1407,6 +1412,12 @@ mod tests {
             let production = p.parse_type();
             let production = assert_ok!(production);
             assert!(matches!(&production, AstType::Boolean(_)));
+        });
+
+        assert_parse!("ptr", |p: &mut Parser| {
+            let production = p.parse_type();
+            let production = assert_ok!(production);
+            assert!(matches!(&production, AstType::Ptr(_)));
         });
     }
 

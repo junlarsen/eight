@@ -1,3 +1,3 @@
-intrinsic_fn malloc<T>(size: i32) -> *T;
-intrinsic_fn free<T>(ptr: *T) -> unit;
-intrinsic_fn exit() -> unit;
+intrinsic_fn __libc_malloc(size: i32) -> ptr;
+intrinsic_fn __libc_free(ptr: ptr) -> unit;
+intrinsic_fn __libc__exit(status: i32) -> unit;
