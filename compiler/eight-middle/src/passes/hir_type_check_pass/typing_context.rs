@@ -44,7 +44,7 @@ pub struct TypingContext<'hir> {
     ///
     /// We currently don't support nested functions or lambdas, so this does not necessarily have to
     /// be a VecDeque, but it's here for future use.
-    type_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
+    type_binding_context: Scope<&'hir str, (&'hir HirTy<'hir>, Span)>,
     let_binding_context: Scope<&'hir str, (&'hir HirTy<'hir>, Span)>,
     // TODO: make private
     pub type_parameter_instantiations: Scope<(u32, u32), &'hir HirTy<'hir>>,
@@ -120,17 +120,19 @@ impl<'hir> TypingContext<'hir> {
         ty: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
         let current_depth = self.type_binding_context.depth();
-        if let Some((depth, _)) = self.type_binding_context.find_with_depth(&name) {
-            if depth >= current_depth {
-                return Err(HirError::TypeParameterShadowsExisting(
-                    TypeParameterShadowsExisting {
-                        name: name.to_owned(),
-                        span,
-                    },
-                ));
-            }
+        if self
+            .type_binding_context
+            .find_within_depth(&name, current_depth)
+            .is_some()
+        {
+            return Err(HirError::TypeParameterShadowsExisting(
+                TypeParameterShadowsExisting {
+                    name: name.to_owned(),
+                    span,
+                },
+            ));
         }
-        self.type_binding_context.add(name, ty);
+        self.type_binding_context.add(name, (ty, span));
         Ok(())
     }
 
@@ -167,7 +169,7 @@ impl<'hir> TypingContext<'hir> {
     }
 
     /// Find the type of a type binding.
-    pub fn find_type_binding(&self, name: &'hir str) -> Option<&'hir HirTy<'hir>> {
+    pub fn find_type_binding(&self, name: &'hir str) -> Option<(&'hir HirTy<'hir>, Span)> {
         self.type_binding_context.find(&name).copied()
     }
 
