@@ -74,6 +74,7 @@ impl<'hir> HirBuilder {
             name,
             name_span,
             signature,
+            type_parameter_substitutions: BTreeMap::new(),
         }
     }
 
@@ -93,7 +94,6 @@ impl<'hir> HirBuilder {
             type_arguments,
             members,
             signature,
-            type_parameter_substitutions: BTreeMap::new(),
         }
     }
 

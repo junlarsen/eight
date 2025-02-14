@@ -179,7 +179,7 @@ impl<'a> HirModuleTextualPass<'a> {
             .append(self.arena.intersperse(
                 function.signature.type_parameters.iter().map(|p| {
                     match function.type_parameter_substitutions.get(p.name) {
-                        Some(t) => self.visit_ty(t),
+                        Some((t, _)) => self.visit_ty(t),
                         None => self.arena.text(p.name),
                     }
                 }),
