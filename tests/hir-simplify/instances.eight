@@ -1,3 +1,5 @@
+// RUN: not %eightc --emit-hir --terminator=hir %s 2>&1 | %regtest test %s
+
 intrinsic_type i32;
 
 intrinsic_fn i32_add(a: i32, b: i32) -> i32;

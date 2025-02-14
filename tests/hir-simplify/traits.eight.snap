@@ -1,20 +1,3 @@
----
-source: compiler/eight-tests/tests/compiler_tests.rs
-description: compiler test suite for hir
-info:
-  program: eightc
-  args:
-    - "--emit-hir"
-    - "--terminator=hir"
-    - tests/hir-lower/traits.test
-input_file: compiler/eight-tests/tests/hir-lower/traits.test
-snapshot_kind: text
----
-success: false
-exit_code: 1
------ stdout -----
-
------ stderr -----
 hir_module {
   declares {
     // module types

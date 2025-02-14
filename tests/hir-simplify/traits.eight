@@ -1,3 +1,5 @@
+// RUN: not %eightc --emit-hir --terminator=hir %s 2>&1 | %regtest test %s
+
 trait Add<A, B, R> {
   fn add(a: A, b: B) -> R;
 }
