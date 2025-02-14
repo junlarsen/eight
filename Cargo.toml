@@ -5,7 +5,7 @@ members = [
     "compiler/eight-driver",
     "compiler/eight-macros",
     "compiler/eight-middle",
-    "compiler/eight-std",
+    "compiler/eight-rt",
     "compiler/eight-support",
     "compiler/eight-syntax",
     "tools/eight-regtest",
