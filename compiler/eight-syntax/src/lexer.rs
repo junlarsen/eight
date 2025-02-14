@@ -123,11 +123,7 @@ impl<'a> Lexer<'a> {
     /// Produce the next token from the input stream
     pub fn produce(&mut self) -> Option<Token> {
         let pos_before_eat = self.pos();
-        let ch = self.input.next();
-        // Do not report the error here, let the consumer decide what to do with it.
-        let Some(ch) = ch else {
-            return None;
-        };
+        let ch = self.input.next()?;
         match ch {
             '0'..='9' => self.produce_integer_literal(ch).ok(),
             'a'..='z' | 'A'..='Z' | '_' => Some(self.produce_keyword_or_identifier(ch)),
