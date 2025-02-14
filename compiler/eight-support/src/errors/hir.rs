@@ -26,7 +26,7 @@ declare_error_type! {
         TraitMissingInstance(TraitMissingInstanceError),
         WrongTraitTypeArgumentCount(WrongTraitTypeArgumentCount),
         TypeParameterShadowsExisting(TypeParameterShadowsExisting),
-        BindingReDeclaresName(BindingReDeclaresName),
+        DuplicateLetBindingInSameScope(DuplicateLetBindingInSameScopeError),
         ConstructingNonStructType(ConstructingNonStructTypeError),
         ConstructingPointerType(ConstructingPointerTypeError),
         WrongFunctionTypeArgumentCount(WrongFunctionTypeArgumentCount),
@@ -233,12 +233,14 @@ pub struct TypeParameterShadowsExisting {
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(
-    code(sema::binding_re_declares_name),
+    code(sema::duplicate_let_binding_in_scope),
     help("give this binding a different name")
 )]
-#[error("binding {name} re-declares name")]
-pub struct BindingReDeclaresName {
+#[error("binding {name} has already been declared in this scope")]
+pub struct DuplicateLetBindingInSameScopeError {
     pub name: String,
+    #[label = "previously declared here"]
+    pub previous: Span,
     #[label = "the binding {name} shadows an existing binding with the same name"]
     pub span: Span,
 }

@@ -45,6 +45,15 @@ impl<K: Ord, V> Scope<K, V> {
         None
     }
 
+    pub fn find_within_depth(&self, name: &K, depth: usize) -> Option<&V> {
+        for (index, scope) in self.scopes.iter().rev().enumerate() {
+            if index == depth - 1 {
+                return scope.get(name);
+            }
+        }
+        None
+    }
+
     /// Find an item in the context, and return the distance from the root scope.
     pub fn find_with_depth(&self, name: &K) -> Option<(usize, &V)> {
         for (depth, scope) in self.scopes.iter().enumerate() {
