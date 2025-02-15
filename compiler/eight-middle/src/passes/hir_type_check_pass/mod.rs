@@ -393,7 +393,7 @@ impl HirModuleTypeCheckerPass {
             ice!("visit_nominal_ty called with non-nominal type");
         };
         // Check if the name refers to a generic type parameter, like `T`.
-        if let Some(sub) = cx.find_type_binding(n.name) {
+        if let Some((sub, _)) = cx.find_type_binding(n.name) {
             return Ok(sub);
         }
         // Check if the name refers to a struct or a type.

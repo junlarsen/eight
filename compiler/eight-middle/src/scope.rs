@@ -54,16 +54,6 @@ impl<K: Ord, V> Scope<K, V> {
         None
     }
 
-    /// Find an item in the context, and return the distance from the root scope.
-    pub fn find_with_depth(&self, name: &K) -> Option<(usize, &V)> {
-        for (depth, scope) in self.scopes.iter().enumerate() {
-            if let Some(item) = scope.get(name) {
-                return Some((depth, item));
-            }
-        }
-        None
-    }
-
     pub fn add(&mut self, name: K, id: V) {
         let scope = self
             .scopes
@@ -78,14 +68,6 @@ impl<K: Ord, V> Scope<K, V> {
             .front_mut()
             .unwrap_or_else(|| ice!("local context has no scope"));
         scope.remove(name);
-    }
-
-    pub fn local_size(&self) -> usize {
-        self.scopes.front().map(|s| s.len()).unwrap_or(0)
-    }
-
-    pub fn find_local(&self, name: &K) -> Option<&V> {
-        self.scopes.front().and_then(|s| s.get(name))
     }
 }
 
