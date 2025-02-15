@@ -10,7 +10,7 @@ use thiserror::Error;
 /// A token that indicates that an error occurred.
 ///
 /// The diagnostic associated with this error has been collected.
-#[derive(Error, Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Error, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 #[error("error dispatched through diagnostic context")]
 pub struct ErrorGuaranteed(pub(crate) ());
 
@@ -38,6 +38,7 @@ impl DiagnosticSource {
 /// order to collect more diagnostics), or fatal (the compiler should exit immediately).
 pub struct DiagnosticContext {
     diagnostics: Mutex<Vec<Report>>,
+    errors: Mutex<Vec<ErrorGuaranteed>>,
     src: Rc<DiagnosticSource>,
 }
 
@@ -49,6 +50,7 @@ impl DiagnosticContext {
     pub fn new(src: Rc<DiagnosticSource>, max_diagnostic_count: usize) -> Self {
         Self {
             src,
+            errors: Mutex::new(Vec::new()),
             diagnostics: Mutex::new(Vec::with_capacity(min(max_diagnostic_count, 16))),
         }
     }
@@ -67,11 +69,30 @@ impl DiagnosticContext {
             .unwrap_or_else(|_| ice!("failed to acquire diagnostics lock"));
         diagnostics.push(Report::from(diagnostic));
         // At the moment we don't have warnings, so we always return an error here.
-        ErrorGuaranteed(())
+        let err = ErrorGuaranteed(());
+        let mut errors = self
+            .errors
+            .lock()
+            .unwrap_or_else(|_| ice!("failed to acquire error set lock"));
+        errors.push(err);
+        // Give the lock to get_emitted_error()
+        drop(errors);
+        self.get_emitted_error()
     }
 
-    pub fn blanket(&self) -> ErrorGuaranteed {
-        ErrorGuaranteed(())
+    /// Get the last emitted ErrorGuaranteed reference.
+    ///
+    /// It being the last error holds no importance because ErrorGuaranteed is opaque, but it does
+    /// ensure that an error was emitted before returning a reference to an ErrorGuaranteed.
+    pub fn get_emitted_error(&self) -> ErrorGuaranteed {
+        let errors = self
+            .errors
+            .lock()
+            .unwrap_or_else(|_| ice!("failed to acquire error set locl"));
+        let err = errors.last().unwrap_or_else(|| {
+            ice!("attempted to get previously emitted error with zero recorded errors")
+        });
+        err.to_owned()
     }
 
     /// Report all the collected diagnostics to stderr.

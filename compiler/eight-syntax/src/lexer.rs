@@ -73,7 +73,7 @@ impl<'a> LexerInput<'a> {
                         span: Span::pos(start + 1),
                     });
                 }
-                Err(self.dcx.blanket())
+                Err(self.dcx.get_emitted_error())
             }
         }
     }

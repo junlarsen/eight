@@ -164,7 +164,7 @@ impl<'session> Pipeline<'session> {
     ) -> Result<O, PipelineError> {
         match (self.dcx().is_empty(), cond) {
             (true, true) => Ok(operation(self)?),
-            (false, _) => Err(self.dcx().blanket().into()),
+            (false, _) => Err(self.dcx().get_emitted_error().into()),
             (_, false) => Err(self.get_terminator_error()),
         }
     }

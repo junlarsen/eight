@@ -69,7 +69,7 @@ impl<'a> ParserInput<'a> {
                             span: Span::pos(self.lexer.pos()),
                         }));
                     }
-                    return Err(self.dcx.blanket());
+                    return Err(self.dcx.get_emitted_error());
                 }
             }
         }
@@ -125,7 +125,7 @@ impl<'a, 'ast> Parser<'a, 'ast> {
                 span: Span::pos(pos),
             }));
         }
-        Err(self.dcx.blanket())
+        Err(self.dcx.get_emitted_error())
     }
 
     /// Determine if the next token in the token stream matches the given type.
