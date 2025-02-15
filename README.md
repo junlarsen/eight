@@ -1,15 +1,16 @@
 # Eight
 
-Eight is a toy programming language for learning about compiler optimization and code generation. It is an imperative
-programming language with a static type system.
+Eight is a toy programming language built to learn compiler infrastructure, optimization, and code generation. The
+compiler compiles an imperative-style programming language with a static type system. It has great type inference and
+its semantics closely resemble the C programming language.
 
-The compiler is written in Rust and will use LLVM as the primary backend, with plans for an x86-64 backend. The type
-system is based on the Hindley-Damas-Milner type system with extensions for type classes and struct types. Its semantics
-highly resembles C. The following is a naive matrix-matrix multiplication example.
+The compiler is written in Rust and uses LLVM as the primary code generator backend. Development of the compiler also
+requires additional tools as described in [the Development secion](#development).
 
 **Current project status**: The frontend is mostly complete, and current work is on the mid-level IR and LLVM codegen.
 
 ```rust
+// Naive O(MKN) matrix-matrix multiplication
 struct Matrix {
   r: i32,
   c: i32,
@@ -41,6 +42,12 @@ fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
 The compiler is written in Rust, and requires the LLVM Integrated Tester to run its test suite. The easiest way to get
 started is to install both Rust and Poetry (to download Lit).
 
+We also have some developer tooling specifically built for Eight (like our Lit-based regression tester) which will be
+built alongside the compiler with `cargo build --all`. This is important as the Lit configuration searches for these
+binaries in order to execute the tests.
+
+The scripts below will take care of all the requirements needed to get started with developing the compiler.
+
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 curl -sSL https://install.python-poetry.org | python3 -
@@ -49,12 +56,17 @@ sudo apt install llvm-18-dev llvm-18-tools clang-18 libpolly-18-dev
 # Configure llvm-sys to point at the installed LLVM
 export LLVM_SYS_180_PREFIX="/usr/lib/llvm-18"
 
-# Run unit tests and snapshot tests
+# Run unit tests
 cargo test
 
 # Install Lit, and run the integration test suite
 poetry install
 cargo xtask lit
+
+# If any of the regression snapshots were updated, review them with eight-regtest
+cargo regtest
+# Which is a workspace alias for
+cargo run --bin eightc-regtest -- verify tests
 ```
 
 Running the compiler is done through `cargo run --bin eightc`, or using the build output if you compile the project.
@@ -74,10 +86,6 @@ Options:
   -h, --help                     Print help
   -V, --version                  Print version
 ```
-
-## Contact
-
-If you have any questions, feel free to reach me by email at mats at jun dot codes.
 
 ## License
 
