@@ -11,8 +11,8 @@ use crate::hir::{
 };
 use crate::HirResult;
 use eight_support::errors::hir::{
-    HirError, InvalidReferenceError, TypeFieldInfiniteRecursionError, UnknownTypeError,
-    WrongTraitTypeArgumentCount,
+    DuplicateTypeParameterError, HirError, InvalidReferenceError, TypeFieldInfiniteRecursionError,
+    UnknownTypeError, WrongTraitTypeArgumentCount,
 };
 use eight_support::ice;
 use eight_support::span::Span;
@@ -155,9 +155,16 @@ impl HirModuleTypeCheckerPass {
         cx.enter_type_binding_scope();
         // Instantiate all the HirTy::Variable types from the function's type variables
         for type_parameter in node.signature.type_parameters.iter() {
+            if let Some((_, def)) = node.type_parameter_substitutions.get(type_parameter.name) {
+                return Err(HirError::from(DuplicateTypeParameterError {
+                    name: type_parameter.name.to_owned(),
+                    span: type_parameter.name_span,
+                    previous: *def,
+                }));
+            }
             let ty = cx.instantiate_type_parameter(type_parameter.ty);
             node.type_parameter_substitutions
-                .insert(type_parameter.name, ty);
+                .insert(type_parameter.name, (ty, type_parameter.name_span));
         }
 
         // Propagate the parameter and return types. If any of these are HirTy::Variable, they are
@@ -260,7 +267,16 @@ impl HirModuleTypeCheckerPass {
         // this makes the `T` in `trait Foo<T> {}` visible to the trait body. While there are no let
         // bindings in traits because they are ambient, methods can still use these types.
         for type_parameter in node.signature.type_parameters.iter() {
-            cx.instantiate_type_parameter(type_parameter.ty);
+            if let Some((_, def)) = node.type_parameter_substitutions.get(type_parameter.name) {
+                return Err(HirError::from(DuplicateTypeParameterError {
+                    name: type_parameter.name.to_owned(),
+                    span: type_parameter.name_span,
+                    previous: *def,
+                }));
+            }
+            let ty = cx.instantiate_type_parameter(type_parameter.ty);
+            node.type_parameter_substitutions
+                .insert(type_parameter.name, (ty, type_parameter.name_span));
         }
 
         // Iterate through the ambient method declarations

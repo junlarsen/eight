@@ -25,7 +25,7 @@ declare_error_type! {
         TraitMethodDoesNotExist(TraitMethodDoesNotExistError),
         TraitMissingInstance(TraitMissingInstanceError),
         WrongTraitTypeArgumentCount(WrongTraitTypeArgumentCount),
-        TypeParameterShadowsExisting(TypeParameterShadowsExisting),
+        DuplicateTypeParameter(DuplicateTypeParameterError),
         DuplicateLetBindingInSameScope(DuplicateLetBindingInSameScopeError),
         ConstructingNonStructType(ConstructingNonStructTypeError),
         ConstructingPointerType(ConstructingPointerTypeError),
@@ -223,10 +223,12 @@ pub struct WrongTraitTypeArgumentCount {
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[diagnostic(code(sema::type_parameter_shadows_existing))]
-#[error("type parameter {name} shadows existing type parameter")]
-pub struct TypeParameterShadowsExisting {
+#[diagnostic(code(sema::duplicate_type_parameter))]
+#[error("type parameter with name {name} has already been defined for this item")]
+pub struct DuplicateTypeParameterError {
     pub name: String,
+    #[label = "previous declared here"]
+    pub previous: Span,
     #[label = "the type parameter {name} shadows an existing type with the same name"]
     pub span: Span,
 }

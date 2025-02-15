@@ -334,7 +334,7 @@ pub struct HirFunction<'hir> {
     /// // or if the module is printed before type inference
     /// fn foo<T>(x: T) -> T {}
     /// ```
-    pub type_parameter_substitutions: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
+    pub type_parameter_substitutions: BTreeMap<&'hir str, (&'hir HirTy<'hir>, Span)>,
     pub linkage_type: LinkageType,
 }
 
@@ -344,6 +344,7 @@ pub struct HirTrait<'hir> {
     pub name: &'hir str,
     pub name_span: Span,
     pub signature: &'hir HirTraitSignature<'hir>,
+    pub type_parameter_substitutions: BTreeMap<&'hir str, (&'hir HirTy<'hir>, Span)>,
 }
 
 #[derive(Debug)]
@@ -362,11 +363,6 @@ pub struct HirInstance<'hir> {
     pub type_arguments: Vec<&'hir HirTy<'hir>>,
     pub members: Vec<HirFunction<'hir>>,
     pub signature: &'hir HirInstanceSignature<'hir>,
-    /// See [`HirFunction::type_parameter_substitutions`] for explanation.
-    ///
-    /// These are instantiations from the trait itself. Separate ones will be created for each
-    /// member.
-    pub type_parameter_substitutions: BTreeMap<&'hir str, &'hir HirTy<'hir>>,
 }
 
 /// A module containing all the types and functions defined in a program.

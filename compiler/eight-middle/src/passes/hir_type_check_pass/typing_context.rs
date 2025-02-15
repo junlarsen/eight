@@ -15,8 +15,8 @@ use eight_support::errors::hir::{
     DuplicateLetBindingInSameScopeError, FunctionTypeMismatchError, HirError,
     InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
     SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
-    TraitMethodDoesNotExistError, TraitMissingInstanceError, TypeMismatchError,
-    TypeParameterShadowsExisting, UnknownFieldError, WrongFunctionTypeArgumentCount,
+    TraitMethodDoesNotExistError, TraitMissingInstanceError, TypeMismatchError, UnknownFieldError,
+    WrongFunctionTypeArgumentCount,
 };
 use eight_support::ice;
 use eight_support::span::Span;
@@ -119,19 +119,6 @@ impl<'hir> TypingContext<'hir> {
         span: Span,
         ty: &'hir HirTy<'hir>,
     ) -> HirResult<()> {
-        let current_depth = self.type_binding_context.depth();
-        if self
-            .type_binding_context
-            .find_within_depth(&name, current_depth)
-            .is_some()
-        {
-            return Err(HirError::TypeParameterShadowsExisting(
-                TypeParameterShadowsExisting {
-                    name: name.to_owned(),
-                    span,
-                },
-            ));
-        }
         self.type_binding_context.add(name, (ty, span));
         Ok(())
     }

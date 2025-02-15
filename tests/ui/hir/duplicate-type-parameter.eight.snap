@@ -1,0 +1,10 @@
+Error: sema::duplicate_type_parameter
+
+  × type parameter with name T has already been defined for this item
+   ╭─[duplicate-type-parameter.eight:3:8]
+ 2 │ 
+ 3 │ fn foo<T, T>() {}
+   ·        ┬  ┬
+   ·        │  ╰── the type parameter T shadows an existing type with the same name
+   ·        ╰── previous declared here
+   ╰────
