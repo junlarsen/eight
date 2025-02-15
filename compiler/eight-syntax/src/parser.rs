@@ -12,7 +12,7 @@ use crate::ast::{
 use crate::lexer::Lexer;
 use crate::tok::{Token, TokenType};
 use eight_support::context::{DiagnosticContext, ErrorGuaranteed};
-use eight_support::errors::syntax::{UnexpectedEndOfFileError, UnexpectedTokenError};
+use eight_support::diagnostics::{UnexpectedEndOfFileError, UnexpectedTokenError};
 use eight_support::span::Span;
 
 pub struct ParserInput<'a> {

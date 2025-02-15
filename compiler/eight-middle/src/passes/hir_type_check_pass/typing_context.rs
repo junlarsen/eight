@@ -1,3 +1,4 @@
+use super::MethodConstraint;
 use crate::context::CompileSession;
 use crate::hir::{
     HirAddressOfExpr, HirAssignExpr, HirBooleanLiteralExpr, HirCallExpr, HirConstantIndexExpr,
@@ -10,20 +11,19 @@ use crate::passes::hir_type_check_pass::{
 };
 use crate::scope::Scope;
 use crate::HirResult;
-use eight_support::errors::hir::{
+use eight_support::diagnostics::{
     ConstructingNonStructTypeError, ConstructingPointerTypeError, DereferenceOfNonPointerError,
-    DuplicateLetBindingInSameScopeError, FunctionTypeMismatchError, HirError,
+    DuplicateLetBindingInSameScopeError, FunctionTypeMismatchError,
     InvalidFieldReferenceOfNonStructError, InvalidStructFieldReferenceError, MissingFieldError,
     SelfReferentialTypeError, TraitDoesNotExistError, TraitInstanceMissingFnError,
     TraitMethodDoesNotExistError, TraitMissingInstanceError, TypeMismatchError, UnknownFieldError,
     WrongFunctionTypeArgumentCount,
 };
+use eight_support::errors::hir::HirError;
 use eight_support::ice;
 use eight_support::span::Span;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
-
-use super::MethodConstraint;
 
 /// A context object for the type checker.
 ///

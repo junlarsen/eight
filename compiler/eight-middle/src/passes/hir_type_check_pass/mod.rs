@@ -10,10 +10,11 @@ use crate::hir::{
     HirPointerTy, HirReturnStmt, HirStmt, HirTy,
 };
 use crate::HirResult;
-use eight_support::errors::hir::{
-    DuplicateTypeParameterError, HirError, InvalidReferenceError, TypeFieldInfiniteRecursionError,
+use eight_support::diagnostics::{
+    DuplicateTypeParameterError, InvalidReferenceError, TypeFieldInfiniteRecursionError,
     UnknownTypeError, WrongTraitTypeArgumentCount,
 };
+use eight_support::errors::hir::HirError;
 use eight_support::ice;
 use eight_support::span::Span;
 use std::collections::BTreeMap;

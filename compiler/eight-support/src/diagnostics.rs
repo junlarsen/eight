@@ -1,38 +1,6 @@
 use crate::span::Span;
-use eight_macros::declare_error_type;
 use miette::Diagnostic;
 use thiserror::Error;
-
-declare_error_type! {
-    #[error("semantic error: {0}")]
-    pub enum HirError {
-        UnknownType(UnknownTypeError),
-        InvalidReference(InvalidReferenceError),
-        TypeFieldInfiniteRecursion(TypeFieldInfiniteRecursionError),
-        BreakOutsideLoop(BreakOutsideLoopError),
-        ContinueOutsideLoop(ContinueOutsideLoopError),
-        TypeMismatch(TypeMismatchError),
-        FunctionTypeMismatch(FunctionTypeMismatchError),
-        SelfReferentialType(SelfReferentialTypeError),
-        InvalidStructFieldReference(InvalidStructFieldReferenceError),
-        InvalidFieldReferenceOfNonStruct(InvalidFieldReferenceOfNonStructError),
-        UnknownField(UnknownFieldError),
-        DuplicateField(DuplicateFieldError),
-        MissingField(MissingFieldError),
-        UnknownIntrinsicType(UnknownIntrinsicTypeError),
-        TraitInstanceMissingFn(TraitInstanceMissingFnError),
-        TraitDoesNotExist(TraitDoesNotExistError),
-        TraitMethodDoesNotExist(TraitMethodDoesNotExistError),
-        TraitMissingInstance(TraitMissingInstanceError),
-        WrongTraitTypeArgumentCount(WrongTraitTypeArgumentCount),
-        DuplicateTypeParameter(DuplicateTypeParameterError),
-        DuplicateLetBindingInSameScope(DuplicateLetBindingInSameScopeError),
-        ConstructingNonStructType(ConstructingNonStructTypeError),
-        ConstructingPointerType(ConstructingPointerTypeError),
-        WrongFunctionTypeArgumentCount(WrongFunctionTypeArgumentCount),
-        DereferenceOfNonPointer(DereferenceOfNonPointerError),
-    }
-}
 
 #[derive(Error, Diagnostic, Debug)]
 #[diagnostic(code(sema::unknown_type))]
@@ -287,5 +255,68 @@ pub struct WrongFunctionTypeArgumentCount {
 pub struct DereferenceOfNonPointerError {
     pub ty: String,
     #[label = "{ty} is not dereferenceable"]
+    pub span: Span,
+}
+
+/// Signals that the parser has reached the end of the input stream.
+///
+/// This error is only emitted to the diagnostic engine when the parser produces it. See the note
+/// on [`Lexer::next`] for more information about how the parser handles this error once it is
+/// emitted from the lexer.
+///
+/// It should also be noted that both lexer and parser produce this error in their signatures, but
+/// as mentioned, only the parser emits it to the diagnostic engine.
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(syntax::unexpected_end_of_file),
+    help("add more input to form a valid program")
+)]
+#[error("expected more characters after this")]
+pub struct UnexpectedEndOfFileError {
+    #[label = "required more input to parse"]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug, PartialEq)]
+#[diagnostic(
+    code(syntax::unfinished_token),
+    help("did you forget to add a '{expected}' character here?")
+)]
+#[error("expected another '{expected}' character here")]
+pub struct UnfinishedTokenError {
+    pub expected: char,
+    #[label = "this alone does not form a valid token"]
+    pub span: Span,
+}
+
+const MAX_INTEGER_32_VALUE: i32 = i32::MAX;
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(
+    code(syntax::invalid_integer_literal),
+    help("did you mean to specify a larger integer type?")
+)]
+#[error("found illegal i32 literal")]
+pub struct InvalidIntegerLiteralError {
+    pub buf: String,
+    #[label("the maximum value that can be represented by an i32 is {MAX_INTEGER_32_VALUE}")]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(syntax::unexpected_character))]
+#[error("found illegal character during parsing")]
+pub struct UnexpectedCharacterError {
+    pub ch: char,
+    #[label("the character '{ch}' does not parse into any tokens")]
+    pub span: Span,
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[diagnostic(code(syntax::unexpected_token))]
+#[error("found unexpected token during parsing")]
+pub struct UnexpectedTokenError {
+    pub token: String,
+    #[label("was not expecting to find '{token}' in this position")]
     pub span: Span,
 }
