@@ -830,6 +830,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
                         .hir_nominal_type(self.session.intern_str(&t.name.name), t.name.span),
                 }
             }
+            AstType::Ptr(_) => self.session.hir_pointer_type(self.session.hir_unit_type()),
             AstType::Pointer(t) => self.session.hir_pointer_type(self.visit_type(t.inner)?),
         };
         Ok(ty)
