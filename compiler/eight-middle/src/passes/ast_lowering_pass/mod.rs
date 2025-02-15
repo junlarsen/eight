@@ -9,12 +9,11 @@ use crate::hir::{
 };
 use crate::hir::{HirReferenceSymbol, HirTy};
 use crate::scope::Scope;
-use crate::HirResult;
 use crate::LinkageType;
+use eight_support::context::ErrorGuaranteed;
 use eight_support::diagnostics::{
     BreakOutsideLoopError, ContinueOutsideLoopError, UnknownIntrinsicTypeError,
 };
-use eight_support::errors::hir::HirError;
 use eight_support::ice;
 use eight_support::span::Span;
 use eight_syntax::ast::{
@@ -36,21 +35,21 @@ use std::collections::{BTreeMap, VecDeque};
 /// lowered into a TConst type, despite the fact that the type checker will replace this with a
 /// fresh type variable. This is to allow the type checker to generate a fresh type variable for
 /// each type parameter for the local context.
-pub struct AstLoweringPass<'ast, 'hir> {
-    session: &'hir CompileSession<'hir>,
-    loop_depth: VecDeque<&'ast AstForStmt<'ast>>,
+pub struct AstLoweringPass<'be> {
+    session: &'be CompileSession<'be>,
+    loop_depth: VecDeque<&'be AstForStmt<'be>>,
 
     /// When traversing the AST, we replace any generic syntax with De Bruijn indexed type
     /// variables.
     ///
     /// These differ from the meta variables used in unification.
-    type_binding_context: Scope<&'hir str, &'hir HirTy<'hir>>,
+    type_binding_context: Scope<&'be str, &'be HirTy<'be>>,
     type_binding_depth: u32,
     type_binding_index: u32,
 }
 
-impl<'hir> AstLoweringPass<'_, 'hir> {
-    pub fn new(session: &'hir CompileSession<'hir>) -> Self {
+impl<'be> AstLoweringPass<'be> {
+    pub fn new(session: &'be CompileSession<'be>) -> Self {
         Self {
             session,
             loop_depth: VecDeque::new(),
@@ -77,16 +76,20 @@ impl<'hir> AstLoweringPass<'_, 'hir> {
         self.type_binding_index = 0;
     }
 
-    pub fn record_typ_binding(&mut self, name: &'hir str, ty: &'hir HirTy<'hir>) -> HirResult<()> {
+    pub fn record_typ_binding(
+        &mut self,
+        name: &'be str,
+        ty: &'be HirTy<'be>,
+    ) -> Result<(), ErrorGuaranteed> {
         self.type_binding_context.add(name, ty);
         Ok(())
     }
 
-    pub fn find_type_binding(&self, name: &'hir str) -> Option<&'hir HirTy<'hir>> {
+    pub fn find_type_binding(&self, name: &'be str) -> Option<&'be HirTy<'be>> {
         self.type_binding_context.find(&name).copied()
     }
 
-    pub fn fresh_type_variable(&mut self) -> &'hir HirTy<'hir> {
+    pub fn fresh_type_variable(&mut self) -> &'be HirTy<'be> {
         let depth = self.type_binding_depth;
         let index = self.type_binding_index;
         let ty = self.session.hir_variable_type(depth, index);
@@ -104,8 +107,8 @@ impl<'hir> AstLoweringPass<'_, 'hir> {
     }
 }
 
-impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
-    pub fn visit_expr(&mut self, node: &'ast AstExpr) -> HirResult<HirExpr<'hir>> {
+impl<'be> AstLoweringPass<'be> {
+    pub fn visit_expr(&mut self, node: &'be AstExpr) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         match node {
             AstExpr::Assign(e) => self.visit_assign_expr(e),
             AstExpr::Call(e) => self.visit_call_expr(e),
@@ -121,7 +124,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         }
     }
 
-    pub fn visit_assign_expr(&mut self, node: &'ast AstAssignExpr) -> HirResult<HirExpr<'hir>> {
+    pub fn visit_assign_expr(
+        &mut self,
+        node: &'be AstAssignExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::Assign(HirBuilder::build_assign_expr(
             node.span,
             self.visit_expr(node.lhs)?,
@@ -130,7 +136,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         )))
     }
 
-    pub fn visit_call_expr(&mut self, node: &'ast AstCallExpr) -> HirResult<HirExpr<'hir>> {
+    pub fn visit_call_expr(
+        &mut self,
+        node: &'be AstCallExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::Call(HirBuilder::build_call_expr(
             node.span,
             self.visit_expr(node.callee)?,
@@ -138,7 +147,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
             node.type_arguments
                 .iter()
                 .map(|t| self.visit_type(t))
-                .collect::<HirResult<Vec<_>>>()?,
+                .collect::<Result<Vec<_>, ErrorGuaranteed>>()?,
             // TODO: Populate this
             vec![],
             self.session.hir_uninitialized_type(),
@@ -147,8 +156,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_construct_expr(
         &mut self,
-        node: &'ast AstConstructExpr,
-    ) -> HirResult<HirExpr<'hir>> {
+        node: &'be AstConstructExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::Construct(HirBuilder::build_construct_expr(
             node.span,
             self.visit_type(node.callee)?,
@@ -161,8 +170,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_constructor_expr_argument(
         &mut self,
-        node: &'ast AstConstructorExprArgument,
-    ) -> HirResult<HirConstructExprArgument<'hir>> {
+        node: &'be AstConstructorExprArgument,
+    ) -> Result<HirConstructExprArgument<'be>, ErrorGuaranteed> {
         Ok(HirBuilder::build_construct_expr_argument(
             node.span,
             self.session.intern_str(&node.field.name),
@@ -175,14 +184,17 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     ///
     /// These are eliminated completely, because the tree structure makes the order of evaluation
     /// explicit.
-    pub fn visit_group_expr(&mut self, node: &'ast AstGroupExpr) -> HirResult<HirExpr<'hir>> {
+    pub fn visit_group_expr(
+        &mut self,
+        node: &'be AstGroupExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         self.visit_expr(node.inner)
     }
 
     pub fn visit_integer_literal_expr(
         &mut self,
-        node: &'ast AstIntegerLiteralExpr,
-    ) -> HirResult<HirExpr<'hir>> {
+        node: &'be AstIntegerLiteralExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::IntegerLiteral(
             HirBuilder::build_integer_literal_expr(
                 node.span,
@@ -194,8 +206,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_boolean_literal_expr(
         &mut self,
-        node: &'ast AstBooleanLiteralExpr,
-    ) -> HirResult<HirExpr<'hir>> {
+        node: &'be AstBooleanLiteralExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::BooleanLiteral(
             HirBuilder::build_boolean_literal_expr(
                 node.span,
@@ -209,7 +221,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     ///
     /// We translate the AddressOf and Deref operators into separate expressions, as they produce
     /// different types
-    pub fn visit_unary_op_expr(&mut self, node: &'ast AstUnaryOpExpr) -> HirResult<HirExpr<'hir>> {
+    pub fn visit_unary_op_expr(
+        &mut self,
+        node: &'be AstUnaryOpExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         // Translate address of and deref operators into separate expressions, as they have wildly
         // different semantics from the other operators.
         if let AstUnaryOp::AddressOf = node.op {
@@ -260,8 +275,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_binary_op_expr(
         &mut self,
-        node: &'ast AstBinaryOpExpr,
-    ) -> HirResult<HirExpr<'hir>> {
+        node: &'be AstBinaryOpExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         let (trait_name, function_name) = match node.op {
             AstBinaryOp::Add => ("Add", "add"),
             AstBinaryOp::Sub => ("Sub", "sub"),
@@ -304,8 +319,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_dot_index_expr(
         &mut self,
-        node: &'ast AstDotIndexExpr,
-    ) -> HirResult<HirExpr<'hir>> {
+        node: &'be AstDotIndexExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::ConstantIndex(
             HirBuilder::build_constant_index_expr(
                 node.span,
@@ -319,8 +334,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_bracket_index_expr(
         &mut self,
-        node: &'ast AstBracketIndexExpr,
-    ) -> HirResult<HirExpr<'hir>> {
+        node: &'be AstBracketIndexExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::OffsetIndex(HirBuilder::build_offset_index_expr(
             node.span,
             self.visit_expr(node.origin)?,
@@ -331,8 +346,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_reference_expr(
         &mut self,
-        node: &'ast AstReferenceExpr,
-    ) -> HirResult<HirExpr<'hir>> {
+        node: &'be AstReferenceExpr,
+    ) -> Result<HirExpr<'be>, ErrorGuaranteed> {
         Ok(HirExpr::Reference(HirBuilder::build_reference_expr(
             node.span,
             self.session.hir_uninitialized_type(),
@@ -347,12 +362,12 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_translation_unit(
         &mut self,
-        node: &'ast AstTranslationUnit,
-    ) -> HirResult<HirModule<'hir>> {
+        node: AstTranslationUnit<'be>,
+    ) -> Result<HirModule<'be>, ErrorGuaranteed> {
         let mut module_body = HirModuleBody::default();
         let mut module_signature = HirModuleSignature::default();
 
-        for item in node.items {
+        for item in node.items.iter() {
             self.visit_item(&mut module_body, &mut module_signature, item)?;
         }
 
@@ -369,10 +384,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     /// linkage type marked external.
     pub fn visit_item(
         &mut self,
-        module_body: &mut HirModuleBody<'hir>,
-        module_signature: &mut HirModuleSignature<'hir>,
-        node: &'ast AstItem,
-    ) -> HirResult<()> {
+        module_body: &mut HirModuleBody<'be>,
+        module_signature: &mut HirModuleSignature<'be>,
+        node: &'be AstItem,
+    ) -> Result<(), ErrorGuaranteed> {
         match node {
             AstItem::Function(f) => {
                 let fun = self.visit_function_item(f)?;
@@ -409,8 +424,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_function_item(
         &mut self,
-        node: &'ast AstFunctionItem,
-    ) -> HirResult<HirFunction<'hir>> {
+        node: &'be AstFunctionItem,
+    ) -> Result<HirFunction<'be>, ErrorGuaranteed> {
         self.enter_type_binding_scope();
         self.drain_type_parameters(node.type_parameters.iter().as_slice());
 
@@ -450,8 +465,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_function_parameter(
         &mut self,
-        node: &'ast AstFunctionParameterItem,
-    ) -> HirResult<&'hir HirFunctionParameterSignature<'hir>> {
+        node: &'be AstFunctionParameterItem,
+    ) -> Result<&'be HirFunctionParameterSignature<'be>, ErrorGuaranteed> {
         let name = self.session.intern_str(&node.name.name);
         let ty = self.visit_type(node.ty)?;
         let hir = self.session.arena_alloc(HirFunctionParameterSignature {
@@ -466,8 +481,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_type_parameter_item(
         &mut self,
-        node: &'ast AstTypeParameterItem,
-    ) -> HirResult<&'hir HirTypeParameterSignature<'hir>> {
+        node: &'be AstTypeParameterItem,
+    ) -> Result<&'be HirTypeParameterSignature<'be>, ErrorGuaranteed> {
         let name = self.session.intern_str(&node.name.name);
         let key = self.session.intern_str(&node.name.name);
         let ty = self
@@ -482,7 +497,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         Ok(hir)
     }
 
-    pub fn visit_type_item(&mut self, node: &'ast AstTypeItem) -> HirResult<HirType<'hir>> {
+    pub fn visit_type_item(
+        &mut self,
+        node: &'be AstTypeItem,
+    ) -> Result<HirType<'be>, ErrorGuaranteed> {
         let name = self.session.intern_str(&node.name.name);
         let signature = self.session.arena_alloc(HirTypeSignature {
             span: node.span,
@@ -493,10 +511,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
                 "bool" => self.session.hir_boolean_type(),
                 "unit" => self.session.hir_unit_type(),
                 _ => {
-                    return Err(HirError::UnknownIntrinsicType(UnknownIntrinsicTypeError {
+                    return Err(self.session.dcx().emit(UnknownIntrinsicTypeError {
                         name: node.name.name.to_owned(),
                         span: node.name.span,
-                    }))
+                    }));
                 }
             },
         });
@@ -509,7 +527,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         Ok(r#type)
     }
 
-    pub fn visit_trait_item(&mut self, node: &'ast AstTraitItem) -> HirResult<HirTrait<'hir>> {
+    pub fn visit_trait_item(
+        &mut self,
+        node: &'be AstTraitItem,
+    ) -> Result<HirTrait<'be>, ErrorGuaranteed> {
         self.enter_type_binding_scope();
         self.drain_type_parameters(node.type_parameters.iter().as_slice());
 
@@ -541,11 +562,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_trait_function_item(
         &mut self,
-        node: &'ast AstTraitFunctionItem,
-    ) -> HirResult<&'hir HirFunctionSignature<'hir>> {
+        node: &'be AstTraitFunctionItem,
+    ) -> Result<&'be HirFunctionSignature<'be>, ErrorGuaranteed> {
         self.enter_type_binding_scope();
         self.drain_type_parameters(node.type_parameters.iter().as_slice());
-
         let type_parameters = HirBuilder::build_vec(node.type_parameters.iter(), |p| {
             self.visit_type_parameter_item(p)
         })?;
@@ -570,8 +590,8 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
 
     pub fn visit_instance_item(
         &mut self,
-        node: &'ast AstInstanceItem,
-    ) -> HirResult<HirInstance<'hir>> {
+        node: &'be AstInstanceItem,
+    ) -> Result<HirInstance<'be>, ErrorGuaranteed> {
         let name = self.session.intern_str(&node.name.name);
         let type_arguments =
             HirBuilder::build_vec(node.instantiation_type_parameters.iter(), |t| {
@@ -610,7 +630,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     /// ```text
     /// type Node = { value: i32, left: *Node, right: *Node, }
     /// ```
-    pub fn visit_struct_item(&mut self, node: &'ast AstStructItem) -> HirResult<HirStruct<'hir>> {
+    pub fn visit_struct_item(
+        &mut self,
+        node: &'be AstStructItem,
+    ) -> Result<HirStruct<'be>, ErrorGuaranteed> {
         let name = self.session.intern_str(&node.name.name);
         let mut fields = BTreeMap::new();
         for member in node.members.iter() {
@@ -641,7 +664,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         Ok(rec)
     }
 
-    pub fn visit_stmt(&mut self, node: &'ast AstStmt) -> HirResult<HirStmt<'hir>> {
+    pub fn visit_stmt(&mut self, node: &'be AstStmt) -> Result<HirStmt<'be>, ErrorGuaranteed> {
         match node {
             AstStmt::Let(s) => self.visit_let_stmt(s),
             AstStmt::Return(s) => self.visit_return_stmt(s),
@@ -653,7 +676,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         }
     }
 
-    pub fn visit_let_stmt(&mut self, node: &'ast AstLetStmt) -> HirResult<HirStmt<'hir>> {
+    pub fn visit_let_stmt(
+        &mut self,
+        node: &'be AstLetStmt,
+    ) -> Result<HirStmt<'be>, ErrorGuaranteed> {
         let name = self.session.intern_str(&node.name.name);
         let ty = match &node.ty {
             Some(t) => self.visit_type(t)?,
@@ -670,7 +696,10 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         )))
     }
 
-    pub fn visit_return_stmt(&mut self, node: &'ast AstReturnStmt) -> HirResult<HirStmt<'hir>> {
+    pub fn visit_return_stmt(
+        &mut self,
+        node: &'be AstReturnStmt,
+    ) -> Result<HirStmt<'be>, ErrorGuaranteed> {
         let value = node.value.map(|v| self.visit_expr(v)).transpose()?;
         Ok(HirStmt::Return(HirBuilder::build_return_stmt(
             node.span, value,
@@ -701,12 +730,15 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     /// - If the initializer is missing, then the induced `let` statement is replaced with a {}
     /// - If the condition is missing, then a literal true is used as the condition.
     /// - If the increment is missing, then the increment block is replaced with a {}
-    pub fn visit_for_stmt(&mut self, node: &'ast AstForStmt) -> HirResult<HirStmt<'hir>> {
+    pub fn visit_for_stmt(
+        &mut self,
+        node: &'be AstForStmt,
+    ) -> Result<HirStmt<'be>, ErrorGuaranteed> {
         self.loop_depth.push_back(node);
         // Build the let statement for the initializer
         let initializer = node
             .initializer
-            .map(|i| -> HirResult<HirLetStmt> {
+            .map(|i| -> Result<HirLetStmt<'be>, ErrorGuaranteed> {
                 Ok(HirBuilder::build_let_stmt(
                     i.span,
                     self.session.intern_str(&i.name.name),
@@ -765,7 +797,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     ///
     /// The synthesis of the if statement simply replaces a missing unhappy path with an empty
     /// block.
-    pub fn visit_if_stmt(&mut self, node: &'ast AstIfStmt) -> HirResult<HirStmt<'hir>> {
+    pub fn visit_if_stmt(&mut self, node: &'be AstIfStmt) -> Result<HirStmt<'be>, ErrorGuaranteed> {
         let condition = self.visit_expr(node.condition)?;
         let happy_path = HirBuilder::build_vec(node.happy_path.iter(), |s| self.visit_stmt(s))?;
         let unhappy_path = match &node.unhappy_path {
@@ -782,27 +814,36 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
         )))
     }
 
-    pub fn visit_break_stmt(&mut self, node: &'ast AstBreakStmt) -> HirResult<HirStmt<'hir>> {
-        self.loop_depth
-            .back()
-            .ok_or(HirError::BreakOutsideLoop(BreakOutsideLoopError {
-                span: node.span,
-            }))?;
+    pub fn visit_break_stmt(
+        &mut self,
+        node: &'be AstBreakStmt,
+    ) -> Result<HirStmt<'be>, ErrorGuaranteed> {
+        self.loop_depth.back().ok_or(
+            self.session
+                .dcx()
+                .emit(BreakOutsideLoopError { span: node.span }),
+        )?;
         Ok(HirStmt::Break(HirBuilder::build_break_stmt(node.span)))
     }
 
-    pub fn visit_continue_stmt(&mut self, node: &'ast AstContinueStmt) -> HirResult<HirStmt<'hir>> {
-        self.loop_depth
-            .back()
-            .ok_or(HirError::ContinueOutsideLoop(ContinueOutsideLoopError {
-                span: node.span,
-            }))?;
+    pub fn visit_continue_stmt(
+        &mut self,
+        node: &'be AstContinueStmt,
+    ) -> Result<HirStmt<'be>, ErrorGuaranteed> {
+        self.loop_depth.back().ok_or(
+            self.session
+                .dcx()
+                .emit(ContinueOutsideLoopError { span: node.span }),
+        )?;
         Ok(HirStmt::Continue(HirBuilder::build_continue_stmt(
             node.span,
         )))
     }
 
-    pub fn visit_expr_stmt(&mut self, node: &'ast AstExprStmt) -> HirResult<HirStmt<'hir>> {
+    pub fn visit_expr_stmt(
+        &mut self,
+        node: &'be AstExprStmt,
+    ) -> Result<HirStmt<'be>, ErrorGuaranteed> {
         let expr = self.visit_expr(node.expr)?;
         Ok(HirStmt::Expr(HirBuilder::build_expr_stmt(node.span, expr)))
     }
@@ -817,7 +858,7 @@ impl<'ast, 'hir> AstLoweringPass<'ast, 'hir> {
     /// fn foo<T>(x: T) -> T {}
     /// ```
     #[allow(clippy::only_used_in_recursion)]
-    pub fn visit_type(&mut self, node: &'ast AstType) -> HirResult<&'hir HirTy<'hir>> {
+    pub fn visit_type(&mut self, node: &'be AstType) -> Result<&'be HirTy<'be>, ErrorGuaranteed> {
         let ty = match node {
             AstType::Unit(_) => self.session.hir_unit_type(),
             AstType::Integer32(_) => self.session.hir_integer32_type(),

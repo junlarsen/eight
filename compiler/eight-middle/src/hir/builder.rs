@@ -16,7 +16,7 @@ use crate::hir::{
     HirReferenceExpr, HirReturnStmt, HirStmt, HirTrait, HirTraitSignature,
 };
 use crate::hir::{HirReferenceSymbol, HirTy};
-use crate::{HirResult, LinkageType};
+use crate::LinkageType;
 use eight_support::span::Span;
 use std::collections::BTreeMap;
 
@@ -33,10 +33,10 @@ impl<'hir> HirBuilder {
     ///
     /// This saves us from having to write `.iter().map(|x| ...).collect()` every time we want to
     /// collect something into a vector.
-    pub fn build_vec<A, B>(
+    pub fn build_vec<A, B, E>(
         iter: impl IntoIterator<Item = A>,
-        f: impl FnMut(A) -> HirResult<B>,
-    ) -> HirResult<Vec<B>> {
+        f: impl FnMut(A) -> Result<B, E>,
+    ) -> Result<Vec<B>, E> {
         iter.into_iter().map(f).collect()
     }
 
