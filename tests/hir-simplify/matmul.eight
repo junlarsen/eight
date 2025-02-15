@@ -1,3 +1,5 @@
+// RUN: not %eightc --emit-hir --terminator=hir %s 2>&1 | %regtest test %s
+
 intrinsic_fn malloc<T>(size: i32) -> *T;
 trait Add<A, B, R> {
   fn add(a: A, b: B) -> R;

@@ -1,126 +1,111 @@
----
-source: compiler/eight-tests/tests/compiler_tests.rs
-description: compiler test suite for ast
-info:
-  program: eightc
-  args:
-    - "--emit-ast"
-    - "--terminator=syntax"
-    - tests/ast-lower/generic_substituion.test
-input_file: compiler/eight-tests/tests/ast-lower/generic_substituion.test
-snapshot_kind: text
----
-success: false
-exit_code: 1
------ stdout -----
 (
     items: [
         Function((
             span: (
-                low: 0,
-                high: 69,
+                low: 79,
+                high: 148,
             ),
             name: (
                 name: "substitute",
                 span: (
-                    low: 3,
-                    high: 13,
+                    low: 82,
+                    high: 92,
                 ),
             ),
             parameters: [
                 (
                     span: (
-                        low: 23,
-                        high: 29,
+                        low: 102,
+                        high: 108,
                     ),
                     name: (
                         name: "a",
                         span: (
-                            low: 23,
-                            high: 24,
+                            low: 102,
+                            high: 103,
                         ),
                     ),
                     ty: Integer32((
                         span: (
-                            low: 26,
-                            high: 29,
+                            low: 105,
+                            high: 108,
                         ),
                     )),
                 ),
                 (
                     span: (
-                        low: 31,
-                        high: 35,
+                        low: 110,
+                        high: 114,
                     ),
                     name: (
                         name: "b",
                         span: (
-                            low: 31,
-                            high: 32,
+                            low: 110,
+                            high: 111,
                         ),
                     ),
                     ty: Named((
                         span: (
-                            low: 34,
-                            high: 35,
+                            low: 113,
+                            high: 114,
                         ),
                         name: (
                             name: "T",
                             span: (
-                                low: 34,
-                                high: 35,
+                                low: 113,
+                                high: 114,
                             ),
                         ),
                     )),
                 ),
                 (
                     span: (
-                        low: 37,
-                        high: 41,
+                        low: 116,
+                        high: 120,
                     ),
                     name: (
                         name: "c",
                         span: (
-                            low: 37,
-                            high: 38,
+                            low: 116,
+                            high: 117,
                         ),
                     ),
                     ty: Named((
                         span: (
-                            low: 40,
-                            high: 41,
+                            low: 119,
+                            high: 120,
                         ),
                         name: (
                             name: "U",
                             span: (
-                                low: 40,
-                                high: 41,
+                                low: 119,
+                                high: 120,
                             ),
                         ),
                     )),
                 ),
                 (
                     span: (
-                        low: 43,
-                        high: 47,
+                        low: 122,
+                        high: 126,
                     ),
                     name: (
                         name: "d",
                         span: (
-                            low: 43,
-                            high: 44,
+                            low: 122,
+                            high: 123,
                         ),
                     ),
                     ty: Named((
                         span: (
-                            low: 46,
-                            high: 47,
+                            low: 125,
+                            high: 126,
                         ),
                         name: (
                             name: "V",
                             span: (
-                                low: 46,
-                                high: 47,
+                                low: 125,
+                                high: 126,
                             ),
                         ),
                     )),
@@ -129,73 +114,73 @@ exit_code: 1
             type_parameters: [
                 (
                     span: (
-                        low: 14,
-                        high: 15,
+                        low: 93,
+                        high: 94,
                     ),
                     name: (
                         name: "T",
                         span: (
-                            low: 14,
-                            high: 15,
+                            low: 93,
+                            high: 94,
                         ),
                     ),
                 ),
                 (
                     span: (
-                        low: 17,
-                        high: 18,
+                        low: 96,
+                        high: 97,
                     ),
                     name: (
                         name: "U",
                         span: (
-                            low: 17,
-                            high: 18,
+                            low: 96,
+                            high: 97,
                         ),
                     ),
                 ),
                 (
                     span: (
-                        low: 20,
-                        high: 21,
+                        low: 99,
+                        high: 100,
                     ),
                     name: (
                         name: "V",
                         span: (
-                            low: 20,
-                            high: 21,
+                            low: 99,
+                            high: 100,
                         ),
                     ),
                 ),
             ],
             return_type: Some(Named((
                 span: (
-                    low: 52,
-                    high: 53,
+                    low: 131,
+                    high: 132,
                 ),
                 name: (
                     name: "V",
                     span: (
-                        low: 52,
-                        high: 53,
+                        low: 131,
+                        high: 132,
                     ),
                 ),
             ))),
             body: [
                 Return((
                     span: (
-                        low: 58,
-                        high: 67,
+                        low: 137,
+                        high: 146,
                     ),
                     value: Some(Reference((
                         span: (
-                            low: 65,
-                            high: 66,
+                            low: 144,
+                            high: 145,
                         ),
                         name: (
                             name: "d",
                             span: (
-                                low: 65,
-                                high: 66,
+                                low: 144,
+                                high: 145,
                             ),
                         ),
                     ))),
@@ -205,6 +190,4 @@ exit_code: 1
         )),
     ],
 )
-
------ stderr -----
 eightc: early termination due to: --terminator=syntax

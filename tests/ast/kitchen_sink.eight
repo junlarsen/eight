@@ -1,3 +1,5 @@
+// RUN: not %eightc --emit-ast --terminator=syntax %s 2>&1 | %regtest test %s
+
 intrinsic_fn malloc<T>(size: i32) -> *T;
 intrinsic_fn free<T>(ptr: *T) -> unit;
 

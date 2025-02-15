@@ -1,0 +1,2 @@
+// RUN: cat ../../stdlib/*.eight | not %eightc --emit-hir --terminator=hir - 2>&1 | %regtest test %s
+

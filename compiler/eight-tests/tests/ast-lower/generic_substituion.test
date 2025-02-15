@@ -1,3 +1,0 @@
-fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V {
-  return d;
-}

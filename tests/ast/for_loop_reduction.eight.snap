@@ -1,30 +1,15 @@
----
-source: compiler/eight-tests/tests/compiler_tests.rs
-description: compiler test suite for ast
-info:
-  program: eightc
-  args:
-    - "--emit-ast"
-    - "--terminator=syntax"
-    - tests/ast-lower/for_loop_reduction.test
-input_file: compiler/eight-tests/tests/ast-lower/for_loop_reduction.test
-snapshot_kind: text
----
-success: false
-exit_code: 1
------ stdout -----
 (
     items: [
         Function((
             span: (
-                low: 0,
-                high: 81,
+                low: 79,
+                high: 160,
             ),
             name: (
                 name: "loop_transform",
                 span: (
-                    low: 3,
-                    high: 17,
+                    low: 82,
+                    high: 96,
                 ),
             ),
             parameters: [],
@@ -33,134 +18,134 @@ exit_code: 1
             body: [
                 For((
                     span: (
-                        low: 24,
-                        high: 79,
+                        low: 103,
+                        high: 158,
                     ),
                     initializer: Some((
                         span: (
-                            low: 29,
-                            high: 38,
+                            low: 108,
+                            high: 117,
                         ),
                         name: (
                             name: "i",
                             span: (
-                                low: 33,
-                                high: 34,
+                                low: 112,
+                                high: 113,
                             ),
                         ),
                         initializer: IntegerLiteral((
                             span: (
-                                low: 37,
-                                high: 38,
+                                low: 116,
+                                high: 117,
                             ),
                             value: 0,
                         )),
                     )),
                     condition: Some(BinaryOp((
                         span: (
-                            low: 40,
-                            high: 46,
+                            low: 119,
+                            high: 125,
                         ),
                         lhs: Reference((
                             span: (
-                                low: 40,
-                                high: 41,
+                                low: 119,
+                                high: 120,
                             ),
                             name: (
                                 name: "i",
                                 span: (
-                                    low: 40,
-                                    high: 41,
+                                    low: 119,
+                                    high: 120,
                                 ),
                             ),
                         )),
                         rhs: IntegerLiteral((
                             span: (
-                                low: 44,
-                                high: 46,
+                                low: 123,
+                                high: 125,
                             ),
                             value: 10,
                         )),
                         op: Lt,
                         op_span: (
-                            low: 42,
-                            high: 43,
+                            low: 121,
+                            high: 122,
                         ),
                     ))),
                     increment: Some(Assign((
                         span: (
-                            low: 48,
-                            high: 57,
+                            low: 127,
+                            high: 136,
                         ),
                         lhs: Reference((
                             span: (
-                                low: 48,
-                                high: 49,
+                                low: 127,
+                                high: 128,
                             ),
                             name: (
                                 name: "i",
                                 span: (
-                                    low: 48,
-                                    high: 49,
+                                    low: 127,
+                                    high: 128,
                                 ),
                             ),
                         )),
                         rhs: BinaryOp((
                             span: (
-                                low: 52,
-                                high: 57,
+                                low: 131,
+                                high: 136,
                             ),
                             lhs: Reference((
                                 span: (
-                                    low: 52,
-                                    high: 53,
+                                    low: 131,
+                                    high: 132,
                                 ),
                                 name: (
                                     name: "i",
                                     span: (
-                                        low: 52,
-                                        high: 53,
+                                        low: 131,
+                                        high: 132,
                                     ),
                                 ),
                             )),
                             rhs: IntegerLiteral((
                                 span: (
-                                    low: 56,
-                                    high: 57,
+                                    low: 135,
+                                    high: 136,
                                 ),
                                 value: 1,
                             )),
                             op: Add,
                             op_span: (
-                                low: 54,
-                                high: 55,
+                                low: 133,
+                                high: 134,
                             ),
                         )),
                     ))),
                     body: [
                         Let((
                             span: (
-                                low: 65,
-                                high: 75,
+                                low: 144,
+                                high: 154,
                             ),
                             name: (
                                 name: "x",
                                 span: (
-                                    low: 69,
-                                    high: 70,
+                                    low: 148,
+                                    high: 149,
                                 ),
                             ),
                             ty: None,
                             value: Reference((
                                 span: (
-                                    low: 73,
-                                    high: 74,
+                                    low: 152,
+                                    high: 153,
                                 ),
                                 name: (
                                     name: "i",
                                     span: (
-                                        low: 73,
-                                        high: 74,
+                                        low: 152,
+                                        high: 153,
                                     ),
                                 ),
                             )),
@@ -172,6 +157,4 @@ exit_code: 1
         )),
     ],
 )
-
------ stderr -----
 eightc: early termination due to: --terminator=syntax
