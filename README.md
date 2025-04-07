@@ -93,4 +93,4 @@ Options:
 
 ## License
 
-Everything in the repository is licensed under the Apache 2.0 License.
+Everything in the repository is licensed under the Apache 2.0 License with LLVM exception.
