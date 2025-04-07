@@ -1,9 +1,0 @@
-pub mod ast_emit;
-pub mod ast_lower;
-pub mod ast_parse;
-pub mod hir_emit;
-pub mod hir_lower;
-pub mod hir_simplify;
-pub mod hir_type_check;
-pub mod mir_codegen_llvm;
-pub mod mir_emit;

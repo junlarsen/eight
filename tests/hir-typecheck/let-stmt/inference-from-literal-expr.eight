@@ -1,8 +1,0 @@
-// RUN: not %eightc --emit-hir --terminator=hir --emit-query hir.fn.foo %s 2>&1 | FileCheck %s
-fn foo() {
-// CHECK-LABEL: foo
-  let infer_integer = 123;
-// CHECK-NEXT: let infer_integer: i32
-  let infer_boolean = true;
-// CHECK-NEXT: let infer_boolean: bool
-}

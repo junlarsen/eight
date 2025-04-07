@@ -1,5 +1,9 @@
 # Eight
 
+> The compiler is currently undergoing a C++ rewrite. Below are instructions for the legacy Rust compiler.
+> 
+> The rewrite is motivated by the interest in direct access to LLVM and MLIR.
+
 Eight is a toy programming language built to learn compiler infrastructure, optimization, and code generation. The
 compiler compiles an imperative-style programming language with a static type system. It has great type inference and
 its semantics closely resemble the C programming language.

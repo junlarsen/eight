@@ -1,7 +1,0 @@
-// RUN: not %eightc %s 2>&1 | %regtest test %s
-
-fn foo<T>(a: T, b: T) -> T {}
-
-fn main() {
-  let foo = foo::<i32, bool>(1, 2);
-}

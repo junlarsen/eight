@@ -1,8 +1,0 @@
-// RUN: not %eightc %s 2>&1 | FileCheck %s
-
-fn test() {
-  let p = new i32 {};
-}
-
-// CHECK-LABEL: sema::constructing_non_struct_type
-// CHECK: type i32 is not a struct type

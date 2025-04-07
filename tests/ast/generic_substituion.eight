@@ -1,5 +1,0 @@
-// RUN: not %eightc --emit-ast --terminator=syntax %s 2>&1 | %regtest test %s
-
-fn substitute<T, U, V>(a: i32, b: T, c: U, d: V) -> V {
-  return d;
-}

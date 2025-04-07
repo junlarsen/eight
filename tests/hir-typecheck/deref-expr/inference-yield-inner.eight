@@ -1,8 +1,0 @@
-// RUN: not %eightc --emit-hir --terminator=hir --emit-query hir.fn.test %s 2>&1 | FileCheck %s
-
-fn test(xs: *i32) -> i32 {
-// CHECK-LABEL: test
-  let k = *xs;
-// CHECK-NEXT: let k: i32
-  return k;
-}

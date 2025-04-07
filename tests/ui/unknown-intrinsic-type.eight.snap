@@ -1,9 +1,0 @@
-Error: sema::unknown_intrinsic_type_type
-
-  × unknown intrinsic type i69
-   ╭─[unknown-intrinsic-type.eight:3:16]
- 2 │ 
- 3 │ intrinsic_type i69;
-   ·                ─┬─
-   ·                 ╰── could not find type i69
-   ╰────
