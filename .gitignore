@@ -1,4 +1,10 @@
 .lit_test_times.txt
 
+# CMake
+CMakeFiles
+
+# CLion
+cmake-build-debug
+
 # Scratch development file, if necessary
 scratch
