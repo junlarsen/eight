@@ -1,7 +1,7 @@
 [project]
-name = "eight"
+name = "xd"
 version = "0.1.0"
-description = "Eight compiler"
+description = "XD programming language compiler"
 authors = [
     {name = "Mats Jun Larsen",email = "mats@jun.codes"}
 ]
