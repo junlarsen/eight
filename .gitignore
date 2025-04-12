@@ -2,9 +2,11 @@
 
 # CMake
 CMakeFiles
+compile_commands.json
 
-# CLion
+# CLion & Clangd
 cmake-build-debug
+.cache
 
 # Scratch development file, if necessary
 scratch
