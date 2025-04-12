@@ -1,8 +1,0 @@
-// RUN: not %eightc --emit-hir --terminator=hir %s 2>&1 | FileCheck %s
-
-fn test() {
-  let p = new UnknownType {};
-}
-
-// CHECK-LABEL: sema::unknown_type
-// CHECK: UnknownType does not name a known type

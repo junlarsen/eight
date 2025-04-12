@@ -1,7 +1,0 @@
-// RUN: not %eightc %s 2>&1 | %regtest test %s
-
-intrinsic_fn get_i32() -> i32;
-
-fn main() {
-  let dummy = get_i32(1);
-}

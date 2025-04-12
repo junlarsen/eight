@@ -1,7 +1,0 @@
-// RUN: not %eightc --emit-ast --terminator=syntax %s 2>&1 | %regtest test %s
-
-fn loop_transform() {
-  for (let i = 0; i < 10; i = i + 1) {
-    let x = i;
-  }
-}

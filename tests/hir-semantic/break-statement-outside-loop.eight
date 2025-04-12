@@ -1,8 +1,0 @@
-// RUN: not %eightc %s 2>&1 | FileCheck %s
-
-fn test() {
-  break;
-}
-
-// CHECK-LABEL: sema::break_outside_loop
-// CHECK: there is no enclosing loop

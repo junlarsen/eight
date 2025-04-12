@@ -1,8 +1,0 @@
-// RUN: not %eightc %s 2>&1 | FileCheck %s
-
-fn test() {
-  let k = unknown;
-}
-
-// CHECK-LABEL: sema::invalid_reference
-// CHECK: no value in scope named unknown

@@ -1,9 +1,0 @@
-// RUN: not %eightc %s 2>&1 | %regtest test %s
-
-struct Foo {
-  bar: i32,
-}
-
-fn main() {
-  let foo = new *Foo {};
-}

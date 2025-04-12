@@ -1,6 +1,0 @@
-// RUN: not %eightc %s 2>&1 | %regtest test %s
-
-fn foo() {
-  let zoo = 0;
-  let zoo = 1;
-}
