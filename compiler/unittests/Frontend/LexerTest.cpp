@@ -1,6 +1,6 @@
 #include "xd/Frontend/Lexer.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include <gtest/gtest.h>
-#include <llvm/Support/MemoryBuffer.h>
 
 using namespace llvm;
 using namespace xd;
@@ -21,6 +21,7 @@ TEST(LexerTest, ParseIntegerLiteral) {
   auto Lex = Lexer(Buf->getBufferStart());
   TokenKind TK = Lex.getNextToken();
   EXPECT_EQ(TK, TokenKind::IntegerLiteral);
+  ASSERT_EQ(Lex.getSourceLocation(), SourceLocation(0, 3));
   EXPECT_FALSE(Lex.hasNext());
 }
 
@@ -28,6 +29,7 @@ TEST(LexerTest, ParseCommentLiteral) {
   auto Buf = MemoryBuffer::getMemBuffer("// this is a comment\nidentifier");
   auto Lex = Lexer(Buf->getBufferStart());
   EXPECT_EQ(Lex.getNextToken(), TokenKind::Comment);
+  ASSERT_EQ(Lex.getSourceLocation(), SourceLocation(0, 20));
   EXPECT_EQ(" this is a comment", Lex.getIdentifier());
   EXPECT_EQ(Lex.getNextToken(), TokenKind::Identifier);
   EXPECT_EQ("identifier", Lex.getIdentifier());
@@ -38,8 +40,10 @@ TEST(LexerTest, ParseIdentifier) {
   auto Buf = MemoryBuffer::getMemBuffer("abc a1_cd");
   auto Lex = Lexer(Buf->getBufferStart());
   EXPECT_EQ(Lex.getNextToken(), TokenKind::Identifier);
+  EXPECT_EQ(Lex.getSourceLocation(), SourceLocation(0, 3));
   EXPECT_EQ("abc", Lex.getIdentifier());
   EXPECT_EQ(Lex.getNextToken(), TokenKind::Identifier);
+  EXPECT_EQ(Lex.getSourceLocation(), SourceLocation(4, 9));
   EXPECT_EQ("a1_cd", Lex.getIdentifier());
   EXPECT_FALSE(Lex.hasNext());
 }

@@ -17,8 +17,6 @@ auto Lexer::getCommentToken() -> TokenKind {
   while (hasNext() && peek() != '\n') {
     Value += advance();
   }
-  // Consume the newline character as well
-  advance();
   Identifier = Value;
   return TokenKind::Comment;
 }
@@ -152,7 +150,7 @@ auto Lexer::getTokenForGreater() -> TokenKind {
 
 auto Lexer::getNextToken() -> TokenKind {
   while (true) {
-    TokenStartPtr = SourcePtr;
+    TokenStart = Offset;
     auto Character = advance();
     switch (Character) {
     default:

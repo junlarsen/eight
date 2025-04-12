@@ -25,6 +25,9 @@ class SourceLocation {
 
 public:
   SourceLocation(uint32_t Start, uint32_t End) : Start(Start), End(End) {}
+  bool operator==(const SourceLocation &Other) const {
+    return Start == Other.Start && End == Other.End;
+  }
 };
 
 enum class TokenKind : uint8_t {
@@ -85,23 +88,26 @@ enum class TokenKind : uint8_t {
 };
 
 class Lexer {
-  llvm::StringRef Source;
+  /// Pointer to the llvm::MemoryBuffer this Lexer operates on
   const char *SourcePtr;
+  llvm::StringRef Source;
 
-  const char *TokenStartPtr;
+  /// Character offset into the source we're currently at.
+  uint32_t Offset;
+  /// Character offset the current token started at.
+  uint32_t TokenStart;
+
   llvm::APInt IntVal;
   std::string Identifier;
 
 public:
   explicit Lexer(llvm::StringRef Source)
-      : Source(Source), SourcePtr(Source.begin()), TokenStartPtr(nullptr) {}
+      : SourcePtr(Source.begin()), Source(Source), Offset(0), TokenStart(0) {}
 
-  /// Get the current lexer position offset from the start of the underlying
-  /// memory buffer.
-  auto getOffsetLocation() const -> uint32_t {
-    return SourcePtr - Source.begin();
+  /// Get the newly built token's source location.
+  auto getSourceLocation() const -> SourceLocation {
+    return SourceLocation(TokenStart, Offset);
   }
-  auto getTokenKind() -> TokenKind;
 
   /// Get the current integer value from the Lexer state, if present.
   ///
@@ -122,6 +128,7 @@ public:
   auto advance() -> char {
     assert(hasNext() &&
            "Called getNextChar on buffer that has reached the end");
+    Offset += 1;
     return *SourcePtr++;
   }
   auto peek() const -> std::optional<char> {
