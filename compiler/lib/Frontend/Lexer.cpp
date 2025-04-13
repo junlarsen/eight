@@ -1,4 +1,4 @@
-//===----- Lexer ---===//
+//===----- Lexer.cpp ---===//
 //
 // Part of the XD Compiler Project, under the Apache License v2.0 with
 // LLVM Exceptions. See https://llvm.org/LICENSE.txt for license information.
@@ -29,8 +29,10 @@ auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> TokenKind {
     Value += advance();
   }
   auto Kind = llvm::StringSwitch<TokenKind>(Value)
-                  .Case("typedef", TokenKind::KeywordTypedef)
-                  .Case("def", TokenKind::KeywordDef)
+                  .Case("struct", TokenKind::KeywordStruct)
+                  .Case("fn", TokenKind::KeywordFn)
+                  .Case("intrinsic_fn", TokenKind::KeywordIntrinsicFn)
+                  .Case("intrinsic_type", TokenKind::KeywordIntrinsicType)
                   .Case("let", TokenKind::KeywordLet)
                   .Case("if", TokenKind::KeywordIf)
                   .Case("else", TokenKind::KeywordElse)
@@ -43,8 +45,8 @@ auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> TokenKind {
                   .Case("false", TokenKind::FalseLiteral)
                   .Case("trait", TokenKind::KeywordTrait)
                   .Case("instance", TokenKind::KeywordInstance)
-                  .Case("intrinsic_def", TokenKind::KeywordIntrinsicDef)
-                  .Case("intrinsic_typdef", TokenKind::KeywordIntrinsicTypedef)
+                  .Case("intrinsic_def", TokenKind::KeywordIntrinsicFn)
+                  .Case("intrinsic_typdef", TokenKind::KeywordIntrinsicType)
                   .Default(TokenKind::Identifier);
   // We have special cases for identifiers and literal values that also update
   // internal lexer state.

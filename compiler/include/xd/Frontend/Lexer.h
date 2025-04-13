@@ -1,4 +1,4 @@
-//===----- Lexer ---===//
+//===----- Lexer.h ---===//
 //
 // Part of the XD Compiler Project, under the Apache License v2.0 with
 // LLVM Exceptions. See https://llvm.org/LICENSE.txt for license information.
@@ -31,11 +31,11 @@ public:
 };
 
 enum class TokenKind : uint8_t {
-  KeywordTypedef,
+  KeywordStruct,
   KeywordLet,
-  KeywordDef,
-  KeywordIntrinsicDef,
-  KeywordIntrinsicTypedef,
+  KeywordFn,
+  KeywordIntrinsicFn,
+  KeywordIntrinsicType,
   KeywordTrait,
   KeywordInstance,
   KeywordIf,
