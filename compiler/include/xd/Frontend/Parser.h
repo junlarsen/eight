@@ -70,16 +70,24 @@ class Parser {
   Lexer Lex;
   std::vector<std::unique_ptr<ParseEvent>> Events;
 
-  std::optional<SyntaxKind> Lookahead;
-  std::optional<std::string> LookaheadValue;
+  Token Current;
+  std::optional<Token> Lookahead;
 
 public:
-  Parser(Lexer Lex) : Lex(Lex) {}
+  Parser(Lexer Lex)
+      : Lex(Lex), Current(Token(SyntaxKind::Error, llvm::StringRef(""))) {}
 
+  auto get() const -> Token { return Current; }
+  auto lookahead() -> Token;
   auto hasNext() const -> bool { return Lex.hasNext(); }
+  auto at(SyntaxKind SK) -> bool;
+  auto eat(SyntaxKind SK) -> bool;
+  auto expect(SyntaxKind SK) -> void;
+
   auto open() -> ParseCheckpoint;
   auto close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void;
   auto advance() -> void;
+  auto advanceWithError(llvm::StringRef Message) -> void;
 };
 
 } // namespace xd
