@@ -11,25 +11,29 @@
 
 using namespace xd;
 
-auto Lexer::getCommentToken() -> SyntaxKind {
+static auto getLiteralToken(SyntaxKind SK, llvm::StringRef S) -> Token {
+  return Token(SK, S);
+}
+
+auto Lexer::getCommentToken() -> Token {
   // The lexer has consumed both of the leading slashes, so we add them back
   // here for full-fidelity.
-  std::string Value = std::string("//");
+  auto Value = llvm::SmallString<8>("//");
   while (hasNext() && peek() != '\n') {
     Value += advance();
   }
-  TextValue = Value;
-  return SyntaxKind::Comment;
+  return Token(SyntaxKind::Comment, Value);
 }
 
-auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> SyntaxKind {
+auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> Token {
   // The lexer already ate the first character, so we can check for numbers and
   // underscores here right away.
-  std::string Value = std::string(1, InitialCharacter);
+  llvm::SmallString<8> Keyword;
+  Keyword += InitialCharacter;
   while (hasNext() && isIdentifierContinuation(*peek())) {
-    Value += advance();
+    Keyword += advance();
   }
-  auto Kind = llvm::StringSwitch<SyntaxKind>(Value)
+  auto Kind = llvm::StringSwitch<SyntaxKind>(Keyword)
                   .Case("struct", SyntaxKind::KeywordStruct)
                   .Case("fn", SyntaxKind::KeywordFn)
                   .Case("intrinsic_fn", SyntaxKind::KeywordIntrinsicFn)
@@ -49,123 +53,121 @@ auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> SyntaxKind {
                   .Case("intrinsic_def", SyntaxKind::KeywordIntrinsicFn)
                   .Case("intrinsic_typdef", SyntaxKind::KeywordIntrinsicType)
                   .Default(SyntaxKind::Identifier);
-  TextValue = Value;
-  return Kind;
+  return Token(Kind, Keyword);
 }
 
-auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> SyntaxKind {
-  std::string Value = std::string(1, InitialCharacter);
+auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> Token {
+  llvm::SmallString<8> Value;
+  Value += InitialCharacter;
   while (hasNext() && peek() >= '0' && peek() <= '9') {
     Value += advance();
   }
-  TextValue = Value;
-  return SyntaxKind::IntegerLiteral;
+  return Token(SyntaxKind::IntegerLiteral, Value);
 }
 
-auto Lexer::getTokenForNewline(char Character) -> SyntaxKind {
-  std::string Value = std::string(1, Character);
+auto Lexer::getTokenForNewline(char Character) -> Token {
+  llvm::SmallString<8> Value;
+  Value += Character;
   // Depending on whether its LF/CRLF/CR there might be another LF token right
   // after this.
   if (Character == 'r' && hasNext() && peek() == '\n')
     Value += advance();
-  TextValue = Value;
-  return SyntaxKind::Newline;
+  return Token(SyntaxKind::Newline, Value);
 }
 
-auto Lexer::getTokenForWhitespace(char Character) -> SyntaxKind {
-  std::string Value = std::string(1, Character);
+auto Lexer::getTokenForWhitespace(char Character) -> Token {
+  llvm::SmallString<8> Value;
+  Value += Character;
   // We eat all horizontal whitespace as a single token.
   while (hasNext() && isWhitespace(*peek()))
     Value += advance();
-  TextValue = Value;
-  return SyntaxKind::Whitespace;
+  return Token(SyntaxKind::Whitespace, Value);
 }
 
-auto Lexer::getTokenForBang() -> SyntaxKind {
+auto Lexer::getTokenForBang() -> Token {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return SyntaxKind::BangEqual;
+    return getLiteralToken(SyntaxKind::BangEqual, "!=");
   }
-  return SyntaxKind::Bang;
+  return getLiteralToken(SyntaxKind::Bang, "!");
 }
 
-auto Lexer::getTokenForMinus() -> SyntaxKind {
+auto Lexer::getTokenForMinus() -> Token {
   auto Ahead = peek();
   if (Ahead == '>') {
     advance();
-    return SyntaxKind::Arrow;
+    return getLiteralToken(SyntaxKind::Arrow, "->");
   }
-  return SyntaxKind::Minus;
+  return getLiteralToken(SyntaxKind::Minus, "-");
 }
 
-auto Lexer::getTokenForSlash() -> SyntaxKind {
+auto Lexer::getTokenForSlash() -> Token {
   auto Ahead = peek();
   if (Ahead == '/') {
     advance();
     return getCommentToken();
   }
-  return SyntaxKind::Slash;
+  return getLiteralToken(SyntaxKind::Slash, "/");
 }
 
-auto Lexer::getTokenForEqual() -> SyntaxKind {
+auto Lexer::getTokenForEqual() -> Token {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return SyntaxKind::EqualEqual;
+    return getLiteralToken(SyntaxKind::EqualEqual, "==");
   }
-  return SyntaxKind::EqualEqual;
+  return getLiteralToken(SyntaxKind::Equal, "=");
 }
 
-auto Lexer::getTokenForColon() -> SyntaxKind {
+auto Lexer::getTokenForColon() -> Token {
   auto Ahead = peek();
   if (Ahead == ':') {
     advance();
-    return SyntaxKind::ColonColon;
+    return getLiteralToken(SyntaxKind::ColonColon, "::");
   }
-  return SyntaxKind::Colon;
+  return getLiteralToken(SyntaxKind::Colon, ":");
 }
 
-auto Lexer::getTokenForAmpersand() -> SyntaxKind {
+auto Lexer::getTokenForAmpersand() -> Token {
   auto Ahead = peek();
   if (Ahead == '&') {
     advance();
-    return SyntaxKind::AmpersandAmpersand;
+    return getLiteralToken(SyntaxKind::AmpersandAmpersand, "&&");
   }
-  return SyntaxKind::Ampersand;
+  return getLiteralToken(SyntaxKind::Ampersand, "&");
 }
 
-auto Lexer::getTokenForPipe() -> SyntaxKind {
+auto Lexer::getTokenForPipe() -> Token {
   auto Ahead = peek();
   if (Ahead == '|') {
     advance();
-    return SyntaxKind::PipePipe;
+    return getLiteralToken(SyntaxKind::PipePipe, "||");
   }
   // The singular pipe cannot be tokenized into a single token, so we place the
   // single pipe into the TextValue buffer and return an error kind.
-  TextValue = '|';
-  return SyntaxKind::Error;
+  return getLiteralToken(SyntaxKind::Error, "|");
 }
 
-auto Lexer::getTokenForLess() -> SyntaxKind {
+auto Lexer::getTokenForLess() -> Token {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return SyntaxKind::RightAngle;
+    return getLiteralToken(SyntaxKind::LeftAngleEqual, "<=");
   }
-  return SyntaxKind::LeftAngle;
+  return getLiteralToken(SyntaxKind::LeftAngle, "<");
 }
 
-auto Lexer::getTokenForGreater() -> SyntaxKind {
+auto Lexer::getTokenForGreater() -> Token {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return SyntaxKind::RightAngle;
+    return getLiteralToken(SyntaxKind::RightAngleEqual, ">=");
   }
-  return SyntaxKind::RightAngle;
+  return getLiteralToken(SyntaxKind::RightAngle, ">");
 }
 
-auto Lexer::getNextToken() -> SyntaxKind {
+auto Lexer::getNextToken() -> Token {
   while (true) {
     TokenStart = Offset;
     auto C = advance();
@@ -186,9 +188,7 @@ auto Lexer::getNextToken() -> SyntaxKind {
       // We've encountered a character that isn't recognized by the lexer at
       // all. Here we should report an error token, make its text available to
       // the caller, and continue.
-      TextValue = C;
-      return SyntaxKind::Error;
-      // Single or double character tokens
+      return getLiteralToken(SyntaxKind::Error, &C);
     case '!':
       return getTokenForBang();
     case '-':
@@ -209,27 +209,27 @@ auto Lexer::getNextToken() -> SyntaxKind {
       return getTokenForGreater();
     case '+':
       // TODO: Parse +/- prefixed integer literals
-      return SyntaxKind::Plus;
+      return getLiteralToken(SyntaxKind::Plus, "+");
     case '.':
-      return SyntaxKind::Dot;
+      return getLiteralToken(SyntaxKind::Dot, ".");
     case ';':
-      return SyntaxKind::Semicolon;
+      return getLiteralToken(SyntaxKind::Semicolon, ";");
     case ',':
-      return SyntaxKind::Comma;
+      return getLiteralToken(SyntaxKind::Comma, ",");
     case '%':
-      return SyntaxKind::Percent;
+      return getLiteralToken(SyntaxKind::Percent, "%");
     case '(':
-      return SyntaxKind::LeftParen;
+      return getLiteralToken(SyntaxKind::LeftParen, "(");
     case '[':
-      return SyntaxKind::LeftBracket;
+      return getLiteralToken(SyntaxKind::LeftBrace, "[");
     case '{':
-      return SyntaxKind::LeftBrace;
+      return getLiteralToken(SyntaxKind::LeftBrace, "{");
     case ')':
-      return SyntaxKind::RightParen;
+      return getLiteralToken(SyntaxKind::RightParen, ")");
     case ']':
-      return SyntaxKind::RightBracket;
+      return getLiteralToken(SyntaxKind::RightBrace, "[");
     case '}':
-      return SyntaxKind::RightBrace;
+      return getLiteralToken(SyntaxKind::RightBrace, "{");
     }
   }
 }

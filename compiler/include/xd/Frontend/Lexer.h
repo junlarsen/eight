@@ -9,8 +9,9 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include "Syntax.h"
+#include "xd/Frontend/Syntax.h"
 #include "llvm/ADT/APInt.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include <cassert>
 #include <cstdint>
@@ -31,6 +32,17 @@ public:
   }
 };
 
+class Token {
+  SyntaxKind SK;
+  llvm::SmallString<8> TextValue;
+
+public:
+  Token(SyntaxKind SK, llvm::SmallString<8> TextValue)
+      : SK(SK), TextValue(TextValue) {}
+  auto getKind() const { return SK; }
+  auto getText() const { return TextValue; }
+};
+
 class Lexer {
   /// Pointer to the llvm::MemoryBuffer this Lexer operates on
   const char *SourcePtr;
@@ -41,24 +53,14 @@ class Lexer {
   /// Character offset the current token started at.
   uint32_t TokenStart;
 
-  std::string TextValue;
-
 public:
   explicit Lexer(llvm::StringRef Source)
       : SourcePtr(Source.begin()), Source(Source), Offset(0), TokenStart(0) {}
 
-  /// Get the newly built token's source location.
-  auto getSourceLocation() const -> SourceLocation {
-    return SourceLocation(TokenStart, Offset);
-  }
+  /// Get the current byte offset into the file
+  auto getByteOffset() const -> uint32_t { return Offset; }
 
-  /// Get the current identifier from the Lexer state, if present.
-  ///
-  /// Should only be called when you have some knowledge that the value will
-  /// be present, such as after reading a Identifier token kind.
-  auto getTextValue() -> std::string { return TextValue; }
-
-  auto getNextToken() -> SyntaxKind;
+  auto getNextToken() -> Token;
   auto hasNext() const -> bool { return SourcePtr != Source.end(); }
   auto advance() -> char {
     assert(hasNext() &&
@@ -73,20 +75,20 @@ public:
   }
 
 private:
-  auto getCommentToken() -> SyntaxKind;
-  auto getKeywordOrIdentifierToken(char Character) -> SyntaxKind;
-  auto getIntegerLiteralToken(char Character) -> SyntaxKind;
-  auto getTokenForWhitespace(char Character) -> SyntaxKind;
-  auto getTokenForNewline(char Character) -> SyntaxKind;
-  auto getTokenForBang() -> SyntaxKind;
-  auto getTokenForMinus() -> SyntaxKind;
-  auto getTokenForSlash() -> SyntaxKind;
-  auto getTokenForEqual() -> SyntaxKind;
-  auto getTokenForColon() -> SyntaxKind;
-  auto getTokenForAmpersand() -> SyntaxKind;
-  auto getTokenForPipe() -> SyntaxKind;
-  auto getTokenForLess() -> SyntaxKind;
-  auto getTokenForGreater() -> SyntaxKind;
+  auto getCommentToken() -> Token;
+  auto getKeywordOrIdentifierToken(char Character) -> Token;
+  auto getIntegerLiteralToken(char Character) -> Token;
+  auto getTokenForWhitespace(char Character) -> Token;
+  auto getTokenForNewline(char Character) -> Token;
+  auto getTokenForBang() -> Token;
+  auto getTokenForMinus() -> Token;
+  auto getTokenForSlash() -> Token;
+  auto getTokenForEqual() -> Token;
+  auto getTokenForColon() -> Token;
+  auto getTokenForAmpersand() -> Token;
+  auto getTokenForPipe() -> Token;
+  auto getTokenForLess() -> Token;
+  auto getTokenForGreater() -> Token;
 
   static auto isIdentifierStart(char C) -> bool {
     return (C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z');
