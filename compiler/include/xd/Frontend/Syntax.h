@@ -18,6 +18,7 @@
 namespace xd {
 enum class SyntaxKind : uint8_t {
   Error,
+  Eof,
   // Nodes
 
   // Tokens

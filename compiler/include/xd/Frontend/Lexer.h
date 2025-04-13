@@ -10,7 +10,6 @@
 #define LEXER_H
 
 #include "Syntax.h"
-
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/StringRef.h"
 #include <cassert>
