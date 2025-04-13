@@ -2,23 +2,28 @@ cmake_minimum_required(VERSION 3.20)
 
 project(XD VERSION 0.1.0)
 
-set(CMAKE_CXX_STANDARD 20)
+set(XD_LLVM_INSTALL_PREFIX "/usr/lib/llvm-20" CACHE STRING "LLVM 20.1.0 install directory")
+
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Force the build to use the LLVM libc++ that was built
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -I${XD_LLVM_INSTALL_PREFIX}/include/c++/v1")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -L${XD_LLVM_INSTALL_PREFIX}/lib -Wl,-rpath,${XD_LLVM_INSTALL_PREFIX}/lib")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -L${XD_LLVM_INSTALL_PREFIX}/lib -Wl,-rpath,${XD_LLVM_INSTALL_PREFIX}/lib")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -stdlib=libc++ -L${XD_LLVM_INSTALL_PREFIX}/lib -Wl,-rpath,${XD_LLVM_INSTALL_PREFIX}/lib")
+
 cmake_policy(SET CMP0135 NEW)
 
-find_package(LLVM 18.1.3 REQUIRED CONFIG)
+find_package(LLVM 20.1.0 REQUIRED CONFIG PATHS "${XD_LLVM_INSTALL_PREFIX}/")
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} in directory ${LLVM_DIR}")
 
 include(FetchContent)
-
-# Ubuntu-sourced LLVM 18 is built with libstdc++, but GoogleTest will try to include <cxxabi.h> because we have LLVM
-# include directories in the include path.
-add_definitions(-DGTEST_HAS_CXXABI_H_=0)
 fetchcontent_declare(googletest GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.16.0)
 fetchcontent_makeavailable(googletest)
 include(GoogleTest)
@@ -33,8 +38,8 @@ macro(add_xd_executable name)
     target_include_directories(${name} PRIVATE ${LLVM_INCLUDE_DIRS})
     # TableGen files are generated in the build directory
     target_include_directories(${name} PRIVATE ${CMAKE_BINARY_DIR}/include)
-    target_compile_features(${name} PRIVATE cxx_std_20)
-    target_compile_options(${name} PRIVATE -fno-rtti -std=c++20)
+    target_compile_features(${name} PRIVATE cxx_std_23)
+    target_compile_options(${name} PRIVATE -fno-rtti -std=c++23)
     install(TARGETS ${name} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 endmacro()
 
@@ -53,8 +58,8 @@ macro(add_xd_library name)
     target_include_directories(${name} PRIVATE ${LLVM_INCLUDE_DIRS})
     # TableGen files are generated in the build directory
     target_include_directories(${name} PRIVATE ${CMAKE_BINARY_DIR}/include)
-    target_compile_features(${name} PRIVATE cxx_std_20)
-    target_compile_options(${name} PRIVATE -fno-rtti -std=c++20)
+    target_compile_features(${name} PRIVATE cxx_std_23)
+    target_compile_options(${name} PRIVATE -fno-rtti -std=c++23)
     install(TARGETS ${name} DESTINATION lib)
 endmacro()
 

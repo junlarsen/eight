@@ -10,7 +10,6 @@
 #define AST_H
 
 #include "xd/Frontend/Lexer.h"
-
 #include <memory>
 #include <vector>
 
@@ -109,6 +108,73 @@ public:
   ASTNode(ASTNodeKind Kind, SourceLocation Loc) : Kind(Kind), Loc(Loc) {}
   auto getKind() const -> ASTNodeKind { return Kind; }
   auto getLoc() const -> SourceLocation { return Loc; }
+};
+
+class ASTType : public ASTNode {
+public:
+  ASTType(ASTNodeKind Kind, SourceLocation Loc) : ASTNode(Kind, Loc) {}
+  static bool classof(const ASTNode *Node) {
+    return Node->getKind() >= ASTNodeKind::Type &&
+           Node->getKind() <= ASTNodeKind::NamedType;
+  }
+};
+
+class ASTUnitType : public ASTType {
+public:
+  ASTUnitType(SourceLocation Loc) : ASTType(ASTNodeKind::UnitType, Loc) {}
+  static bool classof(const ASTNode *Node) {
+    return Node->getKind() == ASTNodeKind::UnitType;
+  }
+};
+
+class ASTIntegerType : public ASTType {
+  uint32_t Width;
+
+public:
+  ASTIntegerType(SourceLocation Loc, uint32_t Width)
+      : ASTType(ASTNodeKind::IntegerType, Loc), Width(Width) {}
+  static bool classof(const ASTNode *Node) {
+    return Node->getKind() == ASTNodeKind::IntegerType;
+  }
+};
+
+class ASTBooleanType : public ASTType {
+public:
+  ASTBooleanType(SourceLocation Loc) : ASTType(ASTNodeKind::BooleanType, Loc) {}
+  static bool classof(const ASTNode *Node) {
+    return Node->getKind() == ASTNodeKind::BooleanType;
+  }
+};
+
+class ASTPointerType : public ASTType {
+  std::unique_ptr<ASTType> Inner;
+
+public:
+  ASTPointerType(SourceLocation Loc, std::unique_ptr<ASTType> Inner)
+      : ASTType(ASTNodeKind::PointerType, Loc), Inner(std::move(Inner)) {}
+  static bool classof(const ASTNode *Node) {
+    return Node->getKind() == ASTNodeKind::PointerType;
+  }
+};
+
+class ASTOpaquePointerType : public ASTType {
+public:
+  ASTOpaquePointerType(SourceLocation Loc, std::unique_ptr<ASTType> Inner)
+      : ASTType(ASTNodeKind::OpaquePointerType, Loc) {}
+  static bool classof(const ASTNode *Node) {
+    return Node->getKind() == ASTNodeKind::OpaquePointerType;
+  }
+};
+
+class ASTNamedType : public ASTType {
+  std::unique_ptr<Identifier> Name;
+
+public:
+  ASTNamedType(SourceLocation Loc, std::unique_ptr<Identifier> Name)
+      : ASTType(ASTNodeKind::NamedType, Loc), Name(std::move(Name)) {}
+  static bool classof(const ASTNode *Node) {
+    return Node->getKind() == ASTNodeKind::NamedType;
+  }
 };
 
 class ASTExpr : public ASTNode {
@@ -303,73 +369,6 @@ public:
       : ASTExpr(ASTNodeKind::GroupingExpr, Loc), Expr(std::move(Expr)) {}
   static bool classof(const ASTNode *Node) {
     return Node->getKind() == ASTNodeKind::GroupingExpr;
-  }
-};
-
-class ASTType : public ASTNode {
-public:
-  ASTType(ASTNodeKind Kind, SourceLocation Loc) : ASTNode(Kind, Loc) {}
-  static bool classof(const ASTNode *Node) {
-    return Node->getKind() >= ASTNodeKind::Type &&
-           Node->getKind() <= ASTNodeKind::NamedType;
-  }
-};
-
-class ASTUnitType : public ASTType {
-public:
-  ASTUnitType(SourceLocation Loc) : ASTType(ASTNodeKind::UnitType, Loc) {}
-  static bool classof(const ASTNode *Node) {
-    return Node->getKind() == ASTNodeKind::UnitType;
-  }
-};
-
-class ASTIntegerType : public ASTType {
-  uint32_t Width;
-
-public:
-  ASTIntegerType(SourceLocation Loc, uint32_t Width)
-      : ASTType(ASTNodeKind::IntegerType, Loc), Width(Width) {}
-  static bool classof(const ASTNode *Node) {
-    return Node->getKind() == ASTNodeKind::IntegerType;
-  }
-};
-
-class ASTBooleanType : public ASTType {
-public:
-  ASTBooleanType(SourceLocation Loc) : ASTType(ASTNodeKind::BooleanType, Loc) {}
-  static bool classof(const ASTNode *Node) {
-    return Node->getKind() == ASTNodeKind::BooleanType;
-  }
-};
-
-class ASTPointerType : public ASTType {
-  std::unique_ptr<ASTType> Inner;
-
-public:
-  ASTPointerType(SourceLocation Loc, std::unique_ptr<ASTType> Inner)
-      : ASTType(ASTNodeKind::PointerType, Loc), Inner(std::move(Inner)) {}
-  static bool classof(const ASTNode *Node) {
-    return Node->getKind() == ASTNodeKind::PointerType;
-  }
-};
-
-class ASTOpaquePointerType : public ASTType {
-public:
-  ASTOpaquePointerType(SourceLocation Loc, std::unique_ptr<ASTType> Inner)
-      : ASTType(ASTNodeKind::OpaquePointerType, Loc) {}
-  static bool classof(const ASTNode *Node) {
-    return Node->getKind() == ASTNodeKind::OpaquePointerType;
-  }
-};
-
-class ASTNamedType : public ASTType {
-  std::unique_ptr<Identifier> Name;
-
-public:
-  ASTNamedType(SourceLocation Loc, std::unique_ptr<Identifier> Name)
-      : ASTType(ASTNodeKind::NamedType, Loc), Name(std::move(Name)) {}
-  static bool classof(const ASTNode *Node) {
-    return Node->getKind() == ASTNodeKind::NamedType;
   }
 };
 
