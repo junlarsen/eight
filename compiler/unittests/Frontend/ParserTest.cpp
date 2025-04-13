@@ -44,6 +44,7 @@ TEST(ParserTest, ConditionalEat) {
   auto Buf = MemoryBuffer::getMemBuffer("hello 123");
   auto Lex = Lexer(Buf->getBufferStart());
   auto P = Parser(Lex);
+  P.advance();
 
   EXPECT_TRUE(P.eat(SyntaxKind::Identifier));
   EXPECT_FALSE(P.eat(SyntaxKind::Identifier));
