@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/AST.h"
+#include "xd/Frontend/Syntax.h"
 
 using namespace llvm;
 using namespace xd;

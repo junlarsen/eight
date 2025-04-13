@@ -9,6 +9,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "Syntax.h"
+
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/StringRef.h"
 #include <cassert>
@@ -30,63 +32,6 @@ public:
   }
 };
 
-enum class TokenKind : uint8_t {
-  KeywordStruct,
-  KeywordLet,
-  KeywordFn,
-  KeywordIntrinsicFn,
-  KeywordIntrinsicType,
-  KeywordTrait,
-  KeywordInstance,
-  KeywordIf,
-  KeywordElse,
-  KeywordReturn,
-  KeywordBreak,
-  KeywordContinue,
-  KeywordFor,
-  KeywordNew,
-
-  Identifier,
-  IntegerLiteral,
-  TrueLiteral,
-  FalseLiteral,
-  Comment,
-
-  Ampersand,
-  Bang,
-  Plus,
-  Dot,
-  Star,
-  Minus,
-  Slash,
-  Equal,
-  EqualEqual,
-  LessEqual,
-  GreaterEqual,
-  BangEqual,
-  Percent,
-
-  LeftParen,
-  LeftBracket,
-  LeftBrace,
-  LeftAngle,
-  RightParen,
-  RightBracket,
-  RightBrace,
-  RightAngle,
-
-  Semicolon,
-  Colon,
-  ColonColon,
-  Comma,
-  Arrow,
-  LogicalAnd,
-  LogicalOr,
-
-  EndOfFile,
-  Error,
-};
-
 class Lexer {
   /// Pointer to the llvm::MemoryBuffer this Lexer operates on
   const char *SourcePtr;
@@ -97,8 +42,7 @@ class Lexer {
   /// Character offset the current token started at.
   uint32_t TokenStart;
 
-  llvm::APInt IntVal;
-  std::string Identifier;
+  std::string TextValue;
 
 public:
   explicit Lexer(llvm::StringRef Source)
@@ -109,21 +53,13 @@ public:
     return SourceLocation(TokenStart, Offset);
   }
 
-  /// Get the current integer value from the Lexer state, if present.
-  ///
-  /// Should only be called when you have some knowledge that the value will
-  /// be present, such as after locating a IntegerLiteral token kind.
-  ///
-  /// Booleans are also returned in this APInt as 1 or 0.
-  auto getIntVal() -> llvm::APInt { return IntVal; }
-
   /// Get the current identifier from the Lexer state, if present.
   ///
   /// Should only be called when you have some knowledge that the value will
   /// be present, such as after reading a Identifier token kind.
-  auto getIdentifier() -> std::string { return Identifier; }
+  auto getTextValue() -> std::string { return TextValue; }
 
-  auto getNextToken() -> TokenKind;
+  auto getNextToken() -> SyntaxKind;
   auto hasNext() const -> bool { return SourcePtr != Source.end(); }
   auto advance() -> char {
     assert(hasNext() &&
@@ -138,18 +74,29 @@ public:
   }
 
 private:
-  auto getCommentToken() -> TokenKind;
-  auto getKeywordOrIdentifierToken(char Character) -> TokenKind;
-  auto getIntegerLiteralToken(char Character) -> TokenKind;
-  auto getTokenForBang() -> TokenKind;
-  auto getTokenForMinus() -> TokenKind;
-  auto getTokenForSlash() -> TokenKind;
-  auto getTokenForEqual() -> TokenKind;
-  auto getTokenForColon() -> TokenKind;
-  auto getTokenForAmpersand() -> TokenKind;
-  auto getTokenForPipe() -> TokenKind;
-  auto getTokenForLess() -> TokenKind;
-  auto getTokenForGreater() -> TokenKind;
+  auto getCommentToken() -> SyntaxKind;
+  auto getKeywordOrIdentifierToken(char Character) -> SyntaxKind;
+  auto getIntegerLiteralToken(char Character) -> SyntaxKind;
+  auto getTokenForWhitespace(char Character) -> SyntaxKind;
+  auto getTokenForNewline(char Character) -> SyntaxKind;
+  auto getTokenForBang() -> SyntaxKind;
+  auto getTokenForMinus() -> SyntaxKind;
+  auto getTokenForSlash() -> SyntaxKind;
+  auto getTokenForEqual() -> SyntaxKind;
+  auto getTokenForColon() -> SyntaxKind;
+  auto getTokenForAmpersand() -> SyntaxKind;
+  auto getTokenForPipe() -> SyntaxKind;
+  auto getTokenForLess() -> SyntaxKind;
+  auto getTokenForGreater() -> SyntaxKind;
+
+  static auto isIdentifierStart(char C) -> bool {
+    return (C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z');
+  }
+  static auto isIdentifierContinuation(char C) -> bool {
+    return isIdentifierStart(C) || C == '_' || (C >= '0' && C <= '9');
+  }
+  static auto isWhitespace(char C) -> bool { return C == ' ' || C == '\t'; }
+  static auto isNewline(char C) -> bool { return C == '\n' || C == '\r'; }
 };
 } // namespace xd
 

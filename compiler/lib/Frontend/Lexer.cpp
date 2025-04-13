@@ -11,163 +11,183 @@
 
 using namespace xd;
 
-auto Lexer::getCommentToken() -> TokenKind {
-  // The lexer has consumed both of the leading slashes.
-  std::string Value = std::string();
+auto Lexer::getCommentToken() -> SyntaxKind {
+  // The lexer has consumed both of the leading slashes, so we add them back
+  // here for full-fidelity.
+  std::string Value = std::string("//");
   while (hasNext() && peek() != '\n') {
     Value += advance();
   }
-  Identifier = Value;
-  return TokenKind::Comment;
+  TextValue = Value;
+  return SyntaxKind::Comment;
 }
 
-auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> TokenKind {
+auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> SyntaxKind {
   // The lexer already ate the first character, so we can check for numbers and
   // underscores here right away.
   std::string Value = std::string(1, InitialCharacter);
-  while (hasNext() && (isalnum(*peek()) || *peek() == '_')) {
+  while (hasNext() && isIdentifierContinuation(*peek())) {
     Value += advance();
   }
-  auto Kind = llvm::StringSwitch<TokenKind>(Value)
-                  .Case("struct", TokenKind::KeywordStruct)
-                  .Case("fn", TokenKind::KeywordFn)
-                  .Case("intrinsic_fn", TokenKind::KeywordIntrinsicFn)
-                  .Case("intrinsic_type", TokenKind::KeywordIntrinsicType)
-                  .Case("let", TokenKind::KeywordLet)
-                  .Case("if", TokenKind::KeywordIf)
-                  .Case("else", TokenKind::KeywordElse)
-                  .Case("return", TokenKind::KeywordReturn)
-                  .Case("break", TokenKind::KeywordBreak)
-                  .Case("continue", TokenKind::KeywordContinue)
-                  .Case("for", TokenKind::KeywordFor)
-                  .Case("new", TokenKind::KeywordNew)
-                  .Case("true", TokenKind::TrueLiteral)
-                  .Case("false", TokenKind::FalseLiteral)
-                  .Case("trait", TokenKind::KeywordTrait)
-                  .Case("instance", TokenKind::KeywordInstance)
-                  .Case("intrinsic_def", TokenKind::KeywordIntrinsicFn)
-                  .Case("intrinsic_typdef", TokenKind::KeywordIntrinsicType)
-                  .Default(TokenKind::Identifier);
-  // We have special cases for identifiers and literal values that also update
-  // internal lexer state.
-  if (Kind == TokenKind::Identifier)
-    Identifier = Value;
-  if (Kind == TokenKind::TrueLiteral)
-    IntVal = llvm::APInt(32, 1);
-  if (Kind == TokenKind::FalseLiteral)
-    IntVal = llvm::APInt(32, 0);
+  auto Kind = llvm::StringSwitch<SyntaxKind>(Value)
+                  .Case("struct", SyntaxKind::KeywordStruct)
+                  .Case("fn", SyntaxKind::KeywordFn)
+                  .Case("intrinsic_fn", SyntaxKind::KeywordIntrinsicFn)
+                  .Case("intrinsic_type", SyntaxKind::KeywordIntrinsicType)
+                  .Case("let", SyntaxKind::KeywordLet)
+                  .Case("if", SyntaxKind::KeywordIf)
+                  .Case("else", SyntaxKind::KeywordElse)
+                  .Case("return", SyntaxKind::KeywordReturn)
+                  .Case("break", SyntaxKind::KeywordBreak)
+                  .Case("continue", SyntaxKind::KeywordContinue)
+                  .Case("for", SyntaxKind::KeywordFor)
+                  .Case("new", SyntaxKind::KeywordNew)
+                  .Case("true", SyntaxKind::TrueLiteral)
+                  .Case("false", SyntaxKind::FalseLiteral)
+                  .Case("trait", SyntaxKind::KeywordTrait)
+                  .Case("instance", SyntaxKind::KeywordInstance)
+                  .Case("intrinsic_def", SyntaxKind::KeywordIntrinsicFn)
+                  .Case("intrinsic_typdef", SyntaxKind::KeywordIntrinsicType)
+                  .Default(SyntaxKind::Identifier);
+  TextValue = Value;
   return Kind;
 }
 
-auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> TokenKind {
+auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> SyntaxKind {
   std::string Value = std::string(1, InitialCharacter);
   while (hasNext() && peek() >= '0' && peek() <= '9') {
     Value += advance();
   }
-  IntVal = llvm::APInt(32, Value, 10);
-  return TokenKind::IntegerLiteral;
+  TextValue = Value;
+  return SyntaxKind::IntegerLiteral;
 }
 
-auto Lexer::getTokenForBang() -> TokenKind {
+auto Lexer::getTokenForNewline(char Character) -> SyntaxKind {
+  std::string Value = std::string(1, Character);
+  // Depending on whether its LF/CRLF/CR there might be another LF token right
+  // after this.
+  if (Character == 'r' && hasNext() && peek() == '\n')
+    Value += advance();
+  TextValue = Value;
+  return SyntaxKind::Newline;
+}
+
+auto Lexer::getTokenForWhitespace(char Character) -> SyntaxKind {
+  std::string Value = std::string(1, Character);
+  // We eat all horizontal whitespace as a single token.
+  while (hasNext() && isWhitespace(*peek()))
+    Value += advance();
+  TextValue = Value;
+  return SyntaxKind::Whitespace;
+}
+
+auto Lexer::getTokenForBang() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return TokenKind::BangEqual;
+    return SyntaxKind::BangEqual;
   }
-  return TokenKind::Bang;
+  return SyntaxKind::Bang;
 }
 
-auto Lexer::getTokenForMinus() -> TokenKind {
+auto Lexer::getTokenForMinus() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '>') {
     advance();
-    return TokenKind::Arrow;
+    return SyntaxKind::Arrow;
   }
-  return TokenKind::Minus;
+  return SyntaxKind::Minus;
 }
 
-auto Lexer::getTokenForSlash() -> TokenKind {
+auto Lexer::getTokenForSlash() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '/') {
     advance();
     return getCommentToken();
   }
-  return TokenKind::Slash;
+  return SyntaxKind::Slash;
 }
 
-auto Lexer::getTokenForEqual() -> TokenKind {
+auto Lexer::getTokenForEqual() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return TokenKind::EqualEqual;
+    return SyntaxKind::EqualEqual;
   }
-  return TokenKind::EqualEqual;
+  return SyntaxKind::EqualEqual;
 }
 
-auto Lexer::getTokenForColon() -> TokenKind {
+auto Lexer::getTokenForColon() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == ':') {
     advance();
-    return TokenKind::ColonColon;
+    return SyntaxKind::ColonColon;
   }
-  return TokenKind::Colon;
+  return SyntaxKind::Colon;
 }
 
-auto Lexer::getTokenForAmpersand() -> TokenKind {
+auto Lexer::getTokenForAmpersand() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '&') {
     advance();
-    return TokenKind::LogicalAnd;
+    return SyntaxKind::AmpersandAmpersand;
   }
-  return TokenKind::Ampersand;
+  return SyntaxKind::Ampersand;
 }
 
-auto Lexer::getTokenForPipe() -> TokenKind {
+auto Lexer::getTokenForPipe() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '|') {
     advance();
-    return TokenKind::LogicalOr;
+    return SyntaxKind::PipePipe;
   }
-  // TODO: Report diagnostic here
-  return TokenKind::Error;
+  // The singular pipe cannot be tokenized into a single token, so we place the
+  // single pipe into the TextValue buffer and return an error kind.
+  TextValue = '|';
+  return SyntaxKind::Error;
 }
 
-auto Lexer::getTokenForLess() -> TokenKind {
+auto Lexer::getTokenForLess() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return TokenKind::RightAngle;
+    return SyntaxKind::RightAngle;
   }
-  return TokenKind::LeftAngle;
+  return SyntaxKind::LeftAngle;
 }
 
-auto Lexer::getTokenForGreater() -> TokenKind {
+auto Lexer::getTokenForGreater() -> SyntaxKind {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
-    return TokenKind::RightAngle;
+    return SyntaxKind::RightAngle;
   }
-  return TokenKind::RightAngle;
+  return SyntaxKind::RightAngle;
 }
 
-auto Lexer::getNextToken() -> TokenKind {
+auto Lexer::getNextToken() -> SyntaxKind {
   while (true) {
     TokenStart = Offset;
-    auto Character = advance();
-    switch (Character) {
+    auto C = advance();
+    switch (C) {
     default:
-      if (Character >= '0' && Character <= '9')
-        return getIntegerLiteralToken(Character);
+      if (C >= '0' && C <= '9')
+        return getIntegerLiteralToken(C);
       // By default, we try to get an identifier/keyword. The
       // getKeywordOrIdentifierToken function will return the Error token kind
       // if it found no matches
-      return getKeywordOrIdentifierToken(Character);
-      // Whitespace is ignored
-    case ' ':
-    case '\t':
-    case '\r':
-    case '\n':
-      continue;
+      if (isIdentifierStart(C))
+        return getKeywordOrIdentifierToken(C);
+      if (isNewline(C))
+        return getTokenForNewline(C);
+      if (isWhitespace(C))
+        return getTokenForWhitespace(C);
+
+      // We've encountered a character that isn't recognized by the lexer at
+      // all. Here we should report an error token, make its text available to
+      // the caller, and continue.
+      TextValue = C;
+      return SyntaxKind::Error;
       // Single or double character tokens
     case '!':
       return getTokenForBang();
@@ -189,32 +209,27 @@ auto Lexer::getNextToken() -> TokenKind {
       return getTokenForGreater();
     case '+':
       // TODO: Parse +/- prefixed integer literals
-      return TokenKind::Plus;
+      return SyntaxKind::Plus;
     case '.':
-      return TokenKind::Dot;
+      return SyntaxKind::Dot;
     case ';':
-      return TokenKind::Semicolon;
+      return SyntaxKind::Semicolon;
     case ',':
-      return TokenKind::Comma;
+      return SyntaxKind::Comma;
     case '%':
-      return TokenKind::Percent;
+      return SyntaxKind::Percent;
     case '(':
-      return TokenKind::LeftParen;
+      return SyntaxKind::LeftParen;
     case '[':
-      return TokenKind::LeftBracket;
+      return SyntaxKind::LeftBracket;
     case '{':
-      return TokenKind::LeftBrace;
+      return SyntaxKind::LeftBrace;
     case ')':
-      return TokenKind::RightParen;
+      return SyntaxKind::RightParen;
     case ']':
-      return TokenKind::RightBracket;
+      return SyntaxKind::RightBracket;
     case '}':
-      return TokenKind::RightBrace;
-    case 0:
-      // This StringRef comes from an llvm::MemoryBuffer which is guaranteed to
-      // be zero-padded. It should be fair to assume this is the end of the
-      // file.
-      return TokenKind::EndOfFile;
+      return SyntaxKind::RightBrace;
     }
   }
 }
