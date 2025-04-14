@@ -69,14 +69,15 @@ auto DiagnosticEmitter::emitDiagnosticClass(const Record &R,
        << Arg->getValueAsString("name") << ";" << "\n";
   }
   OS << "public:" << "\n";
-  OS << "  " << ClassName << "(";
+  // Generate the constructor for the class with the argument list types.
+  OS << "  explicit " << ClassName << "(";
   // Generate each of the diagnostic arguments
   for (auto *Arg : ArgumentRecords) {
     auto *TypeDef = Arg->getValueAsDef("type");
     OS << TypeDef->getValueAsString("inputType") << " "
        << Arg->getValueAsString("name");
     if (Arg != ArgumentRecords.back()) {
-      OS << ",";
+      OS << ", ";
     }
   }
   OS << ") : Diagnostic(DiagnosticKind::" << R.getName() << ")";
@@ -86,6 +87,12 @@ auto DiagnosticEmitter::emitDiagnosticClass(const Record &R,
        << Arg->getValueAsString("name") << ")";
   }
   OS << " {}" << "\n";
+  // Add LLVM-style RTTI instance type check
+  OS << "  static bool classof(const " << ClassName << " *Diagnostic) {"
+     << "\n";
+  OS << "    return Diagnostic->getKind() == DiagnosticKind::" << R.getName()
+     << ";" << "\n";
+  OS << "  }" << "\n";
   // End the class definition
   OS << "};" << "\n";
 }
