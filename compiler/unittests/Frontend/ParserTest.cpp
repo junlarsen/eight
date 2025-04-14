@@ -15,9 +15,8 @@ using namespace llvm;
 using namespace xd;
 
 TEST(ParserTest, Navigation) {
-  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("hello world");
-  auto Lex = Lexer(DM, Buf->getBufferStart());
+  auto Lex = Lexer(Buf->getBufferStart());
   auto P = Parser(Lex);
 
   EXPECT_TRUE(P.hasNext());
@@ -42,9 +41,8 @@ TEST(ParserTest, Navigation) {
 }
 
 TEST(ParserTest, ConditionalEat) {
-  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("hello 123");
-  auto Lex = Lexer(DM, Buf->getBufferStart());
+  auto Lex = Lexer(Buf->getBufferStart());
   auto P = Parser(Lex);
   P.advance();
 

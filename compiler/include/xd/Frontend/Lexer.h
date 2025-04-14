@@ -46,7 +46,6 @@ public:
 };
 
 class Lexer {
-  DiagnosticManager &DM;
   /// Pointer to the llvm::MemoryBuffer this Lexer operates on
   const char *SourcePtr;
   llvm::StringRef Source;
@@ -57,9 +56,8 @@ class Lexer {
   uint32_t TokenStart;
 
 public:
-  Lexer(DiagnosticManager &Manager, llvm::StringRef Source)
-      : DM(Manager), SourcePtr(Source.begin()), Source(Source), Offset(0),
-        TokenStart(0) {}
+  Lexer(llvm::StringRef Source)
+      : SourcePtr(Source.begin()), Source(Source), Offset(0), TokenStart(0) {}
 
   /// Get the current byte offset into the file
   auto getByteOffset() const -> uint32_t { return Offset; }
@@ -77,6 +75,9 @@ public:
       return std::nullopt;
     return *SourcePtr;
   }
+
+  /// Drain all the tokens into a list.
+  auto drain() -> std::vector<Token>;
 
 private:
   auto getCommentToken() -> Token;
