@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef XD_FRONTEND_LEXER_H
+#define XD_FRONTEND_LEXER_H
 
 #include "xd/Frontend/Syntax.h"
 #include "llvm/ADT/APInt.h"
@@ -101,4 +101,4 @@ private:
 };
 } // namespace xd
 
-#endif // LEXER_H
+#endif // XD_FRONTEND_LEXER_H

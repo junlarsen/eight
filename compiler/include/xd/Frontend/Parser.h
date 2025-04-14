@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef XD_FRONTEND_PARSER_H
+#define XD_FRONTEND_PARSER_H
 
 #include "xd/Frontend/Lexer.h"
 #include "xd/Frontend/Syntax.h"
@@ -92,4 +92,4 @@ public:
 
 } // namespace xd
 
-#endif // PARSER_H
+#endif // XD_FRONTEND_PARSER_H

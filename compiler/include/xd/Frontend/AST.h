@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef AST_H
-#define AST_H
+#ifndef XD_FRONTEND_AST_H
+#define XD_FRONTEND_AST_H
 
 #include "xd/Frontend/Lexer.h"
 #include <memory>
@@ -649,4 +649,4 @@ public:
 
 } // namespace xd
 
-#endif // AST_H
+#endif // XD_FRONTEND_AST_H

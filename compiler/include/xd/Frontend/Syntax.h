@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SYNTAX_H
-#define SYNTAX_H
+#ifndef XD_FRONTEND_SYNTAX_H
+#define XD_FRONTEND_SYNTAX_H
 
 #include <cstdint>
 
@@ -77,4 +77,4 @@ enum class SyntaxKind : uint8_t {
 };
 } // namespace xd
 
-#endif // SYNTAX_H
+#endif // XD_FRONTEND_SYNTAX_H

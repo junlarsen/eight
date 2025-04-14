@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DIAGNOSTICEMITTER_H
-#define DIAGNOSTICEMITTER_H
+#ifndef XD_TABLEGEN_DIAGNOSTICEMITTER_H
+#define XD_TABLEGEN_DIAGNOSTICEMITTER_H
 
 #include "llvm/TableGen/Record.h"
 
@@ -21,4 +21,4 @@ public:
 };
 } // namespace xd
 
-#endif // DIAGNOSTICEMITTER_H
+#endif // XD_TABLEGEN_DIAGNOSTICEMITTER_H
