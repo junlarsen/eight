@@ -67,20 +67,17 @@ public:
 using ParseCheckpoint = uint32_t;
 
 class Parser {
-  Lexer Lex;
+  std::vector<Token> Tokens;
   std::vector<std::unique_ptr<ParseEvent>> Events;
-
-  Token Current;
-  std::optional<Token> Lookahead;
+  uint32_t Position = 0;
 
 public:
-  Parser(Lexer Lex)
-      : Lex(Lex), Current(Token(SyntaxKind::Error, llvm::StringRef(""))) {}
+  explicit Parser(std::vector<Token> Tokens) : Tokens(std::move(Tokens)) {}
 
-  auto get() const -> Token { return Current; }
+  auto get() const -> Token { return Tokens.at(Position); }
+  auto hasNext() const -> bool { return Position != Tokens.size(); }
   auto lookahead() -> Token;
-  auto hasNext() const -> bool { return Lex.hasNext(); }
-  auto at(SyntaxKind SK) -> bool;
+  auto at(SyntaxKind SK) const -> bool;
   auto eat(SyntaxKind SK) -> bool;
   auto expect(SyntaxKind SK) -> void;
 

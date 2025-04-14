@@ -18,19 +18,12 @@ using namespace llvm;
 using namespace xd;
 
 auto Parser::lookahead() -> Token {
-  // If there is no lookahead value, we try to get it from the lexer, or we
-  // return the EOF if the lexer has reached the end of its input.
-  if (!Lookahead.has_value()) {
-    if (Lex.hasNext())
-      Lookahead = Lex.getNextToken();
-    else
-      Lookahead = Token(SyntaxKind::Eof, StringRef(""));
-  }
-  // Lookahead is guaranteed to not be nullopt here.
-  return *Lookahead;
+  if (!hasNext())
+    return Token(SyntaxKind::Eof, StringRef());
+  return Tokens.at(Position + 1);
 }
 
-auto Parser::at(SyntaxKind SK) -> bool { return get().getKind() == SK; }
+auto Parser::at(SyntaxKind SK) const -> bool { return get().getKind() == SK; }
 
 auto Parser::eat(SyntaxKind SK) -> bool {
   if (at(SK)) {
@@ -64,21 +57,9 @@ auto Parser::close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void {
 }
 
 auto Parser::advance() -> void {
-  // If we have attempted to peek the future token, we can rewind here.
-  if (Lookahead.has_value()) {
-    Current = Lookahead.value();
-    Lookahead = std::nullopt;
-    return;
-  }
-  // Reset lookahead here, as we move one token ahead.
-  Lookahead = std::nullopt;
+  assert(hasNext() && "advance() called on parser that has reached the end");
   Events.push_back(std::make_unique<ParseAdvanceEvent>());
-  if (Lex.hasNext()) {
-    Current = Lex.getNextToken();
-    return;
-  }
-  // If the lexer does not have any more tokens, then we give the Eof token.
-  Current = Token(SyntaxKind::Eof, StringRef(""));
+  Position++;
 }
 
 auto Parser::advanceWithError(StringRef Message) -> void {
