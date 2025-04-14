@@ -23,7 +23,10 @@ auto DiagnosticEmitter::emit(raw_ostream &OS) -> bool {
          "required for generating the enum kind");
   OS << "#ifndef XD_BASIC_DIAGNOSTICS_TD" << "\n";
   OS << "#define XD_BASIC_DIAGNOSTICS_TD" << "\n\n";
-  OS << "#include <cstdint>" << "\n\n";
+  OS << "#include <cstdint>" << "\n";
+  OS << "#include <string_view>" << "\n";
+  OS << "#include <string>" << "\n";
+  OS << "\n";
   OS << "namespace xd {" << "\n";
   OS << "enum class DiagnosticKind: uint8_t {" << "\n";
   for (auto *Diag : Diagnostics)
@@ -56,11 +59,33 @@ auto DiagnosticEmitter::emitDiagnosticClass(const Record &R,
   std::string ClassName = (R.getName() + "Diagnostic").str();
   OS << "\n";
   OS << "class " << ClassName << " : public Diagnostic {" << "\n";
-  // TODO: Add constructor arguments for well-defined formatting
+  OS << "  inline static std::string_view Format = \""
+     << R.getValueAsString("format") << "\";" << "\n";
+  // Generate each of the diagnostic parameters
+  auto ArgumentRecords = R.getValueAsListOfDefs("arguments");
+  for (auto *Arg : ArgumentRecords) {
+    auto *TypeDef = Arg->getValueAsDef("type");
+    OS << "  " << TypeDef->getValueAsString("cxxType") << " "
+       << Arg->getValueAsString("name") << ";" << "\n";
+  }
   OS << "public:" << "\n";
-  OS << "  " << ClassName << "() : Diagnostic(DiagnosticKind::" << R.getName()
-     << ") {}" << "\n";
-
+  OS << "  " << ClassName << "(";
+  // Generate each of the diagnostic arguments
+  for (auto *Arg : ArgumentRecords) {
+    auto *TypeDef = Arg->getValueAsDef("type");
+    OS << TypeDef->getValueAsString("inputType") << " "
+       << Arg->getValueAsString("name");
+    if (Arg != ArgumentRecords.back()) {
+      OS << ",";
+    }
+  }
+  OS << ") : Diagnostic(DiagnosticKind::" << R.getName() << ")";
+  // Initialize each of the members with the arguments
+  for (auto *Arg : ArgumentRecords) {
+    OS << ", " << Arg->getValueAsString("name") << "("
+       << Arg->getValueAsString("name") << ")";
+  }
+  OS << " {}" << "\n";
   // End the class definition
   OS << "};" << "\n";
 }
