@@ -67,12 +67,15 @@ public:
 using ParseCheckpoint = uint32_t;
 
 class Parser {
+  DiagnosticManager &DM;
+
   std::vector<Token> Tokens;
   std::vector<std::unique_ptr<ParseEvent>> Events;
   uint32_t Position = 0;
 
 public:
-  explicit Parser(std::vector<Token> Tokens) : Tokens(std::move(Tokens)) {}
+  explicit Parser(DiagnosticManager &DM, std::vector<Token> Tokens)
+      : DM(DM), Tokens(std::move(Tokens)) {}
 
   auto get() const -> Token { return Tokens.at(Position); }
   auto hasNext() const -> bool { return Position != Tokens.size(); }

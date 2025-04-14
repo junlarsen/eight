@@ -16,8 +16,9 @@ using namespace xd;
 
 TEST(ParserTest, Navigation) {
   auto Buf = MemoryBuffer::getMemBuffer("hello world");
+  auto DM = DiagnosticManager();
   auto Lex = Lexer(Buf->getBufferStart());
-  auto P = Parser(std::move(Lex.drain()));
+  auto P = Parser(DM, std::move(Lex.drain()));
 
   EXPECT_TRUE(P.hasNext());
   EXPECT_TRUE(P.at(SyntaxKind::Identifier));
@@ -42,8 +43,9 @@ TEST(ParserTest, Navigation) {
 
 TEST(ParserTest, ConditionalEat) {
   auto Buf = MemoryBuffer::getMemBuffer("hello 123");
+  auto DM = DiagnosticManager();
   auto Lex = Lexer(Buf->getBufferStart());
-  auto P = Parser(std::move(Lex.drain()));
+  auto P = Parser(DM, std::move(Lex.drain()));
 
   EXPECT_TRUE(P.at(SyntaxKind::Identifier));
   // Eating whitespace should not work, we need to eat identifier
