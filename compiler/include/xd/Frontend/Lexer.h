@@ -9,12 +9,14 @@
 #ifndef XD_FRONTEND_LEXER_H
 #define XD_FRONTEND_LEXER_H
 
+#include "xd/Basic/DiagnosticManager.h"
 #include "xd/Frontend/Syntax.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include <cassert>
 #include <cstdint>
+#include <llvm/Support/MemoryBuffer.h>
 
 namespace xd {
 /// Represents a single location in a file.
@@ -44,6 +46,7 @@ public:
 };
 
 class Lexer {
+  DiagnosticManager &DM;
   /// Pointer to the llvm::MemoryBuffer this Lexer operates on
   const char *SourcePtr;
   llvm::StringRef Source;
@@ -54,8 +57,9 @@ class Lexer {
   uint32_t TokenStart;
 
 public:
-  explicit Lexer(llvm::StringRef Source)
-      : SourcePtr(Source.begin()), Source(Source), Offset(0), TokenStart(0) {}
+  Lexer(DiagnosticManager &Manager, llvm::StringRef Source)
+      : DM(Manager), SourcePtr(Source.begin()), Source(Source), Offset(0),
+        TokenStart(0) {}
 
   /// Get the current byte offset into the file
   auto getByteOffset() const -> uint32_t { return Offset; }

@@ -42,15 +42,25 @@ auto DiagnosticEmitter::emit(raw_ostream &OS) -> bool {
   OS << "\n"
      << "#include \"xd/Basic/Diagnostic.h.inc\"" << "\n";
 
-  for (auto *Diag : Diagnostics) {
-    OS << "\n";
-    OS << "class " << Diag->getName() << "Diagnostic : public Diagnostic {"
-       << "\n";
-    OS << "};" << "\n";
-  }
+  for (auto *Diag : Diagnostics)
+    emitDiagnosticClass(*Diag, OS);
 
   // Close the namespace and include guard
   OS << "} // namespace xd" << "\n\n";
   OS << "#endif // XD_BASIC_DIAGNOSTICS_TD" << "\n";
   return false;
+}
+
+auto DiagnosticEmitter::emitDiagnosticClass(const Record &R,
+                                            raw_ostream &OS) -> void {
+  std::string ClassName = (R.getName() + "Diagnostic").str();
+  OS << "\n";
+  OS << "class " << ClassName << " : public Diagnostic {" << "\n";
+  // TODO: Add constructor arguments for well-defined formatting
+  OS << "public:" << "\n";
+  OS << "  " << ClassName << "() : Diagnostic(DiagnosticKind::" << R.getName()
+     << ") {}" << "\n";
+
+  // End the class definition
+  OS << "};" << "\n";
 }

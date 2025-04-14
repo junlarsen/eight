@@ -146,6 +146,7 @@ auto Lexer::getTokenForPipe() -> Token {
   }
   // The singular pipe cannot be tokenized into a single token, so we place the
   // single pipe into the TextValue buffer and return an error kind.
+  DM.report<IncompletePipeSymbolDiagnostic>();
   return getLiteralToken(SyntaxKind::Error, "|");
 }
 

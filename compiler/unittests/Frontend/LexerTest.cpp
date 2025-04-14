@@ -14,8 +14,9 @@ using namespace llvm;
 using namespace xd;
 
 TEST(LexerTest, BufferNavigation) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("ab");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
   EXPECT_TRUE(Lex.hasNext());
   EXPECT_EQ(Lex.advance(), 'a');
   EXPECT_TRUE(Lex.hasNext());
@@ -25,8 +26,9 @@ TEST(LexerTest, BufferNavigation) {
 }
 
 TEST(LexerTest, ParseIntegerLiteral) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("123");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
 
   EXPECT_EQ(Lex.getByteOffset(), 0);
   auto TK = Lex.getNextToken();
@@ -37,8 +39,9 @@ TEST(LexerTest, ParseIntegerLiteral) {
 }
 
 TEST(LexerTest, ParseCommentLiteral) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("// this is a comment\nidentifier");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
 
   EXPECT_EQ(Lex.getByteOffset(), 0);
   auto TK1 = Lex.getNextToken();
@@ -61,8 +64,9 @@ TEST(LexerTest, ParseCommentLiteral) {
 }
 
 TEST(LexerTest, ParseIdentifier) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("abc a1_cd");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
 
   EXPECT_EQ(Lex.getByteOffset(), 0);
   auto TK1 = Lex.getNextToken();
@@ -85,8 +89,9 @@ TEST(LexerTest, ParseIdentifier) {
 }
 
 TEST(LexerTest, ParseSingularOperators) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("+.;,");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Plus);
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Dot);
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Semicolon);
@@ -95,14 +100,17 @@ TEST(LexerTest, ParseSingularOperators) {
 }
 
 TEST(LexerTest, ParseUnfinishedPipe) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("|");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Error);
+  EXPECT_FALSE(DM.isEmpty());
 }
 
 TEST(LexerTest, ParseDecisionTokens) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("!!=:::");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Bang);
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::BangEqual);
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::ColonColon);
@@ -111,8 +119,9 @@ TEST(LexerTest, ParseDecisionTokens) {
 }
 
 TEST(LexerTest, ParseWhitespaceSensitive) {
+  auto DM = DiagnosticManager();
   auto Buf = MemoryBuffer::getMemBuffer("- > ->");
-  auto Lex = Lexer(Buf->getBufferStart());
+  auto Lex = Lexer(DM, Buf->getBufferStart());
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Minus);
   EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Whitespace);
 
