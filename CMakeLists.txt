@@ -43,6 +43,16 @@ macro(add_xd_executable name)
     install(TARGETS ${name} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 endmacro()
 
+macro(add_xd_tablegen name)
+    cmake_parse_arguments(ARG "" "" "FLAGS" ${ARGN})
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${name}.inc
+            COMMAND xd-tablegen ${name} ${ARG_FLAGS} -o ${CMAKE_CURRENT_BINARY_DIR}/${name}.inc
+            COMMENT "Building XD TableGen file ${name}"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_custom_target(${name} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${name}.inc)
+    add_dependencies(${name} xd-tablegen)
+endmacro()
+
 macro(add_xd_test name)
     cmake_parse_arguments(ARG "" "" "SOURCES;LIBS" ${ARGN})
     add_xd_executable(${name} SOURCES ${ARG_SOURCES} LIBS ${ARG_LIBS})

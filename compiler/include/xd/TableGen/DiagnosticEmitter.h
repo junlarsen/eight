@@ -9,6 +9,20 @@
 #ifndef DIAGNOSTICEMITTER_H
 #define DIAGNOSTICEMITTER_H
 
-namespace xd {} // namespace xd
+#include "llvm/TableGen/Record.h"
+
+namespace xd {
+class DiagnosticEmitter {
+  const llvm::RecordKeeper &RK;
+
+  auto emitDiagnostic(const llvm::Record *Rec, llvm::raw_ostream &OS) -> void;
+  auto
+  emitDiagnosticIdentifiers(llvm::ArrayRef<const llvm::Record *> Recs) -> void;
+
+public:
+  explicit DiagnosticEmitter(const llvm::RecordKeeper &RK) : RK(RK) {}
+  auto emit(llvm::raw_ostream &OS) -> bool;
+};
+} // namespace xd
 
 #endif // DIAGNOSTICEMITTER_H
