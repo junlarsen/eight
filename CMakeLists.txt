@@ -46,6 +46,7 @@ macro(add_xd_tablegen name)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${name}.inc
             COMMAND xd-tablegen ${name} ${ARG_FLAGS} -o ${CMAKE_CURRENT_BINARY_DIR}/${name}.inc
             COMMENT "Building XD TableGen file ${name}"
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${name}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     add_custom_target(${name} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${name}.inc)
     add_dependencies(${name} XDTableGen xd-tablegen)
