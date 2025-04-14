@@ -28,7 +28,7 @@ fetchcontent_declare(googletest GIT_REPOSITORY https://github.com/google/googlet
 fetchcontent_makeavailable(googletest)
 include(GoogleTest)
 
-set(EIGHT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/compiler/include)
+set(EIGHT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/compiler/include ${CMAKE_BINARY_DIR}/compiler/include)
 
 macro(add_xd_executable name)
     cmake_parse_arguments(ARG "" "" "SOURCES;LIBS" ${ARGN})
@@ -36,8 +36,6 @@ macro(add_xd_executable name)
     target_link_libraries(${name} PRIVATE ${ARG_LIBS})
     target_include_directories(${name} PRIVATE ${EIGHT_INCLUDE_DIRS})
     target_include_directories(${name} PRIVATE ${LLVM_INCLUDE_DIRS})
-    # TableGen files are generated in the build directory
-    target_include_directories(${name} PRIVATE ${CMAKE_BINARY_DIR}/include)
     target_compile_features(${name} PRIVATE cxx_std_23)
     target_compile_options(${name} PRIVATE -fno-rtti -std=c++23)
     install(TARGETS ${name} DESTINATION ${CMAKE_BINARY_DIR}/bin)
@@ -50,7 +48,7 @@ macro(add_xd_tablegen name)
             COMMENT "Building XD TableGen file ${name}"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     add_custom_target(${name} DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${name}.inc)
-    add_dependencies(${name} xd-tablegen)
+    add_dependencies(${name} XDTableGen xd-tablegen)
 endmacro()
 
 macro(add_xd_test name)
@@ -66,8 +64,6 @@ macro(add_xd_library name)
     target_link_libraries(${name} PRIVATE ${ARG_LIBS})
     target_include_directories(${name} PRIVATE ${EIGHT_INCLUDE_DIRS})
     target_include_directories(${name} PRIVATE ${LLVM_INCLUDE_DIRS})
-    # TableGen files are generated in the build directory
-    target_include_directories(${name} PRIVATE ${CMAKE_BINARY_DIR}/include)
     target_compile_features(${name} PRIVATE cxx_std_23)
     target_compile_options(${name} PRIVATE -fno-rtti -std=c++23)
     install(TARGETS ${name} DESTINATION lib)

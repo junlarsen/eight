@@ -1,4 +1,4 @@
-//===----- DiagnosticEmitter ---===//
+//===----- DiagnosticEmitter.h ---===//
 //
 // Part of the XD Compiler Project, under the Apache License v2.0 with
 // LLVM Exceptions. See https://llvm.org/LICENSE.txt for license information.
@@ -14,10 +14,6 @@
 namespace xd {
 class DiagnosticEmitter {
   const llvm::RecordKeeper &RK;
-
-  auto emitDiagnostic(const llvm::Record *Rec, llvm::raw_ostream &OS) -> void;
-  auto
-  emitDiagnosticIdentifiers(llvm::ArrayRef<const llvm::Record *> Recs) -> void;
 
 public:
   explicit DiagnosticEmitter(const llvm::RecordKeeper &RK) : RK(RK) {}

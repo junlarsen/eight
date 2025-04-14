@@ -6,24 +6,21 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "xd/TableGen/DiagnosticEmitter.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/TableGen/Main.h"
-
-#include <xd/TableGen/DiagnosticEmitter.h>
 
 using namespace llvm;
 using namespace xd;
 
 namespace {
-enum TableGenAction {
-  GenDiagnostics,
-};
+enum TableGenAction { GenDiagnostics };
 
 cl::opt<TableGenAction>
     Action(cl::desc("tablegen action to invoke"),
            values(clEnumValN(GenDiagnostics, "gen-diagnostics",
-                             "generate compiler diagnostic messages")));
+                             "generate compiler diagnostic classes")));
 
 auto xdTableGenMain(raw_ostream &OS, const RecordKeeper &RK) -> bool {
   switch (Action) {
@@ -31,10 +28,8 @@ auto xdTableGenMain(raw_ostream &OS, const RecordKeeper &RK) -> bool {
     errs() << "Unknown xd-tablegen action code";
     return true;
   }
-  case GenDiagnostics: {
-    auto Emitter = DiagnosticEmitter(RK);
-    Emitter.emit(OS);
-  }
+  case GenDiagnostics:
+    DiagnosticEmitter(RK).emit(OS);
   }
   return false;
 }
