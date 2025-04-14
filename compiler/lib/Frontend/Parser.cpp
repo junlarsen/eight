@@ -17,13 +17,13 @@
 using namespace llvm;
 using namespace xd;
 
-auto Parser::lookahead() -> Token {
+auto Parser::lookahead() const -> SyntaxKind {
   if (!hasNext())
-    return Token(SyntaxKind::Eof, StringRef());
-  return Tokens.at(Position + 1);
+    return SyntaxKind::Eof;
+  return Tokens.at(Position + 1).getKind();
 }
 
-auto Parser::at(SyntaxKind SK) const -> bool { return get().getKind() == SK; }
+auto Parser::at(SyntaxKind SK) const -> bool { return get() == SK; }
 
 auto Parser::eat(SyntaxKind SK) -> bool {
   if (at(SK)) {

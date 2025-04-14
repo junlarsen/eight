@@ -23,22 +23,21 @@ TEST(ParserTest, Navigation) {
   EXPECT_TRUE(P.hasNext());
   EXPECT_TRUE(P.at(SyntaxKind::Identifier));
   auto TK1 = P.get();
-  EXPECT_EQ(TK1.getText(), "hello");
+  EXPECT_EQ(TK1, SyntaxKind::Identifier);
   EXPECT_TRUE(P.hasNext());
 
   P.advance();
   EXPECT_TRUE(P.at(SyntaxKind::Whitespace));
   EXPECT_TRUE(P.hasNext());
   auto TKFut = P.lookahead();
-  EXPECT_EQ(TKFut.getKind(), SyntaxKind::Identifier);
-  EXPECT_EQ(TKFut.getText(), "world");
+  EXPECT_EQ(TKFut, SyntaxKind::Identifier);
 
   P.advance();
   EXPECT_TRUE(P.at(SyntaxKind::Identifier));
   EXPECT_TRUE(P.hasNext());
   P.advance();
   auto TKEof = P.lookahead();
-  EXPECT_EQ(TKEof.getKind(), SyntaxKind::Eof);
+  EXPECT_EQ(TKEof, SyntaxKind::Eof);
 }
 
 TEST(ParserTest, ConditionalEat) {
@@ -53,7 +52,7 @@ TEST(ParserTest, ConditionalEat) {
   EXPECT_TRUE(P.eat(SyntaxKind::Identifier));
   // We are now at the whitespace
   EXPECT_TRUE(P.at(SyntaxKind::Whitespace));
-  EXPECT_EQ(P.lookahead().getKind(), SyntaxKind::IntegerLiteral);
+  EXPECT_EQ(P.lookahead(), SyntaxKind::IntegerLiteral);
   P.advance();
   EXPECT_TRUE(P.eat(SyntaxKind::IntegerLiteral));
   EXPECT_FALSE(P.hasNext());

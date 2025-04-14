@@ -77,9 +77,9 @@ public:
   explicit Parser(DiagnosticManager &DM, std::vector<Token> Tokens)
       : DM(DM), Tokens(std::move(Tokens)) {}
 
-  auto get() const -> Token { return Tokens.at(Position); }
+  auto get() const -> SyntaxKind { return Tokens.at(Position).getKind(); }
   auto hasNext() const -> bool { return Position != Tokens.size(); }
-  auto lookahead() -> Token;
+  auto lookahead() const -> SyntaxKind;
   auto at(SyntaxKind SK) const -> bool;
   auto eat(SyntaxKind SK) -> bool;
   auto expect(SyntaxKind SK) -> void;

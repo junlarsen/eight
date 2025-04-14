@@ -41,6 +41,9 @@ class Token {
 public:
   Token(SyntaxKind SK, llvm::SmallString<8> TextValue)
       : SK(SK), TextValue(TextValue) {}
+  Token(Token &&Other) noexcept
+      : SK(Other.SK), TextValue(std::move(Other.TextValue)) {}
+
   auto getKind() const { return SK; }
   auto getText() const { return TextValue; }
 };
