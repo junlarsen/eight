@@ -236,7 +236,9 @@ auto Lexer::getNextToken() -> Token {
 
 auto Lexer::drain() -> std::vector<Token> {
   std::vector<Token> Tokens;
-  while (hasNext())
-    Tokens.push_back(getNextToken());
+  while (hasNext()) {
+    auto Tok = getNextToken();
+    Tokens.push_back(Tok);
+  }
   return Tokens;
 }

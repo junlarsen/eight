@@ -16,111 +16,111 @@ using namespace xd;
 TEST(LexerTest, BufferNavigation) {
   auto Buf = MemoryBuffer::getMemBuffer("ab");
   auto Lex = Lexer(Buf->getBufferStart());
-  EXPECT_TRUE(Lex.hasNext());
-  EXPECT_EQ(Lex.advance(), 'a');
-  EXPECT_TRUE(Lex.hasNext());
-  EXPECT_EQ(Lex.peek(), 'b');
-  EXPECT_EQ(Lex.advance(), 'b');
-  EXPECT_FALSE(Lex.hasNext());
+  ASSERT_TRUE(Lex.hasNext());
+  ASSERT_EQ(Lex.advance(), 'a');
+  ASSERT_TRUE(Lex.hasNext());
+  ASSERT_EQ(Lex.peek(), 'b');
+  ASSERT_EQ(Lex.advance(), 'b');
+  ASSERT_FALSE(Lex.hasNext());
 }
 
 TEST(LexerTest, ParseIntegerLiteral) {
   auto Buf = MemoryBuffer::getMemBuffer("123");
   auto Lex = Lexer(Buf->getBufferStart());
 
-  EXPECT_EQ(Lex.getByteOffset(), 0);
+  ASSERT_EQ(Lex.getByteOffset(), 0);
   auto TK = Lex.getNextToken();
-  EXPECT_EQ(TK.getKind(), SyntaxKind::IntegerLiteral);
-  EXPECT_EQ(TK.getText(), "123");
-  EXPECT_EQ(Lex.getByteOffset(), 3);
-  EXPECT_FALSE(Lex.hasNext());
+  ASSERT_EQ(TK.getKind(), SyntaxKind::IntegerLiteral);
+  ASSERT_EQ(TK.getText(), "123");
+  ASSERT_EQ(Lex.getByteOffset(), 3);
+  ASSERT_FALSE(Lex.hasNext());
 }
 
 TEST(LexerTest, ParseCommentLiteral) {
   auto Buf = MemoryBuffer::getMemBuffer("// this is a comment\nidentifier");
   auto Lex = Lexer(Buf->getBufferStart());
 
-  EXPECT_EQ(Lex.getByteOffset(), 0);
+  ASSERT_EQ(Lex.getByteOffset(), 0);
   auto TK1 = Lex.getNextToken();
-  EXPECT_EQ(TK1.getKind(), SyntaxKind::Comment);
-  EXPECT_EQ(TK1.getText(), "// this is a comment");
-  EXPECT_EQ(Lex.getByteOffset(), 20);
+  ASSERT_EQ(TK1.getKind(), SyntaxKind::Comment);
+  ASSERT_EQ(TK1.getText(), "// this is a comment");
+  ASSERT_EQ(Lex.getByteOffset(), 20);
 
-  EXPECT_EQ(Lex.getByteOffset(), 20);
+  ASSERT_EQ(Lex.getByteOffset(), 20);
   auto TK2 = Lex.getNextToken();
-  EXPECT_EQ(TK2.getKind(), SyntaxKind::Newline);
-  EXPECT_EQ(TK2.getText(), "\n");
-  EXPECT_EQ(Lex.getByteOffset(), 21);
+  ASSERT_EQ(TK2.getKind(), SyntaxKind::Newline);
+  ASSERT_EQ(TK2.getText(), "\n");
+  ASSERT_EQ(Lex.getByteOffset(), 21);
 
-  EXPECT_EQ(Lex.getByteOffset(), 21);
+  ASSERT_EQ(Lex.getByteOffset(), 21);
   auto TK3 = Lex.getNextToken();
-  EXPECT_EQ(TK3.getKind(), SyntaxKind::Identifier);
-  EXPECT_EQ(TK3.getText(), "identifier");
-  EXPECT_EQ(Lex.getByteOffset(), 31);
-  EXPECT_FALSE(Lex.hasNext());
+  ASSERT_EQ(TK3.getKind(), SyntaxKind::Identifier);
+  ASSERT_EQ(TK3.getText(), "identifier");
+  ASSERT_EQ(Lex.getByteOffset(), 31);
+  ASSERT_FALSE(Lex.hasNext());
 }
 
 TEST(LexerTest, ParseIdentifier) {
   auto Buf = MemoryBuffer::getMemBuffer("abc a1_cd");
   auto Lex = Lexer(Buf->getBufferStart());
 
-  EXPECT_EQ(Lex.getByteOffset(), 0);
+  ASSERT_EQ(Lex.getByteOffset(), 0);
   auto TK1 = Lex.getNextToken();
-  EXPECT_EQ(TK1.getKind(), SyntaxKind::Identifier);
-  EXPECT_EQ(TK1.getText(), "abc");
-  EXPECT_EQ(Lex.getByteOffset(), 3);
+  ASSERT_EQ(TK1.getKind(), SyntaxKind::Identifier);
+  ASSERT_EQ(TK1.getText(), "abc");
+  ASSERT_EQ(Lex.getByteOffset(), 3);
 
-  EXPECT_EQ(Lex.getByteOffset(), 3);
+  ASSERT_EQ(Lex.getByteOffset(), 3);
   auto TK2 = Lex.getNextToken();
-  EXPECT_EQ(TK2.getKind(), SyntaxKind::Whitespace);
-  EXPECT_EQ(TK2.getText(), " ");
-  EXPECT_EQ(Lex.getByteOffset(), 4);
+  ASSERT_EQ(TK2.getKind(), SyntaxKind::Whitespace);
+  ASSERT_EQ(TK2.getText(), " ");
+  ASSERT_EQ(Lex.getByteOffset(), 4);
 
-  EXPECT_EQ(Lex.getByteOffset(), 4);
+  ASSERT_EQ(Lex.getByteOffset(), 4);
   auto TK3 = Lex.getNextToken();
-  EXPECT_EQ(TK3.getKind(), SyntaxKind::Identifier);
-  EXPECT_EQ(TK3.getText(), "a1_cd");
-  EXPECT_EQ(Lex.getByteOffset(), 9);
-  EXPECT_FALSE(Lex.hasNext());
+  ASSERT_EQ(TK3.getKind(), SyntaxKind::Identifier);
+  ASSERT_EQ(TK3.getText(), "a1_cd");
+  ASSERT_EQ(Lex.getByteOffset(), 9);
+  ASSERT_FALSE(Lex.hasNext());
 }
 
 TEST(LexerTest, ParseSingularOperators) {
   auto Buf = MemoryBuffer::getMemBuffer("+.;,");
   auto Lex = Lexer(Buf->getBufferStart());
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Plus);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Dot);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Semicolon);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Comma);
-  EXPECT_FALSE(Lex.hasNext());
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Plus);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Dot);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Semicolon);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Comma);
+  ASSERT_FALSE(Lex.hasNext());
 }
 
 TEST(LexerTest, ParseUnfinishedPipe) {
   auto Buf = MemoryBuffer::getMemBuffer("|");
   auto Lex = Lexer(Buf->getBufferStart());
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Error);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Error);
 }
 
 TEST(LexerTest, ParseDecisionTokens) {
   auto Buf = MemoryBuffer::getMemBuffer("!!=:::");
   auto Lex = Lexer(Buf->getBufferStart());
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Bang);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::BangEqual);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::ColonColon);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Colon);
-  EXPECT_FALSE(Lex.hasNext());
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Bang);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::BangEqual);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::ColonColon);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Colon);
+  ASSERT_FALSE(Lex.hasNext());
 }
 
 TEST(LexerTest, ParseWhitespaceSensitive) {
   auto Buf = MemoryBuffer::getMemBuffer("- > ->");
   auto Lex = Lexer(Buf->getBufferStart());
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Minus);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Whitespace);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Minus);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Whitespace);
 
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::RightAngle);
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Whitespace);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::RightAngle);
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Whitespace);
 
-  EXPECT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Arrow);
-  EXPECT_FALSE(Lex.hasNext());
+  ASSERT_EQ(Lex.getNextToken().getKind(), SyntaxKind::Arrow);
+  ASSERT_FALSE(Lex.hasNext());
 }
 
 TEST(LexerTest, DrainAllTokens) {
@@ -128,5 +128,5 @@ TEST(LexerTest, DrainAllTokens) {
   auto Lex = Lexer(Buf->getBufferStart());
   auto Tokens = Lex.drain();
   // Two identifiers, one whitespace, one error
-  EXPECT_EQ(Tokens.size(), 4);
+  ASSERT_EQ(Tokens.size(), 4);
 }

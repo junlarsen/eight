@@ -7,9 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/Parser.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include <gtest/gtest.h>
-
-#include <llvm/Support/MemoryBuffer.h>
 
 using namespace llvm;
 using namespace xd;
@@ -20,24 +19,15 @@ TEST(ParserTest, Navigation) {
   auto Lex = Lexer(Buf->getBufferStart());
   auto P = Parser(DM, std::move(Lex.drain()));
 
-  EXPECT_TRUE(P.hasNext());
-  EXPECT_TRUE(P.at(SyntaxKind::Identifier));
-  auto TK1 = P.get();
-  EXPECT_EQ(TK1, SyntaxKind::Identifier);
-  EXPECT_TRUE(P.hasNext());
+  ASSERT_TRUE(P.hasNext());
+  ASSERT_TRUE(P.at(SyntaxKind::Identifier));
+  ASSERT_TRUE(P.hasNext());
 
   P.advance();
-  EXPECT_TRUE(P.at(SyntaxKind::Whitespace));
-  EXPECT_TRUE(P.hasNext());
-  auto TKFut = P.lookahead();
-  EXPECT_EQ(TKFut, SyntaxKind::Identifier);
-
-  P.advance();
-  EXPECT_TRUE(P.at(SyntaxKind::Identifier));
-  EXPECT_TRUE(P.hasNext());
-  P.advance();
+  ASSERT_TRUE(P.at(SyntaxKind::Identifier));
+  ASSERT_FALSE(P.hasNext());
   auto TKEof = P.lookahead();
-  EXPECT_EQ(TKEof, SyntaxKind::Eof);
+  ASSERT_EQ(TKEof, SyntaxKind::Eof);
 }
 
 TEST(ParserTest, ConditionalEat) {
@@ -46,14 +36,31 @@ TEST(ParserTest, ConditionalEat) {
   auto Lex = Lexer(Buf->getBufferStart());
   auto P = Parser(DM, std::move(Lex.drain()));
 
-  EXPECT_TRUE(P.at(SyntaxKind::Identifier));
-  // Eating whitespace should not work, we need to eat identifier
-  EXPECT_FALSE(P.eat(SyntaxKind::Whitespace));
-  EXPECT_TRUE(P.eat(SyntaxKind::Identifier));
-  // We are now at the whitespace
-  EXPECT_TRUE(P.at(SyntaxKind::Whitespace));
-  EXPECT_EQ(P.lookahead(), SyntaxKind::IntegerLiteral);
-  P.advance();
-  EXPECT_TRUE(P.eat(SyntaxKind::IntegerLiteral));
-  EXPECT_FALSE(P.hasNext());
+  ASSERT_TRUE(P.at(SyntaxKind::Identifier));
+  ASSERT_EQ(P.lookahead(), SyntaxKind::IntegerLiteral);
+  ASSERT_TRUE(P.eat(SyntaxKind::Identifier));
+  ASSERT_TRUE(P.eat(SyntaxKind::IntegerLiteral));
+  ASSERT_FALSE(P.hasNext());
+  ASSERT_FALSE(P.eat(SyntaxKind::Comment));
+}
+
+TEST(ParserTest, TreeBuilder) {
+  auto Buf = MemoryBuffer::getMemBuffer("fn foo(a: int)");
+  auto DM = DiagnosticManager();
+  auto Lex = Lexer(Buf->getBufferStart());
+  auto P = Parser(DM, std::move(Lex.drain()));
+
+  auto TU = P.open();
+  P.expect(SyntaxKind::KeywordFn);
+  P.expect(SyntaxKind::Identifier);
+  P.expect(SyntaxKind::LeftParen);
+  auto C1 = P.open();
+  P.expect(SyntaxKind::Identifier);
+  P.expect(SyntaxKind::Colon);
+  P.expect(SyntaxKind::Identifier);
+  P.close(C1, SyntaxKind::FunctionParameterList);
+  P.close(TU, SyntaxKind::TranslationUnit);
+
+  Tree T = P.build();
+  ASSERT_TRUE(P.getDebugTreeBuilderComplete());
 }

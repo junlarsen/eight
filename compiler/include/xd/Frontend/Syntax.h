@@ -13,6 +13,7 @@
 #ifndef XD_FRONTEND_SYNTAX_H
 #define XD_FRONTEND_SYNTAX_H
 
+#include "llvm/ADT/SmallString.h"
 #include <cstdint>
 
 namespace xd {
@@ -20,6 +21,8 @@ enum class SyntaxKind : uint8_t {
   Error,
   Eof,
   // Nodes
+  TranslationUnit,
+  FunctionParameterList,
 
   // Tokens
   KeywordStruct,
@@ -74,6 +77,41 @@ enum class SyntaxKind : uint8_t {
   Arrow,
   AmpersandAmpersand,
   PipePipe,
+};
+
+class Token {
+  SyntaxKind SK;
+  llvm::SmallString<8> TextValue;
+
+public:
+  Token(SyntaxKind SK, const llvm::SmallString<8> &TextValue)
+      : SK(SK), TextValue(TextValue) {}
+
+  auto getKind() const { return SK; }
+  auto getText() const { return TextValue; }
+
+  auto isTrivia() const -> bool {
+    return SK == SyntaxKind::Comment || SK == SyntaxKind::Whitespace ||
+           SK == SyntaxKind::Newline;
+  }
+};
+
+class Tree {
+public:
+  using GreenNodeData = std::variant<Tree, Token>;
+  using GreenNode = std::shared_ptr<GreenNodeData>;
+
+private:
+  SyntaxKind SK;
+  std::vector<GreenNode> Children;
+
+public:
+  explicit Tree(SyntaxKind SK) : SK(SK) {}
+
+  auto getChildren() -> std::vector<GreenNode> & { return Children; }
+  auto getKind() const { return SK; }
+
+  auto addChild(const GreenNode &Child) -> void { Children.push_back(Child); }
 };
 } // namespace xd
 

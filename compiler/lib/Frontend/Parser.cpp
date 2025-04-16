@@ -17,12 +17,6 @@
 using namespace llvm;
 using namespace xd;
 
-auto Parser::lookahead() const -> SyntaxKind {
-  if (!hasNext())
-    return SyntaxKind::Eof;
-  return Tokens.at(Position + 1).getKind();
-}
-
 auto Parser::at(SyntaxKind SK) const -> bool { return get() == SK; }
 
 auto Parser::eat(SyntaxKind SK) -> bool {
@@ -57,9 +51,9 @@ auto Parser::close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void {
 }
 
 auto Parser::advance() -> void {
-  assert(hasNext() && "advance() called on parser that has reached the end");
   Events.push_back(std::make_unique<ParseAdvanceEvent>());
-  Position++;
+  if (hasNext())
+    Position++;
 }
 
 auto Parser::advanceWithError(StringRef Message) -> void {
@@ -67,4 +61,54 @@ auto Parser::advanceWithError(StringRef Message) -> void {
   errs() << Message << "\n";
   advance();
   close(Checkpoint, SyntaxKind::Error);
+}
+
+auto Parser::build() -> Tree {
+  std::vector<Tree> Stack;
+  // Pop the first event off the stack because it's a close event
+  assert(Events.size() > 0 && "Tried to build tree with zero events in tree");
+  Events.pop_back();
+  for (auto &Event : Events) {
+    if (const auto OE = dyn_cast<ParseOpenEvent>(Event)) {
+      // An open event simply pushes a new tree onto the stack
+      Stack.push_back(Tree(OE->getSyntaxKind()));
+    } else if (const auto AE = dyn_cast<ParseAdvanceEvent>(Event)) {
+      // Advancing will push the token kind onto the current element's children
+      // list.
+      while (TreeBuilderPosition < Tokens.size() - 1) {
+        auto &Tok = Tokens.at(TreeBuilderPosition);
+        TreeBuilderPosition++;
+        // As long as we're hitting trivia nodes, we just add them to the green
+        // node.
+        if (Tok.isTrivia()) {
+          auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Tok));
+          Stack.at(Stack.size() - 1).addChild(Node);
+          continue;
+        }
+        // This is the token that the parser saw (i.e., the one after all trivia
+        // skipped).
+        auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Tok));
+        Stack.at(Stack.size() - 1).addChild(Node);
+      }
+    } else if (const auto CE = dyn_cast<ParseCloseEvent>(Event)) {
+      // Closing events simply pop the top element of the deque and puts it into
+      // the top again
+      Tree Subtree = std::move(Stack.back());
+      Stack.erase(Stack.end() - 1);
+      auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Subtree));
+      Stack.at(Stack.size() - 1).addChild(Node);
+    }
+  }
+  assert(Stack.size() == 1 &&
+         "Stack was not left with a single element after building");
+  Tree Root = std::move(Stack.front());
+  // We also drain any remaining trivia tokens and put them into the root here.
+  while (TreeBuilderPosition < Tokens.size() - 1) {
+    auto Tok = Tokens.at(TreeBuilderPosition);
+    assert(Tok.isTrivia() && "Dangling token was not a trivia token");
+    TreeBuilderPosition++;
+    auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Tok));
+    Root.addChild(Node);
+  }
+  return Root;
 }

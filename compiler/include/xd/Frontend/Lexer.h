@@ -12,11 +12,10 @@
 #include "xd/Basic/DiagnosticManager.h"
 #include "xd/Frontend/Syntax.h"
 #include "llvm/ADT/APInt.h"
-#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include <cassert>
 #include <cstdint>
-#include <llvm/Support/MemoryBuffer.h>
 
 namespace xd {
 /// Represents a single location in a file.
@@ -32,20 +31,6 @@ public:
   bool operator==(const SourceLocation &Other) const {
     return Start == Other.Start && End == Other.End;
   }
-};
-
-class Token {
-  SyntaxKind SK;
-  llvm::SmallString<8> TextValue;
-
-public:
-  Token(SyntaxKind SK, llvm::SmallString<8> TextValue)
-      : SK(SK), TextValue(TextValue) {}
-  Token(Token &&Other) noexcept
-      : SK(Other.SK), TextValue(std::move(Other.TextValue)) {}
-
-  auto getKind() const { return SK; }
-  auto getText() const { return TextValue; }
 };
 
 class Lexer {
