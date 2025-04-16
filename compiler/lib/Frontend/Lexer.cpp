@@ -11,21 +11,21 @@
 
 using namespace xd;
 
-static auto getLiteralToken(SyntaxKind SK, llvm::StringRef S) -> Token {
-  return Token(SK, S);
+static auto getLiteralToken(SyntaxKind SK, llvm::StringRef S) -> GreenToken {
+  return GreenToken(SK, S);
 }
 
-auto Lexer::getCommentToken() -> Token {
+auto Lexer::getCommentToken() -> GreenToken {
   // The lexer has consumed both of the leading slashes, so we add them back
   // here for full-fidelity.
   auto Value = llvm::SmallString<8>("//");
   while (hasNext() && peek() != '\n') {
     Value += advance();
   }
-  return Token(SyntaxKind::Comment, Value);
+  return GreenToken(SyntaxKind::Comment, Value);
 }
 
-auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> Token {
+auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> GreenToken {
   // The lexer already ate the first character, so we can check for numbers and
   // underscores here right away.
   llvm::SmallString<8> Keyword;
@@ -53,38 +53,38 @@ auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> Token {
                   .Case("intrinsic_def", SyntaxKind::KeywordIntrinsicFn)
                   .Case("intrinsic_typdef", SyntaxKind::KeywordIntrinsicType)
                   .Default(SyntaxKind::Identifier);
-  return Token(Kind, Keyword);
+  return GreenToken(Kind, Keyword);
 }
 
-auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> Token {
+auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> GreenToken {
   llvm::SmallString<8> Value;
   Value += InitialCharacter;
   while (hasNext() && peek() >= '0' && peek() <= '9') {
     Value += advance();
   }
-  return Token(SyntaxKind::IntegerLiteral, Value);
+  return GreenToken(SyntaxKind::IntegerLiteral, Value);
 }
 
-auto Lexer::getTokenForNewline(char Character) -> Token {
+auto Lexer::getTokenForNewline(char Character) -> GreenToken {
   llvm::SmallString<8> Value;
   Value += Character;
   // Depending on whether its LF/CRLF/CR there might be another LF token right
   // after this.
   if (Character == 'r' && hasNext() && peek() == '\n')
     Value += advance();
-  return Token(SyntaxKind::Newline, Value);
+  return GreenToken(SyntaxKind::Newline, Value);
 }
 
-auto Lexer::getTokenForWhitespace(char Character) -> Token {
+auto Lexer::getTokenForWhitespace(char Character) -> GreenToken {
   llvm::SmallString<8> Value;
   Value += Character;
   // We eat all horizontal whitespace as a single token.
   while (hasNext() && isWhitespace(*peek()))
     Value += advance();
-  return Token(SyntaxKind::Whitespace, Value);
+  return GreenToken(SyntaxKind::Whitespace, Value);
 }
 
-auto Lexer::getTokenForBang() -> Token {
+auto Lexer::getTokenForBang() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
@@ -93,7 +93,7 @@ auto Lexer::getTokenForBang() -> Token {
   return getLiteralToken(SyntaxKind::Bang, "!");
 }
 
-auto Lexer::getTokenForMinus() -> Token {
+auto Lexer::getTokenForMinus() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '>') {
     advance();
@@ -102,7 +102,7 @@ auto Lexer::getTokenForMinus() -> Token {
   return getLiteralToken(SyntaxKind::Minus, "-");
 }
 
-auto Lexer::getTokenForSlash() -> Token {
+auto Lexer::getTokenForSlash() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '/') {
     advance();
@@ -111,7 +111,7 @@ auto Lexer::getTokenForSlash() -> Token {
   return getLiteralToken(SyntaxKind::Slash, "/");
 }
 
-auto Lexer::getTokenForEqual() -> Token {
+auto Lexer::getTokenForEqual() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
@@ -120,7 +120,7 @@ auto Lexer::getTokenForEqual() -> Token {
   return getLiteralToken(SyntaxKind::Equal, "=");
 }
 
-auto Lexer::getTokenForColon() -> Token {
+auto Lexer::getTokenForColon() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == ':') {
     advance();
@@ -129,7 +129,7 @@ auto Lexer::getTokenForColon() -> Token {
   return getLiteralToken(SyntaxKind::Colon, ":");
 }
 
-auto Lexer::getTokenForAmpersand() -> Token {
+auto Lexer::getTokenForAmpersand() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '&') {
     advance();
@@ -138,7 +138,7 @@ auto Lexer::getTokenForAmpersand() -> Token {
   return getLiteralToken(SyntaxKind::Ampersand, "&");
 }
 
-auto Lexer::getTokenForPipe() -> Token {
+auto Lexer::getTokenForPipe() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '|') {
     advance();
@@ -149,7 +149,7 @@ auto Lexer::getTokenForPipe() -> Token {
   return getLiteralToken(SyntaxKind::Error, "|");
 }
 
-auto Lexer::getTokenForLess() -> Token {
+auto Lexer::getTokenForLess() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
@@ -158,7 +158,7 @@ auto Lexer::getTokenForLess() -> Token {
   return getLiteralToken(SyntaxKind::LeftAngle, "<");
 }
 
-auto Lexer::getTokenForGreater() -> Token {
+auto Lexer::getTokenForGreater() -> GreenToken {
   auto Ahead = peek();
   if (Ahead == '=') {
     advance();
@@ -167,7 +167,7 @@ auto Lexer::getTokenForGreater() -> Token {
   return getLiteralToken(SyntaxKind::RightAngle, ">");
 }
 
-auto Lexer::getNextToken() -> Token {
+auto Lexer::getNextToken() -> GreenToken {
   while (true) {
     TokenStart = Offset;
     auto C = advance();
@@ -234,8 +234,8 @@ auto Lexer::getNextToken() -> Token {
   }
 }
 
-auto Lexer::drain() -> std::vector<Token> {
-  std::vector<Token> Tokens;
+auto Lexer::drain() -> std::vector<GreenToken> {
+  std::vector<GreenToken> Tokens;
   while (hasNext()) {
     auto Tok = getNextToken();
     Tokens.push_back(Tok);

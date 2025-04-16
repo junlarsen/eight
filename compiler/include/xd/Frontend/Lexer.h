@@ -50,7 +50,7 @@ public:
   /// Get the current byte offset into the file
   auto getByteOffset() const -> uint32_t { return Offset; }
 
-  auto getNextToken() -> Token;
+  auto getNextToken() -> GreenToken;
   auto hasNext() const -> bool { return SourcePtr != Source.end(); }
   auto advance() -> char {
     assert(hasNext() &&
@@ -65,23 +65,23 @@ public:
   }
 
   /// Drain all the tokens into a list.
-  auto drain() -> std::vector<Token>;
+  auto drain() -> std::vector<GreenToken>;
 
 private:
-  auto getCommentToken() -> Token;
-  auto getKeywordOrIdentifierToken(char Character) -> Token;
-  auto getIntegerLiteralToken(char Character) -> Token;
-  auto getTokenForWhitespace(char Character) -> Token;
-  auto getTokenForNewline(char Character) -> Token;
-  auto getTokenForBang() -> Token;
-  auto getTokenForMinus() -> Token;
-  auto getTokenForSlash() -> Token;
-  auto getTokenForEqual() -> Token;
-  auto getTokenForColon() -> Token;
-  auto getTokenForAmpersand() -> Token;
-  auto getTokenForPipe() -> Token;
-  auto getTokenForLess() -> Token;
-  auto getTokenForGreater() -> Token;
+  auto getCommentToken() -> GreenToken;
+  auto getKeywordOrIdentifierToken(char Character) -> GreenToken;
+  auto getIntegerLiteralToken(char Character) -> GreenToken;
+  auto getTokenForWhitespace(char Character) -> GreenToken;
+  auto getTokenForNewline(char Character) -> GreenToken;
+  auto getTokenForBang() -> GreenToken;
+  auto getTokenForMinus() -> GreenToken;
+  auto getTokenForSlash() -> GreenToken;
+  auto getTokenForEqual() -> GreenToken;
+  auto getTokenForColon() -> GreenToken;
+  auto getTokenForAmpersand() -> GreenToken;
+  auto getTokenForPipe() -> GreenToken;
+  auto getTokenForLess() -> GreenToken;
+  auto getTokenForGreater() -> GreenToken;
 
   static auto isIdentifierStart(char C) -> bool {
     return (C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z');

@@ -63,15 +63,15 @@ auto Parser::advanceWithError(StringRef Message) -> void {
   close(Checkpoint, SyntaxKind::Error);
 }
 
-auto Parser::build() -> Tree {
-  std::vector<Tree> Stack;
+auto Parser::build() -> GreenNode {
+  std::vector<GreenNode> Stack;
   // Pop the first event off the stack because it's a close event
   assert(Events.size() > 0 && "Tried to build tree with zero events in tree");
   Events.pop_back();
   for (auto &Event : Events) {
     if (const auto OE = dyn_cast<ParseOpenEvent>(Event)) {
       // An open event simply pushes a new tree onto the stack
-      Stack.push_back(Tree(OE->getSyntaxKind()));
+      Stack.push_back(GreenNode(OE->getSyntaxKind()));
     } else if (const auto AE = dyn_cast<ParseAdvanceEvent>(Event)) {
       // Advancing will push the token kind onto the current element's children
       // list.
@@ -81,33 +81,33 @@ auto Parser::build() -> Tree {
         // As long as we're hitting trivia nodes, we just add them to the green
         // node.
         if (Tok.isTrivia()) {
-          auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Tok));
+          auto Node = std::make_shared<GreenNode::ChildData>(std::move(Tok));
           Stack.at(Stack.size() - 1).addChild(Node);
           continue;
         }
         // This is the token that the parser saw (i.e., the one after all trivia
         // skipped).
-        auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Tok));
+        auto Node = std::make_shared<GreenNode::ChildData>(std::move(Tok));
         Stack.at(Stack.size() - 1).addChild(Node);
       }
     } else if (const auto CE = dyn_cast<ParseCloseEvent>(Event)) {
       // Closing events simply pop the top element of the deque and puts it into
       // the top again
-      Tree Subtree = std::move(Stack.back());
+      GreenNode Subtree = std::move(Stack.back());
       Stack.erase(Stack.end() - 1);
-      auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Subtree));
+      auto Node = std::make_shared<GreenNode::ChildData>(std::move(Subtree));
       Stack.at(Stack.size() - 1).addChild(Node);
     }
   }
   assert(Stack.size() == 1 &&
          "Stack was not left with a single element after building");
-  Tree Root = std::move(Stack.front());
+  GreenNode Root = std::move(Stack.front());
   // We also drain any remaining trivia tokens and put them into the root here.
   while (TreeBuilderPosition < Tokens.size() - 1) {
     auto Tok = Tokens.at(TreeBuilderPosition);
     assert(Tok.isTrivia() && "Dangling token was not a trivia token");
     TreeBuilderPosition++;
-    auto Node = std::make_shared<Tree::GreenNodeData>(std::move(Tok));
+    auto Node = std::make_shared<GreenNode::ChildData>(std::move(Tok));
     Root.addChild(Node);
   }
   return Root;

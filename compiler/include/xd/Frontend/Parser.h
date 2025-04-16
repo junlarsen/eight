@@ -69,8 +69,8 @@ using ParseCheckpoint = uint32_t;
 class Parser {
   DiagnosticManager &DM;
 
-  std::vector<Token> Tokens;
-  std::vector<Token> SignificantTokens;
+  std::vector<GreenToken> Tokens;
+  std::vector<GreenToken> SignificantTokens;
   std::vector<std::unique_ptr<ParseEvent>> Events;
   uint32_t Position = 0;
   uint32_t TreeBuilderPosition = 0;
@@ -80,7 +80,7 @@ class Parser {
   }
 
 public:
-  explicit Parser(DiagnosticManager &DM, std::vector<Token> Tokens)
+  explicit Parser(DiagnosticManager &DM, std::vector<GreenToken> Tokens)
       : DM(DM), Tokens(std::move(Tokens)) {
     for (auto &Token : this->Tokens)
       if (!Token.isTrivia())
@@ -102,7 +102,7 @@ public:
   auto close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void;
   auto advance() -> void;
   auto advanceWithError(llvm::StringRef Message) -> void;
-  auto build() -> Tree;
+  auto build() -> GreenNode;
 
   /// Get the tree builder's position for debug purposes.
   auto getDebugTreeBuilderComplete() const -> uint32_t {

@@ -61,6 +61,6 @@ TEST(ParserTest, TreeBuilder) {
   P.close(C1, SyntaxKind::FunctionParameterList);
   P.close(TU, SyntaxKind::TranslationUnit);
 
-  Tree T = P.build();
+  GreenNode T = P.build();
   ASSERT_TRUE(P.getDebugTreeBuilderComplete());
 }

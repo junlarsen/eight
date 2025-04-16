@@ -79,12 +79,12 @@ enum class SyntaxKind : uint8_t {
   PipePipe,
 };
 
-class Token {
+class GreenToken {
   SyntaxKind SK;
   llvm::SmallString<8> TextValue;
 
 public:
-  Token(SyntaxKind SK, const llvm::SmallString<8> &TextValue)
+  GreenToken(SyntaxKind SK, const llvm::SmallString<8> &TextValue)
       : SK(SK), TextValue(TextValue) {}
 
   auto getKind() const { return SK; }
@@ -96,22 +96,22 @@ public:
   }
 };
 
-class Tree {
+class GreenNode {
 public:
-  using GreenNodeData = std::variant<Tree, Token>;
-  using GreenNode = std::shared_ptr<GreenNodeData>;
+  using ChildData = std::variant<GreenNode, GreenToken>;
+  using Child = std::shared_ptr<ChildData>;
 
 private:
   SyntaxKind SK;
-  std::vector<GreenNode> Children;
+  std::vector<Child> Children;
 
 public:
-  explicit Tree(SyntaxKind SK) : SK(SK) {}
+  explicit GreenNode(SyntaxKind SK) : SK(SK) {}
 
-  auto getChildren() -> std::vector<GreenNode> & { return Children; }
+  auto getChildren() -> std::vector<Child> & { return Children; }
   auto getKind() const { return SK; }
 
-  auto addChild(const GreenNode &Child) -> void { Children.push_back(Child); }
+  auto addChild(const Child &Child) -> void { Children.push_back(Child); }
 };
 } // namespace xd
 
