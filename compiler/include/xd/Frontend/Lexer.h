@@ -18,21 +18,6 @@
 #include <cstdint>
 
 namespace xd {
-/// Represents a single location in a file.
-///
-/// This implementation does currently not track multiple files. Makes the fine
-/// assumption that input size does not exceed 4GB.
-class SourceLocation {
-  uint32_t Start;
-  uint32_t End;
-
-public:
-  SourceLocation(uint32_t Start, uint32_t End) : Start(Start), End(End) {}
-  bool operator==(const SourceLocation &Other) const {
-    return Start == Other.Start && End == Other.End;
-  }
-};
-
 class Lexer {
   /// Pointer to the llvm::MemoryBuffer this Lexer operates on
   const char *SourcePtr;

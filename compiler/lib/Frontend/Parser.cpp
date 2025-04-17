@@ -30,7 +30,11 @@ auto Parser::eat(SyntaxKind SK) -> bool {
 auto Parser::expect(SyntaxKind SK) -> void {
   if (eat(SK))
     return;
-  errs() << "expected syntaxkind: " << static_cast<uint8_t>(SK) << "\n";
+  // TODO: Can this possibly cause vector out of bounds?
+  auto CurrentSK = get();
+  auto ID = DM.report<UnexpectedTokenDiagnostic>(getSyntaxKindName(CurrentSK));
+  auto Event = std::make_unique<ParseErrorEvent>(ID);
+  Events.push_back(std::move(Event));
 }
 
 auto Parser::open() -> ParseCheckpoint {
@@ -56,9 +60,12 @@ auto Parser::advance() -> void {
     Position++;
 }
 
-auto Parser::advanceWithError(StringRef Message) -> void {
+auto Parser::reportUnexpectedAndAdvance() -> void {
   auto Checkpoint = open();
-  errs() << Message << "\n";
+  auto CurrentSK = get();
+  auto ID = DM.report<UnexpectedTokenDiagnostic>(getSyntaxKindName(CurrentSK));
+  auto Event = std::make_unique<ParseErrorEvent>(ID);
+  Events.push_back(std::move(Event));
   advance();
   close(Checkpoint, SyntaxKind::Error);
 }
@@ -110,6 +117,11 @@ auto Parser::build() -> GreenNode {
       Subtree.setLength(Sum);
       GreenNode &Head = Stack.at(Stack.size() - 1);
       Head.addChild(std::make_shared<GreenNode>(Subtree));
+    } else if (const auto EE = dyn_cast<ParseErrorEvent>(Event)) {
+      auto Tok = ErrorToken(EE->getDiagnosticID());
+      Stack.at(Stack.size() - 1).addChild(Tok);
+    } else {
+      llvm_unreachable("unexpected event kind");
     }
   }
   assert(Stack.size() == 1 &&
@@ -118,6 +130,7 @@ auto Parser::build() -> GreenNode {
   // We also drain any remaining trivia tokens and put them into the root here.
   while (TreeBuilderPosition < Tokens.size()) {
     auto &Tok = Tokens.at(TreeBuilderPosition++);
+    errs() << Tok.getText();
     assert(Tok.isTrivia() && "Dangling token was not a trivia token");
     Root.addChild(Tok);
   }
@@ -151,7 +164,9 @@ auto Parser::parseDecl() -> void {
   case SyntaxKind::KeywordFn:
     return parseFunctionDecl();
   default:
-    assert(false && "todo: report diag here");
+    // The top-level parser has to try to advance, otherwise the parser will
+    // just loop forever.
+    reportUnexpectedAndAdvance();
   }
 }
 
@@ -159,9 +174,14 @@ auto Parser::parseFunctionDecl() -> void {
   auto Fn = open();
   expect(SyntaxKind::KeywordFn);
   expect(SyntaxKind::Identifier);
+  auto FnParameterList = open();
   expect(SyntaxKind::LeftParen);
   expect(SyntaxKind::RightParen);
+  close(FnParameterList, SyntaxKind::FunctionParameterList);
+  auto FnBody = open();
   expect(SyntaxKind::LeftBrace);
+  expect(SyntaxKind::Identifier);
   expect(SyntaxKind::RightBrace);
+  close(FnBody, SyntaxKind::FunctionBody);
   close(Fn, SyntaxKind::Function);
 }

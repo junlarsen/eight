@@ -13,6 +13,7 @@
 #ifndef XD_FRONTEND_SYNTAX_H
 #define XD_FRONTEND_SYNTAX_H
 
+#include "xd/Basic/DiagnosticManager.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cstdint>
@@ -109,8 +110,19 @@ public:
   }
 };
 
+class ErrorToken {
+  DiagnosticID DiagnosticID;
+
+public:
+  explicit ErrorToken(uint32_t DiagnosticID) : DiagnosticID(DiagnosticID) {}
+  auto getDiagnosticID() const -> uint32_t { return DiagnosticID; }
+  auto getTextLength() const -> size_t { return 0; }
+  auto getKind() const -> SyntaxKind { return SyntaxKind::Error; }
+};
+
 class GreenNode {
-  using GreenNodeData = std::variant<GreenToken, std::shared_ptr<GreenNode>>;
+  using GreenNodeData =
+      std::variant<GreenToken, std::shared_ptr<GreenNode>, ErrorToken>;
 
   SyntaxKind SK;
   std::vector<GreenNodeData> Children;
@@ -129,6 +141,7 @@ public:
   auto addChild(const std::shared_ptr<GreenNode> &Tok) -> void {
     Children.push_back(Tok);
   }
+  auto addChild(ErrorToken Tok) -> void { Children.push_back(Tok); }
 
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) const -> void;
 };

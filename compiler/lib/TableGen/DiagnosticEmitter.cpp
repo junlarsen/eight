@@ -23,6 +23,7 @@ auto DiagnosticEmitter::emit(raw_ostream &OS) -> bool {
          "required for generating the enum kind");
   OS << "#ifndef XD_BASIC_DIAGNOSTICS_TD" << "\n";
   OS << "#define XD_BASIC_DIAGNOSTICS_TD" << "\n\n";
+  OS << "#include \"xd/Basic/Location.h\"" << "\n";
   OS << "#include <cstdint>" << "\n";
   OS << "#include <string_view>" << "\n";
   OS << "#include <string>" << "\n";

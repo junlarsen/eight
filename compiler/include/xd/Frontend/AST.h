@@ -9,7 +9,7 @@
 #ifndef XD_FRONTEND_AST_H
 #define XD_FRONTEND_AST_H
 
-#include "xd/Frontend/Lexer.h"
+#include "xd/Basic/Location.h"
 #include <memory>
 #include <vector>
 

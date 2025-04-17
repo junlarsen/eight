@@ -7,4 +7,4 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Basic/DiagnosticManager.h"
-#include "xd/Basic/Diagnostic.h"
+#include "xd/Basic/Location.h"

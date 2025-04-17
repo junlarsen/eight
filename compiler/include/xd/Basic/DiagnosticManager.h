@@ -15,6 +15,8 @@
 #include <vector>
 
 namespace xd {
+using DiagnosticID = uint32_t;
+
 struct DiagnosticOptions {
   uint32_t MaxDiagnostics;
 };
@@ -27,10 +29,12 @@ public:
   DiagnosticManager(const DiagnosticManager &) = delete;
 
   /// Report a new diagnostic to the DiagnosticManager.
-  template <class D, class... Args> auto report(Args &&...A) -> void {
+  template <class D, class... Args> auto report(Args &&...A) -> DiagnosticID {
     std::unique_ptr<Diagnostic> Diag =
         std::make_unique<D>(std::forward<Args>(A)...);
+    DiagnosticID ID = Diagnostics.size();
     Diagnostics.push_back(std::move(Diag));
+    return ID;
   }
 
   auto isEmpty() const -> bool { return Diagnostics.empty(); }

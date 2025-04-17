@@ -14,14 +14,12 @@ using namespace xd;
 
 auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
   switch (SK) {
-  case SyntaxKind::Identifier:
-    return "Identifier";
-  case SyntaxKind::IntegerLiteral:
-    return "IntegerLiteral";
+    // Special kinds
   case SyntaxKind::Error:
-    return "Error";
+    return "<error>";
   case SyntaxKind::Eof:
-    return "Eof";
+    return "<end of file>";
+    // Syntax nodes
   case SyntaxKind::TranslationUnit:
     return "TranslationUnit";
   case SyntaxKind::Function:
@@ -30,116 +28,127 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "FunctionParameterList";
   case SyntaxKind::FunctionBody:
     return "FunctionBody";
+    // Syntax tokens
   case SyntaxKind::KeywordStruct:
-    return "KeywordStruct";
+    return "struct";
   case SyntaxKind::KeywordLet:
-    return "KeywordLet";
+    return "let";
   case SyntaxKind::KeywordFn:
-    return "KeywordFn";
+    return "fn";
   case SyntaxKind::KeywordIntrinsicFn:
-    return "KeywordIntrinsicFn";
+    return "intrinsic_fn";
   case SyntaxKind::KeywordIntrinsicType:
-    return "KeywordIntrinsicType";
+    return "intrinsic_type";
   case SyntaxKind::KeywordTrait:
-    return "KeywordTrait";
+    return "trait";
   case SyntaxKind::KeywordInstance:
-    return "KeywordInstance";
+    return "instance";
   case SyntaxKind::KeywordIf:
-    return "KeywordIf";
+    return "if";
   case SyntaxKind::KeywordElse:
-    return "KeywordElse";
+    return "else";
   case SyntaxKind::KeywordReturn:
-    return "KeywordReturn";
+    return "return";
   case SyntaxKind::KeywordBreak:
-    return "KeywordBreak";
+    return "break";
   case SyntaxKind::KeywordContinue:
-    return "KeywordContinue";
+    return "continue";
   case SyntaxKind::KeywordFor:
-    return "KeywordFor";
+    return "for";
   case SyntaxKind::KeywordNew:
-    return "KeywordNew";
+    return "new";
+  case SyntaxKind::Identifier:
+    return "<identifier>";
+  case SyntaxKind::IntegerLiteral:
+    return "<integer literal>";
   case SyntaxKind::TrueLiteral:
-    return "TrueLiteral";
+    return "true";
   case SyntaxKind::FalseLiteral:
-    return "FalseLiteral";
+    return "false";
   case SyntaxKind::Comment:
-    return "Comment";
+    return "<comment>";
   case SyntaxKind::Whitespace:
-    return "Whitespace";
+    return "<whitespace>";
   case SyntaxKind::Newline:
-    return "Newline";
+    return "<newline>";
   case SyntaxKind::Ampersand:
-    return "Ampersand";
+    return "&";
   case SyntaxKind::Bang:
-    return "Bang";
+    return "!";
   case SyntaxKind::Plus:
-    return "Plus";
+    return "+";
   case SyntaxKind::Dot:
-    return "Dot";
+    return ".";
   case SyntaxKind::Star:
-    return "Star";
+    return "*";
   case SyntaxKind::Minus:
-    return "Minus";
+    return "-";
   case SyntaxKind::Slash:
-    return "Slash";
+    return "/";
   case SyntaxKind::Equal:
-    return "Equal";
+    return "=";
   case SyntaxKind::EqualEqual:
-    return "EqualEqual";
+    return "==";
   case SyntaxKind::BangEqual:
-    return "BangEqual";
+    return "!=";
   case SyntaxKind::Percent:
-    return "Percent";
+    return "%";
   case SyntaxKind::LeftParen:
-    return "LeftParen";
+    return "(";
   case SyntaxKind::LeftBracket:
-    return "LeftBracket";
+    return "[";
   case SyntaxKind::LeftBrace:
-    return "LeftBrace";
+    return "{";
   case SyntaxKind::LeftAngle:
-    return "LeftAngle";
+    return "<";
   case SyntaxKind::LeftAngleEqual:
-    return "LeftAngleEqual";
+    return "<=";
   case SyntaxKind::RightParen:
-    return "RightParen";
+    return ")";
   case SyntaxKind::RightBracket:
-    return "RightBracket";
+    return "]";
   case SyntaxKind::RightBrace:
-    return "RightBrace";
+    return "}";
   case SyntaxKind::RightAngle:
-    return "RightAngle";
+    return ">";
   case SyntaxKind::RightAngleEqual:
-    return "RightAngleEqual";
+    return ">=";
   case SyntaxKind::Semicolon:
-    return "Semicolon";
+    return ";";
   case SyntaxKind::Colon:
-    return "Colon";
+    return ":";
   case SyntaxKind::ColonColon:
-    return "ColonColon";
+    return "::";
   case SyntaxKind::Comma:
-    return "Comma";
+    return ",";
   case SyntaxKind::Arrow:
-    return "Arrow";
+    return "->";
   case SyntaxKind::AmpersandAmpersand:
-    return "AmpersandAmpersand";
+    return "&&";
   case SyntaxKind::PipePipe:
-    return "PipePipe";
+    return "||";
   default:
     llvm_unreachable("Tried to recurse into unknown syntax kind");
   }
 }
 
 auto GreenNode::debug(raw_ostream &OS, size_t Indent) const -> void {
+  // We don't quote this, because node is always a node kind
   OS << std::string(Indent, ' ') << getSyntaxKindName(getKind())
      << " len=" << getTextLength() << " children=" << Children.size() << "\n";
   for (const auto &Child : Children) {
     if (std::holds_alternative<GreenToken>(Child)) {
       auto &Token = std::get<GreenToken>(Child);
-      OS << std::string(Indent + 2, ' ') << getSyntaxKindName(Token.getKind())
+      OS << std::string(Indent + 2, ' ') << "Token '"
+         << getSyntaxKindName(Token.getKind()) << "'"
          << " len=" << Token.getTextLength() << "\n";
-    } else {
+    } else if (std::holds_alternative<std::shared_ptr<GreenNode>>(Child)) {
       auto &Node = std::get<std::shared_ptr<GreenNode>>(Child);
       Node->debug(OS, Indent + 2);
+    } else {
+      auto &ErrTok = std::get<ErrorToken>(Child);
+      OS << std::string(Indent + 2, ' ') << "Error " << ErrTok.getDiagnosticID()
+         << "\n";
     }
   }
 }

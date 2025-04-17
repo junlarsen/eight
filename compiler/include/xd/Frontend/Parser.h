@@ -18,6 +18,7 @@ enum class ParseEventKind : uint8_t {
   Open,
   Close,
   Advance,
+  Error,
 };
 class ParseEvent {
   ParseEventKind Kind;
@@ -59,6 +60,19 @@ public:
   static bool classof(const ParseEvent *Event) {
     return Event->getKind() == ParseEventKind::Advance;
   }
+};
+
+class ParseErrorEvent : public ParseEvent {
+  DiagnosticID ID;
+
+public:
+  explicit ParseErrorEvent(DiagnosticID ID)
+      : ParseEvent(ParseEventKind::Error), ID(ID) {}
+  static bool classof(const ParseEvent *Event) {
+    return Event->getKind() == ParseEventKind::Error;
+  }
+
+  auto getDiagnosticID() const -> DiagnosticID { return ID; }
 };
 
 /// Denotes a checkpoint (parser push) location.
@@ -104,7 +118,7 @@ public:
   auto open() -> ParseCheckpoint;
   auto close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void;
   auto advance() -> void;
-  auto advanceWithError(llvm::StringRef Message) -> void;
+  auto reportUnexpectedAndAdvance() -> void;
   auto build() -> GreenNode;
 
   /// Get the tree builder's position for debug purposes.
@@ -114,7 +128,6 @@ public:
     return TreeBuilderPosition == Tokens.size();
   }
 
-public:
   auto parseTranslationUnit() -> void;
   auto parseDecl() -> void;
   auto parseFunctionDecl() -> void;

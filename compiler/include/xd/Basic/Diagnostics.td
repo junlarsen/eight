@@ -26,6 +26,4 @@ def UnrecognizedCharacter
     : Diagnostic<"Found unrecognized character {0}",
                  [DiagnosticArg<"Character", CharacterArg>]>;
 
-def OtherDiag : Diagnostic<"This is another error {0}: {1}", [
-  DiagnosticArg<"Name", StringArg>, DiagnosticArg<"Count", IntegerArg>
-]>;
+def UnexpectedToken : Diagnostic<"encountered unexpected token {0}", [DiagnosticArg<"Token", StringArg>]>;
