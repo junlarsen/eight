@@ -47,10 +47,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "Expr";
   case SyntaxKind::IntegerLiteralExpr:
     return "IntegerLiteralExpr";
-  case SyntaxKind::TrueLiteralExpr:
-    return "TrueLiteralExpr";
-  case SyntaxKind::FalseLiteralExpr:
-    return "FalseLiteralExpr";
+  case SyntaxKind::BooleanLiteralExpr:
+    return "BooleanLiteralExpr";
   case SyntaxKind::ReferenceExpr:
     return "ReferenceExpr";
   case SyntaxKind::GroupExpr:

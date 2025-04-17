@@ -302,65 +302,21 @@ auto Parser::parseLetStmt() -> void {
   close(C, SyntaxKind::LetStmt);
 }
 
-auto Parser::parseGroupOrLiteralExpr() -> CloseCheckpoint {
-  assert(atGroupOrLiteralExprStart() &&
-         "called parseGroupOrLiteralExpr without group or literal start");
-  auto C = open();
-  if (at(SyntaxKind::Identifier)) {
-    expect(SyntaxKind::Identifier);
-    return close(C, SyntaxKind::ReferenceExpr);
-  }
-  if (at(SyntaxKind::IntegerLiteral)) {
-    expect(SyntaxKind::IntegerLiteral);
-    return close(C, SyntaxKind::IntegerLiteral);
-  }
-  if (at(SyntaxKind::TrueLiteral)) {
-    expect(SyntaxKind::TrueLiteral);
-    return close(C, SyntaxKind::TrueLiteral);
-  }
-  if (at(SyntaxKind::FalseLiteral)) {
-    expect(SyntaxKind::FalseLiteral);
-    return close(C, SyntaxKind::FalseLiteral);
-  }
-  if (at(SyntaxKind::LeftParen)) {
-    expect(SyntaxKind::LeftParen);
-    parseExpr();
-    expect(SyntaxKind::RightParen);
-    return close(C, SyntaxKind::GroupExpr);
-  }
-  if (at(SyntaxKind::KeywordNew)) {
-    expect(SyntaxKind::KeywordNew);
-    parseType();
-    expect(SyntaxKind::LeftBrace);
-    while (!eof() && !at(SyntaxKind::RightBrace)) {
-      auto CC = open();
-      expect(SyntaxKind::Identifier), expect(SyntaxKind::Equal);
-      parseExpr();
-      if (!at(SyntaxKind::RightBrace)) {
-        eat(SyntaxKind::Comma);
-      }
-      close(CC, SyntaxKind::ConstructionExprMember);
-    }
-    expect(SyntaxKind::RightBrace);
-    return close(C, SyntaxKind::ConstructionExpr);
-  }
-  llvm_unreachable("unreachable");
-}
-
 auto Parser::parseExpr(uint32_t Current) -> void {
   auto Tok = get();
   CloseCheckpoint LHS;
   // If we have a basic atom (expr, ref, or group), we have already found the
   // LHS.
-  if (atGroupOrLiteralExprStart()) {
-    LHS = parseGroupOrLiteralExpr();
+  if (atPrimaryExprStart()) {
+    LHS = parsePrimaryExpr();
   } else if (atPrefixOperator()) {
     // Then the current looked-at token MUST be a prefix operator. We then go
     // grab that as the LHS instead.
     auto New = getPrefixPrecedence(Tok);
     auto C = open();
     advance();
-    parseExpr(New);
+    if (atExprStart())
+      parseExpr(New);
     LHS = close(C, SyntaxKind::UnaryExpr);
   } else {
     llvm_unreachable("LHS was meant to be guaranteed to be assigned here");
@@ -378,7 +334,8 @@ auto Parser::parseExpr(uint32_t Current) -> void {
         auto CC = open();
         expect(SyntaxKind::LeftParen);
         while (!eof() && !at(SyntaxKind::RightParen)) {
-          parseExpr();
+          if (atExprStart())
+            parseExpr();
           if (!at(SyntaxKind::RightParen)) {
             expect(SyntaxKind::Comma);
           }
@@ -404,9 +361,95 @@ auto Parser::parseExpr(uint32_t Current) -> void {
     auto C = insert(LHS);
     advance();
     auto NextPrecedence = getInfixPrecedence(Tok);
-    parseExpr(NextPrecedence);
+    if (atExprStart())
+      parseExpr(NextPrecedence);
     LHS = close(C, SyntaxKind::BinaryExpr);
   }
+}
+
+auto Parser::parsePrimaryExpr() -> CloseCheckpoint {
+  assert(atPrimaryExprStart() &&
+         "called parseGroupOrLiteralExpr without group or literal start");
+  switch (get()) {
+  case SyntaxKind::IntegerLiteral:
+    return parseIntegerLiteralExpr();
+  case SyntaxKind::TrueLiteral:
+  case SyntaxKind::FalseLiteral:
+    return parseBooleanLiteralExpr();
+  case SyntaxKind::Identifier:
+    return parseReferenceExpr();
+  case SyntaxKind::LeftParen:
+    return parseGroupExpr();
+  case SyntaxKind::KeywordNew:
+    return parseConstructionExpr();
+  default:
+    llvm_unreachable("unreachable");
+  }
+}
+
+auto Parser::parseIntegerLiteralExpr() -> CloseCheckpoint {
+  assert(at(SyntaxKind::IntegerLiteral) &&
+         "called parseIntegerLiteralExpr without <integer literal>");
+  auto C = open();
+  expect(SyntaxKind::IntegerLiteral);
+  return close(C, SyntaxKind::IntegerLiteral);
+}
+
+auto Parser::parseBooleanLiteralExpr() -> CloseCheckpoint {
+  assert((at(SyntaxKind::TrueLiteral) || at(SyntaxKind::FalseLiteral)) &&
+         "called parseBooleanLiteral without 'true' or 'false'");
+  auto C = open();
+  advance();
+  return close(C, SyntaxKind::BooleanLiteralExpr);
+}
+
+auto Parser::parseGroupExpr() -> CloseCheckpoint {
+  assert(at(SyntaxKind::LeftParen) && "called parseGroupExpr without '('");
+  auto C = open();
+  expect(SyntaxKind::LeftParen);
+  if (atExprStart())
+    parseExpr();
+  expect(SyntaxKind::RightParen);
+  return close(C, SyntaxKind::GroupExpr);
+}
+
+auto Parser::parseReferenceExpr() -> CloseCheckpoint {
+  assert(at(SyntaxKind::Identifier) &&
+         "called parseReferenceExpr without <identifier>");
+  auto C = open();
+  expect(SyntaxKind::Identifier);
+  return close(C, SyntaxKind::ReferenceExpr);
+}
+
+auto Parser::parseConstructionExpr() -> CloseCheckpoint {
+  assert(at(SyntaxKind::KeywordNew) &&
+         "called parseConstructionExpr without 'new'");
+  auto C = open();
+  expect(SyntaxKind::KeywordNew);
+  if (atTypeStart())
+    parseType();
+  if (eat(SyntaxKind::LeftBrace)) {
+    while (!eof() && !at(SyntaxKind::RightBrace)) {
+      if (at(SyntaxKind::Identifier)) {
+        parseConstructionExprMember();
+      }
+    }
+    expect(SyntaxKind::RightBrace);
+  }
+  return close(C, SyntaxKind::ConstructionExpr);
+}
+
+auto Parser::parseConstructionExprMember() -> void {
+  assert(at(SyntaxKind::Identifier) &&
+         "called parseConstructionExprMember without <identifier>");
+  auto C = open();
+  expect(SyntaxKind::Identifier);
+  expect(SyntaxKind::Equal);
+  if (atExprStart())
+    parseExpr();
+  if (!at(SyntaxKind::RightBrace))
+    eat(SyntaxKind::Comma);
+  close(C, SyntaxKind::ConstructionExprMember);
 }
 
 auto Parser::parseType() -> void {

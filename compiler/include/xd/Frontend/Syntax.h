@@ -37,8 +37,7 @@ enum class SyntaxKind : uint8_t {
 
   Expr,
   IntegerLiteralExpr,
-  TrueLiteralExpr,
-  FalseLiteralExpr,
+  BooleanLiteralExpr,
   ReferenceExpr,
   GroupExpr,
   ConstantIndexExpr,

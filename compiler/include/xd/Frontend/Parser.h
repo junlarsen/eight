@@ -162,13 +162,7 @@ public:
   /// 3. LeftParen for GroupExpr
   /// 4. Ampersand/Star/Bang/Minus/Plus for UnaryExpr
   auto atExprStart() const -> bool {
-    return atGroupOrLiteralExprStart() || atPrefixOperator();
-  }
-  auto parseExpr(uint32_t Current = 0) -> void;
-  auto atGroupOrLiteralExprStart() const -> bool {
-    return at(SyntaxKind::Identifier) || at(SyntaxKind::IntegerLiteral) ||
-           at(SyntaxKind::TrueLiteral) || at(SyntaxKind::FalseLiteral) ||
-           at(SyntaxKind::LeftParen) || at(SyntaxKind::KeywordNew);
+    return atPrimaryExprStart() || atPrefixOperator();
   }
   auto atPrefixOperator() const -> bool {
     return at(SyntaxKind::Plus) || at(SyntaxKind::Minus) ||
@@ -187,7 +181,19 @@ public:
            at(SyntaxKind::RightAngleEqual) || at(SyntaxKind::EqualEqual) ||
            at(SyntaxKind::BangEqual);
   }
-  auto parseGroupOrLiteralExpr() -> CloseCheckpoint;
+  auto atPrimaryExprStart() const -> bool {
+    return at(SyntaxKind::Identifier) || at(SyntaxKind::IntegerLiteral) ||
+           at(SyntaxKind::TrueLiteral) || at(SyntaxKind::FalseLiteral) ||
+           at(SyntaxKind::LeftParen) || at(SyntaxKind::KeywordNew);
+  }
+  auto parseExpr(uint32_t Current = 0) -> void;
+  auto parsePrimaryExpr() -> CloseCheckpoint;
+  auto parseIntegerLiteralExpr() -> CloseCheckpoint;
+  auto parseBooleanLiteralExpr() -> CloseCheckpoint;
+  auto parseGroupExpr() -> CloseCheckpoint;
+  auto parseReferenceExpr() -> CloseCheckpoint;
+  auto parseConstructionExpr() -> CloseCheckpoint;
+  auto parseConstructionExprMember() -> void;
 
   /// Precedence table for prefix expression kinds.
   ///
