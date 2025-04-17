@@ -14,6 +14,7 @@
 #define XD_FRONTEND_SYNTAX_H
 
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/raw_ostream.h"
 #include <cstdint>
 
 namespace xd {
@@ -22,7 +23,9 @@ enum class SyntaxKind : uint8_t {
   Eof,
   // Nodes
   TranslationUnit,
+  Function,
   FunctionParameterList,
+  FunctionBody,
 
   // Tokens
   KeywordStruct,
@@ -79,6 +82,8 @@ enum class SyntaxKind : uint8_t {
   PipePipe,
 };
 
+auto getSyntaxKindName(SyntaxKind SK) -> llvm::StringRef;
+
 /// A singular token.
 ///
 /// This is a cheap data structure that we are fine with copying.
@@ -87,13 +92,16 @@ enum class SyntaxKind : uint8_t {
 class GreenToken {
   SyntaxKind SK;
   llvm::SmallString<8> TextValue;
+  size_t Length;
 
 public:
-  GreenToken(SyntaxKind SK, const llvm::SmallString<8> &TextValue)
-      : SK(SK), TextValue(TextValue) {}
+  GreenToken(SyntaxKind SK, const llvm::SmallString<8> &TextValue,
+             size_t Length)
+      : SK(SK), TextValue(TextValue), Length(Length) {}
 
   auto getKind() const { return SK; }
   auto getText() const { return TextValue; }
+  auto getTextLength() const -> size_t { return Length; }
 
   auto isTrivia() const -> bool {
     return SK == SyntaxKind::Comment || SK == SyntaxKind::Whitespace ||
@@ -106,20 +114,62 @@ class GreenNode {
 
   SyntaxKind SK;
   std::vector<GreenNodeData> Children;
+  size_t Length;
 
 public:
-  explicit GreenNode(SyntaxKind SK) : SK(SK) {}
+  explicit GreenNode(SyntaxKind SK, size_t Length) : SK(SK), Length(Length) {}
 
   auto getChildren() -> std::vector<GreenNodeData> & { return Children; }
   auto getKind() const { return SK; }
+  auto getTextLength() const -> size_t { return Length; }
+
+  auto setLength(size_t Length) -> void { this->Length = Length; }
 
   auto addChild(GreenToken Tok) -> void { Children.push_back(Tok); }
   auto addChild(const std::shared_ptr<GreenNode> &Tok) -> void {
     Children.push_back(Tok);
   }
+
+  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) const -> void;
 };
 
-using GreenElement = std::variant<GreenToken, std::shared_ptr<GreenNode>>;
+using GreenElement = std::variant<GreenToken, GreenNode>;
+
+class SyntaxNode {
+  std::optional<std::shared_ptr<SyntaxNode>> Parent;
+  GreenElement Green;
+  std::vector<std::shared_ptr<SyntaxNode>> Children;
+  /// How far into the file is the current node?
+  ///
+  /// For the root, this is zero.
+  uint32_t Offset;
+  uint32_t Index;
+
+public:
+  explicit SyntaxNode(std::optional<std::shared_ptr<SyntaxNode>> Parent,
+                      const GreenElement &Green, uint32_t Offset,
+                      uint32_t Index)
+      : Parent(std::move(Parent)), Green(Green), Offset(Offset), Index(Index) {}
+
+  auto addChild(const std::shared_ptr<SyntaxNode> &Child,
+                uint32_t Index) -> void {
+    Children.insert(Children.begin() + Index, Child);
+  }
+
+  /// Create a root node.
+  static auto
+  getRoot(const GreenElement &Green) -> std::shared_ptr<SyntaxNode> {
+    return std::make_shared<SyntaxNode>(std::nullopt, Green, 0, 0);
+  }
+
+  /// Create a child node.
+  static auto get(std::shared_ptr<SyntaxNode> Parent, const GreenElement &Green,
+                  uint32_t Offset,
+                  uint32_t Index) -> std::shared_ptr<SyntaxNode> {
+    return std::make_shared<SyntaxNode>(std::move(Parent), Green, Offset,
+                                        Index);
+  }
+};
 
 } // namespace xd
 

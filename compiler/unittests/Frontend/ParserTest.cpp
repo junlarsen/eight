@@ -8,6 +8,7 @@
 
 #include "xd/Frontend/Parser.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/raw_ostream.h"
 #include <gtest/gtest.h>
 
 using namespace llvm;
@@ -45,22 +46,33 @@ TEST(ParserTest, ConditionalEat) {
 }
 
 TEST(ParserTest, TreeBuilder) {
-  auto Buf = MemoryBuffer::getMemBuffer("fn foo(a: int)");
+  auto Buf = MemoryBuffer::getMemBuffer("fn foo(a: int) -> { foo }");
   auto DM = DiagnosticManager();
   auto Lex = Lexer(Buf->getBufferStart());
   auto P = Parser(DM, std::move(Lex.drain()));
 
   auto TU = P.open();
-  P.expect(SyntaxKind::KeywordFn);
-  P.expect(SyntaxKind::Identifier);
-  P.expect(SyntaxKind::LeftParen);
+  auto FN = P.open();
+  ASSERT_TRUE(P.eat(SyntaxKind::KeywordFn));
+  ASSERT_TRUE(P.eat(SyntaxKind::Identifier));
   auto C1 = P.open();
-  P.expect(SyntaxKind::Identifier);
-  P.expect(SyntaxKind::Colon);
-  P.expect(SyntaxKind::Identifier);
+  ASSERT_TRUE(P.eat(SyntaxKind::LeftParen));
+  ASSERT_TRUE(P.eat(SyntaxKind::Identifier));
+  ASSERT_TRUE(P.eat(SyntaxKind::Colon));
+  ASSERT_TRUE(P.eat(SyntaxKind::Identifier));
+  ASSERT_TRUE(P.eat(SyntaxKind::RightParen));
   P.close(C1, SyntaxKind::FunctionParameterList);
+  ASSERT_TRUE(P.eat(SyntaxKind::Arrow));
+  auto Block = P.open();
+  ASSERT_TRUE(P.eat(SyntaxKind::LeftBrace));
+  ASSERT_TRUE(P.eat(SyntaxKind::Identifier));
+  ASSERT_TRUE(P.eat(SyntaxKind::RightBrace));
+  P.close(Block, SyntaxKind::FunctionBody);
+  P.close(FN, SyntaxKind::Function);
   P.close(TU, SyntaxKind::TranslationUnit);
 
   GreenNode T = P.build();
   ASSERT_TRUE(P.getDebugTreeBuilderComplete());
+  ASSERT_EQ(T.getKind(), SyntaxKind::TranslationUnit);
+  ASSERT_EQ(T.getTextLength(), 25);
 }

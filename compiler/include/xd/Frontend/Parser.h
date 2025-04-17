@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace xd {
-enum class ParseEventKind {
+enum class ParseEventKind : uint8_t {
   Open,
   Close,
   Advance,
@@ -23,7 +23,9 @@ class ParseEvent {
   ParseEventKind Kind;
 
 public:
-  ParseEvent(ParseEventKind Kind) : Kind(Kind) {}
+  explicit ParseEvent(ParseEventKind Kind) : Kind(Kind) {}
+  explicit ParseEvent(ParseEvent &&) = delete;
+
   auto getKind() const { return Kind; }
   static bool classof(const ParseEvent *Event) {
     return Event->getKind() == ParseEventKind::Open;
@@ -34,7 +36,8 @@ class ParseOpenEvent : public ParseEvent {
   SyntaxKind SK;
 
 public:
-  ParseOpenEvent(SyntaxKind SK) : ParseEvent(ParseEventKind::Open), SK(SK) {}
+  explicit ParseOpenEvent(SyntaxKind SK)
+      : ParseEvent(ParseEventKind::Open), SK(SK) {}
   auto getSyntaxKind() const { return SK; }
   auto setSyntaxKind(SyntaxKind SK) -> void { this->SK = SK; }
   static bool classof(const ParseEvent *Event) {
@@ -44,7 +47,7 @@ public:
 
 class ParseCloseEvent : public ParseEvent {
 public:
-  ParseCloseEvent() : ParseEvent(ParseEventKind::Close) {}
+  explicit ParseCloseEvent() : ParseEvent(ParseEventKind::Close) {}
   static bool classof(const ParseEvent *Event) {
     return Event->getKind() == ParseEventKind::Close;
   }
@@ -52,7 +55,7 @@ public:
 
 class ParseAdvanceEvent : public ParseEvent {
 public:
-  ParseAdvanceEvent() : ParseEvent(ParseEventKind::Advance) {}
+  explicit ParseAdvanceEvent() : ParseEvent(ParseEventKind::Advance) {}
   static bool classof(const ParseEvent *Event) {
     return Event->getKind() == ParseEventKind::Advance;
   }
@@ -67,6 +70,7 @@ public:
 using ParseCheckpoint = uint32_t;
 
 class Parser {
+public:
   DiagnosticManager &DM;
 
   std::vector<GreenToken> Tokens;
@@ -106,7 +110,9 @@ public:
 
   /// Get the tree builder's position for debug purposes.
   auto getDebugTreeBuilderComplete() const -> uint32_t {
-    return TreeBuilderPosition == Tokens.size() - 1;
+    // The build() method will post-increment this regardless of whether there
+    // is another element there or not. Therefore this is the correct comparison
+    return TreeBuilderPosition == Tokens.size();
   }
 };
 

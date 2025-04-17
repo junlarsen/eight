@@ -41,12 +41,12 @@ auto Parser::open() -> ParseCheckpoint {
 }
 
 auto Parser::close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void {
-  auto TargetEvent = *Events.at(Checkpoint);
+  auto &E = Events.at(Checkpoint);
   assert(
-      isa<ParseOpenEvent>(TargetEvent) &&
+      isa<ParseOpenEvent>(*E) &&
       "Attempted to modify OpenEvent, but target event was not an OpenEvent");
-  auto *OpenEvent = cast<ParseOpenEvent>(&TargetEvent);
-  OpenEvent->setSyntaxKind(SK);
+  auto &OpenEvent = cast<ParseOpenEvent>(*E);
+  OpenEvent.setSyntaxKind(SK);
   Events.push_back(std::make_unique<ParseCloseEvent>());
 }
 
@@ -70,22 +70,21 @@ auto Parser::build() -> GreenNode {
   Events.pop_back();
   for (auto &Event : Events) {
     if (const auto OE = dyn_cast<ParseOpenEvent>(Event)) {
-      // An open event simply pushes a new tree onto the stack
-      Stack.push_back(GreenNode(OE->getSyntaxKind()));
+      // An open event simply pushes a new tree onto the stack. So far, we don't
+      // know what the length will be, so we initialize it to zero, and update
+      // as we go.
+      Stack.push_back(GreenNode(OE->getSyntaxKind(), 0));
     } else if (const auto AE = dyn_cast<ParseAdvanceEvent>(Event)) {
       // Advancing will push the token kind onto the current element's children
       // list.
-      while (TreeBuilderPosition < Tokens.size() - 1) {
-        auto &Tok = Tokens.at(TreeBuilderPosition);
-        TreeBuilderPosition++;
+      while (TreeBuilderPosition < Tokens.size()) {
+        auto &Tok = Tokens.at(TreeBuilderPosition++);
         // As long as we're hitting trivia nodes, we just add them to the green
         // node.
         if (Tok.isTrivia()) {
           Stack.at(Stack.size() - 1).addChild(Tok);
           continue;
         }
-        // This is the token that the parser saw (i.e., the one after all trivia
-        // skipped).
         Stack.at(Stack.size() - 1).addChild(Tok);
         break;
       }
@@ -94,18 +93,47 @@ auto Parser::build() -> GreenNode {
       // the top again
       GreenNode Subtree = std::move(Stack.back());
       Stack.erase(Stack.end() - 1);
-      Stack.at(Stack.size() - 1).addChild(std::make_shared<GreenNode>(Subtree));
+      // Compute the length of node by summing all its children.
+      size_t Sum = 0;
+      for (auto &Child : Subtree.getChildren()) {
+        if (std::holds_alternative<GreenToken>(Child)) {
+          auto &Tok = std::get<GreenToken>(Child);
+          Sum += Tok.getTextLength();
+        } else if (std::holds_alternative<std::shared_ptr<GreenNode>>(Child)) {
+          auto &Node = std::get<std::shared_ptr<GreenNode>>(Child);
+          // This is relatively cheap, because although it might seem recurse
+          // down all child nodes here, it ends up not being the case, because
+          // we've already computed and store the length of the children.
+          Sum += Node->getTextLength();
+        }
+      }
+      Subtree.setLength(Sum);
+      GreenNode &Head = Stack.at(Stack.size() - 1);
+      Head.addChild(std::make_shared<GreenNode>(Subtree));
     }
   }
   assert(Stack.size() == 1 &&
          "Stack was not left with a single element after building");
   GreenNode Root = std::move(Stack.front());
   // We also drain any remaining trivia tokens and put them into the root here.
-  while (TreeBuilderPosition < Tokens.size() - 1) {
-    auto &Tok = Tokens.at(TreeBuilderPosition);
+  while (TreeBuilderPosition < Tokens.size()) {
+    auto &Tok = Tokens.at(TreeBuilderPosition++);
     assert(Tok.isTrivia() && "Dangling token was not a trivia token");
-    TreeBuilderPosition++;
     Root.addChild(Tok);
   }
+
+  // Next, because we never close the Root event, we also have to calculate the
+  // sum down here. It is probably not worth extracting into its own function.
+  size_t Sum = 0;
+  for (auto &Child : Root.getChildren()) {
+    if (std::holds_alternative<GreenToken>(Child)) {
+      auto &Tok = std::get<GreenToken>(Child);
+      Sum += Tok.getTextLength();
+    } else if (std::holds_alternative<std::shared_ptr<GreenNode>>(Child)) {
+      auto &Node = std::get<std::shared_ptr<GreenNode>>(Child);
+      Sum += Node->getTextLength();
+    }
+  }
+  Root.setLength(Sum);
   return Root;
 }

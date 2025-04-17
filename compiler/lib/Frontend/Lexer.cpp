@@ -12,7 +12,7 @@
 using namespace xd;
 
 static auto getLiteralToken(SyntaxKind SK, llvm::StringRef S) -> GreenToken {
-  return GreenToken(SK, S);
+  return GreenToken(SK, S, S.size());
 }
 
 auto Lexer::getCommentToken() -> GreenToken {
@@ -22,7 +22,7 @@ auto Lexer::getCommentToken() -> GreenToken {
   while (hasNext() && peek() != '\n') {
     Value += advance();
   }
-  return GreenToken(SyntaxKind::Comment, Value);
+  return GreenToken(SyntaxKind::Comment, Value, Value.size());
 }
 
 auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> GreenToken {
@@ -53,7 +53,7 @@ auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> GreenToken {
                   .Case("intrinsic_def", SyntaxKind::KeywordIntrinsicFn)
                   .Case("intrinsic_typdef", SyntaxKind::KeywordIntrinsicType)
                   .Default(SyntaxKind::Identifier);
-  return GreenToken(Kind, Keyword);
+  return GreenToken(Kind, Keyword, Keyword.size());
 }
 
 auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> GreenToken {
@@ -62,7 +62,7 @@ auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> GreenToken {
   while (hasNext() && peek() >= '0' && peek() <= '9') {
     Value += advance();
   }
-  return GreenToken(SyntaxKind::IntegerLiteral, Value);
+  return GreenToken(SyntaxKind::IntegerLiteral, Value, Value.size());
 }
 
 auto Lexer::getTokenForNewline(char Character) -> GreenToken {
@@ -72,7 +72,7 @@ auto Lexer::getTokenForNewline(char Character) -> GreenToken {
   // after this.
   if (Character == 'r' && hasNext() && peek() == '\n')
     Value += advance();
-  return GreenToken(SyntaxKind::Newline, Value);
+  return GreenToken(SyntaxKind::Newline, Value, Value.size());
 }
 
 auto Lexer::getTokenForWhitespace(char Character) -> GreenToken {
@@ -81,7 +81,7 @@ auto Lexer::getTokenForWhitespace(char Character) -> GreenToken {
   // We eat all horizontal whitespace as a single token.
   while (hasNext() && isWhitespace(*peek()))
     Value += advance();
-  return GreenToken(SyntaxKind::Whitespace, Value);
+  return GreenToken(SyntaxKind::Whitespace, Value, Value.size());
 }
 
 auto Lexer::getTokenForBang() -> GreenToken {
