@@ -42,6 +42,32 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "Stmt";
   case SyntaxKind::LetStmt:
     return "LetStmt";
+  case SyntaxKind::IfStmt:
+    return "IfStmt";
+  case SyntaxKind::IfCondition:
+    return "IfCondition";
+  case SyntaxKind::IfThenBody:
+    return "IfThenBody";
+  case SyntaxKind::IfElseBody:
+    return "IfElseBody";
+  case SyntaxKind::ForStmt:
+    return "ForStmt";
+  case SyntaxKind::ForInitializer:
+    return "ForInitializer";
+  case SyntaxKind::ForCondition:
+    return "ForCondition";
+  case SyntaxKind::ForIncrement:
+    return "ForIncrement";
+  case SyntaxKind::ForBody:
+    return "ForBody";
+  case SyntaxKind::ReturnStmt:
+    return "ReturnStmt";
+  case SyntaxKind::ContinueStmt:
+    return "ContinueStmt";
+  case SyntaxKind::BreakStmt:
+    return "BreakStmt";
+  case SyntaxKind::ExprStmt:
+    return "ExprStmt";
 
   case SyntaxKind::Expr:
     return "Expr";

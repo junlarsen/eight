@@ -171,7 +171,8 @@ auto Parser::parseTranslationUnit() -> void {
 auto Parser::parseDecl() -> void {
   switch (get()) {
   case SyntaxKind::KeywordFn:
-    return parseFunctionDecl();
+    parseFunctionDecl();
+    break;
   default:
     // The top-level parser has to try to advance, otherwise the parser will
     // just loop forever.
@@ -194,7 +195,7 @@ auto Parser::parseFunctionDecl() -> void {
     parseFunctionReturnType();
   }
   if (at(SyntaxKind::LeftBrace)) {
-    parseFunctionBody();
+    parseBlock(SyntaxKind::FunctionBody);
   }
   close(C, SyntaxKind::Function);
 }
@@ -263,8 +264,36 @@ auto Parser::parseFunctionReturnType() -> void {
   close(C, SyntaxKind::FunctionReturnType);
 }
 
-auto Parser::parseFunctionBody() -> void {
-  assert(at(SyntaxKind::LeftBrace) && "called parseFunctionBody without '{'");
+auto Parser::parseStmt() -> void {
+  assert(atStmtStart() && "called parseStmt without being at stmt start");
+  auto C = open();
+  switch (get()) {
+  case SyntaxKind::KeywordLet:
+    parseLetStmt();
+    break;
+  case SyntaxKind::KeywordIf:
+    parseIfStmt();
+    break;
+  case SyntaxKind::KeywordReturn:
+    parseReturnStmt();
+    break;
+  case SyntaxKind::KeywordFor:
+    parseForStmt();
+    break;
+  case SyntaxKind::KeywordBreak:
+    parseBreakStmt();
+    break;
+  case SyntaxKind::KeywordContinue:
+    parseContinueStmt();
+    break;
+  default:
+    parseExprStmt();
+  }
+  close(C, SyntaxKind::Stmt);
+}
+
+auto Parser::parseBlock(SyntaxKind SK) -> void {
+  assert(at(SyntaxKind::LeftBrace) && "called parseNamedBlock without '{'");
   auto C = open();
   expect(SyntaxKind::LeftBrace);
   while (!eof() && !at(SyntaxKind::RightBrace)) {
@@ -275,17 +304,9 @@ auto Parser::parseFunctionBody() -> void {
     }
   }
   expect(SyntaxKind::RightBrace);
-  close(C, SyntaxKind::FunctionBody);
+  close(C, SK);
 }
 
-auto Parser::parseStmt() -> void {
-  assert(atStmtStart() && "called parseStmt without being at stmt start");
-  auto C = open();
-  if (at(SyntaxKind::KeywordLet)) {
-    parseLetStmt();
-  }
-  close(C, SyntaxKind::Stmt);
-}
 auto Parser::parseLetStmt() -> void {
   assert(at(SyntaxKind::KeywordLet) && "called parseLetStmt without 'let'");
   auto C = open();
@@ -300,6 +321,106 @@ auto Parser::parseLetStmt() -> void {
   }
   expect(SyntaxKind::Semicolon);
   close(C, SyntaxKind::LetStmt);
+}
+
+auto Parser::parseIfStmt() -> void {
+  assert(at(SyntaxKind::KeywordIf) && "called parseIfStmt without 'if'");
+  auto C = open();
+  expect(SyntaxKind::KeywordIf);
+  expect(SyntaxKind::LeftParen);
+  if (atExprStart()) {
+    auto CC = open();
+    parseExpr();
+    close(CC, SyntaxKind::IfCondition);
+  }
+  expect(SyntaxKind::RightParen);
+  if (at(SyntaxKind::LeftBrace))
+    parseBlock(SyntaxKind::IfThenBody);
+  if (at(SyntaxKind::KeywordElse)) {
+    expect(SyntaxKind::KeywordElse);
+    if (at(SyntaxKind::LeftBrace)) {
+      parseBlock(SyntaxKind::IfThenBody);
+    }
+  }
+  close(C, SyntaxKind::IfStmt);
+}
+
+auto Parser::parseForStmt() -> void {
+  assert(at(SyntaxKind::KeywordFor) && "called parseForStmt without 'for'");
+  auto C = open();
+  expect(SyntaxKind::KeywordFor);
+  if (at(SyntaxKind::LeftParen)) {
+    expect(SyntaxKind::LeftParen);
+    if (at(SyntaxKind::KeywordLet))
+      parseForInitializer();
+    expect(SyntaxKind::Semicolon);
+    if (atExprStart()) {
+      auto CC = open();
+      parseExpr();
+      close(CC, SyntaxKind::ForCondition);
+    }
+    expect(SyntaxKind::Semicolon);
+    if (atExprStart()) {
+      auto CC = open();
+      parseExpr();
+      close(CC, SyntaxKind::ForIncrement);
+    }
+    expect(SyntaxKind::RightParen);
+  }
+  if (at(SyntaxKind::LeftBrace))
+    parseBlock(SyntaxKind::ForBody);
+  close(C, SyntaxKind::ForStmt);
+}
+
+auto Parser::parseForInitializer() -> void {
+  assert(at(SyntaxKind::KeywordLet) &&
+         "called parseForInitializer without 'let'");
+  auto C = open();
+  expect(SyntaxKind::KeywordLet);
+  expect(SyntaxKind::Identifier);
+  if (eat(SyntaxKind::Colon))
+    parseType();
+  expect(SyntaxKind::Equal);
+  if (atExprStart())
+    parseExpr();
+  close(C, SyntaxKind::ForInitializer);
+}
+
+auto Parser::parseBreakStmt() -> void {
+  assert(at(SyntaxKind::KeywordBreak) &&
+         "called parseBreakStmt without 'break'");
+  auto C = open();
+  expect(SyntaxKind::KeywordBreak);
+  expect(SyntaxKind::Semicolon);
+  close(C, SyntaxKind::BreakStmt);
+}
+
+auto Parser::parseContinueStmt() -> void {
+  assert(at(SyntaxKind::ContinueStmt) &&
+         "called parseContinueStmt without 'continue'");
+  auto C = open();
+  expect(SyntaxKind::KeywordBreak);
+  expect(SyntaxKind::Semicolon);
+  close(C, SyntaxKind::ContinueStmt);
+}
+
+auto Parser::parseReturnStmt() -> void {
+  assert(at(SyntaxKind::KeywordReturn) &&
+         "called parseReturnStmt without 'return'");
+  auto C = open();
+  expect(SyntaxKind::KeywordReturn);
+  if (atExprStart())
+    parseExpr();
+  expect(SyntaxKind::Semicolon);
+  close(C, SyntaxKind::ReturnStmt);
+}
+
+auto Parser::parseExprStmt() -> void {
+  assert(atExprStart() && "called parseExprStmt without expr start");
+  auto C = open();
+  parseExpr();
+  expect(SyntaxKind::Semicolon);
+  close(C, SyntaxKind::ExprStmt);
 }
 
 auto Parser::parseExpr(uint32_t Current) -> void {
@@ -322,38 +443,36 @@ auto Parser::parseExpr(uint32_t Current) -> void {
     llvm_unreachable("LHS was meant to be guaranteed to be assigned here");
   }
 
-  // At this point, we are guaranteed to have an LHS, and we can try crawl for
-  // postfix tokens.
-  while (!eof() && (atPostfixOperator() || atInfixOperator()) &&
-         Current <= getInfixPrecedence(get())) {
-    // We parse postfix operators in a loop until there are no more
-    while (atPostfixOperator()) {
-      auto C = insert(LHS);
-      switch (get()) {
-      case SyntaxKind::LeftParen: {
-        auto CC = open();
-        expect(SyntaxKind::LeftParen);
-        while (!eof() && !at(SyntaxKind::RightParen)) {
-          if (atExprStart())
-            parseExpr();
-          if (!at(SyntaxKind::RightParen)) {
-            expect(SyntaxKind::Comma);
-          }
+  // We parse postfix operators in a loop until there are no more
+  while (atPostfixOperator()) {
+    auto C = insert(LHS);
+    switch (get()) {
+    case SyntaxKind::LeftParen: {
+      auto CC = open();
+      expect(SyntaxKind::LeftParen);
+      while (!eof() && !at(SyntaxKind::RightParen)) {
+        if (atExprStart())
+          parseExpr();
+        if (!at(SyntaxKind::RightParen)) {
+          expect(SyntaxKind::Comma);
         }
-        expect(SyntaxKind::RightParen);
-        close(CC, SyntaxKind::CallExprArgumentList);
-        LHS = close(C, SyntaxKind::CallExpr);
-      } break;
-      case SyntaxKind::Dot: {
-        expect(SyntaxKind::Dot);
-        expect(SyntaxKind::Identifier);
-        LHS = close(C, SyntaxKind::ConstantIndexExpr);
-      } break;
-      default:
-        llvm_unreachable("cannot reach unhandled case");
       }
+      expect(SyntaxKind::RightParen);
+      close(CC, SyntaxKind::CallExprArgumentList);
+      LHS = close(C, SyntaxKind::CallExpr);
+    } break;
+    case SyntaxKind::Dot: {
+      expect(SyntaxKind::Dot);
+      expect(SyntaxKind::Identifier);
+      LHS = close(C, SyntaxKind::ConstantIndexExpr);
+    } break;
+    default:
+      llvm_unreachable("cannot reach unhandled case");
     }
+  }
 
+  // At this point, we are guaranteed to have an LHS
+  while (atInfixOperator() && Current <= getInfixPrecedence(get())) {
     // Finally, we consider if there is a infix expression to be built here.
     auto Tok = get();
     if (!atInfixOperator())

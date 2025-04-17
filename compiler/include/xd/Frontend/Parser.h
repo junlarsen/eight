@@ -142,17 +142,27 @@ public:
   auto parseFunctionParameterList() -> void;
   auto parseFunctionParameter() -> void;
   auto parseFunctionReturnType() -> void;
-  auto parseFunctionBody() -> void;
 
   /// Is the parser at the start of a statement?
   ///
   /// This covers the basic keywords for statements like if/let/for, but also
   /// has to include all rules for Expr for ExprStmt.
   auto atStmtStart() const -> bool {
-    return at(SyntaxKind::KeywordLet) || atExprStart();
+    return at(SyntaxKind::KeywordLet) || at(SyntaxKind::KeywordIf) ||
+           at(SyntaxKind::KeywordFor) || at(SyntaxKind::KeywordReturn) ||
+           at(SyntaxKind::KeywordContinue) || at(SyntaxKind::KeywordBreak) ||
+           atExprStart();
   }
   auto parseStmt() -> void;
+  auto parseBlock(SyntaxKind SK) -> void;
   auto parseLetStmt() -> void;
+  auto parseIfStmt() -> void;
+  auto parseForStmt() -> void;
+  auto parseForInitializer() -> void;
+  auto parseReturnStmt() -> void;
+  auto parseExprStmt() -> void;
+  auto parseContinueStmt() -> void;
+  auto parseBreakStmt() -> void;
 
   /// Is the parser currently at the start of an expression? This is the FIRST
   /// set of the Expr rule. Effectively this is:
@@ -179,7 +189,7 @@ public:
            at(SyntaxKind::Percent) || at(SyntaxKind::LeftAngle) ||
            at(SyntaxKind::LeftAngleEqual) || at(SyntaxKind::RightAngle) ||
            at(SyntaxKind::RightAngleEqual) || at(SyntaxKind::EqualEqual) ||
-           at(SyntaxKind::BangEqual);
+           at(SyntaxKind::BangEqual) || at(SyntaxKind::Equal);
   }
   auto atPrimaryExprStart() const -> bool {
     return at(SyntaxKind::Identifier) || at(SyntaxKind::IntegerLiteral) ||
