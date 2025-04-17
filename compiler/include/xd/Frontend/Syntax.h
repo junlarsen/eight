@@ -25,10 +25,18 @@ enum class SyntaxKind : uint8_t {
   // Nodes
   TranslationUnit,
   Function,
+  FunctionTypeParameterList,
+  FunctionTypeParameter,
   FunctionParameterList,
+  FunctionParameter,
+  FunctionReturnType,
   FunctionBody,
 
-  // Tokens
+  Type,
+  NamedType,
+  PointerType,
+
+  // Keyword tokens
   KeywordStruct,
   KeywordLet,
   KeywordFn,
@@ -43,7 +51,7 @@ enum class SyntaxKind : uint8_t {
   KeywordContinue,
   KeywordFor,
   KeywordNew,
-
+  // Textual tokens
   Identifier,
   IntegerLiteral,
   TrueLiteral,
@@ -51,7 +59,7 @@ enum class SyntaxKind : uint8_t {
   Comment,
   Whitespace,
   Newline,
-
+  // Symbol tokens
   Ampersand,
   Bang,
   Plus,
@@ -63,7 +71,6 @@ enum class SyntaxKind : uint8_t {
   EqualEqual,
   BangEqual,
   Percent,
-
   LeftParen,
   LeftBracket,
   LeftBrace,

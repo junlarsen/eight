@@ -93,6 +93,8 @@ class Parser {
   uint32_t TreeBuilderPosition = 0;
 
   auto get() const -> SyntaxKind {
+    if (eof())
+      return SyntaxKind::Eof;
     return SignificantTokens.at(Position).getKind();
   }
 
@@ -105,13 +107,11 @@ public:
   }
 
   auto lookahead() const -> SyntaxKind {
-    if (!hasNext())
+    if (Position + 1 >= SignificantTokens.size())
       return SyntaxKind::Eof;
     return SignificantTokens.at(Position + 1).getKind();
   }
-  auto hasNext() const -> bool {
-    return Position < SignificantTokens.size() - 1;
-  }
+  auto eof() const -> bool { return Position == SignificantTokens.size(); }
   auto at(SyntaxKind SK) const -> bool;
   auto eat(SyntaxKind SK) -> bool;
   auto expect(SyntaxKind SK) -> void;
@@ -131,6 +131,16 @@ public:
   auto parseTranslationUnit() -> void;
   auto parseDecl() -> void;
   auto parseFunctionDecl() -> void;
+  auto parseFunctionTypeParameterList() -> void;
+  auto parseFunctionTypeParameter() -> void;
+  auto parseFunctionParameterList() -> void;
+  auto parseFunctionParameter() -> void;
+  auto parseFunctionReturnType() -> void;
+  auto parseFunctionBody() -> void;
+
+  auto parseType() -> void;
+  auto parseNamedType() -> void;
+  auto parsePointerType() -> void;
 };
 
 } // namespace xd

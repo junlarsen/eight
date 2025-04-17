@@ -19,15 +19,32 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "<error>";
   case SyntaxKind::Eof:
     return "<end of file>";
+
     // Syntax nodes
   case SyntaxKind::TranslationUnit:
     return "TranslationUnit";
   case SyntaxKind::Function:
     return "Function";
+  case SyntaxKind::FunctionTypeParameterList:
+    return "FunctionTypeParameterList";
+  case SyntaxKind::FunctionTypeParameter:
+    return "FunctionTypeParameter";
+  case SyntaxKind::FunctionParameter:
+    return "FunctionParameter";
   case SyntaxKind::FunctionParameterList:
     return "FunctionParameterList";
+  case SyntaxKind::FunctionReturnType:
+    return "FunctionReturnType";
   case SyntaxKind::FunctionBody:
     return "FunctionBody";
+
+  case SyntaxKind::Type:
+    return "Type";
+  case SyntaxKind::NamedType:
+    return "NamedType";
+  case SyntaxKind::PointerType:
+    return "PointerType";
+
     // Syntax tokens
   case SyntaxKind::KeywordStruct:
     return "struct";
@@ -134,12 +151,12 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
 
 auto GreenNode::debug(raw_ostream &OS, size_t Indent) const -> void {
   // We don't quote this, because node is always a node kind
-  OS << std::string(Indent, ' ') << getSyntaxKindName(getKind())
+  OS << std::string(Indent, ' ') << "* " << getSyntaxKindName(getKind())
      << " len=" << getTextLength() << " children=" << Children.size() << "\n";
   for (const auto &Child : Children) {
     if (std::holds_alternative<GreenToken>(Child)) {
       auto &Token = std::get<GreenToken>(Child);
-      OS << std::string(Indent + 2, ' ') << "Token '"
+      OS << std::string(Indent + 2, ' ') << "| " << "Token '"
          << getSyntaxKindName(Token.getKind()) << "'"
          << " len=" << Token.getTextLength() << "\n";
     } else if (std::holds_alternative<std::shared_ptr<GreenNode>>(Child)) {
@@ -147,8 +164,8 @@ auto GreenNode::debug(raw_ostream &OS, size_t Indent) const -> void {
       Node->debug(OS, Indent + 2);
     } else {
       auto &ErrTok = std::get<ErrorToken>(Child);
-      OS << std::string(Indent + 2, ' ') << "Error " << ErrTok.getDiagnosticID()
-         << "\n";
+      OS << std::string(Indent + 2, ' ') << "| " << "Error "
+         << ErrTok.getDiagnosticID() << "\n";
     }
   }
 }

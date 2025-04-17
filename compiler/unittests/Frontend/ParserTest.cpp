@@ -20,13 +20,14 @@ TEST(ParserTest, Navigation) {
   auto Lex = Lexer(Buf->getBufferStart());
   auto P = Parser(DM, std::move(Lex.drain()));
 
-  ASSERT_TRUE(P.hasNext());
+  ASSERT_FALSE(P.eof());
   ASSERT_TRUE(P.at(SyntaxKind::Identifier));
-  ASSERT_TRUE(P.hasNext());
+  ASSERT_FALSE(P.eof());
 
   P.advance();
   ASSERT_TRUE(P.at(SyntaxKind::Identifier));
-  ASSERT_FALSE(P.hasNext());
+  P.advance();
+  ASSERT_TRUE(P.eof());
   auto TKEof = P.lookahead();
   ASSERT_EQ(TKEof, SyntaxKind::Eof);
 }
@@ -41,7 +42,7 @@ TEST(ParserTest, ConditionalEat) {
   ASSERT_EQ(P.lookahead(), SyntaxKind::IntegerLiteral);
   ASSERT_TRUE(P.eat(SyntaxKind::Identifier));
   ASSERT_TRUE(P.eat(SyntaxKind::IntegerLiteral));
-  ASSERT_FALSE(P.hasNext());
+  ASSERT_TRUE(P.eof());
   ASSERT_FALSE(P.eat(SyntaxKind::Comment));
 }
 

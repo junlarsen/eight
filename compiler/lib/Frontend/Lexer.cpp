@@ -210,6 +210,8 @@ auto Lexer::getNextToken() -> GreenToken {
     case '+':
       // TODO: Parse +/- prefixed integer literals
       return getLiteralToken(SyntaxKind::Plus, "+");
+    case '*':
+      return getLiteralToken(SyntaxKind::Star, "*");
     case '.':
       return getLiteralToken(SyntaxKind::Dot, ".");
     case ';':
@@ -221,15 +223,15 @@ auto Lexer::getNextToken() -> GreenToken {
     case '(':
       return getLiteralToken(SyntaxKind::LeftParen, "(");
     case '[':
-      return getLiteralToken(SyntaxKind::LeftBrace, "[");
+      return getLiteralToken(SyntaxKind::LeftBracket, "[");
     case '{':
       return getLiteralToken(SyntaxKind::LeftBrace, "{");
     case ')':
       return getLiteralToken(SyntaxKind::RightParen, ")");
     case ']':
-      return getLiteralToken(SyntaxKind::RightBrace, "[");
+      return getLiteralToken(SyntaxKind::RightBracket, "]");
     case '}':
-      return getLiteralToken(SyntaxKind::RightBrace, "{");
+      return getLiteralToken(SyntaxKind::RightBrace, "]");
     }
   }
 }

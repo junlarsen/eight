@@ -30,7 +30,6 @@ auto Parser::eat(SyntaxKind SK) -> bool {
 auto Parser::expect(SyntaxKind SK) -> void {
   if (eat(SK))
     return;
-  // TODO: Can this possibly cause vector out of bounds?
   auto CurrentSK = get();
   auto ID = DM.report<UnexpectedTokenDiagnostic>(getSyntaxKindName(CurrentSK));
   auto Event = std::make_unique<ParseErrorEvent>(ID);
@@ -56,7 +55,7 @@ auto Parser::close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void {
 
 auto Parser::advance() -> void {
   Events.push_back(std::make_unique<ParseAdvanceEvent>());
-  if (hasNext())
+  if (!eof())
     Position++;
 }
 
@@ -127,11 +126,10 @@ auto Parser::build() -> GreenNode {
   assert(Stack.size() == 1 &&
          "Stack was not left with a single element after building");
   GreenNode Root = std::move(Stack.front());
-  // We also drain any remaining trivia tokens and put them into the root here.
+  // We also drain any remaining tokens and put them into the root here. The
+  // tokens here can be of any kind.
   while (TreeBuilderPosition < Tokens.size()) {
     auto &Tok = Tokens.at(TreeBuilderPosition++);
-    errs() << Tok.getText();
-    assert(Tok.isTrivia() && "Dangling token was not a trivia token");
     Root.addChild(Tok);
   }
 
@@ -153,14 +151,14 @@ auto Parser::build() -> GreenNode {
 
 auto Parser::parseTranslationUnit() -> void {
   auto TU = open();
-  while (hasNext()) {
+  while (!eof()) {
     parseDecl();
   }
   close(TU, SyntaxKind::TranslationUnit);
 }
 
 auto Parser::parseDecl() -> void {
-  switch (get()) {
+  switch (auto SK = get()) {
   case SyntaxKind::KeywordFn:
     return parseFunctionDecl();
   default:
@@ -171,17 +169,126 @@ auto Parser::parseDecl() -> void {
 }
 
 auto Parser::parseFunctionDecl() -> void {
-  auto Fn = open();
+  assert(at(SyntaxKind::KeywordFn) && "called parseFunctionDecl without 'fn'");
+  auto C = open();
   expect(SyntaxKind::KeywordFn);
   expect(SyntaxKind::Identifier);
-  auto FnParameterList = open();
-  expect(SyntaxKind::LeftParen);
-  expect(SyntaxKind::RightParen);
-  close(FnParameterList, SyntaxKind::FunctionParameterList);
-  auto FnBody = open();
-  expect(SyntaxKind::LeftBrace);
+  if (at(SyntaxKind::LeftBracket)) {
+    parseFunctionTypeParameterList();
+  }
+  if (at(SyntaxKind::LeftParen)) {
+    parseFunctionParameterList();
+  }
+  if (eat(SyntaxKind::Arrow)) {
+    parseFunctionReturnType();
+  }
+  if (at(SyntaxKind::LeftBrace)) {
+    parseFunctionBody();
+  }
+  close(C, SyntaxKind::Function);
+}
+
+auto Parser::parseFunctionTypeParameterList() -> void {
+  assert(at(SyntaxKind::LeftBracket) &&
+         "called parseFunctionTypeParameterList without '['");
+  auto C = open();
+  expect(SyntaxKind::LeftBracket);
+  while (!eof() && !at(SyntaxKind::RightBracket)) {
+    if (at(SyntaxKind::Identifier)) {
+      parseFunctionTypeParameter();
+    } else {
+      break;
+    }
+  }
+  expect(SyntaxKind::RightBracket);
+  close(C, SyntaxKind::FunctionTypeParameterList);
+}
+
+auto Parser::parseFunctionTypeParameter() -> void {
+  assert(at(SyntaxKind::Identifier) &&
+         "called parseFunctionParameterList without <identifier>");
+  auto C = open();
   expect(SyntaxKind::Identifier);
+  if (!at(SyntaxKind::RightAngle)) {
+    expect(SyntaxKind::Comma);
+  }
+  close(C, SyntaxKind::FunctionTypeParameter);
+}
+
+auto Parser::parseFunctionParameterList() -> void {
+  assert(at(SyntaxKind::LeftParen) &&
+         "called parseFunctionParameterList without '('");
+  auto C = open();
+  expect(SyntaxKind::LeftParen);
+  while (!eof() && !at(SyntaxKind::RightParen)) {
+    if (at(SyntaxKind::Identifier)) {
+      parseFunctionParameter();
+    } else {
+      break;
+    }
+  }
+  expect(SyntaxKind::RightParen);
+  close(C, SyntaxKind::FunctionParameterList);
+}
+
+auto Parser::parseFunctionParameter() -> void {
+  assert(at(SyntaxKind::Identifier) &&
+         "called parseFunctionParameter without <identifier>");
+  auto C = open();
+  expect(SyntaxKind::Identifier);
+  expect(SyntaxKind::Colon);
+  parseType();
+  if (!at(SyntaxKind::Comma)) {
+    expect(SyntaxKind::Comma);
+  }
+  close(C, SyntaxKind::FunctionParameter);
+}
+
+auto Parser::parseFunctionReturnType() -> void {
+  auto C = open();
+  if (at(SyntaxKind::Identifier) || at(SyntaxKind::Star)) {
+    parseType();
+  }
+  close(C, SyntaxKind::FunctionReturnType);
+}
+
+auto Parser::parseFunctionBody() -> void {
+  assert(at(SyntaxKind::LeftBrace) && "called parseFunctionBody without '{'");
+  auto C = open();
+  expect(SyntaxKind::LeftBrace);
+  while (!eof() && !at(SyntaxKind::RightBrace)) {
+    // TODO
+  }
   expect(SyntaxKind::RightBrace);
-  close(FnBody, SyntaxKind::FunctionBody);
-  close(Fn, SyntaxKind::Function);
+  close(C, SyntaxKind::FunctionBody);
+}
+
+auto Parser::parseType() -> void {
+  assert((at(SyntaxKind::Identifier) || at(SyntaxKind::Star)) &&
+         "called parseType without '*' or <identifier>");
+  auto C = open();
+  if (at(SyntaxKind::Identifier)) {
+    parseNamedType();
+  } else if (at(SyntaxKind::Star)) {
+    parsePointerType();
+  }
+  close(C, SyntaxKind::Type);
+}
+
+auto Parser::parseNamedType() -> void {
+  assert(at(SyntaxKind::Identifier) &&
+         "called parseNamedType without <identifier>");
+  auto C = open();
+  expect(SyntaxKind::Identifier);
+  close(C, SyntaxKind::NamedType);
+}
+
+auto Parser::parsePointerType() -> void {
+  assert(at(SyntaxKind::Star) && "called parsePointerType without '*'");
+  auto C = open();
+  expect(SyntaxKind::Star);
+  if (at(SyntaxKind::Identifier) || at(SyntaxKind::Star)) {
+    parseType();
+  }
+  close(C, SyntaxKind::PointerType);
 }
