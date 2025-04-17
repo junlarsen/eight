@@ -79,6 +79,11 @@ enum class SyntaxKind : uint8_t {
   PipePipe,
 };
 
+/// A singular token.
+///
+/// This is a cheap data structure that we are fine with copying.
+///
+/// TODO: Intern the TextValue strings
 class GreenToken {
   SyntaxKind SK;
   llvm::SmallString<8> TextValue;
@@ -97,22 +102,25 @@ public:
 };
 
 class GreenNode {
-public:
-  using ChildData = std::variant<GreenNode, GreenToken>;
-  using Child = std::shared_ptr<ChildData>;
+  using GreenNodeData = std::variant<GreenToken, std::shared_ptr<GreenNode>>;
 
-private:
   SyntaxKind SK;
-  std::vector<Child> Children;
+  std::vector<GreenNodeData> Children;
 
 public:
   explicit GreenNode(SyntaxKind SK) : SK(SK) {}
 
-  auto getChildren() -> std::vector<Child> & { return Children; }
+  auto getChildren() -> std::vector<GreenNodeData> & { return Children; }
   auto getKind() const { return SK; }
 
-  auto addChild(const Child &Child) -> void { Children.push_back(Child); }
+  auto addChild(GreenToken Tok) -> void { Children.push_back(Tok); }
+  auto addChild(const std::shared_ptr<GreenNode> &Tok) -> void {
+    Children.push_back(Tok);
+  }
 };
+
+using GreenElement = std::variant<GreenToken, std::shared_ptr<GreenNode>>;
+
 } // namespace xd
 
 #endif // XD_FRONTEND_SYNTAX_H

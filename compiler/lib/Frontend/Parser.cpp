@@ -81,22 +81,20 @@ auto Parser::build() -> GreenNode {
         // As long as we're hitting trivia nodes, we just add them to the green
         // node.
         if (Tok.isTrivia()) {
-          auto Node = std::make_shared<GreenNode::ChildData>(std::move(Tok));
-          Stack.at(Stack.size() - 1).addChild(Node);
+          Stack.at(Stack.size() - 1).addChild(Tok);
           continue;
         }
         // This is the token that the parser saw (i.e., the one after all trivia
         // skipped).
-        auto Node = std::make_shared<GreenNode::ChildData>(std::move(Tok));
-        Stack.at(Stack.size() - 1).addChild(Node);
+        Stack.at(Stack.size() - 1).addChild(Tok);
+        break;
       }
     } else if (const auto CE = dyn_cast<ParseCloseEvent>(Event)) {
       // Closing events simply pop the top element of the deque and puts it into
       // the top again
       GreenNode Subtree = std::move(Stack.back());
       Stack.erase(Stack.end() - 1);
-      auto Node = std::make_shared<GreenNode::ChildData>(std::move(Subtree));
-      Stack.at(Stack.size() - 1).addChild(Node);
+      Stack.at(Stack.size() - 1).addChild(std::make_shared<GreenNode>(Subtree));
     }
   }
   assert(Stack.size() == 1 &&
@@ -104,11 +102,10 @@ auto Parser::build() -> GreenNode {
   GreenNode Root = std::move(Stack.front());
   // We also drain any remaining trivia tokens and put them into the root here.
   while (TreeBuilderPosition < Tokens.size() - 1) {
-    auto Tok = Tokens.at(TreeBuilderPosition);
+    auto &Tok = Tokens.at(TreeBuilderPosition);
     assert(Tok.isTrivia() && "Dangling token was not a trivia token");
     TreeBuilderPosition++;
-    auto Node = std::make_shared<GreenNode::ChildData>(std::move(Tok));
-    Root.addChild(Node);
+    Root.addChild(Tok);
   }
   return Root;
 }
