@@ -38,6 +38,38 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
   case SyntaxKind::FunctionBody:
     return "FunctionBody";
 
+  case SyntaxKind::Stmt:
+    return "Stmt";
+  case SyntaxKind::LetStmt:
+    return "LetStmt";
+
+  case SyntaxKind::Expr:
+    return "Expr";
+  case SyntaxKind::IntegerLiteralExpr:
+    return "IntegerLiteralExpr";
+  case SyntaxKind::TrueLiteralExpr:
+    return "TrueLiteralExpr";
+  case SyntaxKind::FalseLiteralExpr:
+    return "FalseLiteralExpr";
+  case SyntaxKind::ReferenceExpr:
+    return "ReferenceExpr";
+  case SyntaxKind::GroupExpr:
+    return "GroupExpr";
+  case SyntaxKind::ConstantIndexExpr:
+    return "ConstantIndexExpr";
+  case SyntaxKind::CallExpr:
+    return "CallExpr";
+  case SyntaxKind::CallExprArgumentList:
+    return "CallExprArgumentList";
+  case SyntaxKind::UnaryExpr:
+    return "UnaryExpr";
+  case SyntaxKind::BinaryExpr:
+    return "BinaryExpr";
+  case SyntaxKind::ConstructionExpr:
+    return "ConstructionExpr";
+  case SyntaxKind::ConstructionExprMember:
+    return "ConstructionExprMember";
+
   case SyntaxKind::Type:
     return "Type";
   case SyntaxKind::NamedType:

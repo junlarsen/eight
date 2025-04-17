@@ -12,6 +12,7 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
+#include <fcntl.h>
 #include <vector>
 
 using namespace llvm;
@@ -36,21 +37,31 @@ auto Parser::expect(SyntaxKind SK) -> void {
   Events.push_back(std::move(Event));
 }
 
-auto Parser::open() -> ParseCheckpoint {
+auto Parser::open() -> OpenCheckpoint {
   auto Checkpoint = Events.size();
   auto Event = std::make_unique<ParseOpenEvent>(SyntaxKind::Error);
   Events.push_back(std::move(Event));
-  return Checkpoint;
+  return OpenCheckpoint(Checkpoint);
 }
 
-auto Parser::close(ParseCheckpoint Checkpoint, SyntaxKind SK) -> void {
-  auto &E = Events.at(Checkpoint);
+auto Parser::close(OpenCheckpoint Checkpoint,
+                   SyntaxKind SK) -> CloseCheckpoint {
+  auto &E = Events.at(Checkpoint.ID);
   assert(
       isa<ParseOpenEvent>(*E) &&
       "Attempted to modify OpenEvent, but target event was not an OpenEvent");
   auto &OpenEvent = cast<ParseOpenEvent>(*E);
   OpenEvent.setSyntaxKind(SK);
   Events.push_back(std::make_unique<ParseCloseEvent>());
+  return CloseCheckpoint(Checkpoint.ID);
+}
+
+auto Parser::insert(CloseCheckpoint Checkpoint) -> OpenCheckpoint {
+  auto OpenCP = OpenCheckpoint(Checkpoint.ID);
+  auto Event = std::make_unique<ParseOpenEvent>(SyntaxKind::Error);
+  // TODO: Consider using a linked list to avoid O(N) worst-case here
+  Events.insert(Events.begin() + Checkpoint.ID, std::move(Event));
+  return OpenCheckpoint(OpenCP);
 }
 
 auto Parser::advance() -> void {
@@ -158,7 +169,7 @@ auto Parser::parseTranslationUnit() -> void {
 }
 
 auto Parser::parseDecl() -> void {
-  switch (auto SK = get()) {
+  switch (get()) {
   case SyntaxKind::KeywordFn:
     return parseFunctionDecl();
   default:
@@ -210,7 +221,7 @@ auto Parser::parseFunctionTypeParameter() -> void {
   auto C = open();
   expect(SyntaxKind::Identifier);
   if (!at(SyntaxKind::RightAngle)) {
-    expect(SyntaxKind::Comma);
+    eat(SyntaxKind::Comma);
   }
   close(C, SyntaxKind::FunctionTypeParameter);
 }
@@ -238,8 +249,8 @@ auto Parser::parseFunctionParameter() -> void {
   expect(SyntaxKind::Identifier);
   expect(SyntaxKind::Colon);
   parseType();
-  if (!at(SyntaxKind::Comma)) {
-    expect(SyntaxKind::Comma);
+  if (!at(SyntaxKind::RightParen)) {
+    eat(SyntaxKind::Comma);
   }
   close(C, SyntaxKind::FunctionParameter);
 }
@@ -257,15 +268,149 @@ auto Parser::parseFunctionBody() -> void {
   auto C = open();
   expect(SyntaxKind::LeftBrace);
   while (!eof() && !at(SyntaxKind::RightBrace)) {
-    // TODO
+    if (atStmtStart()) {
+      parseStmt();
+    } else {
+      break;
+    }
   }
   expect(SyntaxKind::RightBrace);
   close(C, SyntaxKind::FunctionBody);
 }
 
+auto Parser::parseStmt() -> void {
+  assert(atStmtStart() && "called parseStmt without being at stmt start");
+  auto C = open();
+  if (at(SyntaxKind::KeywordLet)) {
+    parseLetStmt();
+  }
+  close(C, SyntaxKind::Stmt);
+}
+auto Parser::parseLetStmt() -> void {
+  assert(at(SyntaxKind::KeywordLet) && "called parseLetStmt without 'let'");
+  auto C = open();
+  expect(SyntaxKind::KeywordLet);
+  expect(SyntaxKind::Identifier);
+  if (eat(SyntaxKind::Colon)) {
+    parseType();
+  }
+  expect(SyntaxKind::Equal);
+  if (atExprStart()) {
+    parseExpr();
+  }
+  expect(SyntaxKind::Semicolon);
+  close(C, SyntaxKind::LetStmt);
+}
+
+auto Parser::parseGroupOrLiteralExpr() -> CloseCheckpoint {
+  assert(atGroupOrLiteralExprStart() &&
+         "called parseGroupOrLiteralExpr without group or literal start");
+  auto C = open();
+  if (at(SyntaxKind::Identifier)) {
+    expect(SyntaxKind::Identifier);
+    return close(C, SyntaxKind::ReferenceExpr);
+  }
+  if (at(SyntaxKind::IntegerLiteral)) {
+    expect(SyntaxKind::IntegerLiteral);
+    return close(C, SyntaxKind::IntegerLiteral);
+  }
+  if (at(SyntaxKind::TrueLiteral)) {
+    expect(SyntaxKind::TrueLiteral);
+    return close(C, SyntaxKind::TrueLiteral);
+  }
+  if (at(SyntaxKind::FalseLiteral)) {
+    expect(SyntaxKind::FalseLiteral);
+    return close(C, SyntaxKind::FalseLiteral);
+  }
+  if (at(SyntaxKind::LeftParen)) {
+    expect(SyntaxKind::LeftParen);
+    parseExpr();
+    expect(SyntaxKind::RightParen);
+    return close(C, SyntaxKind::GroupExpr);
+  }
+  if (at(SyntaxKind::KeywordNew)) {
+    expect(SyntaxKind::KeywordNew);
+    parseType();
+    expect(SyntaxKind::LeftBrace);
+    while (!eof() && !at(SyntaxKind::RightBrace)) {
+      auto CC = open();
+      expect(SyntaxKind::Identifier), expect(SyntaxKind::Equal);
+      parseExpr();
+      if (!at(SyntaxKind::RightBrace)) {
+        eat(SyntaxKind::Comma);
+      }
+      close(CC, SyntaxKind::ConstructionExprMember);
+    }
+    expect(SyntaxKind::RightBrace);
+    return close(C, SyntaxKind::ConstructionExpr);
+  }
+  llvm_unreachable("unreachable");
+}
+
+auto Parser::parseExpr(uint32_t Current) -> void {
+  auto Tok = get();
+  CloseCheckpoint LHS;
+  // If we have a basic atom (expr, ref, or group), we have already found the
+  // LHS.
+  if (atGroupOrLiteralExprStart()) {
+    LHS = parseGroupOrLiteralExpr();
+  } else if (atPrefixOperator()) {
+    // Then the current looked-at token MUST be a prefix operator. We then go
+    // grab that as the LHS instead.
+    auto New = getPrefixPrecedence(Tok);
+    auto C = open();
+    advance();
+    parseExpr(New);
+    LHS = close(C, SyntaxKind::UnaryExpr);
+  } else {
+    llvm_unreachable("LHS was meant to be guaranteed to be assigned here");
+  }
+
+  // At this point, we are guaranteed to have an LHS, and we can try crawl for
+  // postfix tokens.
+  while (!eof() && (atPostfixOperator() || atInfixOperator()) &&
+         Current <= getInfixPrecedence(get())) {
+    // We parse postfix operators in a loop until there are no more
+    while (atPostfixOperator()) {
+      auto C = insert(LHS);
+      switch (get()) {
+      case SyntaxKind::LeftParen: {
+        auto CC = open();
+        expect(SyntaxKind::LeftParen);
+        while (!eof() && !at(SyntaxKind::RightParen)) {
+          parseExpr();
+          if (!at(SyntaxKind::RightParen)) {
+            expect(SyntaxKind::Comma);
+          }
+        }
+        expect(SyntaxKind::RightParen);
+        close(CC, SyntaxKind::CallExprArgumentList);
+        LHS = close(C, SyntaxKind::CallExpr);
+      } break;
+      case SyntaxKind::Dot: {
+        expect(SyntaxKind::Dot);
+        expect(SyntaxKind::Identifier);
+        LHS = close(C, SyntaxKind::ConstantIndexExpr);
+      } break;
+      default:
+        llvm_unreachable("cannot reach unhandled case");
+      }
+    }
+
+    // Finally, we consider if there is a infix expression to be built here.
+    auto Tok = get();
+    if (!atInfixOperator())
+      return;
+    auto C = insert(LHS);
+    advance();
+    auto NextPrecedence = getInfixPrecedence(Tok);
+    parseExpr(NextPrecedence);
+    LHS = close(C, SyntaxKind::BinaryExpr);
+  }
+}
+
 auto Parser::parseType() -> void {
-  assert((at(SyntaxKind::Identifier) || at(SyntaxKind::Star)) &&
-         "called parseType without '*' or <identifier>");
+  assert(atTypeStart() && "called parseType without '*' or <identifier>");
   auto C = open();
   if (at(SyntaxKind::Identifier)) {
     parseNamedType();
@@ -287,7 +432,7 @@ auto Parser::parsePointerType() -> void {
   assert(at(SyntaxKind::Star) && "called parsePointerType without '*'");
   auto C = open();
   expect(SyntaxKind::Star);
-  if (at(SyntaxKind::Identifier) || at(SyntaxKind::Star)) {
+  if (atTypeStart()) {
     parseType();
   }
   close(C, SyntaxKind::PointerType);

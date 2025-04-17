@@ -32,6 +32,23 @@ enum class SyntaxKind : uint8_t {
   FunctionReturnType,
   FunctionBody,
 
+  Stmt,
+  LetStmt,
+
+  Expr,
+  IntegerLiteralExpr,
+  TrueLiteralExpr,
+  FalseLiteralExpr,
+  ReferenceExpr,
+  GroupExpr,
+  ConstantIndexExpr,
+  CallExpr,
+  CallExprArgumentList,
+  UnaryExpr,
+  BinaryExpr,
+  ConstructionExpr,
+  ConstructionExprMember,
+
   Type,
   NamedType,
   PointerType,
