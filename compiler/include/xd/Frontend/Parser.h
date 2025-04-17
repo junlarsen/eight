@@ -70,7 +70,6 @@ public:
 using ParseCheckpoint = uint32_t;
 
 class Parser {
-public:
   DiagnosticManager &DM;
 
   std::vector<GreenToken> Tokens;
@@ -114,6 +113,11 @@ public:
     // is another element there or not. Therefore this is the correct comparison
     return TreeBuilderPosition == Tokens.size();
   }
+
+public:
+  auto parseTranslationUnit() -> void;
+  auto parseDecl() -> void;
+  auto parseFunctionDecl() -> void;
 };
 
 } // namespace xd

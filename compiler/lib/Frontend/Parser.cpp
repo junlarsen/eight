@@ -137,3 +137,31 @@ auto Parser::build() -> GreenNode {
   Root.setLength(Sum);
   return Root;
 }
+
+auto Parser::parseTranslationUnit() -> void {
+  auto TU = open();
+  while (hasNext()) {
+    parseDecl();
+  }
+  close(TU, SyntaxKind::TranslationUnit);
+}
+
+auto Parser::parseDecl() -> void {
+  switch (get()) {
+  case SyntaxKind::KeywordFn:
+    return parseFunctionDecl();
+  default:
+    assert(false && "todo: report diag here");
+  }
+}
+
+auto Parser::parseFunctionDecl() -> void {
+  auto Fn = open();
+  expect(SyntaxKind::KeywordFn);
+  expect(SyntaxKind::Identifier);
+  expect(SyntaxKind::LeftParen);
+  expect(SyntaxKind::RightParen);
+  expect(SyntaxKind::LeftBrace);
+  expect(SyntaxKind::RightBrace);
+  close(Fn, SyntaxKind::Function);
+}
