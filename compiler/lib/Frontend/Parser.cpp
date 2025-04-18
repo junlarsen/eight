@@ -258,7 +258,7 @@ auto Parser::parseFunctionParameter() -> void {
 
 auto Parser::parseFunctionReturnType() -> void {
   auto C = open();
-  if (at(SyntaxKind::Identifier) || at(SyntaxKind::Star)) {
+  if (atTypeStart()) {
     parseType();
   }
   close(C, SyntaxKind::FunctionReturnType);
@@ -518,8 +518,9 @@ auto Parser::parseIntegerLiteralExpr() -> CloseCheckpoint {
 }
 
 auto Parser::parseBooleanLiteralExpr() -> CloseCheckpoint {
-  assert((at(SyntaxKind::TrueLiteral) || at(SyntaxKind::FalseLiteral)) &&
-         "called parseBooleanLiteral without 'true' or 'false'");
+  static const TokenSet TS =
+      (1 << SyntaxKind::TrueLiteral) | (1 << SyntaxKind::FalseLiteral);
+  assert(in(TS) && "called parseBooleanLiteral without 'true' or 'false'");
   auto C = open();
   advance();
   return close(C, SyntaxKind::BooleanLiteralExpr);

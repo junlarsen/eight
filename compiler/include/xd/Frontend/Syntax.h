@@ -16,57 +16,13 @@
 #include "xd/Basic/DiagnosticManager.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/raw_ostream.h"
+#include <bitset>
 #include <cstdint>
 
 namespace xd {
-enum class SyntaxKind : uint8_t {
-  Error,
-  Eof,
-  // Nodes
-  TranslationUnit,
-  Function,
-  FunctionTypeParameterList,
-  FunctionTypeParameter,
-  FunctionParameterList,
-  FunctionParameter,
-  FunctionReturnType,
-  FunctionBody,
-
-  Stmt,
-  LetStmt,
-  IfStmt,
-  IfCondition,
-  IfThenBody,
-  IfElseBody,
-  ForStmt,
-  ForInitializer,
-  ForCondition,
-  ForIncrement,
-  ForBody,
-  ReturnStmt,
-  ContinueStmt,
-  BreakStmt,
-  ExprStmt,
-
-  Expr,
-  IntegerLiteralExpr,
-  BooleanLiteralExpr,
-  ReferenceExpr,
-  GroupExpr,
-  ConstantIndexExpr,
-  CallExpr,
-  CallExprArgumentList,
-  UnaryExpr,
-  BinaryExpr,
-  ConstructionExpr,
-  ConstructionExprMember,
-
-  Type,
-  NamedType,
-  PointerType,
-
+enum class SyntaxKind : uint64_t {
   // Keyword tokens
-  KeywordStruct,
+  KeywordStruct = 0,
   KeywordLet,
   KeywordFn,
   KeywordIntrinsicFn,
@@ -117,7 +73,58 @@ enum class SyntaxKind : uint8_t {
   Arrow,
   AmpersandAmpersand,
   PipePipe,
+
+  Error,
+  Eof,
+  // Nodes
+  TranslationUnit,
+  Function,
+  FunctionTypeParameterList,
+  FunctionTypeParameter,
+  FunctionParameterList,
+  FunctionParameter,
+  FunctionReturnType,
+  FunctionBody,
+
+  Stmt,
+  LetStmt,
+  IfStmt,
+  IfCondition,
+  IfThenBody,
+  IfElseBody,
+  ForStmt,
+  ForInitializer,
+  ForCondition,
+  ForIncrement,
+  ForBody,
+  ReturnStmt,
+  ContinueStmt,
+  BreakStmt,
+  ExprStmt,
+
+  Expr,
+  IntegerLiteralExpr,
+  BooleanLiteralExpr,
+  ReferenceExpr,
+  GroupExpr,
+  ConstantIndexExpr,
+  CallExpr,
+  CallExprArgumentList,
+  UnaryExpr,
+  BinaryExpr,
+  ConstructionExpr,
+  ConstructionExprMember,
+
+  Type,
+  NamedType,
+  PointerType,
 };
+
+using TokenSet = std::bitset<64>;
+
+inline uint64_t operator<<(uint64_t LHS, SyntaxKind RHS) {
+  return LHS << static_cast<uint64_t>(RHS);
+}
 
 auto getSyntaxKindName(SyntaxKind SK) -> llvm::StringRef;
 
