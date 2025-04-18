@@ -23,6 +23,7 @@ auto DiagnosticEmitter::emit(raw_ostream &OS) -> bool {
          "required for generating the enum kind");
   OS << "#ifndef XD_BASIC_DIAGNOSTICS_TD" << "\n";
   OS << "#define XD_BASIC_DIAGNOSTICS_TD" << "\n\n";
+  OS << "#include \"llvm/Support/raw_ostream.h\"" << "\n";
   OS << "#include \"xd/Basic/Location.h\"" << "\n";
   OS << "#include <cstdint>" << "\n";
   OS << "#include <string_view>" << "\n";
@@ -93,6 +94,10 @@ auto DiagnosticEmitter::emitDiagnosticClass(const Record &R,
      << "\n";
   OS << "    return Diagnostic->getKind() == DiagnosticKind::" << R.getName()
      << ";" << "\n";
+  OS << "  }" << "\n";
+  // Add emit error to stderr
+  OS << "  auto emit(llvm::raw_ostream &OS) const -> void {" << "\n";
+  OS << "    OS << \"" << ClassName << "\" << \"\\n\";" << "\n";
   OS << "  }" << "\n";
   // End the class definition
   OS << "};" << "\n";

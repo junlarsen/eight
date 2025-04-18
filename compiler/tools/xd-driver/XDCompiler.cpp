@@ -46,4 +46,13 @@ auto main(int argc, char **argv) -> int {
   P.parseTranslationUnit();
   GreenNode Tree = P.build();
   Tree.debug(errs());
+
+  if (DM.isEmpty())
+    return 0;
+
+  errs() << "Compiler diagnostics:" << "\n";
+  for (auto &Diag : *DM.diagnostics()) {
+    Diag->emit(errs());
+  }
+  return 1;
 }

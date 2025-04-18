@@ -30,4 +30,5 @@ public:
     return Diag->getKind() >= FirstDiagnosticKind &&
            Diag->getKind() <= LastDiagnosticKind;
   }
+  virtual auto emit(llvm::raw_ostream &OS) const -> void = 0;
 };

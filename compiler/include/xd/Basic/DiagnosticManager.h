@@ -38,6 +38,9 @@ public:
   }
 
   auto isEmpty() const -> bool { return Diagnostics.empty(); }
+  auto diagnostics() const -> const std::vector<std::unique_ptr<Diagnostic>> * {
+    return &Diagnostics;
+  }
 };
 } // namespace xd
 
