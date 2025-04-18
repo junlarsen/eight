@@ -70,16 +70,6 @@ auto Parser::advance() -> void {
     Position++;
 }
 
-auto Parser::reportUnexpectedAndAdvance() -> void {
-  auto Checkpoint = open();
-  auto CurrentSK = get();
-  auto ID = DM.report<UnexpectedTokenDiagnostic>(getSyntaxKindName(CurrentSK));
-  auto Event = std::make_unique<ParseErrorEvent>(ID);
-  Events.push_back(std::move(Event));
-  advance();
-  close(Checkpoint, SyntaxKind::Error);
-}
-
 auto Parser::build() -> GreenNode {
   std::vector<GreenNode> Stack;
   // Pop the first event off the stack because it's a close event
@@ -161,7 +151,7 @@ auto Parser::build() -> GreenNode {
 }
 
 auto Parser::parseTranslationUnit() -> void {
-  auto TU = open();
+  auto TU = open(); // TODO: Consider recovering here?
   while (!eof()) {
     parseDecl();
   }
@@ -176,7 +166,7 @@ auto Parser::parseDecl() -> void {
   default:
     // The top-level parser has to try to advance, otherwise the parser will
     // just loop forever.
-    reportUnexpectedAndAdvance();
+    report<UnexpectedTokenDiagnostic>(getSyntaxKindName(get()));
   }
 }
 
@@ -209,7 +199,10 @@ auto Parser::parseFunctionTypeParameterList() -> void {
     if (at(SyntaxKind::Identifier)) {
       parseFunctionTypeParameter();
     } else {
-      break;
+      if (at(TSFunctionTypeParameterListRecovery)) {
+        break;
+      }
+      report<ExpectedFunctionTypeParameterDiagnostic>(getSyntaxKindName(get()));
     }
   }
   expect(SyntaxKind::RightBracket);
@@ -236,7 +229,10 @@ auto Parser::parseFunctionParameterList() -> void {
     if (at(SyntaxKind::Identifier)) {
       parseFunctionParameter();
     } else {
-      break;
+      if (at(TSFunctionParameterListRecovery)) {
+        break;
+      }
+      report<ExpectedFunctionParameterDiagnostic>(getSyntaxKindName(get()));
     }
   }
   expect(SyntaxKind::RightParen);
@@ -300,7 +296,9 @@ auto Parser::parseBlock(SyntaxKind SK) -> void {
     if (atStmtStart()) {
       parseStmt();
     } else {
-      break;
+      if (at(TSBlockRecovery)) {
+        break;
+      }
     }
   }
   expect(SyntaxKind::RightBrace);
@@ -454,7 +452,11 @@ auto Parser::parseExpr(uint32_t Current) -> void {
         if (atExprStart()) {
           parseExpr();
         } else {
-          break;
+          if (at(TSCallExpressionArgumentListRecovery)) {
+            break;
+          }
+          report<ExpectedCallExpressionArgumentDiagnostic>(
+              getSyntaxKindName(get()));
         }
         if (!at(SyntaxKind::RightParen)) {
           expect(SyntaxKind::Comma);
@@ -520,7 +522,7 @@ auto Parser::parseIntegerLiteralExpr() -> CloseCheckpoint {
 auto Parser::parseBooleanLiteralExpr() -> CloseCheckpoint {
   static const TokenSet TS =
       (1 << SyntaxKind::TrueLiteral) | (1 << SyntaxKind::FalseLiteral);
-  assert(in(TS) && "called parseBooleanLiteral without 'true' or 'false'");
+  assert(at(TS) && "called parseBooleanLiteral without 'true' or 'false'");
   auto C = open();
   advance();
   return close(C, SyntaxKind::BooleanLiteralExpr);
@@ -556,7 +558,11 @@ auto Parser::parseConstructionExpr() -> CloseCheckpoint {
       if (at(SyntaxKind::Identifier)) {
         parseConstructionExprMember();
       } else {
-        break;
+        if (at(TSCallExpressionArgumentListRecovery)) {
+          break;
+        }
+        report<ExpectedConstructionExprMemberDiagnostic>(
+            getSyntaxKindName(get()));
       }
     }
     expect(SyntaxKind::RightBrace);

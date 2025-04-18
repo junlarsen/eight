@@ -120,11 +120,75 @@ enum class SyntaxKind : uint64_t {
   PointerType,
 };
 
-using TokenSet = std::bitset<64>;
-
 inline uint64_t operator<<(uint64_t LHS, SyntaxKind RHS) {
   return LHS << static_cast<uint64_t>(RHS);
 }
+
+using TokenSet = std::bitset<64>;
+
+static const TokenSet TSStatementStart =
+    1 << SyntaxKind::KeywordLet | 1 << SyntaxKind::KeywordIf |
+    1 << SyntaxKind::KeywordFor | 1 << SyntaxKind::KeywordReturn |
+    1 << SyntaxKind::ContinueStmt | 1 << SyntaxKind::KeywordBreak;
+static const TokenSet TSPrimaryExpressionStart =
+    1 << SyntaxKind::Identifier | 1 << SyntaxKind::IntegerLiteral |
+    1 << SyntaxKind::TrueLiteral | 1 << SyntaxKind::FalseLiteral |
+    1 << SyntaxKind::LeftParen | 1 << SyntaxKind::KeywordNew;
+static const TokenSet TSPrefixOperator =
+    1 << SyntaxKind::Plus | 1 << SyntaxKind::Minus | 1 << SyntaxKind::Bang |
+    1 << SyntaxKind::Ampersand | 1 << SyntaxKind::Star;
+static const TokenSet TSExpressionStart =
+    TSPrimaryExpressionStart | TSPrefixOperator;
+static const TokenSet TSInfixEqualOperator = 1 << SyntaxKind::Equal;
+static const TokenSet TSInfixLogicalOperator =
+    1 << SyntaxKind::AmpersandAmpersand | 1 << SyntaxKind::PipePipe;
+static const TokenSet TSInfixComparisonOperator =
+    1 << SyntaxKind::EqualEqual | 1 << SyntaxKind::BangEqual |
+    1 << SyntaxKind::LeftAngleEqual | 1 << SyntaxKind::RightAngleEqual |
+    1 << SyntaxKind::LeftAngle | 1 << SyntaxKind::RightAngle;
+static const TokenSet TSInfixAdditiveOperator =
+    1 << SyntaxKind::Plus | 1 << SyntaxKind::Minus;
+static const TokenSet TSInfixMultiplicativeOperator =
+    1 << SyntaxKind::Star | 1 << SyntaxKind::Slash | 1 << SyntaxKind::Percent;
+static const TokenSet TSInfixOperator =
+    TSInfixEqualOperator | TSInfixLogicalOperator | TSInfixComparisonOperator |
+    TSInfixAdditiveOperator | TSInfixMultiplicativeOperator;
+static const TokenSet TSPostfixOperator =
+    1 << SyntaxKind::LeftParen | 1 << SyntaxKind::Dot;
+static const TokenSet TSTypeStart =
+    1 << SyntaxKind::Identifier | 1 << SyntaxKind::Star;
+
+/// A new declaration is a fair recovery point for practically everything.
+static const TokenSet TSDeclRecovery = 1 << SyntaxKind::KeywordFn;
+
+/// The parameter list can either recover on the '->' used for the return type,
+/// or the '{' used for the body.
+static const TokenSet TSFunctionParameterListRecovery =
+    TSDeclRecovery |
+    TokenSet(1 << SyntaxKind::LeftBrace | 1 << SyntaxKind::Arrow);
+
+/// Recovery token set for function type parameter set
+///
+/// This parse will also trigger on the '(' used for the function parameter
+/// list.
+static const TokenSet TSFunctionTypeParameterListRecovery =
+    TSFunctionParameterListRecovery | TokenSet(1 << SyntaxKind::LeftParen);
+
+/// A block can only assume to recover on a top-level decl again, or a new
+/// statement.
+static const TokenSet TSBlockRecovery =
+    TSDeclRecovery |
+    TokenSet(1 << SyntaxKind::KeywordLet | 1 << SyntaxKind::KeywordIf |
+             1 << SyntaxKind::KeywordFor | 1 << SyntaxKind::ContinueStmt |
+             1 << SyntaxKind::KeywordBreak | 1 << SyntaxKind::KeywordReturn);
+
+/// A call expression's argument may recover at the next statement.
+static const TokenSet TSCallExpressionArgumentListRecovery =
+    TSBlockRecovery;
+
+/// The same goes for the construction expression.
+static const TokenSet TSConstructionExprMemberListRecovery =
+  TSBlockRecovery;
 
 auto getSyntaxKindName(SyntaxKind SK) -> llvm::StringRef;
 

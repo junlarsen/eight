@@ -124,7 +124,16 @@ public:
   auto close(OpenCheckpoint Checkpoint, SyntaxKind SK) -> CloseCheckpoint;
   auto insert(CloseCheckpoint Checkpoint) -> OpenCheckpoint;
   auto advance() -> void;
-  auto reportUnexpectedAndAdvance() -> void;
+
+  /// Construct a diagnostic in-place, and advance the parser by one token.
+  template <class T, class... Args> auto report(Args &&...A) -> void {
+    auto Checkpoint = open();
+    DiagnosticID ID = DM.report<T>(std::forward<Args>(A)...);
+    auto Event = std::make_unique<ParseErrorEvent>(ID);
+    Events.push_back(std::move(Event));
+    advance();
+    close(Checkpoint, SyntaxKind::Error);
+  }
 
   /// Construct the Green tree from the parsed events.
   auto build() -> GreenNode;
@@ -136,9 +145,23 @@ public:
     return TreeBuilderPosition == Tokens.size();
   }
 
-  auto in(const TokenSet &TS) const -> bool { return in(TS, get()); }
+  auto at(const TokenSet &TS) const -> bool { return in(TS, get()); }
   static auto in(const TokenSet &TS, SyntaxKind SK) -> bool {
     return TS[static_cast<uint64_t>(SK)];
+  }
+
+  auto atExprStart() const -> bool {
+    return atPrimaryExprStart() || atPrefixOperator();
+  }
+  auto atPrefixOperator() const -> bool { return at(TSPrefixOperator); }
+  auto atPostfixOperator() const -> bool { return at(TSPostfixOperator); }
+  auto atInfixOperator() const -> bool { return at(TSInfixOperator); }
+  auto atPrimaryExprStart() const -> bool {
+    return at(TSPrimaryExpressionStart);
+  }
+  auto atTypeStart() const -> bool { return at(TSTypeStart); }
+  auto atStmtStart() const -> bool {
+    return at(TSStatementStart) || atExprStart();
   }
 
   auto parseTranslationUnit() -> void;
@@ -149,18 +172,6 @@ public:
   auto parseFunctionParameterList() -> void;
   auto parseFunctionParameter() -> void;
   auto parseFunctionReturnType() -> void;
-
-  /// Is the parser at the start of a statement?
-  ///
-  /// This covers the basic keywords for statements like if/let/for, but also
-  /// has to include all rules for Expr for ExprStmt.
-  auto atStmtStart() const -> bool {
-    static const TokenSet TS =
-        (1 << SyntaxKind::KeywordLet) | (1 << SyntaxKind::KeywordIf) |
-        (1 << SyntaxKind::KeywordFor) | (1 << SyntaxKind::KeywordReturn) |
-        (1 << SyntaxKind::ContinueStmt) | (1 << SyntaxKind::KeywordBreak);
-    return in(TS) || atExprStart();
-  }
 
   auto parseStmt() -> void;
   auto parseBlock(SyntaxKind SK) -> void;
@@ -173,50 +184,6 @@ public:
   auto parseContinueStmt() -> void;
   auto parseBreakStmt() -> void;
 
-  /// Is the parser currently at the start of an expression? This is the FIRST
-  /// set of the Expr rule. Effectively this is:
-  ///
-  /// 1. Identifier for ReferenceExpr
-  /// 2. *Literal for *LiteralExpr
-  /// 3. LeftParen for GroupExpr
-  /// 4. Ampersand/Star/Bang/Minus/Plus for UnaryExpr
-  auto atExprStart() const -> bool {
-    return atPrimaryExprStart() || atPrefixOperator();
-  }
-
-  auto atPrefixOperator() const -> bool {
-    static const TokenSet TS =
-        (1 << SyntaxKind::Plus) | (1 << SyntaxKind::Minus) |
-        (1 << SyntaxKind::Star) | (1 << SyntaxKind::Bang) |
-        (1 << SyntaxKind::Ampersand);
-    return in(TS);
-  }
-
-  auto atPostfixOperator() const -> bool {
-    static const TokenSet TS =
-        (1 << SyntaxKind::LeftParen) | (1 << SyntaxKind::Dot);
-    return in(TS);
-  }
-
-  auto atInfixOperator() const -> bool {
-    static const TokenSet TS =
-        (1 << SyntaxKind::Plus) | (1 << SyntaxKind::Minus) |
-        (1 << SyntaxKind::Star) | (1 << SyntaxKind::Slash) |
-        (1 << SyntaxKind::Percent) | (1 << SyntaxKind::LeftAngleEqual) |
-        (1 << SyntaxKind::RightAngleEqual) | (1 << SyntaxKind::LeftAngle) |
-        (1 << SyntaxKind::RightAngle) | (1 << SyntaxKind::BangEqual) |
-        (1 << SyntaxKind::EqualEqual) | (1 << SyntaxKind::PipePipe) |
-        (1 << SyntaxKind::AmpersandAmpersand) | (1 << SyntaxKind::Equal);
-    return in(TS);
-  }
-
-  auto atPrimaryExprStart() const -> bool {
-    static const TokenSet TS =
-        (1 << SyntaxKind::Identifier) | (1 << SyntaxKind::IntegerLiteral) |
-        (1 << SyntaxKind::TrueLiteral) | (1 << SyntaxKind::FalseLiteral) |
-        (1 << SyntaxKind::LeftParen) | (1 << SyntaxKind::KeywordNew);
-    return in(TS);
-  }
   auto parseExpr(uint32_t Current = 0) -> void;
   auto parsePrimaryExpr() -> CloseCheckpoint;
   auto parseIntegerLiteralExpr() -> CloseCheckpoint;
@@ -226,64 +193,34 @@ public:
   auto parseConstructionExpr() -> CloseCheckpoint;
   auto parseConstructionExprMember() -> void;
 
+  auto parseType() -> void;
+  auto parseNamedType() -> void;
+  auto parsePointerType() -> void;
+
   /// Precedence table for prefix expression kinds.
   ///
   /// All the unary operators have higher precedence than any infix operator, so
   /// it does not actually matter here.
   static auto getPrefixPrecedence(SyntaxKind SK) -> uint32_t {
-    static const TokenSet TS =
-        (1 << SyntaxKind::Plus) | (1 << SyntaxKind::Minus) |
-        (1 << SyntaxKind::Bang) | (1 << SyntaxKind::Ampersand) |
-        (1 << SyntaxKind::Star);
-    if (in(TS, SK))
+    if (in(TSPrefixOperator, SK))
       return 6;
     llvm_unreachable("unknown syntax kind");
   }
 
   /// Precedence table for infix expression kinds.
   static auto getInfixPrecedence(SyntaxKind SK) -> uint32_t {
-    // 1. Assignment has the lowest precedence, that way RHS is "built" first.
-    if (SK == SyntaxKind::Equal)
+    if (in(TSInfixEqualOperator, SK))
       return 1;
-
-    // 2. Boolean AND/OR should be evaluated after their terms
-    static const TokenSet LogicalTS =
-        (1 << SyntaxKind::AmpersandAmpersand) | (1 << SyntaxKind::PipePipe);
-    if (in(LogicalTS, SK))
+    if (in(TSInfixLogicalOperator, SK))
       return 2;
-
-    // 3. Comparison operators should be evaluated after their terms too
-    static const TokenSet ComparisonTS =
-        (1 << SyntaxKind::EqualEqual) | (1 << SyntaxKind::BangEqual) |
-        (1 << SyntaxKind::LeftAngleEqual) | (1 << SyntaxKind::RightAngleEqual) |
-        (1 << SyntaxKind::LeftAngle) | (1 << SyntaxKind::RightAngle);
-    if (in(ComparisonTS, SK))
+    if (in(TSInfixComparisonOperator, SK))
       return 3;
-
-    // 4. Additive infix operators have the least precedence
-    static const TokenSet AdditiveTS =
-        (1 << SyntaxKind::Plus) | (1 << SyntaxKind::Minus);
-    if (in(AdditiveTS, SK))
+    if (in(TSInfixAdditiveOperator, SK))
       return 4;
-
-    // 5. Multiplicative come after additive
-    static const TokenSet MultiplicativeTS = (1 << SyntaxKind::Star) |
-                                             (1 << SyntaxKind::Slash) |
-                                             (1 << SyntaxKind::Percent);
-    if (in(MultiplicativeTS, SK))
+    if (in(TSInfixMultiplicativeOperator, SK))
       return 5;
     llvm_unreachable("unknown syntax kind");
   }
-
-  auto atTypeStart() const -> bool {
-    static const TokenSet TS =
-        (1 << SyntaxKind::Identifier) | (1 << SyntaxKind::Star);
-    return in(TS);
-  }
-
-  auto parseType() -> void;
-  auto parseNamedType() -> void;
-  auto parsePointerType() -> void;
 };
 
 } // namespace xd
