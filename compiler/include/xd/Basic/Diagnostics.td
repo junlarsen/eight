@@ -49,5 +49,13 @@ def ExpectedConstructionExprMember
     : Diagnostic<"expected construction member, but received {0}",
                  [DiagnosticArg<"Token", StringArg>]>;
 
-def ExpectedStructMember :Diagnostic<"expected struct member, but received {0}",
-                                           [DiagnosticArg<"Token", StringArg>]>;
+def ExpectedStructMember
+    : Diagnostic<"expected struct member, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedTraitTypeParameter
+    : Diagnostic<"expected trait type parameter, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedTraitMember : Diagnostic<"expected trait member, but received {0}",
+                                     [DiagnosticArg<"Token", StringArg>]>;

@@ -160,6 +160,7 @@ public:
   }
 
   auto atDeclStart() const -> bool { return at(TSDeclStart); }
+  auto atTraitMemberStart() const -> bool { return at(TSTraitMemberStart); }
   auto atExprStart() const -> bool {
     return atPrimaryExprStart() || atPrefixOperator();
   }
@@ -186,6 +187,11 @@ public:
   auto parseStructDecl() -> void;
   auto parseStructMemberList() -> void;
   auto parseStructMember() -> void;
+  auto parseTraitDecl() -> void;
+  auto parseTraitTypeParameterList() -> void;
+  auto parseTraitTypeParameter() -> void;
+  auto parseTraitMemberList() -> void;
+  auto parseTraitFunctionMember() -> void;
 
   auto parseStmt() -> void;
   auto parseBlock(SyntaxKind SK) -> void;

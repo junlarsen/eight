@@ -48,6 +48,18 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "StructMemberList";
   case SyntaxKind::StructMember:
     return "StructMember";
+  case SyntaxKind::Trait:
+    return "Trait";
+  case SyntaxKind::TraitTypeParameterList:
+    return "TraitTypeParameterList";
+  case SyntaxKind::TraitTypeParameter:
+    return "TraitTypeParameter";
+  case SyntaxKind::TraitMemberList:
+    return "TraitMemberList";
+  case SyntaxKind::TraitFunctionMember:
+    return "TraitFunctionMember";
+  case SyntaxKind::TraitIntrinsicFunctionMember:
+    return "TraitIntrinsicFunctionMember";
 
   case SyntaxKind::Stmt:
     return "Stmt";

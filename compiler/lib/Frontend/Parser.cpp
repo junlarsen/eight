@@ -329,6 +329,103 @@ auto Parser::parseStructMember() -> void {
   close(C, SyntaxKind::StructMember);
 }
 
+auto Parser::parseTraitDecl() -> void {
+  assert(at(SyntaxKind::KeywordTrait) &&
+         "called parseTraitDecl without 'trait'");
+  auto C = open();
+  expect(SyntaxKind::KeywordTrait);
+  expect(SyntaxKind::Identifier);
+  if (at(SyntaxKind::LeftBracket))
+    parseTraitTypeParameterList();
+  if (at(SyntaxKind::LeftBrace))
+    parseTraitMemberList();
+  close(C, SyntaxKind::Trait);
+}
+
+auto Parser::parseTraitTypeParameterList() -> void {
+  assert(at(SyntaxKind::LeftBracket) &&
+         "called parseTraitTypeParameterList without '['");
+  auto C = open();
+  expect(SyntaxKind::LeftBracket);
+  while (!eof() && !at(SyntaxKind::RightBracket)) {
+    if (at(SyntaxKind::Identifier)) {
+      parseTraitTypeParameter();
+    } else {
+      if (at(TSTraitTypeParameterListRecovery)) {
+        break;
+      }
+      report<ExpectedTraitTypeParameterDiagnostic>(getTokenLength(),
+                                                   getSyntaxKindName(get()));
+    }
+    if (!at(SyntaxKind::RightBrace))
+      eat(SyntaxKind::Comma);
+  }
+  expect(SyntaxKind::RightBrace);
+  close(C, SyntaxKind::TraitTypeParameterList);
+}
+
+auto Parser::parseTraitTypeParameter() -> void {
+  assert(at(SyntaxKind::Identifier) &&
+         "called parseTraitTypeParameter without <identifier>");
+  auto C = open();
+  expect(SyntaxKind::Identifier);
+  close(C, SyntaxKind::TraitTypeParameter);
+}
+
+auto Parser::parseTraitMemberList() -> void {
+  assert(at(SyntaxKind::LeftBrace) &&
+         "called parseTraitMemberList without '{'");
+  auto C = open();
+  expect(SyntaxKind::LeftBrace);
+  while (!eof() && !at(SyntaxKind::RightBrace)) {
+    if (atTraitMemberStart()) {
+      switch (get()) {
+      case SyntaxKind::KeywordFn:
+      case SyntaxKind::KeywordIntrinsicFn:
+        // parseTraitFunctionMember will handle both cases. This switch is
+        // mostly for possible future features such as associated members or
+        // types.
+        parseTraitFunctionMember();
+        break;
+      default:
+        llvm_unreachable(
+            "disparity between atTraitMemberStart and above switch cases");
+      }
+    } else {
+      if (at(TSTraitMemberListRecovery)) {
+        break;
+      }
+      report<ExpectedTraitMemberDiagnostic>(getTokenLength(),
+                                            getSyntaxKindName(get()));
+    }
+    if (!at(SyntaxKind::RightBrace))
+      eat(SyntaxKind::Comma);
+  }
+  expect(SyntaxKind::RightBrace);
+  close(C, SyntaxKind::TraitMemberList);
+}
+
+auto Parser::parseTraitFunctionMember() -> void {
+  assert((at(SyntaxKind::KeywordFn) || at(SyntaxKind::KeywordIntrinsicFn)) &&
+         "called parseTraitFunctionMember without 'fn' or 'intrinsic_fn'");
+  auto C = open();
+  bool IsIntrinsic = at(SyntaxKind::KeywordIntrinsicFn);
+  advance();
+  expect(SyntaxKind::Identifier);
+  // This function can simply re-use the same parsing rules that we apply to
+  // functions. It might look a bit off in the syntax tree, but the parse rules
+  // are identical.
+  if (at(SyntaxKind::LeftBracket))
+    parseFunctionTypeParameterList();
+  if (at(SyntaxKind::LeftParen))
+    parseFunctionParameterList();
+  if (eat(SyntaxKind::Arrow))
+    parseFunctionReturnType();
+  expect(SyntaxKind::Semicolon);
+  close(C, IsIntrinsic ? SyntaxKind::TraitIntrinsicFunctionMember
+                       : SyntaxKind::TraitFunctionMember);
+}
+
 auto Parser::parseStmt() -> void {
   assert(atStmtStart() && "called parseStmt without being at stmt start");
   auto C = open();
