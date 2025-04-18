@@ -37,11 +37,8 @@ public:
     return ID;
   }
 
-  /// Get the given diagnostic if it exists.
-  auto getDiagnostic(const DiagnosticID ID) const -> Diagnostic * {
-    if (ID >= Diagnostics.size())
-      return nullptr;
-    return Diagnostics[ID].get();
+  auto addLocation(DiagnosticID ID, SourceLocation Loc) const -> void {
+    Diagnostics.at(ID)->setLocation(Loc);
   }
   auto isEmpty() const -> bool { return Diagnostics.empty(); }
   auto diagnostics() const -> const std::vector<std::unique_ptr<Diagnostic>> * {

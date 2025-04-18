@@ -63,11 +63,11 @@ public:
 };
 
 class ParseErrorEvent : public ParseEvent {
-  DiagnosticID ID;
   uint32_t Length;
+  DiagnosticID ID;
 
 public:
-  explicit ParseErrorEvent(DiagnosticID ID, uint32_t Length)
+  explicit ParseErrorEvent(uint32_t Length, DiagnosticID ID)
       : ParseEvent(ParseEventKind::Error), ID(ID), Length(Length) {}
   static bool classof(const ParseEvent *Event) {
     return Event->getKind() == ParseEventKind::Error;

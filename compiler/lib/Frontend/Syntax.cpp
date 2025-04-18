@@ -312,9 +312,7 @@ buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
   // If this is an error node, then we can propagate the location to the diag
   // itself.
   if (auto *GE = dyn_cast<GreenError>(Elem.get())) {
-    auto *Diag = DM.getDiagnostic(GE->getDiagnosticID());
-    assert(Diag != nullptr && "diagnostic has disappeared since creation");
-    Diag->setLocation(Self->getLocation());
+    DM.addLocation(GE->getDiagnosticID(), Self->getLocation());
   }
 
   if (auto *GN = dyn_cast<GreenNode>(Elem.get())) {
