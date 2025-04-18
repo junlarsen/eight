@@ -86,6 +86,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "CallExpr";
   case SyntaxKind::CallExprArgumentList:
     return "CallExprArgumentList";
+  case SyntaxKind::CallExprTypeArgumentList:
+    return "CallExprTypeArgumentList";
   case SyntaxKind::UnaryExpr:
     return "UnaryExpr";
   case SyntaxKind::BinaryExpr:

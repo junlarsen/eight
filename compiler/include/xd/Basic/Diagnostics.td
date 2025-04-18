@@ -41,6 +41,10 @@ def ExpectedCallExpressionArgument
     : Diagnostic<"expected function call argument, but received {0}",
                  [DiagnosticArg<"Token", StringArg>]>;
 
+def ExpectedCallExpressionTypeArgument
+    : Diagnostic<"expected function call type argument, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
+
 def ExpectedConstructionExprMember
     : Diagnostic<"expected construction member, but received {0}",
                  [DiagnosticArg<"Token", StringArg>]>;

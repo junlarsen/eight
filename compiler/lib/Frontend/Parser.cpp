@@ -439,8 +439,29 @@ auto Parser::parseExpr(uint32_t Current) -> void {
   while (atPostfixOperator()) {
     auto C = insert(LHS);
     switch (get()) {
+    case SyntaxKind::LeftBracket:
     case SyntaxKind::LeftParen: {
       auto CC = open();
+      // Take the type arguments if present
+      if (eat(SyntaxKind::LeftBracket)) {
+        auto CCC = open();
+        while (!eof() && !at(SyntaxKind::RightBracket)) {
+          if (atTypeStart()) {
+            parseType();
+          } else {
+            if (at(TSCallExpressionTypeArgumentListRecovery)) {
+              break;
+            }
+            report<ExpectedCallExpressionTypeArgumentDiagnostic>(
+                getTokenLength(), getSyntaxKindName(get()));
+          }
+          if (!at(SyntaxKind::RightParen)) {
+            eat(SyntaxKind::Comma);
+          }
+        }
+        expect(SyntaxKind::RightBracket);
+        close(CCC, SyntaxKind::CallExprTypeArgumentList);
+      }
       expect(SyntaxKind::LeftParen);
       while (!eof() && !at(SyntaxKind::RightParen)) {
         if (atExprStart()) {
@@ -453,7 +474,7 @@ auto Parser::parseExpr(uint32_t Current) -> void {
               getTokenLength(), getSyntaxKindName(get()));
         }
         if (!at(SyntaxKind::RightParen)) {
-          expect(SyntaxKind::Comma);
+          eat(SyntaxKind::Comma);
         }
       }
       expect(SyntaxKind::RightParen);

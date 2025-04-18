@@ -111,6 +111,7 @@ enum class SyntaxKind : uint64_t {
   ConstantIndexExpr,
   CallExpr,
   CallExprArgumentList,
+  CallExprTypeArgumentList,
   UnaryExpr,
   BinaryExpr,
   ConstructionExpr,
@@ -154,8 +155,9 @@ static const TokenSet TSInfixMultiplicativeOperator =
 static const TokenSet TSInfixOperator =
     TSInfixEqualOperator | TSInfixLogicalOperator | TSInfixComparisonOperator |
     TSInfixAdditiveOperator | TSInfixMultiplicativeOperator;
-static const TokenSet TSPostfixOperator =
-    1 << SyntaxKind::LeftParen | 1 << SyntaxKind::Dot;
+static const TokenSet TSPostfixOperator = 1 << SyntaxKind::LeftParen |
+                                          1 << SyntaxKind::Dot |
+                                          1 << SyntaxKind::LeftBracket;
 static const TokenSet TSTypeStart =
     1 << SyntaxKind::Identifier | 1 << SyntaxKind::Star;
 
@@ -185,6 +187,8 @@ static const TokenSet TSBlockRecovery =
 
 /// A call expression's argument may recover at the next statement.
 static const TokenSet TSCallExpressionArgumentListRecovery = TSBlockRecovery;
+static const TokenSet TSCallExpressionTypeArgumentListRecovery =
+    TSBlockRecovery;
 
 /// The same goes for the construction expression.
 static const TokenSet TSConstructionExprMemberListRecovery = TSBlockRecovery;
