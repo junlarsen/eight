@@ -26,4 +26,21 @@ def UnrecognizedCharacter
     : Diagnostic<"Found unrecognized character {0}",
                  [DiagnosticArg<"Character", CharacterArg>]>;
 
-def UnexpectedToken : Diagnostic<"encountered unexpected token {0}", [DiagnosticArg<"Token", StringArg>]>;
+def UnexpectedToken : Diagnostic<"encountered unexpected token {0}",
+                                 [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedFunctionParameter
+    : Diagnostic<"expected function parameter, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedFunctionTypeParameter
+    : Diagnostic<"expected function type parameter, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedCallExpressionArgument
+    : Diagnostic<"expected function call argument, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedConstructionExprMember
+    : Diagnostic<"expected construction member, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
