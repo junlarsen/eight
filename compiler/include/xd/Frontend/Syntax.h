@@ -79,6 +79,7 @@ enum class SyntaxKind : uint64_t {
   Eof,
   // Nodes
   TranslationUnit,
+  IntrinsicFunction,
   Function,
   FunctionTypeParameterList,
   FunctionTypeParameter,
@@ -86,6 +87,12 @@ enum class SyntaxKind : uint64_t {
   FunctionParameter,
   FunctionReturnType,
   FunctionBody,
+
+  Struct,
+  StructMemberList,
+  StructMember,
+
+  IntrinsicType,
 
   Stmt,
   LetStmt,
@@ -145,10 +152,14 @@ inline uint64_t operator<<(uint64_t LHS, SyntaxKind RHS) {
 
 using TokenSet = std::bitset<64>;
 
+static const TokenSet TSDeclStart =
+    1 << SyntaxKind::KeywordFn | 1 << SyntaxKind::KeywordIntrinsicFn |
+    1 << SyntaxKind::KeywordIntrinsicType | 1 << SyntaxKind::KeywordStruct |
+    1 << SyntaxKind::KeywordTrait | 1 << SyntaxKind::KeywordInstance;
 static const TokenSet TSStatementStart =
     1 << SyntaxKind::KeywordLet | 1 << SyntaxKind::KeywordIf |
     1 << SyntaxKind::KeywordFor | 1 << SyntaxKind::KeywordReturn |
-    1 << SyntaxKind::ContinueStmt | 1 << SyntaxKind::KeywordBreak;
+    1 << SyntaxKind::KeywordContinue | 1 << SyntaxKind::KeywordBreak;
 static const TokenSet TSPrimaryExpressionStart =
     1 << SyntaxKind::Identifier | 1 << SyntaxKind::IntegerLiteral |
     1 << SyntaxKind::TrueLiteral | 1 << SyntaxKind::FalseLiteral |
@@ -179,7 +190,9 @@ static const TokenSet TSTypeStart =
     1 << SyntaxKind::Identifier | 1 << SyntaxKind::Star;
 
 /// A new declaration is a fair recovery point for practically everything.
-static const TokenSet TSDeclRecovery = 1 << SyntaxKind::KeywordFn;
+static const TokenSet TSDeclRecovery =
+    1 << SyntaxKind::KeywordFn | 1 << SyntaxKind::KeywordStruct |
+    1 << SyntaxKind::KeywordIntrinsicType | 1 << SyntaxKind::KeywordIntrinsicFn;
 
 /// The parameter list can either recover on the '->' used for the return type,
 /// or the '{' used for the body.
@@ -193,6 +206,8 @@ static const TokenSet TSFunctionParameterListRecovery =
 /// list.
 static const TokenSet TSFunctionTypeParameterListRecovery =
     TSFunctionParameterListRecovery | TokenSet(1 << SyntaxKind::LeftParen);
+
+static const TokenSet TSStructMemberListRecovery = TSDeclRecovery;
 
 /// A block can only assume to recover on a top-level decl again, or a new
 /// statement.

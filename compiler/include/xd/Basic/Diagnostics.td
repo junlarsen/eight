@@ -48,3 +48,6 @@ def ExpectedCallExpressionTypeArgument
 def ExpectedConstructionExprMember
     : Diagnostic<"expected construction member, but received {0}",
                  [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedStructMember :Diagnostic<"expected struct member, but received {0}",
+                                           [DiagnosticArg<"Token", StringArg>]>;

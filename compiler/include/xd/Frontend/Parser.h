@@ -159,6 +159,7 @@ public:
     return TS[static_cast<uint64_t>(SK)];
   }
 
+  auto atDeclStart() const -> bool { return at(TSDeclStart); }
   auto atExprStart() const -> bool {
     return atPrimaryExprStart() || atPrefixOperator();
   }
@@ -181,6 +182,10 @@ public:
   auto parseFunctionParameterList() -> void;
   auto parseFunctionParameter() -> void;
   auto parseFunctionReturnType() -> void;
+  auto parseIntrinsicTypeDecl() -> void;
+  auto parseStructDecl() -> void;
+  auto parseStructMemberList() -> void;
+  auto parseStructMember() -> void;
 
   auto parseStmt() -> void;
   auto parseBlock(SyntaxKind SK) -> void;

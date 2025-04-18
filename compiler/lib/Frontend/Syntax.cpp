@@ -24,6 +24,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     // Syntax nodes
   case SyntaxKind::TranslationUnit:
     return "TranslationUnit";
+  case SyntaxKind::IntrinsicFunction:
+    return "IntrinsicFunction";
   case SyntaxKind::Function:
     return "Function";
   case SyntaxKind::FunctionTypeParameterList:
@@ -38,6 +40,14 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "FunctionReturnType";
   case SyntaxKind::FunctionBody:
     return "FunctionBody";
+  case SyntaxKind::IntrinsicType:
+    return "IntrinsicType";
+  case SyntaxKind::Struct:
+    return "Struct";
+  case SyntaxKind::StructMemberList:
+    return "StructMemberList";
+  case SyntaxKind::StructMember:
+    return "StructMember";
 
   case SyntaxKind::Stmt:
     return "Stmt";

@@ -311,3 +311,52 @@ TEST(ParserTest, ParseBinaryExpression) {
     ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryModulusExpr);
   }
 }
+
+TEST(ParserTest, ParseFunctionDecl) {
+  {
+    auto Basic = getParser("fn main() {}");
+    Basic->P.parseFunctionDecl();
+    auto T = Basic->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Function);
+  }
+  {
+    auto Intrinsic = getParser("intrinsic_fn malloc(size: i32) -> ptr");
+    Intrinsic->P.parseFunctionDecl();
+    auto T = Intrinsic->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::IntrinsicFunction);
+  }
+  {
+    auto TypeParameters = getParser("fn id[T](x: T) -> T {}");
+    TypeParameters->P.parseFunctionDecl();
+    auto T = TypeParameters->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Function);
+  }
+}
+
+TEST(ParserTest, ParseIntrinsicTypeDecl) {
+  auto Intrinsic = getParser("intrinsic_type i32;");
+  Intrinsic->P.parseIntrinsicTypeDecl();
+  auto T = Intrinsic->P.build();
+  ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::IntrinsicType);
+}
+
+TEST(ParserTest, ParseStructDecl) {
+  {
+    auto NoMembers = getParser("struct Foo {}");
+    NoMembers->P.parseStructDecl();
+    auto T = NoMembers->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Struct);
+  }
+  {
+    auto TrailingComma = getParser("struct Foo { a: bool, }");
+    TrailingComma->P.parseStructDecl();
+    auto T = TrailingComma->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Struct);
+  }
+  {
+    auto ManyMembers = getParser("struct Foo { a: i32, z: Vec2D }");
+    ManyMembers->P.parseStructDecl();
+    auto T = ManyMembers->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Struct);
+  }
+}

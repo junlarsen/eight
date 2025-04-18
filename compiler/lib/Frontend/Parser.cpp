@@ -144,28 +144,43 @@ auto Parser::build() -> GreenNode {
 auto Parser::parseTranslationUnit() -> void {
   auto TU = open(); // TODO: Consider recovering here?
   while (!eof()) {
-    parseDecl();
-  }
-  close(TU, SyntaxKind::TranslationUnit);
-}
-
-auto Parser::parseDecl() -> void {
-  switch (get()) {
-  case SyntaxKind::KeywordFn:
-    parseFunctionDecl();
-    break;
-  default:
+    if (atDeclStart()) {
+      parseDecl();
+      continue;
+    }
     // The top-level parser has to try to advance, otherwise the parser will
     // just loop forever.
     report<UnexpectedTokenDiagnostic>(getTokenLength(),
                                       getSyntaxKindName(get()));
   }
+  close(TU, SyntaxKind::TranslationUnit);
+}
+
+auto Parser::parseDecl() -> void {
+  assert(atDeclStart() && "called parseDecl without decl");
+  switch (get()) {
+  case SyntaxKind::KeywordFn:
+  case SyntaxKind::KeywordIntrinsicFn:
+    parseFunctionDecl();
+    break;
+  case SyntaxKind::KeywordIntrinsicType:
+    parseIntrinsicTypeDecl();
+    break;
+  case SyntaxKind::KeywordStruct:
+    parseStructDecl();
+    break;
+  default:
+    llvm_unreachable("disparity between atDeclStart() and kinds in switch");
+  }
 }
 
 auto Parser::parseFunctionDecl() -> void {
-  assert(at(SyntaxKind::KeywordFn) && "called parseFunctionDecl without 'fn'");
+  assert(at(SyntaxKind::KeywordFn) ||
+         at(SyntaxKind::KeywordIntrinsicFn) &&
+             "called parseFunctionDecl without 'fn' or 'intrinsic_fn'");
   auto C = open();
-  expect(SyntaxKind::KeywordFn);
+  bool IsIntrinsic = at(SyntaxKind::KeywordIntrinsicFn);
+  advance();
   expect(SyntaxKind::Identifier);
   if (at(SyntaxKind::LeftBracket)) {
     parseFunctionTypeParameterList();
@@ -176,10 +191,16 @@ auto Parser::parseFunctionDecl() -> void {
   if (eat(SyntaxKind::Arrow)) {
     parseFunctionReturnType();
   }
-  if (at(SyntaxKind::LeftBrace)) {
-    parseBlock(SyntaxKind::FunctionBody);
+  // We only try parsing a body if we are in an actual function (i.e., not
+  // intrinsic)
+  if (IsIntrinsic) {
+    expect(SyntaxKind::Semicolon);
+  } else {
+    if (at(SyntaxKind::LeftBrace))
+      parseBlock(SyntaxKind::FunctionBody);
   }
-  close(C, SyntaxKind::Function);
+  // Pick the node type based on whether we parsed an intrinsic function or not
+  close(C, IsIntrinsic ? SyntaxKind::IntrinsicFunction : SyntaxKind::Function);
 }
 
 auto Parser::parseFunctionTypeParameterList() -> void {
@@ -252,6 +273,60 @@ auto Parser::parseFunctionReturnType() -> void {
     parseType();
   }
   close(C, SyntaxKind::FunctionReturnType);
+}
+
+auto Parser::parseIntrinsicTypeDecl() -> void {
+  assert(at(SyntaxKind::KeywordIntrinsicType) &&
+         "called parseIntrinsicTypeDecl without 'intrinsic_type'");
+  auto C = open();
+  expect(SyntaxKind::KeywordIntrinsicType);
+  expect(SyntaxKind::Identifier);
+  expect(SyntaxKind::Semicolon);
+  close(C, SyntaxKind::IntrinsicType);
+}
+
+auto Parser::parseStructDecl() -> void {
+  assert(at(SyntaxKind::KeywordStruct) &&
+         "called parseStructDecl without 'struct'");
+  auto C = open();
+  expect(SyntaxKind::Struct);
+  expect(SyntaxKind::Identifier);
+  if (at(SyntaxKind::LeftBrace))
+    parseStructMemberList();
+  close(C, SyntaxKind::Struct);
+}
+
+auto Parser::parseStructMemberList() -> void {
+  assert(at(SyntaxKind::LeftBrace) &&
+         "called parseStructMemberList without '{'");
+  auto C = open();
+  expect(SyntaxKind::LeftBrace);
+  while (!eof() && !at(SyntaxKind::RightBrace)) {
+    if (at(SyntaxKind::Identifier)) {
+      parseStructMember();
+    } else {
+      if (at(TSStructMemberListRecovery)) {
+        break;
+      }
+      report<ExpectedStructMemberDiagnostic>(getTokenLength(),
+                                             getSyntaxKindName(get()));
+    }
+    if (!at(SyntaxKind::RightBrace))
+      eat(SyntaxKind::Comma);
+  }
+  expect(SyntaxKind::RightBrace);
+  close(C, SyntaxKind::StructMemberList);
+}
+
+auto Parser::parseStructMember() -> void {
+  assert(at(SyntaxKind::Identifier) &&
+         "called parseStructMember without <identifier>");
+  auto C = open();
+  expect(SyntaxKind::Identifier);
+  expect(SyntaxKind::Semicolon);
+  if (atTypeStart())
+    parseType();
+  close(C, SyntaxKind::StructMember);
 }
 
 auto Parser::parseStmt() -> void {
