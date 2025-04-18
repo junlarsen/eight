@@ -14,6 +14,7 @@
 #define XD_FRONTEND_SYNTAX_H
 
 #include "xd/Basic/DiagnosticManager.h"
+#include "xd/Basic/Location.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/raw_ostream.h"
 #include <bitset>
@@ -183,12 +184,10 @@ static const TokenSet TSBlockRecovery =
              1 << SyntaxKind::KeywordBreak | 1 << SyntaxKind::KeywordReturn);
 
 /// A call expression's argument may recover at the next statement.
-static const TokenSet TSCallExpressionArgumentListRecovery =
-    TSBlockRecovery;
+static const TokenSet TSCallExpressionArgumentListRecovery = TSBlockRecovery;
 
 /// The same goes for the construction expression.
-static const TokenSet TSConstructionExprMemberListRecovery =
-  TSBlockRecovery;
+static const TokenSet TSConstructionExprMemberListRecovery = TSBlockRecovery;
 
 auto getSyntaxKindName(SyntaxKind SK) -> llvm::StringRef;
 
@@ -228,15 +227,38 @@ public:
 };
 
 class GreenNode {
+public:
   using GreenNodeData =
       std::variant<GreenToken, std::shared_ptr<GreenNode>, ErrorToken>;
 
+private:
   SyntaxKind SK;
   std::vector<GreenNodeData> Children;
   size_t Length;
 
 public:
   explicit GreenNode(SyntaxKind SK, size_t Length) : SK(SK), Length(Length) {}
+
+  static auto isGreenToken(GreenNodeData &GND) -> GreenToken * {
+    if (std::holds_alternative<GreenToken>(GND)) {
+      return &std::get<GreenToken>(GND);
+    }
+    return nullptr;
+  }
+
+  static auto isErrorToken(GreenNodeData &GND) -> ErrorToken * {
+    if (std::holds_alternative<ErrorToken>(GND)) {
+      return &std::get<ErrorToken>(GND);
+    }
+    return nullptr;
+  }
+
+  static auto isGreenNode(GreenNodeData &GND) -> std::shared_ptr<GreenNode> {
+    if (std::holds_alternative<std::shared_ptr<GreenNode>>(GND)) {
+      return std::get<std::shared_ptr<GreenNode>>(GND);
+    }
+    return nullptr;
+  }
 
   auto getChildren() -> std::vector<GreenNodeData> & { return Children; }
   auto getKind() const { return SK; }
@@ -250,10 +272,10 @@ public:
   }
   auto addChild(ErrorToken Tok) -> void { Children.push_back(Tok); }
 
-  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) const -> void;
+  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
 };
 
-using GreenElement = std::variant<GreenToken, GreenNode>;
+using GreenElement = GreenNode::GreenNodeData;
 
 class SyntaxNode {
   std::optional<std::shared_ptr<SyntaxNode>> Parent;
@@ -263,18 +285,27 @@ class SyntaxNode {
   ///
   /// For the root, this is zero.
   uint32_t Offset;
+  uint32_t Length;
   uint32_t Index;
 
 public:
   explicit SyntaxNode(std::optional<std::shared_ptr<SyntaxNode>> Parent,
                       const GreenElement &Green, uint32_t Offset,
                       uint32_t Index)
-      : Parent(std::move(Parent)), Green(Green), Offset(Offset), Index(Index) {}
+      : Parent(std::move(Parent)), Green(Green), Offset(Offset), Length(0),
+        Index(Index), Children({}) {}
 
-  auto addChild(const std::shared_ptr<SyntaxNode> &Child,
-                uint32_t Index) -> void {
+  auto getLength() -> uint32_t;
+  auto addChild(uint32_t Index,
+                const std::shared_ptr<SyntaxNode> &Child) -> void {
     Children.insert(Children.begin() + Index, Child);
   }
+  auto getOffset() const -> uint32_t { return Offset; }
+  auto getIndex() const -> uint32_t { return Index; }
+  auto front() -> decltype(Children.front()) { return Children.front(); }
+  auto back() -> decltype(Children.back()) { return Children.back(); }
+  auto getLocation() -> SourceLocation;
+  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
 
   /// Create a root node.
   static auto
@@ -291,6 +322,9 @@ public:
   }
 };
 
+/// Turn a Green tree into a red tree.
+auto buildSyntaxTree(const std::shared_ptr<GreenNode> &GreenRoot)
+    -> std::shared_ptr<SyntaxNode>;
 } // namespace xd
 
 #endif // XD_FRONTEND_SYNTAX_H

@@ -205,23 +205,75 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
   }
 }
 
-auto GreenNode::debug(raw_ostream &OS, size_t Indent) const -> void {
+auto GreenNode::debug(raw_ostream &OS, size_t Indent) -> void {
   // We don't quote this, because node is always a node kind
   OS << std::string(Indent, ' ') << "* " << getSyntaxKindName(getKind())
      << " len=" << getTextLength() << " children=" << Children.size() << "\n";
-  for (const auto &Child : Children) {
-    if (std::holds_alternative<GreenToken>(Child)) {
-      auto &Token = std::get<GreenToken>(Child);
+  for (auto &Child : getChildren()) {
+    if (const auto *GT = isGreenToken(Child)) {
       OS << std::string(Indent + 2, ' ') << "| " << "Token '"
-         << getSyntaxKindName(Token.getKind()) << "'"
-         << " len=" << Token.getTextLength() << "\n";
-    } else if (std::holds_alternative<std::shared_ptr<GreenNode>>(Child)) {
-      auto &Node = std::get<std::shared_ptr<GreenNode>>(Child);
-      Node->debug(OS, Indent + 2);
-    } else {
-      auto &ErrTok = std::get<ErrorToken>(Child);
+         << getSyntaxKindName(GT->getKind()) << "'"
+         << " len=" << GT->getTextLength() << "\n";
+    } else if (const auto GN = isGreenNode(Child)) {
+      GN->debug(OS, Indent + 2);
+    } else if (const auto *ET = isErrorToken(Child)) {
       OS << std::string(Indent + 2, ' ') << "| " << "Error "
-         << ErrTok.getDiagnosticID() << "\n";
+         << ET->getDiagnosticID() << "\n";
+    } else {
+      llvm_unreachable("GreenNode is not a valid variant kind");
     }
   }
+}
+
+auto SyntaxNode::getLength() -> uint32_t {
+  if (auto *GT = GreenNode::isGreenToken(Green)) {
+    return GT->getTextLength();
+  }
+  if (auto *ET = GreenNode::isErrorToken(Green)) {
+    return ET->getTextLength();
+  }
+  if (auto GN = GreenNode::isGreenNode(Green)) {
+    return GN->getTextLength();
+  }
+  llvm_unreachable("GreenNode is not a valid variant kind");
+}
+
+auto SyntaxNode::getLocation() -> SourceLocation {
+  return SourceLocation(Offset, Offset + getLength());
+}
+
+auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
+  OS << std::string(Indent, ' ') << "SyntaxNode @ (" << Children.size() << ") "
+     << getLocation().getStart() << ".." << getLocation().getEnd() << "\n";
+  for (auto &Child : Children) {
+    Child->debug(OS, Indent + 2);
+  }
+}
+
+static auto buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
+                           uint32_t Offset,
+                           GreenElement &GE) -> std::shared_ptr<SyntaxNode> {
+  auto Self = SyntaxNode::get(Parent, GE, Offset, Index);
+  Parent->addChild(Index, Self);
+  if (const auto GN = GreenNode::isGreenNode(GE)) {
+    auto NextOffset = Offset;
+    for (uint32_t I = 0; auto &C : GN->getChildren()) {
+      auto Child = buildChildTree(Self, I, NextOffset, C);
+      NextOffset += Child->getLength();
+      I++;
+    }
+  }
+  return Self;
+}
+
+auto xd::buildSyntaxTree(const std::shared_ptr<GreenNode> &GreenRoot)
+    -> std::shared_ptr<SyntaxNode> {
+  auto Root = SyntaxNode::getRoot(GreenRoot);
+  auto Offset = 0;
+  for (uint32_t I = 0; auto &C : GreenRoot->getChildren()) {
+    auto Child = buildChildTree(Root, I, Offset, C);
+    Offset += Child->getLength();
+    I++;
+  }
+  return Root;
 }

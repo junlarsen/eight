@@ -25,6 +25,9 @@ public:
   bool operator==(const SourceLocation &Other) const {
     return Start == Other.Start && End == Other.End;
   }
+
+  auto getStart() const { return Start; }
+  auto getEnd() const { return End; }
 };
 } // namespace xd
 
