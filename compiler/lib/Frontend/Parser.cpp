@@ -31,6 +31,12 @@ auto Parser::expect(SyntaxKind SK) -> void {
   if (eat(SK))
     return;
   auto CurrentSK = get();
+  if (CurrentSK == SyntaxKind::Eof) {
+    auto ID = DM.report<UnexpectedEndOfFileDiagnostic>();
+    auto Event = std::make_unique<ParseErrorEvent>(getTokenLength(), ID);
+    Events.push_back(std::move(Event));
+    return;
+  }
   auto ID = DM.report<UnexpectedTokenDiagnostic>(getSyntaxKindName(CurrentSK));
   auto Event = std::make_unique<ParseErrorEvent>(getTokenLength(), ID);
   Events.push_back(std::move(Event));
@@ -142,16 +148,16 @@ auto Parser::build() -> GreenNode {
 }
 
 auto Parser::parseTranslationUnit() -> void {
-  auto TU = open(); // TODO: Consider recovering here?
+  auto TU = open();
   while (!eof()) {
     if (atDeclStart()) {
       parseDecl();
-      continue;
+    } else {
+      // The top-level parser has to try to advance, otherwise the parser will
+      // just loop forever.
+      report<UnexpectedTokenDiagnostic>(getTokenLength(),
+                                        getSyntaxKindName(get()));
     }
-    // The top-level parser has to try to advance, otherwise the parser will
-    // just loop forever.
-    report<UnexpectedTokenDiagnostic>(getTokenLength(),
-                                      getSyntaxKindName(get()));
   }
   close(TU, SyntaxKind::TranslationUnit);
 }
@@ -168,6 +174,12 @@ auto Parser::parseDecl() -> void {
     break;
   case SyntaxKind::KeywordStruct:
     parseStructDecl();
+    break;
+  case SyntaxKind::KeywordTrait:
+    parseTraitDecl();
+    break;
+  case SyntaxKind::KeywordInstance:
+    parseInstanceDecl();
     break;
   default:
     llvm_unreachable("disparity between atDeclStart() and kinds in switch");
@@ -360,7 +372,7 @@ auto Parser::parseTraitTypeParameterList() -> void {
     if (!at(SyntaxKind::RightBrace))
       eat(SyntaxKind::Comma);
   }
-  expect(SyntaxKind::RightBrace);
+  expect(SyntaxKind::RightBracket);
   close(C, SyntaxKind::TraitTypeParameterList);
 }
 
@@ -381,9 +393,8 @@ auto Parser::parseTraitMemberList() -> void {
     if (atTraitMemberStart()) {
       switch (get()) {
       case SyntaxKind::KeywordFn:
-      case SyntaxKind::KeywordIntrinsicFn:
-        // parseTraitFunctionMember will handle both cases. This switch is
-        // mostly for possible future features such as associated members or
+        // parseTraitFunctionMember will handle the only case. This switch is
+        // mostly for possible future features such as associated constants or
         // types.
         parseTraitFunctionMember();
         break;
@@ -398,18 +409,15 @@ auto Parser::parseTraitMemberList() -> void {
       report<ExpectedTraitMemberDiagnostic>(getTokenLength(),
                                             getSyntaxKindName(get()));
     }
-    if (!at(SyntaxKind::RightBrace))
-      eat(SyntaxKind::Comma);
   }
   expect(SyntaxKind::RightBrace);
   close(C, SyntaxKind::TraitMemberList);
 }
 
 auto Parser::parseTraitFunctionMember() -> void {
-  assert((at(SyntaxKind::KeywordFn) || at(SyntaxKind::KeywordIntrinsicFn)) &&
+  assert(at(SyntaxKind::KeywordFn) &&
          "called parseTraitFunctionMember without 'fn' or 'intrinsic_fn'");
   auto C = open();
-  bool IsIntrinsic = at(SyntaxKind::KeywordIntrinsicFn);
   advance();
   expect(SyntaxKind::Identifier);
   // This function can simply re-use the same parsing rules that we apply to
@@ -422,8 +430,72 @@ auto Parser::parseTraitFunctionMember() -> void {
   if (eat(SyntaxKind::Arrow))
     parseFunctionReturnType();
   expect(SyntaxKind::Semicolon);
-  close(C, IsIntrinsic ? SyntaxKind::TraitIntrinsicFunctionMember
-                       : SyntaxKind::TraitFunctionMember);
+  close(C, SyntaxKind::TraitFunctionMember);
+}
+
+auto Parser::parseInstanceDecl() -> void {
+  assert(at(SyntaxKind::KeywordInstance) &&
+         "called parseInstanceDecl without 'instance'");
+  auto C = open();
+  expect(SyntaxKind::KeywordInstance);
+  expect(SyntaxKind::Identifier);
+  if (at(SyntaxKind::LeftBracket))
+    parseInstanceTypeArgumentList();
+  expect(SyntaxKind::KeywordFor);
+  if (atTypeStart())
+    parseType();
+  if (at(SyntaxKind::LeftBrace))
+    parseInstanceMemberList();
+  close(C, SyntaxKind::Instance);
+}
+
+auto Parser::parseInstanceTypeArgumentList() -> void {
+  assert(at(SyntaxKind::LeftBracket) &&
+         "called parseInstanceTypeArgument without '['");
+  auto C = open();
+  expect(SyntaxKind::LeftBracket);
+  while (!eof() && !at(SyntaxKind::RightBracket)) {
+    if (atTypeStart()) {
+      parseType();
+    } else {
+      if (at(TSInstanceTypeArgumentListRecovery)) {
+        break;
+      }
+      report<ExpectedInstanceTypeArgumentDiagnostic>(getTokenLength(),
+                                                     getSyntaxKindName(get()));
+    }
+    if (!at(SyntaxKind::RightBracket))
+      eat(SyntaxKind::Comma);
+  }
+  expect(SyntaxKind::RightBracket);
+  close(C, SyntaxKind::InstanceTypeArgumentList);
+}
+
+auto Parser::parseInstanceMemberList() -> void {
+  assert(at(SyntaxKind::LeftBrace) &&
+         "called parseInstanceMemberList without '{'");
+  auto C = open();
+  expect(SyntaxKind::LeftBrace);
+  while (!eof() && !at(SyntaxKind::RightBrace)) {
+    if (atInstanceMemberStart()) {
+      switch (get()) {
+      case SyntaxKind::KeywordFn:
+      case SyntaxKind::KeywordIntrinsicFn:
+        parseFunctionDecl();
+        break;
+      default:
+        llvm_unreachable("disparity between atInstanceMemberStart and above");
+      }
+    } else {
+      if (at(TSInstanceMemberListRecovery)) {
+        break;
+      }
+      report<ExpectedInstanceMemberDiagnostic>(getTokenLength(),
+                                               getSyntaxKindName(get()));
+    }
+  }
+  expect(SyntaxKind::RightBrace);
+  close(C, SyntaxKind::InstanceMemberList);
 }
 
 auto Parser::parseStmt() -> void {

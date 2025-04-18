@@ -383,18 +383,33 @@ TEST(ParserTest, ParseTraitDecl) {
 }
 
 TEST(ParserTest, ParseTraitMemberDecl) {
-  // This test is here so we can check that intrinsic/regular fn difference is
-  // detected by the parser.
   {
     auto Regular = getParser("fn eat[T]();");
     Regular->P.parseTraitFunctionMember();
     auto T = Regular->P.build();
     ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::TraitFunctionMember);
   }
+}
+
+TEST(ParserTest, ParseInstanceDecl) {
   {
-    auto Intrinsic = getParser("intrinsic_fn bar[T](a: T);");
-    Intrinsic->P.parseTraitFunctionMember();
-    auto T = Intrinsic->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::TraitIntrinsicFunctionMember);
+    auto NoMembers = getParser("instance Foo[i32] for i32 {}");
+    NoMembers->P.parseInstanceDecl();
+    auto T = NoMembers->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Instance);
+  }
+  {
+    auto RegularFn =
+        getParser("instance Foo[i32] for i32 { fn id() -> bool {} }");
+    RegularFn->P.parseInstanceDecl();
+    auto T = RegularFn->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Instance);
+  }
+  {
+    auto InstanceFn =
+        getParser("instance Foo[i32] for i32 { intrinsic_fn id() -> bool; }");
+    InstanceFn->P.parseInstanceDecl();
+    auto T = InstanceFn->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::Instance);
   }
 }

@@ -29,6 +29,8 @@ def UnrecognizedCharacter
 def UnexpectedToken : Diagnostic<"encountered unexpected token {0}",
                                  [DiagnosticArg<"Token", StringArg>]>;
 
+def UnexpectedEndOfFile : Diagnostic<"did not expect end of file", []>;
+
 def ExpectedFunctionParameter
     : Diagnostic<"expected function parameter, but received {0}",
                  [DiagnosticArg<"Token", StringArg>]>;
@@ -59,3 +61,11 @@ def ExpectedTraitTypeParameter
 
 def ExpectedTraitMember : Diagnostic<"expected trait member, but received {0}",
                                      [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedInstanceTypeArgument
+    : Diagnostic<"expected instance type argument, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedInstanceMember
+    : Diagnostic<"expected instance member, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;

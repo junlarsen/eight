@@ -99,7 +99,10 @@ enum class SyntaxKind : uint64_t {
   TraitTypeParameter,
   TraitMemberList,
   TraitFunctionMember,
-  TraitIntrinsicFunctionMember,
+
+  Instance,
+  InstanceTypeArgumentList,
+  InstanceMemberList,
 
   Stmt,
   LetStmt,
@@ -163,7 +166,8 @@ static const TokenSet TSDeclStart =
     1 << SyntaxKind::KeywordFn | 1 << SyntaxKind::KeywordIntrinsicFn |
     1 << SyntaxKind::KeywordIntrinsicType | 1 << SyntaxKind::KeywordStruct |
     1 << SyntaxKind::KeywordTrait | 1 << SyntaxKind::KeywordInstance;
-static const TokenSet TSTraitMemberStart =
+static const TokenSet TSTraitMemberStart = 1 << SyntaxKind::KeywordFn;
+static const TokenSet TSInstanceMemberStart =
     1 << SyntaxKind::KeywordFn | 1 << SyntaxKind::KeywordIntrinsicFn;
 static const TokenSet TSStatementStart =
     1 << SyntaxKind::KeywordLet | 1 << SyntaxKind::KeywordIf |
@@ -223,6 +227,13 @@ static const TokenSet TSStructMemberListRecovery = TSDeclRecovery;
 static const TokenSet TSTraitTypeParameterListRecovery =
     TSDeclRecovery | TokenSet(1 << SyntaxKind::LeftBrace);
 static const TokenSet TSTraitMemberListRecovery = TSDeclRecovery;
+
+static const TokenSet TSInstanceMemberListRecovery =
+    TSDeclRecovery | TokenSet(1 << SyntaxKind::LeftBrace);
+/// The type argument list of an instance can either be the body, or the `for`
+/// name.
+static const TokenSet TSInstanceTypeArgumentListRecovery =
+    TSInstanceMemberListRecovery | TokenSet(1 << SyntaxKind::KeywordFor);
 
 /// A block can only assume to recover on a top-level decl again, or a new
 /// statement.
