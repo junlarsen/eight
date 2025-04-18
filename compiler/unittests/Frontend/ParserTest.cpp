@@ -74,6 +74,6 @@ TEST(ParserTest, TreeBuilder) {
 
   GreenNode T = P.build();
   ASSERT_TRUE(P.getDebugTreeBuilderComplete());
-  ASSERT_EQ(T.getKind(), SyntaxKind::TranslationUnit);
+  ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::TranslationUnit);
   ASSERT_EQ(T.getTextLength(), 25);
 }

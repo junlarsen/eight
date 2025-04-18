@@ -89,10 +89,11 @@ auto Parser::build() -> GreenNode {
         // As long as we're hitting trivia nodes, we just add them to the green
         // node.
         if (Tok.isTrivia()) {
-          Stack.at(Stack.size() - 1).addChild(Tok);
+          Stack.at(Stack.size() - 1)
+              .addChild(std::make_shared<GreenToken>(Tok));
           continue;
         }
-        Stack.at(Stack.size() - 1).addChild(Tok);
+        Stack.at(Stack.size() - 1).addChild(std::make_shared<GreenToken>(Tok));
         break;
       }
     } else if (const auto CE = dyn_cast<ParseCloseEvent>(Event)) {
@@ -102,24 +103,14 @@ auto Parser::build() -> GreenNode {
       Stack.erase(Stack.end() - 1);
       // Compute the length of node by summing all its children.
       size_t Sum = 0;
-      for (auto &Child : Subtree.getChildren()) {
-        if (std::holds_alternative<GreenToken>(Child)) {
-          auto &Tok = std::get<GreenToken>(Child);
-          Sum += Tok.getTextLength();
-        } else if (std::holds_alternative<std::shared_ptr<GreenNode>>(Child)) {
-          auto &Node = std::get<std::shared_ptr<GreenNode>>(Child);
-          // This is relatively cheap, because although it might seem recurse
-          // down all child nodes here, it ends up not being the case, because
-          // we've already computed and store the length of the children.
-          Sum += Node->getTextLength();
-        }
-      }
+      for (auto &Child : Subtree.getChildren())
+        Sum += Child->getTextLength();
       Subtree.setLength(Sum);
       GreenNode &Head = Stack.at(Stack.size() - 1);
       Head.addChild(std::make_shared<GreenNode>(Subtree));
     } else if (const auto EE = dyn_cast<ParseErrorEvent>(Event)) {
-      auto Tok = ErrorToken(EE->getDiagnosticID());
-      Stack.at(Stack.size() - 1).addChild(Tok);
+      auto Err = GreenError(EE->getDiagnosticID());
+      Stack.at(Stack.size() - 1).addChild(std::make_unique<GreenError>(Err));
     } else {
       llvm_unreachable("unexpected event kind");
     }
@@ -131,21 +122,14 @@ auto Parser::build() -> GreenNode {
   // tokens here can be of any kind.
   while (TreeBuilderPosition < Tokens.size()) {
     auto &Tok = Tokens.at(TreeBuilderPosition++);
-    Root.addChild(Tok);
+    Root.addChild(std::make_shared<GreenToken>(Tok));
   }
 
   // Next, because we never close the Root event, we also have to calculate the
   // sum down here. It is probably not worth extracting into its own function.
   size_t Sum = 0;
-  for (auto &Child : Root.getChildren()) {
-    if (std::holds_alternative<GreenToken>(Child)) {
-      auto &Tok = std::get<GreenToken>(Child);
-      Sum += Tok.getTextLength();
-    } else if (std::holds_alternative<std::shared_ptr<GreenNode>>(Child)) {
-      auto &Node = std::get<std::shared_ptr<GreenNode>>(Child);
-      Sum += Node->getTextLength();
-    }
-  }
+  for (const auto &Child : Root.getChildren())
+    Sum += Child->getTextLength();
   Root.setLength(Sum);
   return Root;
 }

@@ -100,7 +100,7 @@ class Parser {
   auto get() const -> SyntaxKind {
     if (eof())
       return SyntaxKind::Eof;
-    return SignificantTokens.at(Position).getKind();
+    return SignificantTokens.at(Position).getSyntaxKind();
   }
 
 public:
@@ -114,7 +114,7 @@ public:
   auto lookahead() const -> SyntaxKind {
     if (Position + 1 >= SignificantTokens.size())
       return SyntaxKind::Eof;
-    return SignificantTokens.at(Position + 1).getKind();
+    return SignificantTokens.at(Position + 1).getSyntaxKind();
   }
   auto eof() const -> bool { return Position == SignificantTokens.size(); }
   auto at(SyntaxKind SK) const -> bool;

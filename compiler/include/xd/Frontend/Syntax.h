@@ -191,95 +191,94 @@ static const TokenSet TSConstructionExprMemberListRecovery = TSBlockRecovery;
 
 auto getSyntaxKindName(SyntaxKind SK) -> llvm::StringRef;
 
-/// A singular token.
-///
-/// This is a cheap data structure that we are fine with copying.
-///
-/// TODO: Intern the TextValue strings
-class GreenToken {
-  SyntaxKind SK;
-  llvm::SmallString<8> TextValue;
-  size_t Length;
+enum class GreenElementKind {
+  Node,
+  Token,
+  Error,
+};
+
+/// Any green tree element value
+class GreenElement {
+  GreenElementKind Kind;
 
 public:
-  GreenToken(SyntaxKind SK, const llvm::SmallString<8> &TextValue,
-             size_t Length)
-      : SK(SK), TextValue(TextValue), Length(Length) {}
+  virtual ~GreenElement() = default;
+  explicit GreenElement(GreenElementKind Kind) : Kind(Kind) {}
+  auto getKind() const -> GreenElementKind { return Kind; }
+  static bool classof(const GreenElement *E) {
+    return E->getKind() >= GreenElementKind::Node &&
+           E->getKind() <= GreenElementKind::Error;
+  }
+  virtual auto getSyntaxKind() const -> SyntaxKind = 0;
+  virtual auto getTextLength() const -> size_t = 0;
+};
 
-  auto getKind() const { return SK; }
-  auto getText() const { return TextValue; }
-  auto getTextLength() const -> size_t { return Length; }
+class GreenToken : public GreenElement {
+  SyntaxKind SK;
+  llvm::SmallString<8> TextValue;
+
+public:
+  explicit GreenToken(SyntaxKind SK, const llvm::StringRef &Text)
+      : GreenElement(GreenElementKind::Token), SK(SK), TextValue(Text) {}
+  auto getText() const -> llvm::StringRef { return TextValue; }
+  auto getSyntaxKind() const -> SyntaxKind override { return SK; }
+  auto getTextLength() const -> size_t override { return TextValue.size(); }
 
   auto isTrivia() const -> bool {
     return SK == SyntaxKind::Comment || SK == SyntaxKind::Whitespace ||
            SK == SyntaxKind::Newline;
   }
+
+  static bool classof(const GreenElement *E) {
+    return E->getKind() == GreenElementKind::Token;
+  }
 };
 
-class ErrorToken {
+class GreenError : public GreenElement {
   DiagnosticID DiagnosticID;
 
 public:
-  explicit ErrorToken(uint32_t DiagnosticID) : DiagnosticID(DiagnosticID) {}
+  explicit GreenError(uint32_t DiagnosticID)
+      : GreenElement(GreenElementKind::Error), DiagnosticID(DiagnosticID) {}
   auto getDiagnosticID() const -> uint32_t { return DiagnosticID; }
-  auto getTextLength() const -> size_t { return 0; }
-  auto getKind() const -> SyntaxKind { return SyntaxKind::Error; }
+  auto getTextLength() const -> size_t override { return 0; }
+  auto getSyntaxKind() const -> SyntaxKind override {
+    return SyntaxKind::Error;
+  }
+
+  static bool classof(const GreenElement *E) {
+    return E->getKind() == GreenElementKind::Error;
+  }
 };
 
-class GreenNode {
-public:
-  using GreenNodeData =
-      std::variant<GreenToken, std::shared_ptr<GreenNode>, ErrorToken>;
-
-private:
+class GreenNode : public GreenElement {
   SyntaxKind SK;
-  std::vector<GreenNodeData> Children;
+  std::vector<std::shared_ptr<GreenElement>> Children;
   size_t Length;
 
 public:
-  explicit GreenNode(SyntaxKind SK, size_t Length) : SK(SK), Length(Length) {}
+  explicit GreenNode(SyntaxKind SK, size_t Length)
+      : GreenElement(GreenElementKind::Node), SK(SK), Length(Length) {}
 
-  static auto isGreenToken(GreenNodeData &GND) -> GreenToken * {
-    if (std::holds_alternative<GreenToken>(GND)) {
-      return &std::get<GreenToken>(GND);
-    }
-    return nullptr;
+  auto getChildren() -> std::vector<std::shared_ptr<GreenElement>> & {
+    return Children;
   }
-
-  static auto isErrorToken(GreenNodeData &GND) -> ErrorToken * {
-    if (std::holds_alternative<ErrorToken>(GND)) {
-      return &std::get<ErrorToken>(GND);
-    }
-    return nullptr;
-  }
-
-  static auto isGreenNode(GreenNodeData &GND) -> std::shared_ptr<GreenNode> {
-    if (std::holds_alternative<std::shared_ptr<GreenNode>>(GND)) {
-      return std::get<std::shared_ptr<GreenNode>>(GND);
-    }
-    return nullptr;
-  }
-
-  auto getChildren() -> std::vector<GreenNodeData> & { return Children; }
-  auto getKind() const { return SK; }
-  auto getTextLength() const -> size_t { return Length; }
-
+  auto getSyntaxKind() const -> SyntaxKind override { return SK; };
+  auto getTextLength() const -> size_t override { return Length; };
   auto setLength(size_t Length) -> void { this->Length = Length; }
-
-  auto addChild(GreenToken Tok) -> void { Children.push_back(Tok); }
-  auto addChild(const std::shared_ptr<GreenNode> &Tok) -> void {
-    Children.push_back(Tok);
+  auto addChild(std::shared_ptr<GreenElement> Child) -> void {
+    Children.push_back(Child);
   }
-  auto addChild(ErrorToken Tok) -> void { Children.push_back(Tok); }
-
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
-};
 
-using GreenElement = GreenNode::GreenNodeData;
+  static bool classof(const GreenElement *E) {
+    return E->getKind() == GreenElementKind::Node;
+  }
+};
 
 class SyntaxNode {
   std::optional<std::shared_ptr<SyntaxNode>> Parent;
-  GreenElement Green;
+  std::shared_ptr<GreenElement> Green;
   std::vector<std::shared_ptr<SyntaxNode>> Children;
   /// How far into the file is the current node?
   ///
@@ -290,12 +289,12 @@ class SyntaxNode {
 
 public:
   explicit SyntaxNode(std::optional<std::shared_ptr<SyntaxNode>> Parent,
-                      const GreenElement &Green, uint32_t Offset,
+                      std::shared_ptr<GreenElement> Green, uint32_t Offset,
                       uint32_t Index)
       : Parent(std::move(Parent)), Green(Green), Offset(Offset), Length(0),
         Index(Index), Children({}) {}
 
-  auto getLength() -> uint32_t;
+  auto getLength() -> uint32_t { return Green->getTextLength(); }
   auto addChild(uint32_t Index,
                 const std::shared_ptr<SyntaxNode> &Child) -> void {
     Children.insert(Children.begin() + Index, Child);
@@ -309,13 +308,13 @@ public:
 
   /// Create a root node.
   static auto
-  getRoot(const GreenElement &Green) -> std::shared_ptr<SyntaxNode> {
+  getRoot(std::shared_ptr<GreenElement> Green) -> std::shared_ptr<SyntaxNode> {
     return std::make_shared<SyntaxNode>(std::nullopt, Green, 0, 0);
   }
 
   /// Create a child node.
-  static auto get(std::shared_ptr<SyntaxNode> Parent, const GreenElement &Green,
-                  uint32_t Offset,
+  static auto get(std::shared_ptr<SyntaxNode> Parent,
+                  std::shared_ptr<GreenElement> Green, uint32_t Offset,
                   uint32_t Index) -> std::shared_ptr<SyntaxNode> {
     return std::make_shared<SyntaxNode>(std::move(Parent), Green, Offset,
                                         Index);
@@ -323,7 +322,7 @@ public:
 };
 
 /// Turn a Green tree into a red tree.
-auto buildSyntaxTree(const std::shared_ptr<GreenNode> &GreenRoot)
+auto buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot)
     -> std::shared_ptr<SyntaxNode>;
 } // namespace xd
 
