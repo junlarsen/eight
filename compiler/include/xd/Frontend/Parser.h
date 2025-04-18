@@ -68,7 +68,7 @@ class ParseErrorEvent : public ParseEvent {
 
 public:
   explicit ParseErrorEvent(uint32_t Length, DiagnosticID ID)
-      : ParseEvent(ParseEventKind::Error), ID(ID), Length(Length) {}
+      : ParseEvent(ParseEventKind::Error), Length(Length), ID(ID) {}
   static bool classof(const ParseEvent *Event) {
     return Event->getKind() == ParseEventKind::Error;
   }
@@ -138,7 +138,7 @@ public:
   auto report(uint32_t Len, Args &&...A) -> void {
     auto Checkpoint = open();
     DiagnosticID ID = DM.report<T>(std::forward<Args>(A)...);
-    auto Event = std::make_unique<ParseErrorEvent>(ID, Len);
+    auto Event = std::make_unique<ParseErrorEvent>(Len, ID);
     Events.push_back(std::move(Event));
     advance();
     close(Checkpoint, SyntaxKind::Error);
