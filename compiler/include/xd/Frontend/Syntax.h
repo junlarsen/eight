@@ -276,6 +276,13 @@ public:
     Children.push_back(Child);
   }
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
+  auto hasChild(SyntaxKind SK) const -> bool {
+    for (auto &Child : Children) {
+      if (Child->getSyntaxKind() == SK)
+        return true;
+    }
+    return false;
+  }
 
   static bool classof(const GreenElement *E) {
     return E->getKind() == GreenElementKind::Node;
@@ -300,7 +307,7 @@ public:
       : Parent(std::move(Parent)), Green(Green), Offset(Offset), Length(0),
         Index(Index), Children({}) {}
 
-  auto getLength() -> uint32_t { return Green->getTextLength(); }
+  auto getLength() const -> uint32_t { return Green->getTextLength(); }
   auto addChild(uint32_t Index,
                 const std::shared_ptr<SyntaxNode> &Child) -> void {
     Children.insert(Children.begin() + Index, Child);
@@ -308,6 +315,9 @@ public:
   auto getOffset() const -> uint32_t { return Offset; }
   auto getIndex() const -> uint32_t { return Index; }
   auto getGreen() const -> std::shared_ptr<GreenElement> { return Green; }
+  auto getParent() const -> std::optional<std::shared_ptr<SyntaxNode>> {
+    return Parent;
+  }
   auto front() -> decltype(Children.front()) { return Children.front(); }
   auto back() -> decltype(Children.back()) { return Children.back(); }
   auto getLocation() -> SourceLocation;

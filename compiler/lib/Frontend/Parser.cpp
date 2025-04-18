@@ -531,7 +531,7 @@ auto Parser::parseIntegerLiteralExpr() -> CloseCheckpoint {
          "called parseIntegerLiteralExpr without <integer literal>");
   auto C = open();
   expect(SyntaxKind::IntegerLiteral);
-  return close(C, SyntaxKind::IntegerLiteral);
+  return close(C, SyntaxKind::IntegerLiteralExpr);
 }
 
 auto Parser::parseBooleanLiteralExpr() -> CloseCheckpoint {

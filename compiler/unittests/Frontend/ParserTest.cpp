@@ -77,3 +77,237 @@ TEST(ParserTest, TreeBuilder) {
   ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::TranslationUnit);
   ASSERT_EQ(T.getTextLength(), 25);
 }
+
+struct Context {
+  std::unique_ptr<MemoryBuffer> Buf;
+  std::unique_ptr<DiagnosticManager> DM;
+  Lexer L;
+  Parser P;
+};
+
+static auto getParser(const StringRef Input) -> std::unique_ptr<Context> {
+  auto Buf = MemoryBuffer::getMemBuffer(Input);
+  auto DM = std::make_unique<DiagnosticManager>();
+  auto Lex = Lexer(Buf->getBufferStart());
+  auto P = Parser(*DM, std::move(Lex.drain()));
+  return std::make_unique<Context>(std::move(Buf), std::move(DM), Lex,
+                                   std::move(P));
+}
+
+TEST(ParserTest, ParseExpression) {
+  // ReferenceExpression
+  {
+    auto Ctx = getParser("hello");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::ReferenceExpr);
+  }
+  // IntegerLiteralExpression
+  {
+    auto Ctx = getParser("7772");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    T.debug(errs());
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::IntegerLiteralExpr);
+  }
+  // BooleanLiteralExpression
+  {
+    auto Ctx = getParser("true");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BooleanLiteralExpr);
+  }
+  {
+    auto Ctx = getParser("false");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BooleanLiteralExpr);
+  }
+  // GroupExpr
+  {
+    auto Ctx = getParser("(0)");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::GroupExpr);
+    ASSERT_TRUE(T.hasChild(SyntaxKind::IntegerLiteralExpr));
+  }
+  // ConstructionExpr
+  {
+    auto TrailingComma = getParser("new Foo { a = b, }");
+    TrailingComma->P.parseExpr();
+    auto T = TrailingComma->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::ConstructionExpr);
+  }
+  {
+    auto NoMembers = getParser("new Foo {}");
+    NoMembers->P.parseExpr();
+    auto T = NoMembers->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::ConstructionExpr);
+  }
+  {
+    auto MultipleMembers = getParser("new Foo { a = b, d = 28 }");
+    MultipleMembers->P.parseExpr();
+    auto T = MultipleMembers->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::ConstructionExpr);
+  }
+}
+
+TEST(ParserTest, ParsePrefixExpression) {
+  // Boolean Negation
+  {
+    auto Ctx = getParser("!a");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+  }
+  // Integral Negation
+  {
+    auto Ctx = getParser("-b");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+  }
+  // Integral Abs
+  {
+    auto Ctx = getParser("+a");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+  }
+  // Address Of
+  {
+    auto Ctx = getParser("&a");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+  }
+  // Dereference
+  {
+    auto Ctx = getParser("*a");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+  }
+}
+
+TEST(ParserTest, ParsePostfixExpression) {
+  // Member access
+  {
+    auto Ctx = getParser("x.y");
+    Ctx->P.parseExpr();
+    auto T = Ctx->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::ConstantIndexExpr);
+  }
+  {
+    auto NoTypeNoArgs = getParser("x()");
+    NoTypeNoArgs->P.parseExpr();
+    auto T = NoTypeNoArgs->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::CallExpr);
+  }
+  {
+    auto TypeButNoArgs = getParser("y[]()");
+    TypeButNoArgs->P.parseExpr();
+    auto T = TypeButNoArgs->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::CallExpr);
+  }
+  {
+    auto Everything = getParser("Foo[A, Y](77777, *a)");
+    Everything->P.parseExpr();
+    auto T = Everything->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::CallExpr);
+  }
+  {
+    auto Chained = getParser("foo()()");
+    Chained->P.parseExpr();
+    auto T = Chained->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::CallExpr);
+    ASSERT_TRUE(T.hasChild(SyntaxKind::CallExpr));
+  }
+}
+
+TEST(ParserTest, ParseBinaryExpression) {
+  {
+    auto Assignment = getParser("a = b");
+    Assignment->P.parseExpr();
+    auto T = Assignment->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto GreaterThan = getParser("a > b");
+    GreaterThan->P.parseExpr();
+    auto T = GreaterThan->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto LessThan = getParser("a < b");
+    LessThan->P.parseExpr();
+    auto T = LessThan->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto GreaterThanOrEqual = getParser("a >= b");
+    GreaterThanOrEqual->P.parseExpr();
+    auto T = GreaterThanOrEqual->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto LessThanOrEqual = getParser("a <= b");
+    LessThanOrEqual->P.parseExpr();
+    auto T = LessThanOrEqual->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto EqualEqual = getParser("a == b");
+    EqualEqual->P.parseExpr();
+    auto T = EqualEqual->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto Inequal = getParser("a != b");
+    Inequal->P.parseExpr();
+    auto T = Inequal->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto LogicalAnd = getParser("a && b");
+    LogicalAnd->P.parseExpr();
+    auto T = LogicalAnd->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto LogicalOr = getParser("a || b");
+    LogicalOr->P.parseExpr();
+    auto T = LogicalOr->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto Plus = getParser("a + b");
+    Plus->P.parseExpr();
+    auto T = Plus->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto Minus = getParser("a - b");
+    Minus->P.parseExpr();
+    auto T = Minus->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto Multiply = getParser("a * b");
+    Multiply->P.parseExpr();
+    auto T = Multiply->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto Divide = getParser("a / b");
+    Divide->P.parseExpr();
+    auto T = Divide->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+  {
+    auto Modulo = getParser("a % b");
+    Modulo->P.parseExpr();
+    auto T = Modulo->P.build();
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+  }
+}
