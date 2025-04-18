@@ -231,8 +231,10 @@ auto SyntaxNode::getLocation() -> SourceLocation {
 }
 
 auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
-  OS << std::string(Indent, ' ') << "SyntaxNode @ (" << Children.size() << ") "
-     << getLocation().getStart() << ".." << getLocation().getEnd() << "\n";
+  OS << std::string(Indent, ' ') << "SyntaxNode '"
+     << getSyntaxKindName(Green->getSyntaxKind()) << "' (" << Children.size()
+     << ") " << getLocation().getStart() << ".." << getLocation().getEnd()
+     << "\n";
   for (auto &Child : Children) {
     Child->debug(OS, Indent + 2);
   }
