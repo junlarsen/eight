@@ -451,8 +451,11 @@ auto Parser::parseExpr(uint32_t Current) -> void {
       auto CC = open();
       expect(SyntaxKind::LeftParen);
       while (!eof() && !at(SyntaxKind::RightParen)) {
-        if (atExprStart())
+        if (atExprStart()) {
           parseExpr();
+        } else {
+          break;
+        }
         if (!at(SyntaxKind::RightParen)) {
           expect(SyntaxKind::Comma);
         }
@@ -551,6 +554,8 @@ auto Parser::parseConstructionExpr() -> CloseCheckpoint {
     while (!eof() && !at(SyntaxKind::RightBrace)) {
       if (at(SyntaxKind::Identifier)) {
         parseConstructionExprMember();
+      } else {
+        break;
       }
     }
     expect(SyntaxKind::RightBrace);
