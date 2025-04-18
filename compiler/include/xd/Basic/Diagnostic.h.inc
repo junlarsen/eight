@@ -12,10 +12,12 @@
 //===----------------------------------------------------------------------===//
 
 class Diagnostic {
+protected:
   DiagnosticKind Kind;
   SourceLocation Loc;
 
 public:
+  virtual ~Diagnostic() = default;
   /// Create a Diagnostic without location information. Note that the location
   /// info will have to be attached later in order to become printable.
   explicit Diagnostic(DiagnosticKind Kind)

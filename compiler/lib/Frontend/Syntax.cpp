@@ -240,15 +240,25 @@ auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
   }
 }
 
-static auto buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
-                           uint32_t Offset, std::shared_ptr<GreenElement> GE)
-    -> std::shared_ptr<SyntaxNode> {
-  auto Self = SyntaxNode::get(Parent, GE, Offset, Index);
+static auto
+buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
+               uint32_t Offset, std::shared_ptr<GreenElement> Elem,
+               DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode> {
+  auto Self = SyntaxNode::get(Parent, Elem, Offset, Index);
   Parent->addChild(Index, Self);
-  if (auto *GN = dyn_cast<GreenNode>(GE.get())) {
+
+  // If this is an error node, then we can propagate the location to the diag
+  // itself.
+  if (auto *GE = dyn_cast<GreenError>(Elem.get())) {
+    auto *Diag = DM.getDiagnostic(GE->getDiagnosticID());
+    assert(Diag != nullptr && "diagnostic has disappeared since creation");
+    Diag->setLocation(Self->getLocation());
+  }
+
+  if (auto *GN = dyn_cast<GreenNode>(Elem.get())) {
     auto NextOffset = Offset;
     for (uint32_t I = 0; auto &C : GN->getChildren()) {
-      auto Child = buildChildTree(Self, I, NextOffset, C);
+      auto Child = buildChildTree(Self, I, NextOffset, C, DM);
       NextOffset += Child->getLength();
       I++;
     }
@@ -256,12 +266,12 @@ static auto buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
   return Self;
 }
 
-auto xd::buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot)
-    -> std::shared_ptr<SyntaxNode> {
+auto xd::buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot,
+                         DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode> {
   auto Root = SyntaxNode::getRoot(GreenRoot);
   auto Offset = 0;
   for (uint32_t I = 0; auto &C : GreenRoot->getChildren()) {
-    auto Child = buildChildTree(Root, I, Offset, C);
+    auto Child = buildChildTree(Root, I, Offset, C, DM);
     Offset += Child->getLength();
     I++;
   }

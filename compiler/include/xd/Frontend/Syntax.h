@@ -322,8 +322,8 @@ public:
 };
 
 /// Turn a Green tree into a red tree.
-auto buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot)
-    -> std::shared_ptr<SyntaxNode>;
+auto buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot,
+                     DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode>;
 } // namespace xd
 
 #endif // XD_FRONTEND_SYNTAX_H

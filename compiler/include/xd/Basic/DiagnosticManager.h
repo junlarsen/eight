@@ -37,6 +37,12 @@ public:
     return ID;
   }
 
+  /// Get the given diagnostic if it exists.
+  auto getDiagnostic(const DiagnosticID ID) const -> Diagnostic * {
+    if (ID >= Diagnostics.size())
+      return nullptr;
+    return Diagnostics[ID].get();
+  }
   auto isEmpty() const -> bool { return Diagnostics.empty(); }
   auto diagnostics() const -> const std::vector<std::unique_ptr<Diagnostic>> * {
     return &Diagnostics;

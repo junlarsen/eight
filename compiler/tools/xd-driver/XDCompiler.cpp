@@ -47,7 +47,7 @@ auto main(int argc, char **argv) -> int {
   GreenNode Tree = P.build();
   Tree.debug(errs());
 
-  auto Root = buildSyntaxTree(std::make_shared<GreenNode>(Tree));
+  auto Root = buildSyntaxTree(std::make_shared<GreenNode>(Tree), DM);
   Root->debug(errs());
 
   if (DM.isEmpty())

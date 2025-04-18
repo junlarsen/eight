@@ -97,7 +97,9 @@ auto DiagnosticEmitter::emitDiagnosticClass(const Record &R,
   OS << "  }" << "\n";
   // Add emit error to stderr
   OS << "  auto emit(llvm::raw_ostream &OS) const -> void {" << "\n";
-  OS << "    OS << \"" << ClassName << "\" << \"\\n\";" << "\n";
+  OS << "    OS << \"" << ClassName
+     << "\" << \" at \" << Loc.getStart() << \"..\" << Loc.getEnd() << \"\\n\";"
+     << "\n";
   OS << "  }" << "\n";
   // End the class definition
   OS << "};" << "\n";
