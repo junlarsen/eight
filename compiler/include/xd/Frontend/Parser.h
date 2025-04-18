@@ -64,14 +64,16 @@ public:
 
 class ParseErrorEvent : public ParseEvent {
   DiagnosticID ID;
+  uint32_t Length;
 
 public:
-  explicit ParseErrorEvent(DiagnosticID ID)
-      : ParseEvent(ParseEventKind::Error), ID(ID) {}
+  explicit ParseErrorEvent(DiagnosticID ID, uint32_t Length)
+      : ParseEvent(ParseEventKind::Error), ID(ID), Length(Length) {}
   static bool classof(const ParseEvent *Event) {
     return Event->getKind() == ParseEventKind::Error;
   }
 
+  auto getLength() const { return Length; }
   auto getDiagnosticID() const -> DiagnosticID { return ID; }
 };
 
@@ -103,6 +105,12 @@ class Parser {
     return SignificantTokens.at(Position).getSyntaxKind();
   }
 
+  auto getTokenLength() const -> uint32_t {
+    if (eof())
+      return 0;
+    return SignificantTokens.at(Position).getTextLength();
+  }
+
 public:
   explicit Parser(DiagnosticManager &DM, std::vector<GreenToken> Tokens)
       : DM(DM), Tokens(std::move(Tokens)) {
@@ -126,10 +134,11 @@ public:
   auto advance() -> void;
 
   /// Construct a diagnostic in-place, and advance the parser by one token.
-  template <class T, class... Args> auto report(Args &&...A) -> void {
+  template <class T, class... Args>
+  auto report(uint32_t Len, Args &&...A) -> void {
     auto Checkpoint = open();
     DiagnosticID ID = DM.report<T>(std::forward<Args>(A)...);
-    auto Event = std::make_unique<ParseErrorEvent>(ID);
+    auto Event = std::make_unique<ParseErrorEvent>(ID, Len);
     Events.push_back(std::move(Event));
     advance();
     close(Checkpoint, SyntaxKind::Error);

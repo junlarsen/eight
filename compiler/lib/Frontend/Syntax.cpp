@@ -259,7 +259,9 @@ buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
     auto NextOffset = Offset;
     for (uint32_t I = 0; auto &C : GN->getChildren()) {
       auto Child = buildChildTree(Self, I, NextOffset, C, DM);
-      NextOffset += Child->getLength();
+      // Do not duplicate offsets for errors
+      if (!isa<GreenError>(Child->getGreen().get()))
+        NextOffset += Child->getLength();
       I++;
     }
   }
@@ -272,7 +274,9 @@ auto xd::buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot,
   auto Offset = 0;
   for (uint32_t I = 0; auto &C : GreenRoot->getChildren()) {
     auto Child = buildChildTree(Root, I, Offset, C, DM);
-    Offset += Child->getLength();
+    // Do not duplicate offsets for errors
+    if (!isa<GreenError>(Child->getGreen().get()))
+      Offset += Child->getLength();
     I++;
   }
   return Root;

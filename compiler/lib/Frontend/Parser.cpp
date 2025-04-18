@@ -10,7 +10,6 @@
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/Syntax.h"
 #include "llvm/Support/Casting.h"
-#include "llvm/Support/raw_ostream.h"
 #include <cassert>
 #include <fcntl.h>
 #include <vector>
@@ -33,7 +32,7 @@ auto Parser::expect(SyntaxKind SK) -> void {
     return;
   auto CurrentSK = get();
   auto ID = DM.report<UnexpectedTokenDiagnostic>(getSyntaxKindName(CurrentSK));
-  auto Event = std::make_unique<ParseErrorEvent>(ID);
+  auto Event = std::make_unique<ParseErrorEvent>(getTokenLength(), ID);
   Events.push_back(std::move(Event));
 }
 
@@ -103,13 +102,18 @@ auto Parser::build() -> GreenNode {
       Stack.erase(Stack.end() - 1);
       // Compute the length of node by summing all its children.
       size_t Sum = 0;
-      for (auto &Child : Subtree.getChildren())
+      for (auto &Child : Subtree.getChildren()) {
+        // Skip error tokens, as they are a duplicate length of the token that
+        // caused the error to be reported.
+        if (isa<GreenError>(Child.get()))
+          continue;
         Sum += Child->getTextLength();
+      }
       Subtree.setLength(Sum);
       GreenNode &Head = Stack.at(Stack.size() - 1);
       Head.addChild(std::make_shared<GreenNode>(Subtree));
     } else if (const auto EE = dyn_cast<ParseErrorEvent>(Event)) {
-      auto Err = GreenError(EE->getDiagnosticID());
+      auto Err = GreenError(EE->getDiagnosticID(), EE->getLength());
       Stack.at(Stack.size() - 1).addChild(std::make_unique<GreenError>(Err));
     } else {
       llvm_unreachable("unexpected event kind");
@@ -128,8 +132,11 @@ auto Parser::build() -> GreenNode {
   // Next, because we never close the Root event, we also have to calculate the
   // sum down here. It is probably not worth extracting into its own function.
   size_t Sum = 0;
-  for (const auto &Child : Root.getChildren())
+  for (const auto &Child : Root.getChildren()) {
+    if (isa<GreenError>(Child.get()))
+      continue;
     Sum += Child->getTextLength();
+  }
   Root.setLength(Sum);
   return Root;
 }
@@ -150,7 +157,8 @@ auto Parser::parseDecl() -> void {
   default:
     // The top-level parser has to try to advance, otherwise the parser will
     // just loop forever.
-    report<UnexpectedTokenDiagnostic>(getSyntaxKindName(get()));
+    report<UnexpectedTokenDiagnostic>(getTokenLength(),
+                                      getSyntaxKindName(get()));
   }
 }
 
@@ -186,7 +194,8 @@ auto Parser::parseFunctionTypeParameterList() -> void {
       if (at(TSFunctionTypeParameterListRecovery)) {
         break;
       }
-      report<ExpectedFunctionTypeParameterDiagnostic>(getSyntaxKindName(get()));
+      report<ExpectedFunctionTypeParameterDiagnostic>(getTokenLength(),
+                                                      getSyntaxKindName(get()));
     }
   }
   expect(SyntaxKind::RightBracket);
@@ -216,7 +225,8 @@ auto Parser::parseFunctionParameterList() -> void {
       if (at(TSFunctionParameterListRecovery)) {
         break;
       }
-      report<ExpectedFunctionParameterDiagnostic>(getSyntaxKindName(get()));
+      report<ExpectedFunctionParameterDiagnostic>(getTokenLength(),
+                                                  getSyntaxKindName(get()));
     }
   }
   expect(SyntaxKind::RightParen);
@@ -440,7 +450,7 @@ auto Parser::parseExpr(uint32_t Current) -> void {
             break;
           }
           report<ExpectedCallExpressionArgumentDiagnostic>(
-              getSyntaxKindName(get()));
+              getTokenLength(), getSyntaxKindName(get()));
         }
         if (!at(SyntaxKind::RightParen)) {
           expect(SyntaxKind::Comma);
@@ -546,7 +556,7 @@ auto Parser::parseConstructionExpr() -> CloseCheckpoint {
           break;
         }
         report<ExpectedConstructionExprMemberDiagnostic>(
-            getSyntaxKindName(get()));
+            getTokenLength(), getSyntaxKindName(get()));
       }
     }
     expect(SyntaxKind::RightBrace);

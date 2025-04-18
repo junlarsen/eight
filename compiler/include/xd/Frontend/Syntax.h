@@ -236,12 +236,14 @@ public:
 
 class GreenError : public GreenElement {
   DiagnosticID DiagnosticID;
+  uint32_t Length;
 
 public:
-  explicit GreenError(uint32_t DiagnosticID)
-      : GreenElement(GreenElementKind::Error), DiagnosticID(DiagnosticID) {}
+  explicit GreenError(uint32_t DiagnosticID, uint32_t Length)
+      : GreenElement(GreenElementKind::Error), DiagnosticID(DiagnosticID),
+        Length(Length) {}
   auto getDiagnosticID() const -> uint32_t { return DiagnosticID; }
-  auto getTextLength() const -> size_t override { return 0; }
+  auto getTextLength() const -> size_t override { return Length; }
   auto getSyntaxKind() const -> SyntaxKind override {
     return SyntaxKind::Error;
   }
@@ -301,6 +303,7 @@ public:
   }
   auto getOffset() const -> uint32_t { return Offset; }
   auto getIndex() const -> uint32_t { return Index; }
+  auto getGreen() const -> std::shared_ptr<GreenElement> { return Green; }
   auto front() -> decltype(Children.front()) { return Children.front(); }
   auto back() -> decltype(Children.back()) { return Children.back(); }
   auto getLocation() -> SourceLocation;
