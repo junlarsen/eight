@@ -88,10 +88,44 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "CallExprArgumentList";
   case SyntaxKind::CallExprTypeArgumentList:
     return "CallExprTypeArgumentList";
-  case SyntaxKind::UnaryExpr:
-    return "UnaryExpr";
-  case SyntaxKind::BinaryExpr:
-    return "BinaryExpr";
+  case SyntaxKind::UnaryNotExpr:
+    return "UnaryNotExpr";
+  case SyntaxKind::UnaryMinusExpr:
+    return "UnaryMinusExpr";
+  case SyntaxKind::UnaryPlusExpr:
+    return "UnaryPlusExpr";
+  case SyntaxKind::UnaryDerefExpr:
+    return "UnaryDerefExpr";
+  case SyntaxKind::UnaryAddrOfExpr:
+    return "UnaryAddrOfExpr";
+  case SyntaxKind::BinaryLogicalAndExpr:
+    return "BinaryLogicalAndExpr";
+  case SyntaxKind::BinaryLogicalOrExpr:
+    return "BinaryLogicalOrExpr";
+  case SyntaxKind::BinaryAssignExpr:
+    return "BinaryAssignExpr";
+  case SyntaxKind::BinaryEqualityExpr:
+    return "BinaryEqualityExpr";
+  case SyntaxKind::BinaryInequalityExpr:
+    return "BinaryInequalityExpr";
+  case SyntaxKind::BinaryLessThanExpr:
+    return "BinaryLessThanExpr";
+  case SyntaxKind::BinaryGreaterThanExpr:
+    return "BinaryGreaterThanExpr";
+  case SyntaxKind::BinaryGreaterThanEqualExpr:
+    return "BinaryGreaterThanEqualExpr";
+  case SyntaxKind::BinaryLessThanEqualExpr:
+    return "BinaryLessThanEqualExpr";
+  case SyntaxKind::BinaryAddExpr:
+    return "BinaryAddExpr";
+  case SyntaxKind::BinarySubExpr:
+    return "BinarySubExpr";
+  case SyntaxKind::BinaryMulExpr:
+    return "BinaryMulExpr";
+  case SyntaxKind::BinaryDivExpr:
+    return "BinaryDivExpr";
+  case SyntaxKind::BinaryModulusExpr:
+    return "BinaryModulusExpr";
   case SyntaxKind::ConstructionExpr:
     return "ConstructionExpr";
   case SyntaxKind::ConstructionExprMember:

@@ -430,7 +430,7 @@ auto Parser::parseExpr(uint32_t Current) -> void {
     advance();
     if (atExprStart())
       parseExpr(New);
-    LHS = close(C, SyntaxKind::UnaryExpr);
+    LHS = close(C, getUnaryExprSyntaxKind(Tok));
   } else {
     llvm_unreachable("LHS was meant to be guaranteed to be assigned here");
   }
@@ -502,7 +502,7 @@ auto Parser::parseExpr(uint32_t Current) -> void {
     auto NextPrecedence = getInfixPrecedence(Tok);
     if (atExprStart())
       parseExpr(NextPrecedence);
-    LHS = close(C, SyntaxKind::BinaryExpr);
+    LHS = close(C, getBinaryExprSyntaxKind(Tok));
   }
 }
 

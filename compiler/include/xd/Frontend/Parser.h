@@ -230,6 +230,52 @@ public:
       return 5;
     llvm_unreachable("unknown syntax kind");
   }
+
+  static auto getUnaryExprSyntaxKind(SyntaxKind SK) -> SyntaxKind {
+    if (SK == SyntaxKind::Plus)
+      return SyntaxKind::UnaryPlusExpr;
+    if (SK == SyntaxKind::Minus)
+      return SyntaxKind::UnaryMinusExpr;
+    if (SK == SyntaxKind::Bang)
+      return SyntaxKind::UnaryNotExpr;
+    if (SK == SyntaxKind::Ampersand)
+      return SyntaxKind::UnaryAddrOfExpr;
+    if (SK == SyntaxKind::Star)
+      return SyntaxKind::UnaryDerefExpr;
+    llvm_unreachable("unknown syntax kind");
+  }
+
+  static auto getBinaryExprSyntaxKind(SyntaxKind SK) -> SyntaxKind {
+    if (SK == SyntaxKind::Equal)
+      return SyntaxKind::BinaryAssignExpr;
+    if (SK == SyntaxKind::AmpersandAmpersand)
+      return SyntaxKind::BinaryLogicalAndExpr;
+    if (SK == SyntaxKind::PipePipe)
+      return SyntaxKind::BinaryLogicalOrExpr;
+    if (SK == SyntaxKind::EqualEqual)
+      return SyntaxKind::BinaryEqualityExpr;
+    if (SK == SyntaxKind::BangEqual)
+      return SyntaxKind::BinaryInequalityExpr;
+    if (SK == SyntaxKind::LeftAngle)
+      return SyntaxKind::BinaryLessThanExpr;
+    if (SK == SyntaxKind::LeftAngleEqual)
+      return SyntaxKind::BinaryLessThanEqualExpr;
+    if (SK == SyntaxKind::RightAngle)
+      return SyntaxKind::BinaryGreaterThanExpr;
+    if (SK == SyntaxKind::RightAngleEqual)
+      return SyntaxKind::BinaryGreaterThanEqualExpr;
+    if (SK == SyntaxKind::Plus)
+      return SyntaxKind::BinaryAddExpr;
+    if (SK == SyntaxKind::Minus)
+      return SyntaxKind::BinarySubExpr;
+    if (SK == SyntaxKind::Star)
+      return SyntaxKind::BinaryMulExpr;
+    if (SK == SyntaxKind::Slash)
+      return SyntaxKind::BinaryDivExpr;
+    if (SK == SyntaxKind::Percent)
+      return SyntaxKind::BinaryModulusExpr;
+    llvm_unreachable("unknown syntax kind");
+  }
 };
 
 } // namespace xd

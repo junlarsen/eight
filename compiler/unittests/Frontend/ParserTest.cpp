@@ -158,35 +158,35 @@ TEST(ParserTest, ParsePrefixExpression) {
     auto Ctx = getParser("!a");
     Ctx->P.parseExpr();
     auto T = Ctx->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryNotExpr);
   }
   // Integral Negation
   {
     auto Ctx = getParser("-b");
     Ctx->P.parseExpr();
     auto T = Ctx->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryMinusExpr);
   }
   // Integral Abs
   {
     auto Ctx = getParser("+a");
     Ctx->P.parseExpr();
     auto T = Ctx->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryPlusExpr);
   }
   // Address Of
   {
     auto Ctx = getParser("&a");
     Ctx->P.parseExpr();
     auto T = Ctx->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryAddrOfExpr);
   }
   // Dereference
   {
     auto Ctx = getParser("*a");
     Ctx->P.parseExpr();
     auto T = Ctx->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::UnaryDerefExpr);
   }
 }
 
@@ -230,84 +230,84 @@ TEST(ParserTest, ParseBinaryExpression) {
     auto Assignment = getParser("a = b");
     Assignment->P.parseExpr();
     auto T = Assignment->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryAssignExpr);
   }
   {
     auto GreaterThan = getParser("a > b");
     GreaterThan->P.parseExpr();
     auto T = GreaterThan->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryGreaterThanExpr);
   }
   {
     auto LessThan = getParser("a < b");
     LessThan->P.parseExpr();
     auto T = LessThan->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryLessThanExpr);
   }
   {
     auto GreaterThanOrEqual = getParser("a >= b");
     GreaterThanOrEqual->P.parseExpr();
     auto T = GreaterThanOrEqual->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryGreaterThanEqualExpr);
   }
   {
     auto LessThanOrEqual = getParser("a <= b");
     LessThanOrEqual->P.parseExpr();
     auto T = LessThanOrEqual->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryLessThanEqualExpr);
   }
   {
     auto EqualEqual = getParser("a == b");
     EqualEqual->P.parseExpr();
     auto T = EqualEqual->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryEqualityExpr);
   }
   {
     auto Inequal = getParser("a != b");
     Inequal->P.parseExpr();
     auto T = Inequal->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryInequalityExpr);
   }
   {
     auto LogicalAnd = getParser("a && b");
     LogicalAnd->P.parseExpr();
     auto T = LogicalAnd->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryLogicalAndExpr);
   }
   {
     auto LogicalOr = getParser("a || b");
     LogicalOr->P.parseExpr();
     auto T = LogicalOr->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryLogicalOrExpr);
   }
   {
     auto Plus = getParser("a + b");
     Plus->P.parseExpr();
     auto T = Plus->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryAddExpr);
   }
   {
     auto Minus = getParser("a - b");
     Minus->P.parseExpr();
     auto T = Minus->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinarySubExpr);
   }
   {
     auto Multiply = getParser("a * b");
     Multiply->P.parseExpr();
     auto T = Multiply->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryMulExpr);
   }
   {
     auto Divide = getParser("a / b");
     Divide->P.parseExpr();
     auto T = Divide->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryDivExpr);
   }
   {
     auto Modulo = getParser("a % b");
     Modulo->P.parseExpr();
     auto T = Modulo->P.build();
-    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryExpr);
+    ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::BinaryModulusExpr);
   }
 }
