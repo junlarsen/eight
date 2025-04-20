@@ -365,9 +365,9 @@ public:
       : Parent(std::move(Parent)), Green(Green), Offset(Offset), Length(0),
         Index(Index), Children({}) {}
 
-  auto getLength() const -> uint32_t { return Green->getTextLength(); }
-  auto addChild(uint32_t Index,
-                const std::shared_ptr<SyntaxNode> &Child) -> void {
+  auto getTextLength() const -> uint32_t { return Green->getTextLength(); }
+  auto getSyntaxKind() const -> SyntaxKind { return Green->getSyntaxKind(); }
+  auto addChild(uint32_t Index, std::shared_ptr<SyntaxNode> Child) -> void {
     Children.insert(Children.begin() + Index, Child);
   }
   auto getOffset() const -> uint32_t { return Offset; }
@@ -381,6 +381,19 @@ public:
   auto getLocation() -> SourceLocation;
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
 
+  /// Find a direct child with the given syntax kind.
+  auto findChild(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>>;
+
+  /// Find all direct children with the given syntax kind.
+  ///
+  /// This is useful for heterogeneous lists, such as InstanceMemberList having
+  /// either Function or IntrinsicFunction members.
+  auto findChildren(const std::vector<SyntaxKind> &SKS)
+      -> std::optional<std::vector<std::shared_ptr<SyntaxNode>>>;
+
+  /// Find a sibling with the given syntax kind.
+  auto findSibling(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>>;
+
   /// Create a root node.
   static auto
   getRoot(std::shared_ptr<GreenElement> Green) -> std::shared_ptr<SyntaxNode> {
@@ -391,8 +404,9 @@ public:
   static auto get(std::shared_ptr<SyntaxNode> Parent,
                   std::shared_ptr<GreenElement> Green, uint32_t Offset,
                   uint32_t Index) -> std::shared_ptr<SyntaxNode> {
-    return std::make_shared<SyntaxNode>(std::move(Parent), Green, Offset,
-                                        Index);
+    auto Self = std::make_shared<SyntaxNode>(Parent, Green, Offset, Index);
+    Parent->addChild(Index, Self);
+    return Self;
   }
 };
 

@@ -289,7 +289,7 @@ auto GreenNode::debug(raw_ostream &OS, size_t Indent) -> void {
 }
 
 auto SyntaxNode::getLocation() -> SourceLocation {
-  return SourceLocation(Offset, Offset + getLength());
+  return SourceLocation(Offset, Offset + getTextLength());
 }
 
 auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
@@ -302,12 +302,42 @@ auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
   }
 }
 
+auto SyntaxNode::findChild(SyntaxKind SK)
+    -> std::optional<std::shared_ptr<SyntaxNode>> {
+  for (auto &Child : Children) {
+    if (Child->getSyntaxKind() == SK)
+      return Child;
+  }
+  return std::nullopt;
+}
+
+auto SyntaxNode::findChildren(const std::vector<SyntaxKind> &SKS)
+    -> std::optional<std::vector<std::shared_ptr<SyntaxNode>>> {
+  std::vector<std::shared_ptr<SyntaxNode>> Matches;
+  for (auto &Child : Children) {
+    // TODO: Optimize SK search using bitset
+    for (auto SK : SKS)
+      if (Child->getSyntaxKind() == SK)
+        Matches.push_back(Child);
+  }
+  if (Matches.size() == 0)
+    return std::nullopt;
+  return Matches;
+}
+
+auto SyntaxNode::findSibling(SyntaxKind SK)
+    -> std::optional<std::shared_ptr<SyntaxNode>> {
+  auto P = getParent();
+  if (P == std::nullopt)
+    return std::nullopt;
+  return P->get()->findChild(SK);
+}
+
 static auto
 buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
                uint32_t Offset, std::shared_ptr<GreenElement> Elem,
                DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode> {
   auto Self = SyntaxNode::get(Parent, Elem, Offset, Index);
-  Parent->addChild(Index, Self);
 
   // If this is an error node, then we can propagate the location to the diag
   // itself.
@@ -321,7 +351,7 @@ buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
       auto Child = buildChildTree(Self, I, NextOffset, C, DM);
       // Do not duplicate offsets for errors
       if (!isa<GreenError>(Child->getGreen().get()))
-        NextOffset += Child->getLength();
+        NextOffset += Child->getTextLength();
       I++;
     }
   }
@@ -336,7 +366,7 @@ auto xd::buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot,
     auto Child = buildChildTree(Root, I, Offset, C, DM);
     // Do not duplicate offsets for errors
     if (!isa<GreenError>(Child->getGreen().get()))
-      Offset += Child->getLength();
+      Offset += Child->getTextLength();
     I++;
   }
   return Root;
