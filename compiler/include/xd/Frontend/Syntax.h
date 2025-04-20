@@ -21,7 +21,7 @@
 #include <cstdint>
 
 namespace xd {
-enum class SyntaxKind : uint64_t {
+enum class SyntaxKind : uint8_t {
   // Keyword tokens
   KeywordStruct = 0,
   KeywordLet,
@@ -160,7 +160,11 @@ inline uint64_t operator<<(uint64_t LHS, SyntaxKind RHS) {
   return LHS << static_cast<uint64_t>(RHS);
 }
 
-using TokenSet = std::bitset<64>;
+/// A bitset representing the possible tokens the lexer might produce.
+///
+/// This is fixed to 50 at the moment, because including Error and Eof there are
+/// 50 significant members from SyntaxKind that can be put into this bitset.
+using TokenSet = std::bitset<50>;
 
 static const TokenSet TSDeclStart =
     1 << SyntaxKind::KeywordFn | 1 << SyntaxKind::KeywordIntrinsicFn |
