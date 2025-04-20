@@ -169,7 +169,6 @@ auto Lexer::getTokenForGreater() -> GreenToken {
 
 auto Lexer::getNextToken() -> GreenToken {
   while (true) {
-    TokenStart = Offset;
     auto C = advance();
     switch (C) {
     default:

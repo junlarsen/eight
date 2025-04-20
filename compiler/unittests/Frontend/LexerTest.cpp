@@ -28,11 +28,10 @@ TEST(LexerTest, ParseIntegerLiteral) {
   auto Buf = MemoryBuffer::getMemBuffer("123");
   auto Lex = Lexer(Buf->getBufferStart());
 
-  ASSERT_EQ(Lex.getByteOffset(), 0);
   auto TK = Lex.getNextToken();
   ASSERT_EQ(TK.getSyntaxKind(), SyntaxKind::IntegerLiteral);
   ASSERT_EQ(TK.getText(), "123");
-  ASSERT_EQ(Lex.getByteOffset(), 3);
+  ASSERT_EQ(TK.getTextLength(), 3);
   ASSERT_FALSE(Lex.hasNext());
 }
 
@@ -40,23 +39,20 @@ TEST(LexerTest, ParseCommentLiteral) {
   auto Buf = MemoryBuffer::getMemBuffer("// this is a comment\nidentifier");
   auto Lex = Lexer(Buf->getBufferStart());
 
-  ASSERT_EQ(Lex.getByteOffset(), 0);
   auto TK1 = Lex.getNextToken();
   ASSERT_EQ(TK1.getSyntaxKind(), SyntaxKind::Comment);
   ASSERT_EQ(TK1.getText(), "// this is a comment");
-  ASSERT_EQ(Lex.getByteOffset(), 20);
+  ASSERT_EQ(TK1.getTextLength(), 20);
 
-  ASSERT_EQ(Lex.getByteOffset(), 20);
   auto TK2 = Lex.getNextToken();
   ASSERT_EQ(TK2.getSyntaxKind(), SyntaxKind::Newline);
   ASSERT_EQ(TK2.getText(), "\n");
-  ASSERT_EQ(Lex.getByteOffset(), 21);
+  ASSERT_EQ(TK2.getTextLength(), 1);
 
-  ASSERT_EQ(Lex.getByteOffset(), 21);
   auto TK3 = Lex.getNextToken();
   ASSERT_EQ(TK3.getSyntaxKind(), SyntaxKind::Identifier);
   ASSERT_EQ(TK3.getText(), "identifier");
-  ASSERT_EQ(Lex.getByteOffset(), 31);
+  ASSERT_EQ(TK3.getTextLength(), 10);
   ASSERT_FALSE(Lex.hasNext());
 }
 
@@ -64,24 +60,20 @@ TEST(LexerTest, ParseIdentifier) {
   auto Buf = MemoryBuffer::getMemBuffer("abc a1_cd");
   auto Lex = Lexer(Buf->getBufferStart());
 
-  ASSERT_EQ(Lex.getByteOffset(), 0);
   auto TK1 = Lex.getNextToken();
   ASSERT_EQ(TK1.getSyntaxKind(), SyntaxKind::Identifier);
   ASSERT_EQ(TK1.getText(), "abc");
-  ASSERT_EQ(Lex.getByteOffset(), 3);
+  ASSERT_EQ(TK1.getTextLength(), 3);
 
-  ASSERT_EQ(Lex.getByteOffset(), 3);
   auto TK2 = Lex.getNextToken();
   ASSERT_EQ(TK2.getSyntaxKind(), SyntaxKind::Whitespace);
   ASSERT_EQ(TK2.getText(), " ");
-  ASSERT_EQ(Lex.getByteOffset(), 4);
+  ASSERT_EQ(TK2.getTextLength(), 1);
 
-  ASSERT_EQ(Lex.getByteOffset(), 4);
   auto TK3 = Lex.getNextToken();
   ASSERT_EQ(TK3.getSyntaxKind(), SyntaxKind::Identifier);
   ASSERT_EQ(TK3.getText(), "a1_cd");
-  ASSERT_EQ(Lex.getByteOffset(), 9);
-  ASSERT_FALSE(Lex.hasNext());
+  ASSERT_EQ(TK3.getTextLength(), 5);
 }
 
 TEST(LexerTest, ParseSingularOperators) {

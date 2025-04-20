@@ -15,32 +15,22 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include <cassert>
-#include <cstdint>
 
 namespace xd {
 class Lexer {
   /// Pointer to the llvm::MemoryBuffer this Lexer operates on
   const char *SourcePtr;
-  llvm::StringRef Source;
-
-  /// Character offset into the source we're currently at.
-  uint32_t Offset;
-  /// Character offset the current token started at.
-  uint32_t TokenStart;
+  const llvm::StringRef &Source;
 
 public:
-  Lexer(llvm::StringRef Source)
-      : SourcePtr(Source.begin()), Source(Source), Offset(0), TokenStart(0) {}
-
-  /// Get the current byte offset into the file
-  auto getByteOffset() const -> uint32_t { return Offset; }
+  explicit Lexer(const llvm::StringRef &Source)
+      : SourcePtr(Source.begin()), Source(Source) {}
 
   auto getNextToken() -> GreenToken;
   auto hasNext() const -> bool { return SourcePtr != Source.end(); }
   auto advance() -> char {
     assert(hasNext() &&
            "Called getNextChar on buffer that has reached the end");
-    Offset += 1;
     return *SourcePtr++;
   }
   auto peek() const -> std::optional<char> {
