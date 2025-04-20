@@ -12,8 +12,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Force the build to use the LLVM libc++ that was built
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -I${XD_LLVM_INSTALL_PREFIX}/include/c++/v1")
+# Force the build to use the LLVM libc++ that was built. We also force -Wno-deprecated-declarations because LLVM support
+# relies on some deprecated aligned_union_t in C++23
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -I${XD_LLVM_INSTALL_PREFIX}/include/c++/v1 -Wno-deprecated-declarations")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -L${XD_LLVM_INSTALL_PREFIX}/lib -Wl,-rpath,${XD_LLVM_INSTALL_PREFIX}/lib")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -L${XD_LLVM_INSTALL_PREFIX}/lib -Wl,-rpath,${XD_LLVM_INSTALL_PREFIX}/lib")
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -stdlib=libc++ -L${XD_LLVM_INSTALL_PREFIX}/lib -Wl,-rpath,${XD_LLVM_INSTALL_PREFIX}/lib")
