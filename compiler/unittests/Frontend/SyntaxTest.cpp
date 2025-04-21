@@ -439,3 +439,52 @@ TEST(SyntaxTest, ParseContinueStmtIntoTree) {
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
   ASSERT_TRUE(isa<ASTContinueStmt>(**Stmt));
 }
+
+TEST(SyntaxTest, ParseReturnStmtIntoTree) {
+  {
+    auto Ctx = test::getParser("return;");
+    Ctx->P.parseStmt();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_TRUE(Stmt.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Stmt));
+    ASSERT_TRUE(isa<ASTReturnStmt>(**Stmt));
+    auto ReturnStmt = cast<ASTReturnStmt>(**Stmt);
+    ASSERT_FALSE(ReturnStmt.getReturnExpr().has_value());
+  }
+  {
+    auto Ctx = test::getParser("return 1;");
+    Ctx->P.parseStmt();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_TRUE(Stmt.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Stmt));
+    ASSERT_TRUE(isa<ASTReturnStmt>(**Stmt));
+    auto ReturnStmt = cast<ASTReturnStmt>(**Stmt);
+
+    auto ReturnExpr = ReturnStmt.getReturnExpr();
+    ASSERT_TRUE(ReturnExpr.has_value());
+    ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(ReturnExpr->get()));
+  }
+}
+
+TEST(SyntaxTest, ParseExprStmtIntoTree) {
+  auto Ctx = test::getParser("1 + 1;");
+  Ctx->P.parseStmt();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Stmt = ASTStmt::cast(RedTree);
+  ASSERT_TRUE(Stmt.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Stmt));
+  ASSERT_TRUE(isa<ASTExprStmt>(**Stmt));
+  auto ExprStmt = cast<ASTExprStmt>(**Stmt);
+
+  auto Expr = ExprStmt.getExpr();
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTBinaryExpr>(Expr->get()));
+}

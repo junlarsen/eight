@@ -936,6 +936,48 @@ public:
   }
 };
 
+class ASTReturnStmt : public ASTStmt {
+public:
+  explicit ASTReturnStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  /// Get the optional return value.
+  auto getReturnExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
+      return ASTExpr::cast(*Expr);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ReturnStmt;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTReturnStmt>> {
+    if (SN->getSyntaxKind() != SyntaxKind::ReturnStmt || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTReturnStmt>(SN);
+  }
+};
+
+class ASTExprStmt : public ASTStmt {
+public:
+  explicit ASTExprStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  /// Get the expression.
+  auto getExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
+      return ASTExpr::cast(*Expr);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ExprStmt;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTExprStmt>> {
+    if (SN->getSyntaxKind() != SyntaxKind::ExprStmt || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTExprStmt>(SN);
+  }
+};
+
 class ASTDecl : public ASTNode {
 public:
   explicit ASTDecl(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
