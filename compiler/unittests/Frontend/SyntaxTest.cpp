@@ -503,8 +503,9 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
     auto FunctionDecl = cast<ASTFunctionDecl>(**Decl);
     ASSERT_FALSE(FunctionDecl.isIntrinsic());
 
-    ASSERT_TRUE(FunctionDecl.getReturnType().has_value());
-    ASSERT_TRUE(isa<ASTNamedType>(FunctionDecl.getReturnType()->get()));
+    ASSERT_TRUE(FunctionDecl.getReturnTypeAnnotation().has_value());
+    ASSERT_TRUE(
+        isa<ASTNamedType>(FunctionDecl.getReturnTypeAnnotation()->get()));
 
     auto TypeParameterList = FunctionDecl.getTypeParameterList();
     ASSERT_TRUE(TypeParameterList.has_value());
@@ -586,4 +587,47 @@ TEST(SyntaxTest, ParseIntrinsicTypeDeclIntoTree) {
 
   ASSERT_TRUE(TypeDecl.getName().has_value());
   ASSERT_EQ((*TypeDecl.getName())->getName(), "i32");
+}
+
+TEST(SyntaxTest, ParseTraitDeclIntoTree) {
+  auto Ctx =
+      test::getParser("trait Add[T, R] { fn add(self: Self, other: T) -> R; }");
+  Ctx->P.parseDecl();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_TRUE(Decl.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Decl));
+  ASSERT_TRUE(isa<ASTTraitDecl>(**Decl));
+  auto TraitDecl = cast<ASTTraitDecl>(**Decl);
+
+  ASSERT_TRUE(TraitDecl.getName().has_value());
+  ASSERT_EQ((*TraitDecl.getName())->getName(), "Add");
+
+  auto TypeParameterList = TraitDecl.getTypeParameterList();
+  ASSERT_TRUE(TypeParameterList.has_value());
+  ASSERT_TRUE((*TypeParameterList)->getTypeParameters().has_value());
+  ASSERT_EQ((*TypeParameterList)->getTypeParameters()->size(), 2);
+
+  auto TypeParameter = (*TypeParameterList)->getTypeParameters()->at(0);
+  ASSERT_TRUE(TypeParameter->getName().has_value());
+  ASSERT_EQ((*TypeParameter->getName())->getName(), "T");
+
+  auto MemberList = TraitDecl.getMemberList();
+  ASSERT_TRUE(MemberList.has_value());
+  ASSERT_TRUE((*MemberList)->getFunctionMembers().has_value());
+  ASSERT_EQ((*MemberList)->getFunctionMembers()->size(), 1);
+
+  auto FunctionMember = (*MemberList)->getFunctionMembers()->at(0);
+  ASSERT_TRUE(FunctionMember->getName().has_value());
+  ASSERT_EQ((*FunctionMember->getName())->getName(), "add");
+  auto FMReturnType = FunctionMember->getReturnTypeAnnotation();
+  ASSERT_TRUE(FMReturnType.has_value());
+  auto FMTypeParameterList = FunctionMember->getTypeParameterList();
+  ASSERT_FALSE(FMTypeParameterList.has_value());
+  auto FMParameterList = FunctionMember->getParameterList();
+  ASSERT_TRUE(FMParameterList.has_value());
+  ASSERT_TRUE((*FMParameterList)->getParameters().has_value());
+  ASSERT_EQ((*FMParameterList)->getParameters()->size(), 2);
 }
