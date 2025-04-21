@@ -116,3 +116,54 @@ TEST(SyntaxTest, ParseUnaryExprIntoTree) {
   auto OperandExpr = cast<ASTUnaryExpr>(**Operand);
   ASSERT_EQ(OperandExpr.getOperator(), ASTUnaryOperator::Deref);
 }
+
+TEST(SyntaxTest, ParseGroupExprIntoTree) {
+  auto Ctx = test::getParser("((a))");
+  Ctx->P.parseExpr();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Expr));
+  ASSERT_TRUE(isa<ASTGroupExpr>(**Expr));
+  auto GroupExpr = cast<ASTGroupExpr>(**Expr);
+  auto InnerExpr = GroupExpr.getInnerExpr();
+  ASSERT_TRUE(InnerExpr.has_value());
+  ASSERT_TRUE(isa<ASTGroupExpr>(**InnerExpr));
+}
+
+TEST(SyntaxTest, ParseReferenceExprIntoTree) {
+  auto Ctx = test::getParser("aa");
+  Ctx->P.parseExpr();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Expr));
+  ASSERT_TRUE(isa<ASTReferenceExpr>(**Expr));
+  auto ReferenceExpr = cast<ASTReferenceExpr>(**Expr);
+  auto Name = ReferenceExpr.getName();
+  ASSERT_TRUE(Name.has_value());
+  ASSERT_EQ((*Name)->getName(), "aa");
+}
+
+TEST(SyntaxTest, ParseConstantIndexExprIntoTree) {
+  auto Ctx = test::getParser("a.b");
+  Ctx->P.parseExpr();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Expr));
+  ASSERT_TRUE(isa<ASTConstantIndexExpr>(**Expr));
+  auto ConstantIndexExpr = cast<ASTConstantIndexExpr>(**Expr);
+  auto Origin = ConstantIndexExpr.getOrigin();
+  ASSERT_TRUE(Origin.has_value());
+  ASSERT_TRUE(isa<ASTReferenceExpr>(**Origin));
+  auto Index = ConstantIndexExpr.getIndex();
+  ASSERT_TRUE(Index.has_value());
+  ASSERT_EQ((*Index)->getName(), "b");
+}

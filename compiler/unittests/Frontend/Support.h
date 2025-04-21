@@ -9,6 +9,8 @@
 #ifndef XD_UNITTESTS_SUPPORT_H
 #define XD_UNITTESTS_SUPPORT_H
 
+#include "xd/Frontend/Lexer.h"
+#include "xd/Frontend/Parser.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/MemoryBuffer.h"
 

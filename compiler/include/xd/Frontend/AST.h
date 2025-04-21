@@ -34,15 +34,13 @@ class ASTExprStmt;
 class ASTExpr;
 class ASTIntegerLiteralExpr;
 class ASTBooleanLiteralExpr;
-class ASTAssignmentExpr;
 class ASTBinaryOperatorExpr;
 class ASTUnaryOperatorExpr;
 class ASTConstantIndexExpr;
-class ASTVariableIndexExpr;
 class ASTReferenceExpr;
 class ASTCallExpr;
 class ASTConstructionExpr;
-class ASTGroupingExpr;
+class ASTGroupExpr;
 
 class ASTType;
 class ASTPointerType;
@@ -310,6 +308,77 @@ public:
     if (!isBinaryExprSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
     return std::make_shared<ASTBinaryExpr>(SN);
+  }
+};
+
+class ASTGroupExpr : public ASTExpr {
+public:
+  explicit ASTGroupExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  auto getInnerExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto InnerExpr = SN->findChildAtIndex(isExprSyntaxKind, 0);
+        InnerExpr.has_value())
+      return ASTExpr::cast(*InnerExpr);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::GroupExpr;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTGroupExpr>> {
+    if (SN->getSyntaxKind() != SyntaxKind::GroupExpr || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTGroupExpr>(SN);
+  }
+};
+
+class ASTConstantIndexExpr : public ASTExpr {
+public:
+  explicit ASTConstantIndexExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  /// Get the expression the indexing is being done on.
+  auto getOrigin() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto Origin = SN->findChildAtIndex(isExprSyntaxKind, 0);
+        Origin.has_value())
+      return ASTExpr::cast(*Origin);
+    return std::nullopt;
+  }
+
+  /// Get the named index that this expression is indexing.
+  auto getIndex() const -> std::optional<std::shared_ptr<Identifier>> {
+    if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
+      return Identifier::cast(*Ident);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ConstantIndexExpr;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTConstantIndexExpr>> {
+    if (SN->getSyntaxKind() != SyntaxKind::ConstantIndexExpr || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTConstantIndexExpr>(SN);
+  }
+};
+
+class ASTReferenceExpr : public ASTExpr {
+public:
+  explicit ASTReferenceExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  /// Get the variable name for this reference expression.
+  auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
+    if (auto Name = SN->findChild(SyntaxKind::Identifier); Name.has_value())
+      return Identifier::cast(*Name);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ReferenceExpr;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTReferenceExpr>> {
+    if (SN->getSyntaxKind() != SyntaxKind::ReferenceExpr || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTReferenceExpr>(SN);
   }
 };
 
