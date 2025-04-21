@@ -155,7 +155,7 @@ public:
   explicit ASTExpr(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
 
   static bool classof(const ASTNode *Node) {
-    return isTypeSyntaxKind(Node->getSyntaxKind());
+    return isExprSyntaxKind(Node->getSyntaxKind());
   }
   static auto cast(std::shared_ptr<SyntaxNode> SN)
       -> std::optional<std::shared_ptr<ASTExpr>> {
@@ -170,7 +170,7 @@ public:
   explicit ASTStmt(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
 
   static bool classof(const ASTNode *Node) {
-    return isTypeSyntaxKind(Node->getSyntaxKind());
+    return isStmtSyntaxKind(Node->getSyntaxKind());
   }
   static auto cast(std::shared_ptr<SyntaxNode> SN)
       -> std::optional<std::shared_ptr<ASTStmt>> {
@@ -185,7 +185,7 @@ public:
   explicit ASTDecl(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
 
   static bool classof(const ASTNode *Node) {
-    return isTypeSyntaxKind(Node->getSyntaxKind());
+    return isDeclSyntaxKind(Node->getSyntaxKind());
   }
   static auto cast(std::shared_ptr<SyntaxNode> SN)
       -> std::optional<std::shared_ptr<ASTDecl>> {
