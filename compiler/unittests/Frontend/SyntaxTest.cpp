@@ -36,7 +36,7 @@ TEST(SyntaxTest, GraphSearching) {
   auto SiblingStruct = FunctionChild->findSibling(SyntaxKind::Struct);
   ASSERT_EQ(SiblingStruct, StructChild);
 
-  auto Members = Root->findChildren({SyntaxKind::Function, SyntaxKind::Struct});
+  auto Members = Root->findChildren(isDeclSyntaxKind);
   ASSERT_TRUE(Members.has_value());
   ASSERT_EQ(Members->size(), 2);
   ASSERT_EQ(Members->front()->getParent(), Root);
@@ -208,5 +208,57 @@ TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
     ASSERT_TRUE(isa<ASTBooleanLiteralExpr>(**Expr));
     auto BooleanLiteralExpr = cast<ASTBooleanLiteralExpr>(**Expr);
     ASSERT_EQ(BooleanLiteralExpr.getValue(), false);
+  }
+}
+
+TEST(SyntaxTest, ParseCallExprIntoTree) {
+  {
+    auto Ctx = test::getParser("f[int](1, 2, 3)");
+    Ctx->P.parseExpr();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_TRUE(Expr.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Expr));
+    ASSERT_TRUE(isa<ASTCallExpr>(**Expr));
+    auto CallExpr = cast<ASTCallExpr>(**Expr);
+
+    auto TypeArgList = CallExpr.getTypeArgumentList();
+    ASSERT_TRUE(TypeArgList.has_value());
+    auto TypeArgs = (*TypeArgList)->getTypeArguments();
+    ASSERT_TRUE(TypeArgs.has_value());
+    ASSERT_EQ(TypeArgs->size(), 1);
+    ASSERT_TRUE(isa<ASTNamedType>(TypeArgs->at(0).get()));
+
+    auto ArgList = CallExpr.getArgumentList();
+    ASSERT_TRUE(ArgList.has_value());
+    auto Args = (*ArgList)->getArguments();
+    ASSERT_TRUE(Args.has_value());
+    ASSERT_EQ(Args->size(), 3);
+    ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(Args->at(0).get()));
+    ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(Args->at(1).get()));
+    ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(Args->at(2).get()));
+  }
+  {
+    auto Ctx = test::getParser("f()");
+    Ctx->P.parseExpr();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_TRUE(Expr.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Expr));
+    ASSERT_TRUE(isa<ASTCallExpr>(**Expr));
+    auto CallExpr = cast<ASTCallExpr>(**Expr);
+
+    auto TypeArgList = CallExpr.getTypeArgumentList();
+    ASSERT_FALSE(TypeArgList.has_value());
+
+    auto ArgList = CallExpr.getArgumentList();
+    ASSERT_TRUE(ArgList.has_value());
+    auto Args = (*ArgList)->getArguments();
+    ASSERT_TRUE(Args.has_value());
+    ASSERT_EQ(Args->size(), 0);
   }
 }

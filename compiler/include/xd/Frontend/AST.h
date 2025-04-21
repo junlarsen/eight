@@ -431,6 +431,103 @@ public:
   }
 };
 
+class ASTCallExpr : public ASTExpr {
+public:
+  /// Member class representing the type argument list to the call expression.
+  class TypeArgumentList {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit TypeArgumentList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the type argument list
+    auto getTypeArguments() const
+        -> std::optional<std::vector<std::shared_ptr<ASTType>>> {
+      if (auto TypeArgs = SN->findChildren(isTypeSyntaxKind);
+          TypeArgs.has_value()) {
+        std::vector<std::shared_ptr<ASTType>> Result;
+        for (auto TypeArg : *TypeArgs) {
+          if (auto TA = ASTType::cast(TypeArg); TA.has_value())
+            Result.push_back(*TA);
+        }
+        return Result;
+      }
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<TypeArgumentList>> {
+      if (SN->getSyntaxKind() != SyntaxKind::CallExprTypeArgumentList ||
+          !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<TypeArgumentList>(SN);
+    }
+  };
+
+  /// Member class representing the argument list to the call expression.
+  class ArgumentList {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit ArgumentList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the argument list.
+    auto getArguments() const
+        -> std::optional<std::vector<std::shared_ptr<ASTExpr>>> {
+      if (auto Args = SN->findChildren(isExprSyntaxKind); Args.has_value()) {
+        std::vector<std::shared_ptr<ASTExpr>> Result;
+        for (auto Arg : *Args) {
+          if (auto A = ASTExpr::cast(Arg); A.has_value())
+            Result.push_back(*A);
+        }
+        return Result;
+      }
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<ArgumentList>> {
+      if (SN->getSyntaxKind() != SyntaxKind::CallExprArgumentList ||
+          !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<ArgumentList>(SN);
+    }
+  };
+
+  explicit ASTCallExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  /// Get the expression that is being called
+  auto getCallee() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto Callee = SN->findChild(isExprSyntaxKind); Callee.has_value())
+      return ASTExpr::cast(*Callee);
+    return std::nullopt;
+  }
+
+  /// Get the type arguments provided to this call.
+  auto getTypeArgumentList() const
+      -> std::optional<std::shared_ptr<TypeArgumentList>> {
+    if (auto TAL = SN->findChild(SyntaxKind::CallExprTypeArgumentList);
+        TAL.has_value())
+      return TypeArgumentList::cast(*TAL);
+    return std::nullopt;
+  }
+
+  /// Get the arguments provided to this call.
+  auto getArgumentList() const -> std::optional<std::shared_ptr<ArgumentList>> {
+    if (auto AL = SN->findChild(SyntaxKind::CallExprArgumentList);
+        AL.has_value())
+      return ArgumentList::cast(*AL);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::CallExpr;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTCallExpr>> {
+    if (SN->getSyntaxKind() != SyntaxKind::CallExpr || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTCallExpr>(SN);
+  }
+};
+
 class ASTStmt : public ASTNode {
 public:
   explicit ASTStmt(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}

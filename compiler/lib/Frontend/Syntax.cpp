@@ -331,26 +331,46 @@ auto SyntaxNode::findChildAtIndex(
   return std::nullopt;
 }
 
-auto SyntaxNode::findChildren(const std::vector<SyntaxKind> &SKS)
+auto SyntaxNode::findChildren(SyntaxKind SK) const
     -> std::optional<std::vector<std::shared_ptr<SyntaxNode>>> {
+  if (Children.empty())
+    return std::nullopt;
+
   std::vector<std::shared_ptr<SyntaxNode>> Matches;
   for (auto &Child : Children) {
-    // TODO: Optimize SK search using bitset
-    for (auto SK : SKS)
-      if (Child->getSyntaxKind() == SK)
-        Matches.push_back(Child);
+    if (Child->getSyntaxKind() == SK)
+      Matches.push_back(Child);
   }
-  if (Matches.size() == 0)
-    return std::nullopt;
   return Matches;
 }
 
-auto SyntaxNode::findSibling(SyntaxKind SK)
+auto SyntaxNode::findChildren(const std::function<bool(SyntaxKind)> &Predicate)
+    const -> std::optional<std::vector<std::shared_ptr<SyntaxNode>>> {
+  if (Children.empty())
+    return std::nullopt;
+
+  std::vector<std::shared_ptr<SyntaxNode>> Matches;
+  for (auto &Child : Children) {
+    if (Predicate(Child->getSyntaxKind()))
+      Matches.push_back(Child);
+  }
+  return Matches;
+}
+
+auto SyntaxNode::findSibling(SyntaxKind SK) const
     -> std::optional<std::shared_ptr<SyntaxNode>> {
   auto P = getParent();
   if (P == std::nullopt)
     return std::nullopt;
   return P->get()->findChild(SK);
+}
+
+auto SyntaxNode::findSibling(const std::function<bool(SyntaxKind)> &Predicate)
+    const -> std::optional<std::shared_ptr<SyntaxNode>> {
+  auto P = getParent();
+  if (P == std::nullopt)
+    return std::nullopt;
+  return P->get()->findChild(Predicate);
 }
 
 static auto

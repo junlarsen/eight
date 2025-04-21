@@ -500,7 +500,6 @@ auto Parser::parseInstanceMemberList() -> void {
 
 auto Parser::parseStmt() -> void {
   assert(atStmtStart() && "called parseStmt without being at stmt start");
-  auto C = open();
   switch (get()) {
   case SyntaxKind::KeywordLet:
     parseLetStmt();
@@ -523,7 +522,6 @@ auto Parser::parseStmt() -> void {
   default:
     parseExprStmt();
   }
-  close(C, SyntaxKind::Stmt);
 }
 
 auto Parser::parseBlock(SyntaxKind SK) -> void {
@@ -685,10 +683,9 @@ auto Parser::parseExpr(uint32_t Current) -> void {
     switch (get()) {
     case SyntaxKind::LeftBracket:
     case SyntaxKind::LeftParen: {
-      auto CC = open();
       // Take the type arguments if present
       if (eat(SyntaxKind::LeftBracket)) {
-        auto CCC = open();
+        auto CC = open();
         while (!eof() && !at(SyntaxKind::RightBracket)) {
           if (atTypeStart()) {
             parseType();
@@ -704,8 +701,10 @@ auto Parser::parseExpr(uint32_t Current) -> void {
           }
         }
         expect(SyntaxKind::RightBracket);
-        close(CCC, SyntaxKind::CallExprTypeArgumentList);
+        close(CC, SyntaxKind::CallExprTypeArgumentList);
       }
+      // Next, we parse the required call arguments.
+      auto CC = open();
       expect(SyntaxKind::LeftParen);
       while (!eof() && !at(SyntaxKind::RightParen)) {
         if (atExprStart()) {
@@ -844,13 +843,16 @@ auto Parser::parseConstructionExprMember() -> void {
 
 auto Parser::parseType() -> void {
   assert(atTypeStart() && "called parseType without '*' or <identifier>");
-  auto C = open();
-  if (at(SyntaxKind::Identifier)) {
+  switch (get()) {
+  case SyntaxKind::Identifier:
     parseNamedType();
-  } else if (at(SyntaxKind::Star)) {
+    break;
+  case SyntaxKind::Star:
     parsePointerType();
+    break;
+  default:
+    llvm_unreachable("unreachable");
   }
-  close(C, SyntaxKind::Type);
 }
 
 auto Parser::parseNamedType() -> void {

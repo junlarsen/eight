@@ -417,28 +417,36 @@ public:
 
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
 
+  /// Find a child with the given syntax kind.
   auto findChild(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>> {
     return findChildAtIndex(SK, 0);
   }
+  /// Find a child whose syntax kind matches the predicate.
   auto findChild(const std::function<bool(SyntaxKind)> &Predicate)
       -> std::optional<std::shared_ptr<SyntaxNode>> {
     return findChildAtIndex(Predicate, 0);
   }
+  /// Find the nth child with the given syntax kind.
   auto findChildAtIndex(SyntaxKind SK, size_t Index)
       -> std::optional<std::shared_ptr<SyntaxNode>>;
   auto
+  /// Find the nth child whose syntax kind matches the predicate.
   findChildAtIndex(const std::function<bool(SyntaxKind)> &Predicate,
                    size_t Index) -> std::optional<std::shared_ptr<SyntaxNode>>;
 
-  /// Find all direct children with the given syntax kind.
-  ///
-  /// This is useful for heterogeneous lists, such as InstanceMemberList having
-  /// either Function or IntrinsicFunction members.
-  auto findChildren(const std::vector<SyntaxKind> &SKS)
+  /// Find all children with the given syntax kind.
+  auto findChildren(SyntaxKind SK) const
+      -> std::optional<std::vector<std::shared_ptr<SyntaxNode>>>;
+  /// Find all children whose syntax kind matches the predicate.
+  auto findChildren(const std::function<bool(SyntaxKind)> &Predicate) const
       -> std::optional<std::vector<std::shared_ptr<SyntaxNode>>>;
 
   /// Find a sibling with the given syntax kind.
-  auto findSibling(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>>;
+  auto findSibling(SyntaxKind SK) const
+      -> std::optional<std::shared_ptr<SyntaxNode>>;
+  /// Find a sibling whose syntax kind matches the predicate.
+  auto findSibling(const std::function<bool(SyntaxKind)> &Predicate) const
+      -> std::optional<std::shared_ptr<SyntaxNode>>;
 
   /// Create a root node.
   static auto
