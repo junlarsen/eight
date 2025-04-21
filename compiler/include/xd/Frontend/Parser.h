@@ -185,7 +185,6 @@ public:
   auto parseFunctionTypeParameter() -> void;
   auto parseFunctionParameterList() -> void;
   auto parseFunctionParameter() -> void;
-  auto parseFunctionReturnType() -> void;
   auto parseIntrinsicTypeDecl() -> void;
   auto parseStructDecl() -> void;
   auto parseStructMemberList() -> void;

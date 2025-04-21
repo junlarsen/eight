@@ -201,7 +201,8 @@ auto Parser::parseFunctionDecl() -> void {
     parseFunctionParameterList();
   }
   if (eat(SyntaxKind::Arrow)) {
-    parseFunctionReturnType();
+    if (atTypeStart())
+      parseType();
   }
   // We only try parsing a body if we are in an actual function (i.e., not
   // intrinsic)
@@ -240,7 +241,7 @@ auto Parser::parseFunctionTypeParameter() -> void {
          "called parseFunctionParameterList without <identifier>");
   auto C = open();
   expect(SyntaxKind::Identifier);
-  if (!at(SyntaxKind::RightAngle)) {
+  if (!at(SyntaxKind::RightBracket)) {
     eat(SyntaxKind::Comma);
   }
   close(C, SyntaxKind::FunctionTypeParameter);
@@ -277,14 +278,6 @@ auto Parser::parseFunctionParameter() -> void {
     eat(SyntaxKind::Comma);
   }
   close(C, SyntaxKind::FunctionParameter);
-}
-
-auto Parser::parseFunctionReturnType() -> void {
-  auto C = open();
-  if (atTypeStart()) {
-    parseType();
-  }
-  close(C, SyntaxKind::FunctionReturnType);
 }
 
 auto Parser::parseIntrinsicTypeDecl() -> void {
@@ -427,8 +420,10 @@ auto Parser::parseTraitFunctionMember() -> void {
     parseFunctionTypeParameterList();
   if (at(SyntaxKind::LeftParen))
     parseFunctionParameterList();
-  if (eat(SyntaxKind::Arrow))
-    parseFunctionReturnType();
+  if (eat(SyntaxKind::Arrow)) {
+    if (atTypeStart())
+      parseType();
+  }
   expect(SyntaxKind::Semicolon);
   close(C, SyntaxKind::TraitFunctionMember);
 }

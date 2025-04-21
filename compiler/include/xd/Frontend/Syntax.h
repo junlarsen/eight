@@ -135,7 +135,6 @@ enum class SyntaxKind : uint8_t {
   FunctionTypeParameter,
   FunctionParameterList,
   FunctionParameter,
-  FunctionReturnType,
   FunctionBody,
   StructMemberList,
   StructMember,

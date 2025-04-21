@@ -488,3 +488,59 @@ TEST(SyntaxTest, ParseExprStmtIntoTree) {
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTBinaryExpr>(Expr->get()));
 }
+
+TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
+  {
+    auto Ctx = test::getParser("fn id[T](el: T) -> T { return el; }");
+    Ctx->P.parseDecl();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Decl = ASTDecl::cast(RedTree);
+    ASSERT_TRUE(Decl.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Decl));
+    ASSERT_TRUE(isa<ASTFunctionDecl>(**Decl));
+    auto FunctionDecl = cast<ASTFunctionDecl>(**Decl);
+    ASSERT_FALSE(FunctionDecl.isIntrinsic());
+
+    ASSERT_TRUE(FunctionDecl.getReturnType().has_value());
+    ASSERT_TRUE(isa<ASTNamedType>(FunctionDecl.getReturnType()->get()));
+
+    auto TypeParameterList = FunctionDecl.getTypeParameterList();
+    ASSERT_TRUE(TypeParameterList.has_value());
+    ASSERT_TRUE(TypeParameterList->get()->getTypeParameters().has_value());
+    ASSERT_EQ(TypeParameterList->get()->getTypeParameters().value().size(), 1);
+    auto TypeParameter =
+        TypeParameterList->get()->getTypeParameters().value().at(0);
+    ASSERT_TRUE(TypeParameter->getName().has_value());
+    ASSERT_EQ((*TypeParameter->getName())->getName(), "T");
+
+    auto ParameterList = FunctionDecl.getParameterList();
+    ASSERT_TRUE(ParameterList.has_value());
+    ASSERT_TRUE(ParameterList->get()->getParameters().has_value());
+    ASSERT_EQ(ParameterList->get()->getParameters().value().size(), 1);
+    auto Parameter = ParameterList->get()->getParameters().value().at(0);
+    ASSERT_TRUE(Parameter->getName().has_value());
+    ASSERT_EQ((*Parameter->getName())->getName(), "el");
+
+    auto Body = FunctionDecl.getBody();
+    ASSERT_TRUE(Body.has_value());
+    ASSERT_TRUE(Body->get()->getStmtList().has_value());
+    ASSERT_EQ(Body->get()->getStmtList().value().size(), 1);
+  }
+  {
+    auto Ctx = test::getParser("intrinsic_fn eat();");
+    Ctx->P.parseDecl();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Decl = ASTDecl::cast(RedTree);
+    ASSERT_TRUE(Decl.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Decl));
+    ASSERT_TRUE(isa<ASTFunctionDecl>(**Decl));
+    auto FunctionDecl = cast<ASTFunctionDecl>(**Decl);
+    ASSERT_TRUE(FunctionDecl.isIntrinsic());
+
+    ASSERT_FALSE(FunctionDecl.getBody().has_value());
+  }
+}

@@ -38,8 +38,6 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "FunctionParameter";
   case SyntaxKind::FunctionParameterList:
     return "FunctionParameterList";
-  case SyntaxKind::FunctionReturnType:
-    return "FunctionReturnType";
   case SyntaxKind::FunctionBody:
     return "FunctionBody";
   case SyntaxKind::IntrinsicType:
