@@ -301,7 +301,7 @@ auto Parser::parseStructDecl() -> void {
   assert(at(SyntaxKind::KeywordStruct) &&
          "called parseStructDecl without 'struct'");
   auto C = open();
-  expect(SyntaxKind::Struct);
+  expect(SyntaxKind::KeywordStruct);
   expect(SyntaxKind::Identifier);
   if (at(SyntaxKind::LeftBrace))
     parseStructMemberList();
@@ -335,7 +335,7 @@ auto Parser::parseStructMember() -> void {
          "called parseStructMember without <identifier>");
   auto C = open();
   expect(SyntaxKind::Identifier);
-  expect(SyntaxKind::Semicolon);
+  expect(SyntaxKind::Colon);
   if (atTypeStart())
     parseType();
   close(C, SyntaxKind::StructMember);
