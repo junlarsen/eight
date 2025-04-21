@@ -631,3 +631,36 @@ TEST(SyntaxTest, ParseTraitDeclIntoTree) {
   ASSERT_TRUE((*FMParameterList)->getParameters().has_value());
   ASSERT_EQ((*FMParameterList)->getParameters()->size(), 2);
 }
+
+TEST(SyntaxTest, ParseInstanceDeclIntoTree) {
+  auto Ctx = test::getParser("instance Add[i32, i32] for i32 { fn add() {} "
+                             "intrinsic_fn add_fast(); }");
+  Ctx->P.parseDecl();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_TRUE(Decl.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Decl));
+  ASSERT_TRUE(isa<ASTInstanceDecl>(**Decl));
+  auto InstanceDecl = cast<ASTInstanceDecl>(**Decl);
+
+  ASSERT_TRUE(InstanceDecl.getAttachedType().has_value());
+  ASSERT_TRUE(isa<ASTNamedType>(**InstanceDecl.getAttachedType()));
+
+  auto TypeArgumentList = InstanceDecl.getTypeArgumentList();
+  ASSERT_TRUE(TypeArgumentList.has_value());
+  ASSERT_TRUE((*TypeArgumentList)->getTypeArguments().has_value());
+  ASSERT_EQ((*TypeArgumentList)->getTypeArguments()->size(), 2);
+  auto TypeArgument = (*TypeArgumentList)->getTypeArguments()->at(0);
+  ASSERT_TRUE(isa<ASTNamedType>(*TypeArgument));
+
+  auto MemberList = InstanceDecl.getMemberList();
+  ASSERT_TRUE(MemberList.has_value());
+  ASSERT_TRUE((*MemberList)->getFunctionMembers().has_value());
+  ASSERT_EQ((*MemberList)->getFunctionMembers()->size(), 2);
+  auto FunctionMember = (*MemberList)->getFunctionMembers()->at(0);
+  ASSERT_FALSE(FunctionMember->isIntrinsic());
+  auto IntrinsicFunctionMember = (*MemberList)->getFunctionMembers()->at(1);
+  ASSERT_TRUE(IntrinsicFunctionMember->isIntrinsic());
+}

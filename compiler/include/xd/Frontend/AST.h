@@ -164,6 +164,35 @@ public:
   }
 };
 
+/// Member class representing the type argument list to the call expression.
+template <SyntaxKind ListKind> class TypeArgumentList {
+  std::shared_ptr<SyntaxNode> SN;
+
+public:
+  explicit TypeArgumentList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  /// Get the type argument list
+  auto getTypeArguments() const
+      -> std::optional<std::vector<std::shared_ptr<ASTType>>> {
+    if (auto TypeArgs = SN->findChildren(isTypeSyntaxKind);
+        TypeArgs.has_value()) {
+      std::vector<std::shared_ptr<ASTType>> Result;
+      for (auto TypeArg : *TypeArgs) {
+        if (auto TA = ASTType::cast(TypeArg); TA.has_value())
+          Result.push_back(*TA);
+      }
+      return Result;
+    }
+    return std::nullopt;
+  }
+
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<TypeArgumentList>> {
+    if (SN->getSyntaxKind() != ListKind || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<TypeArgumentList>(SN);
+  }
+};
+
 enum class ASTUnaryOperator {
   Not,
   Minus,
@@ -433,36 +462,6 @@ public:
 
 class ASTCallExpr : public ASTExpr {
 public:
-  /// Member class representing the type argument list to the call expression.
-  class TypeArgumentList {
-    std::shared_ptr<SyntaxNode> SN;
-
-  public:
-    explicit TypeArgumentList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
-    /// Get the type argument list
-    auto getTypeArguments() const
-        -> std::optional<std::vector<std::shared_ptr<ASTType>>> {
-      if (auto TypeArgs = SN->findChildren(isTypeSyntaxKind);
-          TypeArgs.has_value()) {
-        std::vector<std::shared_ptr<ASTType>> Result;
-        for (auto TypeArg : *TypeArgs) {
-          if (auto TA = ASTType::cast(TypeArg); TA.has_value())
-            Result.push_back(*TA);
-        }
-        return Result;
-      }
-      return std::nullopt;
-    }
-
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
-        -> std::optional<std::shared_ptr<TypeArgumentList>> {
-      if (SN->getSyntaxKind() != SyntaxKind::CallExprTypeArgumentList ||
-          !SN->isNode())
-        return std::nullopt;
-      return std::make_shared<TypeArgumentList>(SN);
-    }
-  };
-
   /// Member class representing the argument list to the call expression.
   class ArgumentList {
     std::shared_ptr<SyntaxNode> SN;
@@ -502,10 +501,11 @@ public:
 
   /// Get the type arguments provided to this call.
   auto getTypeArgumentList() const
-      -> std::optional<std::shared_ptr<TypeArgumentList>> {
+      -> std::optional<std::shared_ptr<
+          TypeArgumentList<SyntaxKind::CallExprTypeArgumentList>>> {
     if (auto TAL = SN->findChild(SyntaxKind::CallExprTypeArgumentList);
         TAL.has_value())
-      return TypeArgumentList::cast(*TAL);
+      return TypeArgumentList<SyntaxKind::CallExprTypeArgumentList>::cast(*TAL);
     return std::nullopt;
   }
 
@@ -1330,6 +1330,83 @@ public:
     if (SN->getSyntaxKind() != SyntaxKind::Trait || !SN->isNode())
       return std::nullopt;
     return std::make_shared<ASTTraitDecl>(SN);
+  }
+};
+
+class ASTInstanceDecl : public ASTDecl {
+public:
+  /// Member class for the trait members
+  class MemberList {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit MemberList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get all regular function members.
+    auto getFunctionMembers() const
+        -> std::optional<std::vector<std::shared_ptr<ASTFunctionDecl>>> {
+      if (auto MS = SN->findChildren([&](SyntaxKind SK) {
+            return SK == SyntaxKind::Function ||
+                   SK == SyntaxKind::IntrinsicFunction;
+          });
+          MS.has_value()) {
+        std::vector<std::shared_ptr<ASTFunctionDecl>> Result;
+        for (auto M : *MS)
+          if (auto MM = ASTFunctionDecl::cast(M); MM.has_value())
+            Result.push_back(*MM);
+        return Result;
+      }
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<MemberList>> {
+      if (SN->getSyntaxKind() != SyntaxKind::InstanceMemberList ||
+          !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<MemberList>(SN);
+    }
+  };
+
+  explicit ASTInstanceDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  /// Get the type this instance is attached to.
+  auto getAttachedType() const -> std::optional<std::shared_ptr<ASTType>> {
+    if (auto T = SN->findChild(isTypeSyntaxKind); T.has_value())
+      return ASTType::cast(*T);
+    return std::nullopt;
+  }
+
+  /// Get the type arguments provided to the instance.
+  auto getTypeArgumentList() const
+      -> std::optional<std::shared_ptr<
+          TypeArgumentList<SyntaxKind::InstanceTypeArgumentList>>> {
+    if (auto TAL = SN->findChild(SyntaxKind::InstanceTypeArgumentList);
+        TAL.has_value())
+      return TypeArgumentList<SyntaxKind::InstanceTypeArgumentList>::cast(*TAL);
+    return std::nullopt;
+  }
+
+  /// Get the trait this is an instance of.
+  auto getTraitName() const -> std::optional<std::shared_ptr<Identifier>> {
+    if (auto T = SN->findChild(SyntaxKind::Identifier); T.has_value())
+      return Identifier::cast(*T);
+    return std::nullopt;
+  }
+
+  /// Get the instance member list.
+  auto getMemberList() const -> std::optional<std::shared_ptr<MemberList>> {
+    if (auto ML = SN->findChild(SyntaxKind::InstanceMemberList); ML.has_value())
+      return MemberList::cast(*ML);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::Instance;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTInstanceDecl>> {
+    if (SN->getSyntaxKind() != SyntaxKind::Instance || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTInstanceDecl>(SN);
   }
 };
 } // namespace xd
