@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/Syntax.h"
+#include "Support.h"
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/Lexer.h"
 #include "xd/Frontend/Parser.h"
@@ -78,24 +79,8 @@ TEST(SyntaxTest, CastIntoSyntaxTree) {
   ASSERT_EQ((*Ident)->getName(), "int");
 }
 
-struct Context {
-  std::unique_ptr<MemoryBuffer> Buf;
-  std::unique_ptr<DiagnosticManager> DM;
-  Lexer L;
-  Parser P;
-};
-
-static auto getParser(const StringRef Input) -> std::unique_ptr<Context> {
-  auto Buf = MemoryBuffer::getMemBuffer(Input);
-  auto DM = std::make_unique<DiagnosticManager>();
-  auto Lex = Lexer(Buf->getBufferStart());
-  auto P = Parser(*DM, std::move(Lex.drain()));
-  return std::make_unique<Context>(std::move(Buf), std::move(DM), Lex,
-                                   std::move(P));
-}
-
 TEST(SyntaxTest, ParseBinaryExprIntoTree) {
-  auto Ctx = getParser("1 + 5 * 2");
+  auto Ctx = test::getParser("1 + 5 * 2");
   Ctx->P.parseExpr();
   auto GreenTree = Ctx->P.build();
   auto RedTree =
@@ -114,7 +99,7 @@ TEST(SyntaxTest, ParseBinaryExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseUnaryExprIntoTree) {
-  auto Ctx = getParser("-*x");
+  auto Ctx = test::getParser("-*x");
   Ctx->P.parseExpr();
   auto GreenTree = Ctx->P.build();
   auto RedTree =
