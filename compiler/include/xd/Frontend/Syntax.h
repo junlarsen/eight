@@ -244,7 +244,7 @@ static const TokenSet TSInstanceTypeArgumentListRecovery =
 static const TokenSet TSBlockRecovery =
     TSDeclRecovery |
     TokenSet(1 << SyntaxKind::KeywordLet | 1 << SyntaxKind::KeywordIf |
-             1 << SyntaxKind::KeywordFor | 1 << SyntaxKind::ContinueStmt |
+             1 << SyntaxKind::KeywordFor | 1 << SyntaxKind::KeywordContinue |
              1 << SyntaxKind::KeywordBreak | 1 << SyntaxKind::KeywordReturn);
 
 /// A call expression's argument may recover at the next statement.
