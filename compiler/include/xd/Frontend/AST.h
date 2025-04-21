@@ -54,14 +54,14 @@ class Identifier final {
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit Identifier(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit Identifier(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
   auto getLocation() const -> SourceLocation { return SN->getLocation(); }
   auto getName() const -> llvm::StringRef {
     return llvm::cast<GreenToken>(SN->getGreen().get())->getText();
   }
 
   /// Can the given SyntaxNode be cast to an Identifier?
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<Identifier>> {
     if (!SN->isToken() || SN->getSyntaxKind() != SyntaxKind::Identifier)
       return std::nullopt;
@@ -78,7 +78,7 @@ protected:
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit ASTNode(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit ASTNode(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
 
   auto getSyntaxKind() const -> SyntaxKind { return SN->getSyntaxKind(); }
   auto getLocation() const -> SourceLocation { return SN->getLocation(); }
@@ -90,12 +90,12 @@ public:
 /// Any type node in the abstract syntax tree.
 class ASTType : public ASTNode {
 public:
-  explicit ASTType(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
+  explicit ASTType(const std::shared_ptr<SyntaxNode> &SN) : ASTNode(SN) {}
 
   static bool classof(const ASTNode *Node) {
     return isTypeSyntaxKind(Node->getSyntaxKind());
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTType>> {
     if (!isTypeSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
@@ -106,7 +106,8 @@ public:
 /// Represent a pointer type.
 class ASTPointerType final : public ASTType {
 public:
-  explicit ASTPointerType(std::shared_ptr<SyntaxNode> SN) : ASTType(SN) {}
+  explicit ASTPointerType(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTType(SN) {}
 
   /// Get the type that this type is a pointer to.
   auto getInnerType() const -> std::optional<std::shared_ptr<ASTType>> {
@@ -118,7 +119,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::PointerType;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTPointerType>> {
     if (SN->getSyntaxKind() != SyntaxKind::PointerType || !SN->isNode())
       return std::nullopt;
@@ -129,7 +130,7 @@ public:
 /// Represent a named type such as `int`.
 class ASTNamedType final : public ASTType {
 public:
-  explicit ASTNamedType(std::shared_ptr<SyntaxNode> SN) : ASTType(SN) {}
+  explicit ASTNamedType(const std::shared_ptr<SyntaxNode> &SN) : ASTType(SN) {}
 
   /// Get the name of the type.
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
@@ -141,7 +142,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::NamedType;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTNamedType>> {
     if (SN->getSyntaxKind() != SyntaxKind::NamedType || !SN->isNode())
       return std::nullopt;
@@ -151,12 +152,12 @@ public:
 
 class ASTExpr : public ASTNode {
 public:
-  explicit ASTExpr(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
+  explicit ASTExpr(const std::shared_ptr<SyntaxNode> &SN) : ASTNode(SN) {}
 
   static bool classof(const ASTNode *Node) {
     return isExprSyntaxKind(Node->getSyntaxKind());
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTExpr>> {
     if (!isExprSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
@@ -169,7 +170,7 @@ template <SyntaxKind ListKind> class TypeArgumentList {
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit TypeArgumentList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit TypeArgumentList(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
   /// Get the type argument list
   auto getTypeArguments() const
       -> std::optional<std::vector<std::shared_ptr<ASTType>>> {
@@ -185,7 +186,7 @@ public:
     return std::nullopt;
   }
 
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<TypeArgumentList>> {
     if (SN->getSyntaxKind() != ListKind || !SN->isNode())
       return std::nullopt;
@@ -221,7 +222,7 @@ inline auto getUnaryOperator(SyntaxKind SK) -> ASTUnaryOperator {
 /// Represent a unary operation.
 class ASTUnaryExpr : public ASTExpr {
 public:
-  explicit ASTUnaryExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  explicit ASTUnaryExpr(const std::shared_ptr<SyntaxNode> &SN) : ASTExpr(SN) {}
   /// Get the operator kind.
   ///
   /// This does not return an optional node, because the UnaryExpr in the AST
@@ -240,7 +241,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return isUnaryExprSyntaxKind(Node->getSyntaxKind());
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTUnaryExpr>> {
     if (!isUnaryExprSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
@@ -302,7 +303,7 @@ inline auto getBinaryOperator(SyntaxKind SK) -> ASTBinaryOperator {
 
 class ASTBinaryExpr : public ASTExpr {
 public:
-  explicit ASTBinaryExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  explicit ASTBinaryExpr(const std::shared_ptr<SyntaxNode> &SN) : ASTExpr(SN) {}
   /// Get the operator kind.
   ///
   /// This does not return an optional node, because the BinaryExpr in the AST
@@ -332,7 +333,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return isBinaryExprSyntaxKind(Node->getSyntaxKind());
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTBinaryExpr>> {
     if (!isBinaryExprSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
@@ -342,7 +343,7 @@ public:
 
 class ASTGroupExpr : public ASTExpr {
 public:
-  explicit ASTGroupExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  explicit ASTGroupExpr(const std::shared_ptr<SyntaxNode> &SN) : ASTExpr(SN) {}
   auto getInnerExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
     if (auto InnerExpr = SN->findChildAtIndex(isExprSyntaxKind, 0);
         InnerExpr.has_value())
@@ -353,7 +354,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::GroupExpr;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTGroupExpr>> {
     if (SN->getSyntaxKind() != SyntaxKind::GroupExpr || !SN->isNode())
       return std::nullopt;
@@ -363,7 +364,8 @@ public:
 
 class ASTConstantIndexExpr : public ASTExpr {
 public:
-  explicit ASTConstantIndexExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  explicit ASTConstantIndexExpr(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTExpr(SN) {}
   /// Get the expression the indexing is being done on.
   auto getOrigin() const -> std::optional<std::shared_ptr<ASTExpr>> {
     if (auto Origin = SN->findChildAtIndex(isExprSyntaxKind, 0);
@@ -382,7 +384,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ConstantIndexExpr;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTConstantIndexExpr>> {
     if (SN->getSyntaxKind() != SyntaxKind::ConstantIndexExpr || !SN->isNode())
       return std::nullopt;
@@ -392,7 +394,8 @@ public:
 
 class ASTReferenceExpr : public ASTExpr {
 public:
-  explicit ASTReferenceExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  explicit ASTReferenceExpr(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTExpr(SN) {}
   /// Get the variable name for this reference expression.
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
     if (auto Name = SN->findChild(SyntaxKind::Identifier); Name.has_value())
@@ -403,7 +406,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ReferenceExpr;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTReferenceExpr>> {
     if (SN->getSyntaxKind() != SyntaxKind::ReferenceExpr || !SN->isNode())
       return std::nullopt;
@@ -413,7 +416,7 @@ public:
 
 class ASTIntegerLiteralExpr : public ASTExpr {
 public:
-  explicit ASTIntegerLiteralExpr(std::shared_ptr<SyntaxNode> SN)
+  explicit ASTIntegerLiteralExpr(const std::shared_ptr<SyntaxNode> &SN)
       : ASTExpr(SN) {}
   /// Get the integer value.
   auto getValue() const -> std::optional<llvm::APInt> {
@@ -428,7 +431,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::IntegerLiteralExpr;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTIntegerLiteralExpr>> {
     if (SN->getSyntaxKind() != SyntaxKind::IntegerLiteralExpr || !SN->isNode())
       return std::nullopt;
@@ -438,7 +441,7 @@ public:
 
 class ASTBooleanLiteralExpr : public ASTExpr {
 public:
-  explicit ASTBooleanLiteralExpr(std::shared_ptr<SyntaxNode> SN)
+  explicit ASTBooleanLiteralExpr(const std::shared_ptr<SyntaxNode> &SN)
       : ASTExpr(SN) {}
   /// Get the boolean value.
   auto getValue() const -> std::optional<bool> {
@@ -452,7 +455,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::BooleanLiteralExpr;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTBooleanLiteralExpr>> {
     if (SN->getSyntaxKind() != SyntaxKind::BooleanLiteralExpr || !SN->isNode())
       return std::nullopt;
@@ -467,7 +470,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit ArgumentList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit ArgumentList(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get the argument list.
     auto getArguments() const
         -> std::optional<std::vector<std::shared_ptr<ASTExpr>>> {
@@ -482,7 +485,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<ArgumentList>> {
       if (SN->getSyntaxKind() != SyntaxKind::CallExprArgumentList ||
           !SN->isNode())
@@ -491,7 +494,7 @@ public:
     }
   };
 
-  explicit ASTCallExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  explicit ASTCallExpr(const std::shared_ptr<SyntaxNode> &SN) : ASTExpr(SN) {}
   /// Get the expression that is being called
   auto getCallee() const -> std::optional<std::shared_ptr<ASTExpr>> {
     if (auto Callee = SN->findChild(isExprSyntaxKind); Callee.has_value())
@@ -520,7 +523,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::CallExpr;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTCallExpr>> {
     if (SN->getSyntaxKind() != SyntaxKind::CallExpr || !SN->isNode())
       return std::nullopt;
@@ -537,7 +540,8 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit ConstructionMember(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit ConstructionMember(const std::shared_ptr<SyntaxNode> &SN)
+        : SN(SN) {}
     /// Get the member name
     auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
       if (auto Name = SN->findChild(SyntaxKind::Identifier); Name.has_value())
@@ -552,7 +556,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<ConstructionMember>> {
       if (SN->getSyntaxKind() != SyntaxKind::ConstructionExprMember ||
           !SN->isNode())
@@ -567,7 +571,8 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit ConstructionMemberList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit ConstructionMemberList(const std::shared_ptr<SyntaxNode> &SN)
+        : SN(SN) {}
     /// Get the members.
     auto getMembers() const
         -> std::optional<std::vector<std::shared_ptr<ConstructionMember>>> {
@@ -583,7 +588,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<ConstructionMemberList>> {
       if (SN->getSyntaxKind() != SyntaxKind::ConstructionExprMemberList ||
           !SN->isNode())
@@ -592,7 +597,8 @@ public:
     }
   };
 
-  explicit ASTConstructionExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  explicit ASTConstructionExpr(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTExpr(SN) {}
   /// Get the construction initializer member list.
   auto getMemberList() const
       -> std::optional<std::shared_ptr<ConstructionMemberList>> {
@@ -612,7 +618,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ConstructionExpr;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTConstructionExpr>> {
     if (SN->getSyntaxKind() != SyntaxKind::ConstructionExpr || !SN->isNode())
       return std::nullopt;
@@ -622,12 +628,12 @@ public:
 
 class ASTStmt : public ASTNode {
 public:
-  explicit ASTStmt(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
+  explicit ASTStmt(const std::shared_ptr<SyntaxNode> &SN) : ASTNode(SN) {}
 
   static bool classof(const ASTNode *Node) {
     return isStmtSyntaxKind(Node->getSyntaxKind());
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTStmt>> {
     if (!isStmtSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
@@ -640,7 +646,7 @@ template <SyntaxKind ChildKind> class Body {
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit Body(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit Body(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
   /// Get the statement list.
   auto
   getStmtList() const -> std::optional<std::vector<std::shared_ptr<ASTStmt>>> {
@@ -654,8 +660,8 @@ public:
     return std::nullopt;
   }
 
-  static auto
-  cast(std::shared_ptr<SyntaxNode> SN) -> std::optional<std::shared_ptr<Body>> {
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
+      -> std::optional<std::shared_ptr<Body>> {
     if (SN->getSyntaxKind() != ChildKind || !SN->isNode())
       return std::nullopt;
     return std::make_shared<Body>(SN);
@@ -664,7 +670,7 @@ public:
 
 class ASTLetStmt : public ASTStmt {
 public:
-  explicit ASTLetStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  explicit ASTLetStmt(const std::shared_ptr<SyntaxNode> &SN) : ASTStmt(SN) {}
   /// Get the name of the let binding.
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
     if (auto Name = SN->findChild(SyntaxKind::Identifier); Name.has_value())
@@ -689,7 +695,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::LetStmt;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTStmt>> {
     if (SN->getSyntaxKind() != SyntaxKind::LetStmt || !SN->isNode())
       return std::nullopt;
@@ -699,7 +705,7 @@ public:
 
 class ASTIfStmt : public ASTStmt {
 public:
-  explicit ASTIfStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  explicit ASTIfStmt(const std::shared_ptr<SyntaxNode> &SN) : ASTStmt(SN) {}
   /// Get the condition of the if statement
   auto getConditionExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
     if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
@@ -726,7 +732,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::IfStmt;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTIfStmt>> {
     if (SN->getSyntaxKind() != SyntaxKind::IfStmt || !SN->isNode())
       return std::nullopt;
@@ -741,7 +747,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit Initializer(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit Initializer(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get the binding variable name.
     auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
       if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -763,7 +769,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<Initializer>> {
       if (SN->getSyntaxKind() != SyntaxKind::ForInitializer || !SN->isNode())
         return std::nullopt;
@@ -776,7 +782,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit Condition(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit Condition(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get the condition expression.
     auto getExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
       if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
@@ -784,7 +790,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<Condition>> {
       if (SN->getSyntaxKind() != SyntaxKind::ForCondition || !SN->isNode())
         return std::nullopt;
@@ -797,7 +803,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit Increment(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit Increment(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get the increment expression.
     auto getExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
       if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
@@ -805,7 +811,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<Increment>> {
       if (SN->getSyntaxKind() != SyntaxKind::ForIncrement || !SN->isNode())
         return std::nullopt;
@@ -813,7 +819,7 @@ public:
     }
   };
 
-  explicit ASTForStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  explicit ASTForStmt(const std::shared_ptr<SyntaxNode> &SN) : ASTStmt(SN) {}
   /// Get the initializer.
   auto getInitializer() const -> std::optional<std::shared_ptr<Initializer>> {
     if (auto I = SN->findChild(SyntaxKind::ForInitializer); I.has_value())
@@ -846,7 +852,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ForStmt;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTForStmt>> {
     if (SN->getSyntaxKind() != SyntaxKind::ForStmt || !SN->isNode())
       return std::nullopt;
@@ -856,12 +862,12 @@ public:
 
 class ASTBreakStmt : public ASTStmt {
 public:
-  explicit ASTBreakStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  explicit ASTBreakStmt(const std::shared_ptr<SyntaxNode> &SN) : ASTStmt(SN) {}
 
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::BreakStmt;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTBreakStmt>> {
     if (SN->getSyntaxKind() != SyntaxKind::BreakStmt || !SN->isNode())
       return std::nullopt;
@@ -871,12 +877,13 @@ public:
 
 class ASTContinueStmt : public ASTStmt {
 public:
-  explicit ASTContinueStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  explicit ASTContinueStmt(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTStmt(SN) {}
 
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ContinueStmt;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTContinueStmt>> {
     if (SN->getSyntaxKind() != SyntaxKind::ContinueStmt || !SN->isNode())
       return std::nullopt;
@@ -886,7 +893,7 @@ public:
 
 class ASTReturnStmt : public ASTStmt {
 public:
-  explicit ASTReturnStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  explicit ASTReturnStmt(const std::shared_ptr<SyntaxNode> &SN) : ASTStmt(SN) {}
   /// Get the optional return value.
   auto getReturnExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
     if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
@@ -897,7 +904,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ReturnStmt;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTReturnStmt>> {
     if (SN->getSyntaxKind() != SyntaxKind::ReturnStmt || !SN->isNode())
       return std::nullopt;
@@ -907,7 +914,7 @@ public:
 
 class ASTExprStmt : public ASTStmt {
 public:
-  explicit ASTExprStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  explicit ASTExprStmt(const std::shared_ptr<SyntaxNode> &SN) : ASTStmt(SN) {}
   /// Get the expression.
   auto getExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
     if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
@@ -918,7 +925,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ExprStmt;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTExprStmt>> {
     if (SN->getSyntaxKind() != SyntaxKind::ExprStmt || !SN->isNode())
       return std::nullopt;
@@ -928,12 +935,12 @@ public:
 
 class ASTDecl : public ASTNode {
 public:
-  explicit ASTDecl(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
+  explicit ASTDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTNode(SN) {}
 
   static bool classof(const ASTNode *Node) {
     return isDeclSyntaxKind(Node->getSyntaxKind());
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTDecl>> {
     if (!isDeclSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
@@ -946,7 +953,7 @@ template <SyntaxKind ChildKind> class TypeParameter {
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit TypeParameter(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit TypeParameter(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
   /// Get the name of the type parameter
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
     if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -954,7 +961,7 @@ public:
     return std::nullopt;
   }
 
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<TypeParameter>> {
     if (SN->getSyntaxKind() != ChildKind || !SN->isNode())
       return std::nullopt;
@@ -967,7 +974,7 @@ template <SyntaxKind ListKind, SyntaxKind ChildKind> class TypeParameterList {
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit TypeParameterList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit TypeParameterList(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
   /// Get the type parameters
   auto getTypeParameters() const
       -> std::optional<std::vector<std::shared_ptr<TypeParameter<ChildKind>>>> {
@@ -982,7 +989,7 @@ public:
     return std::nullopt;
   }
 
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<TypeParameterList>> {
     if (SN->getSyntaxKind() != ListKind || !SN->isNode())
       return std::nullopt;
@@ -995,7 +1002,7 @@ template <SyntaxKind ChildKind> class Parameter {
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit Parameter(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit Parameter(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
   /// Get the name of the parameter
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
     if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -1010,7 +1017,7 @@ public:
     return std::nullopt;
   }
 
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<Parameter>> {
     if (SN->getSyntaxKind() != ChildKind || !SN->isNode())
       return std::nullopt;
@@ -1023,7 +1030,7 @@ template <SyntaxKind ListKind, SyntaxKind ChildKind> class ParameterList {
   std::shared_ptr<SyntaxNode> SN;
 
 public:
-  explicit ParameterList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+  explicit ParameterList(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
   /// Get the parameter list
   auto getParameters() const
       -> std::optional<std::vector<std::shared_ptr<Parameter<ChildKind>>>> {
@@ -1038,7 +1045,7 @@ public:
     return std::nullopt;
   }
 
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ParameterList>> {
     if (SN->getSyntaxKind() != ListKind || !SN->isNode())
       return std::nullopt;
@@ -1048,7 +1055,8 @@ public:
 
 class ASTFunctionDecl : public ASTDecl {
 public:
-  explicit ASTFunctionDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  explicit ASTFunctionDecl(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTDecl(SN) {}
   /// Get the optionally declared return type
   auto
   getReturnTypeAnnotation() const -> std::optional<std::shared_ptr<ASTType>> {
@@ -1097,7 +1105,7 @@ public:
     return Node->getSyntaxKind() == SyntaxKind::Function ||
            Node->getSyntaxKind() == SyntaxKind::IntrinsicFunction;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTFunctionDecl>> {
     if ((SN->getSyntaxKind() != SyntaxKind::Function &&
          SN->getSyntaxKind() != SyntaxKind::IntrinsicFunction) ||
@@ -1114,7 +1122,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit Member(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit Member(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get the name of the member.
     auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
       if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -1129,7 +1137,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<Member>> {
       if (SN->getSyntaxKind() != SyntaxKind::StructMember || !SN->isNode())
         return std::nullopt;
@@ -1142,7 +1150,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit MemberList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit MemberList(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get the member list
     auto
     getMembers() const -> std::optional<std::vector<std::shared_ptr<Member>>> {
@@ -1157,7 +1165,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<MemberList>> {
       if (SN->getSyntaxKind() != SyntaxKind::StructMemberList || !SN->isNode())
         return std::nullopt;
@@ -1165,7 +1173,7 @@ public:
     }
   };
 
-  explicit ASTStructDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  explicit ASTStructDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
   /// Get the name of the struct
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
     if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -1183,7 +1191,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::Struct;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTStructDecl>> {
     if (SN->getSyntaxKind() != SyntaxKind::Struct || !SN->isNode())
       return std::nullopt;
@@ -1193,7 +1201,8 @@ public:
 
 class ASTIntrinsicTypeDecl : public ASTDecl {
 public:
-  explicit ASTIntrinsicTypeDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  explicit ASTIntrinsicTypeDecl(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTDecl(SN) {}
   /// Get the name of the type decl
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
     if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -1204,7 +1213,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::IntrinsicType;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTIntrinsicTypeDecl>> {
     if (SN->getSyntaxKind() != SyntaxKind::IntrinsicType || !SN->isNode())
       return std::nullopt;
@@ -1218,7 +1227,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit FunctionMember(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit FunctionMember(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get the function name.
     auto getName() -> std::optional<std::shared_ptr<Identifier>> {
       if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -1258,7 +1267,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<FunctionMember>> {
       if (SN->getSyntaxKind() != SyntaxKind::TraitFunctionMember ||
           !SN->isNode())
@@ -1272,7 +1281,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit MemberList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit MemberList(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get all function members
     auto getFunctionMembers() const
         -> std::optional<std::vector<std::shared_ptr<FunctionMember>>> {
@@ -1287,7 +1296,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<MemberList>> {
       if (SN->getSyntaxKind() != SyntaxKind::TraitMemberList || !SN->isNode())
         return std::nullopt;
@@ -1295,7 +1304,7 @@ public:
     }
   };
 
-  explicit ASTTraitDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  explicit ASTTraitDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
   /// Get the trait name.
   auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
     if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
@@ -1325,7 +1334,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::Trait;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTTraitDecl>> {
     if (SN->getSyntaxKind() != SyntaxKind::Trait || !SN->isNode())
       return std::nullopt;
@@ -1340,7 +1349,7 @@ public:
     std::shared_ptr<SyntaxNode> SN;
 
   public:
-    explicit MemberList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    explicit MemberList(const std::shared_ptr<SyntaxNode> &SN) : SN(SN) {}
     /// Get all regular function members.
     auto getFunctionMembers() const
         -> std::optional<std::vector<std::shared_ptr<ASTFunctionDecl>>> {
@@ -1358,7 +1367,7 @@ public:
       return std::nullopt;
     }
 
-    static auto cast(std::shared_ptr<SyntaxNode> SN)
+    static auto cast(const std::shared_ptr<SyntaxNode> &SN)
         -> std::optional<std::shared_ptr<MemberList>> {
       if (SN->getSyntaxKind() != SyntaxKind::InstanceMemberList ||
           !SN->isNode())
@@ -1367,7 +1376,8 @@ public:
     }
   };
 
-  explicit ASTInstanceDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  explicit ASTInstanceDecl(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTDecl(SN) {}
   /// Get the type this instance is attached to.
   auto getAttachedType() const -> std::optional<std::shared_ptr<ASTType>> {
     if (auto T = SN->findChild(isTypeSyntaxKind); T.has_value())
@@ -1402,7 +1412,7 @@ public:
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::Instance;
   }
-  static auto cast(std::shared_ptr<SyntaxNode> SN)
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN)
       -> std::optional<std::shared_ptr<ASTInstanceDecl>> {
     if (SN->getSyntaxKind() != SyntaxKind::Instance || !SN->isNode())
       return std::nullopt;
