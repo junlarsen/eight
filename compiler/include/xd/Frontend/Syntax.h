@@ -160,11 +160,11 @@ inline uint64_t operator<<(uint64_t LHS, SyntaxKind RHS) {
   return LHS << static_cast<uint64_t>(RHS);
 }
 
+/// The index of the SyntaxKind enum where token values stop.
+constexpr size_t TokenSyntaxKindCount = static_cast<size_t>(SyntaxKind::Eof);
+
 /// A bitset representing the possible tokens the lexer might produce.
-///
-/// This is fixed to 50 at the moment, because including Error and Eof there are
-/// 50 significant members from SyntaxKind that can be put into this bitset.
-using TokenSet = std::bitset<50>;
+using TokenSet = std::bitset<TokenSyntaxKindCount>;
 
 static const TokenSet TSDeclStart =
     1 << SyntaxKind::KeywordFn | 1 << SyntaxKind::KeywordIntrinsicFn |
