@@ -628,10 +628,10 @@ auto Parser::parseBreakStmt() -> void {
 }
 
 auto Parser::parseContinueStmt() -> void {
-  assert(at(SyntaxKind::ContinueStmt) &&
+  assert(at(SyntaxKind::KeywordContinue) &&
          "called parseContinueStmt without 'continue'");
   auto C = open();
-  expect(SyntaxKind::KeywordBreak);
+  expect(SyntaxKind::KeywordContinue);
   expect(SyntaxKind::Semicolon);
   close(C, SyntaxKind::ContinueStmt);
 }

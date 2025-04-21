@@ -34,8 +34,8 @@ class ASTExprStmt;
 class ASTExpr;
 class ASTIntegerLiteralExpr;
 class ASTBooleanLiteralExpr;
-class ASTBinaryOperatorExpr;
-class ASTUnaryOperatorExpr;
+class ASTBinaryExpr;
+class ASTUnaryExpr;
 class ASTConstantIndexExpr;
 class ASTReferenceExpr;
 class ASTCallExpr;
@@ -756,6 +756,183 @@ public:
     if (SN->getSyntaxKind() != SyntaxKind::IfStmt || !SN->isNode())
       return std::nullopt;
     return std::make_shared<ASTIfStmt>(SN);
+  }
+};
+
+class ASTForStmt : public ASTStmt {
+public:
+  /// Member class for the initializer
+  class ForInitializer {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit ForInitializer(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the binding variable name.
+    auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
+      if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
+        return Identifier::cast(*Ident);
+      return std::nullopt;
+    }
+
+    /// Get the type annotation on the binding.
+    auto getTypeAnnotation() const -> std::optional<std::shared_ptr<ASTType>> {
+      if (auto T = SN->findChild(isTypeSyntaxKind); T.has_value())
+        return ASTType::cast(*T);
+      return std::nullopt;
+    }
+
+    /// Get the initializer expression for the binding.
+    auto getInitializer() const -> std::optional<std::shared_ptr<ASTExpr>> {
+      if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
+        return ASTExpr::cast(*Expr);
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<ForInitializer>> {
+      if (SN->getSyntaxKind() != SyntaxKind::ForInitializer || !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<ForInitializer>(SN);
+    }
+  };
+
+  /// Member class for the condition
+  class ForCondition {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit ForCondition(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the condition expression.
+    auto getExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
+      if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
+        return ASTExpr::cast(*Expr);
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<ForCondition>> {
+      if (SN->getSyntaxKind() != SyntaxKind::ForCondition || !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<ForCondition>(SN);
+    }
+  };
+
+  /// Member class for the increment
+  class ForIncrement {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit ForIncrement(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the increment expression.
+    auto getExpr() const -> std::optional<std::shared_ptr<ASTExpr>> {
+      if (auto Expr = SN->findChild(isExprSyntaxKind); Expr.has_value())
+        return ASTExpr::cast(*Expr);
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<ForIncrement>> {
+      if (SN->getSyntaxKind() != SyntaxKind::ForIncrement || !SN->isNode())
+        return std::nullopt;
+      return std::make_unique<ForIncrement>(SN);
+    }
+  };
+
+  /// Member class for the body
+  class ForBody {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit ForBody(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the statement list.
+    auto getStmtList() const
+        -> std::optional<std::vector<std::shared_ptr<ASTStmt>>> {
+      if (auto SL = SN->findChildren(isStmtSyntaxKind); SL.has_value()) {
+        std::vector<std::shared_ptr<ASTStmt>> Result;
+        for (auto Stmt : *SL)
+          if (auto S = ASTStmt::cast(Stmt); S.has_value())
+            Result.push_back(*S);
+        return Result;
+      }
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<ForBody>> {
+      if (SN->getSyntaxKind() != SyntaxKind::ForBody || !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<ForBody>(SN);
+    }
+  };
+
+  explicit ASTForStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+  /// Get the initializer.
+  auto
+  getInitializer() const -> std::optional<std::shared_ptr<ForInitializer>> {
+    if (auto I = SN->findChild(SyntaxKind::ForInitializer); I.has_value())
+      return ForInitializer::cast(*I);
+    return std::nullopt;
+  }
+
+  /// Get the condition.
+  auto getCondition() const -> std::optional<std::shared_ptr<ForCondition>> {
+    if (auto Cond = SN->findChild(SyntaxKind::ForCondition); Cond.has_value())
+      return ForCondition::cast(*Cond);
+    return std::nullopt;
+  }
+
+  /// Get the increment
+  auto getIncrement() const -> std::optional<std::shared_ptr<ForIncrement>> {
+    if (auto I = SN->findChild(SyntaxKind::ForIncrement); I.has_value())
+      return ForIncrement::cast(*I);
+    return std::nullopt;
+  }
+
+  /// Get the body
+  auto getBody() const -> std::optional<std::shared_ptr<ForBody>> {
+    if (auto Body = SN->findChild(SyntaxKind::ForBody); Body.has_value())
+      return ForBody::cast(*Body);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ForStmt;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTForStmt>> {
+    if (SN->getSyntaxKind() != SyntaxKind::ForStmt || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTForStmt>(SN);
+  }
+};
+
+class ASTBreakStmt : public ASTStmt {
+public:
+  explicit ASTBreakStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::BreakStmt;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTBreakStmt>> {
+    if (SN->getSyntaxKind() != SyntaxKind::BreakStmt || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTBreakStmt>(SN);
+  }
+};
+
+class ASTContinueStmt : public ASTStmt {
+public:
+  explicit ASTContinueStmt(std::shared_ptr<SyntaxNode> SN) : ASTStmt(SN) {}
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ContinueStmt;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTContinueStmt>> {
+    if (SN->getSyntaxKind() != SyntaxKind::ContinueStmt || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTContinueStmt>(SN);
   }
 };
 

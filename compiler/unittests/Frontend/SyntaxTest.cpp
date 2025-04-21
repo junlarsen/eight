@@ -358,3 +358,84 @@ TEST(SyntaxTest, ParseIfStmtIntoTree) {
     ASSERT_FALSE(ElseBody.has_value());
   }
 }
+
+TEST(SyntaxTest, ParseForStmtIntoTree) {
+  {
+    auto Ctx =
+        test::getParser("for (let i = 0; i < 10; i = i + 1) { let x = 0; }");
+    Ctx->P.parseStmt();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_TRUE(Stmt.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Stmt));
+    ASSERT_TRUE(isa<ASTForStmt>(**Stmt));
+    auto ForStmt = cast<ASTForStmt>(**Stmt);
+
+    auto ForInitializer = ForStmt.getInitializer();
+    ASSERT_TRUE(ForInitializer.has_value());
+    ASSERT_TRUE(ForInitializer->get()->getName().has_value());
+    ASSERT_EQ(ForInitializer->get()->getName()->get()->getName(), "i");
+    ASSERT_FALSE(ForInitializer->get()->getTypeAnnotation().has_value());
+    ASSERT_TRUE(ForInitializer->get()->getInitializer().has_value());
+    ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(
+        ForInitializer->get()->getInitializer()->get()));
+
+    auto ForCondition = ForStmt.getCondition();
+    ASSERT_TRUE(ForCondition.has_value());
+    ASSERT_TRUE(ForCondition->get()->getExpr().has_value());
+    ASSERT_TRUE(isa<ASTBinaryExpr>(ForCondition->get()->getExpr()->get()));
+
+    auto ForIncrement = ForStmt.getIncrement();
+    ASSERT_TRUE(ForIncrement.has_value());
+    ASSERT_TRUE(ForIncrement->get()->getExpr().has_value());
+    // Assignments are binary operators.
+    ASSERT_TRUE(isa<ASTBinaryExpr>(ForIncrement->get()->getExpr()->get()));
+
+    auto ForBody = ForStmt.getBody();
+    ASSERT_TRUE(ForBody.has_value());
+    ASSERT_TRUE(ForBody->get()->getStmtList().has_value());
+    ASSERT_EQ(ForBody->get()->getStmtList()->size(), 1);
+  }
+  {
+    auto Ctx = test::getParser("for (;;) {}");
+    Ctx->P.parseStmt();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_TRUE(Stmt.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Stmt));
+    ASSERT_TRUE(isa<ASTForStmt>(**Stmt));
+    auto ForStmt = cast<ASTForStmt>(**Stmt);
+
+    ASSERT_FALSE(ForStmt.getInitializer().has_value());
+    ASSERT_FALSE(ForStmt.getCondition().has_value());
+    ASSERT_FALSE(ForStmt.getIncrement().has_value());
+  }
+}
+
+TEST(SyntaxTest, ParseBreakStmtIntoTree) {
+  auto Ctx = test::getParser("break;");
+  Ctx->P.parseStmt();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Stmt = ASTStmt::cast(RedTree);
+  ASSERT_TRUE(Stmt.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Stmt));
+  ASSERT_TRUE(isa<ASTBreakStmt>(**Stmt));
+}
+
+TEST(SyntaxTest, ParseContinueStmtIntoTree) {
+  auto Ctx = test::getParser("continue;");
+  Ctx->P.parseStmt();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Stmt = ASTStmt::cast(RedTree);
+  ASSERT_TRUE(Stmt.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Stmt));
+  ASSERT_TRUE(isa<ASTContinueStmt>(**Stmt));
+}
