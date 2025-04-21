@@ -17,7 +17,7 @@
 namespace xd {
 class ASTDecl;
 class ASTFunctionDecl;
-class ASTTypeDecl;
+class ASTIntrinsicTypeDecl;
 class ASTStructDecl;
 class ASTTraitDecl;
 class ASTInstanceDecl;
@@ -1180,6 +1180,111 @@ public:
         !SN->isNode())
       return std::nullopt;
     return std::make_shared<ASTFunctionDecl>(SN);
+  }
+};
+
+class ASTStructDecl : public ASTDecl {
+public:
+  /// Member class for a single struct member.
+  class Member {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit Member(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the name of the member.
+    auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
+      if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
+        return Identifier::cast(*Ident);
+      return std::nullopt;
+    }
+
+    /// Get the type annotation for the member.
+    auto getTypeAnnotation() const -> std::optional<std::shared_ptr<ASTType>> {
+      if (auto T = SN->findChild(isTypeSyntaxKind); T.has_value())
+        return ASTType::cast(*T);
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<Member>> {
+      if (SN->getSyntaxKind() != SyntaxKind::StructMember || !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<Member>(SN);
+    }
+  };
+
+  /// Member class for the struct member list.
+  class MemberList {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit MemberList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the member list
+    auto
+    getMembers() const -> std::optional<std::vector<std::shared_ptr<Member>>> {
+      if (auto MS = SN->findChildren(SyntaxKind::StructMember);
+          MS.has_value()) {
+        std::vector<std::shared_ptr<Member>> Result;
+        for (auto M : *MS)
+          if (auto MN = Member::cast(M); MN.has_value())
+            Result.push_back(*MN);
+        return Result;
+      }
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<MemberList>> {
+      if (SN->getSyntaxKind() != SyntaxKind::StructMemberList || !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<MemberList>(SN);
+    }
+  };
+
+  explicit ASTStructDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  /// Get the name of the struct
+  auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
+    if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
+      return Identifier::cast(*Ident);
+    return std::nullopt;
+  }
+
+  /// Get the member list
+  auto getMemberList() const -> std::optional<std::shared_ptr<MemberList>> {
+    if (auto ML = SN->findChild(SyntaxKind::StructMemberList); ML.has_value())
+      return MemberList::cast(*ML);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::Struct;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTStructDecl>> {
+    if (SN->getSyntaxKind() != SyntaxKind::Struct || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTStructDecl>(SN);
+  }
+};
+
+class ASTIntrinsicTypeDecl : public ASTDecl {
+public:
+  explicit ASTIntrinsicTypeDecl(std::shared_ptr<SyntaxNode> SN) : ASTDecl(SN) {}
+  /// Get the name of the type decl
+  auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
+    if (auto Ident = SN->findChild(SyntaxKind::Identifier); Ident.has_value())
+      return Identifier::cast(*Ident);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::IntrinsicType;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTIntrinsicTypeDecl>> {
+    if (SN->getSyntaxKind() != SyntaxKind::IntrinsicType || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTIntrinsicTypeDecl>(SN);
   }
 };
 } // namespace xd

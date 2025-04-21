@@ -544,3 +544,46 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
     ASSERT_FALSE(FunctionDecl.getBody().has_value());
   }
 }
+
+TEST(SyntaxTest, ParseStructDeclIntoTree) {
+  auto Ctx = test::getParser("struct Vec2D { x: i32, y: i32 }");
+  Ctx->P.parseDecl();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_TRUE(Decl.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Decl));
+  ASSERT_TRUE(isa<ASTStructDecl>(**Decl));
+  auto StructDecl = cast<ASTStructDecl>(**Decl);
+
+  ASSERT_TRUE(StructDecl.getName().has_value());
+  ASSERT_EQ((*StructDecl.getName())->getName(), "Vec2D");
+
+  auto StructMemberList = StructDecl.getMemberList();
+  ASSERT_TRUE(StructMemberList.has_value());
+  ASSERT_TRUE((*StructMemberList)->getMembers().has_value());
+  ASSERT_TRUE((*StructMemberList)->getMembers()->size() == 2);
+
+  auto StructMember = (*StructMemberList)->getMembers()->at(0);
+  ASSERT_TRUE(StructMember->getName().has_value());
+  ASSERT_EQ((*StructMember->getName())->getName(), "x");
+  ASSERT_TRUE(StructMember->getTypeAnnotation().has_value());
+  ASSERT_TRUE(isa<ASTNamedType>(StructMember->getTypeAnnotation()->get()));
+}
+
+TEST(SyntaxTest, ParseIntrinsicTypeDeclIntoTree) {
+  auto Ctx = test::getParser("intrinsic_type i32;");
+  Ctx->P.parseDecl();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_TRUE(Decl.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Decl));
+  ASSERT_TRUE(isa<ASTIntrinsicTypeDecl>(**Decl));
+  auto TypeDecl = cast<ASTIntrinsicTypeDecl>(**Decl);
+
+  ASSERT_TRUE(TypeDecl.getName().has_value());
+  ASSERT_EQ((*TypeDecl.getName())->getName(), "i32");
+}
