@@ -167,3 +167,46 @@ TEST(SyntaxTest, ParseConstantIndexExprIntoTree) {
   ASSERT_TRUE(Index.has_value());
   ASSERT_EQ((*Index)->getName(), "b");
 }
+
+TEST(SyntaxTest, ParseIntegerLiteralExprIntoTree) {
+  auto Ctx = test::getParser("100");
+  Ctx->P.parseExpr();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Expr));
+  ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(**Expr));
+  auto IntegerLiteralExpr = cast<ASTIntegerLiteralExpr>(**Expr);
+  ASSERT_EQ(IntegerLiteralExpr.getValue(), 100);
+}
+
+TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
+  {
+    auto Ctx = test::getParser("true");
+    Ctx->P.parseExpr();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_TRUE(Expr.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Expr));
+    ASSERT_TRUE(isa<ASTBooleanLiteralExpr>(**Expr));
+    auto BooleanLiteralExpr = cast<ASTBooleanLiteralExpr>(**Expr);
+    ASSERT_EQ(BooleanLiteralExpr.getValue(), true);
+  }
+  {
+    auto Ctx = test::getParser("false");
+    Ctx->P.parseExpr();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_TRUE(Expr.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Expr));
+    ASSERT_TRUE(isa<ASTBooleanLiteralExpr>(**Expr));
+    auto BooleanLiteralExpr = cast<ASTBooleanLiteralExpr>(**Expr);
+    ASSERT_EQ(BooleanLiteralExpr.getValue(), false);
+  }
+}

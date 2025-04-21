@@ -382,6 +382,55 @@ public:
   }
 };
 
+class ASTIntegerLiteralExpr : public ASTExpr {
+public:
+  explicit ASTIntegerLiteralExpr(std::shared_ptr<SyntaxNode> SN)
+      : ASTExpr(SN) {}
+  /// Get the integer value.
+  auto getValue() const -> std::optional<llvm::APInt> {
+    if (auto Lit = SN->findChild(SyntaxKind::IntegerLiteral); Lit.has_value()) {
+      auto LitTok = llvm::dyn_cast<GreenToken>((*Lit)->getGreen().get());
+      assert(LitTok != nullptr && "integer literal node was not a token");
+      return llvm::APInt(32, LitTok->getText(), 10);
+    }
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::IntegerLiteralExpr;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTIntegerLiteralExpr>> {
+    if (SN->getSyntaxKind() != SyntaxKind::IntegerLiteralExpr || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTIntegerLiteralExpr>(SN);
+  }
+};
+
+class ASTBooleanLiteralExpr : public ASTExpr {
+public:
+  explicit ASTBooleanLiteralExpr(std::shared_ptr<SyntaxNode> SN)
+      : ASTExpr(SN) {}
+  /// Get the boolean value.
+  auto getValue() const -> std::optional<bool> {
+    if (auto Lit = SN->findChild(SyntaxKind::TrueLiteral); Lit.has_value())
+      return true;
+    if (auto Lit = SN->findChild(SyntaxKind::FalseLiteral); Lit.has_value())
+      return false;
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::BooleanLiteralExpr;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTBooleanLiteralExpr>> {
+    if (SN->getSyntaxKind() != SyntaxKind::BooleanLiteralExpr || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTBooleanLiteralExpr>(SN);
+  }
+};
+
 class ASTStmt : public ASTNode {
 public:
   explicit ASTStmt(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
