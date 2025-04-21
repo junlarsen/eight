@@ -304,20 +304,29 @@ auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
   }
 }
 
-auto SyntaxNode::findChild(SyntaxKind SK)
+auto SyntaxNode::findChildAtIndex(SyntaxKind SK, size_t Index)
     -> std::optional<std::shared_ptr<SyntaxNode>> {
+  size_t I = 0;
   for (auto &Child : Children) {
-    if (Child->getSyntaxKind() == SK)
-      return Child;
+    if (Child->getSyntaxKind() == SK) {
+      if (I == Index)
+        return Child;
+      I++;
+    }
   }
   return std::nullopt;
 }
 
-auto SyntaxNode::findChild(const std::function<bool(SyntaxKind)> &Predicate)
-    -> std::optional<std::shared_ptr<SyntaxNode>> {
+auto SyntaxNode::findChildAtIndex(
+    const std::function<bool(SyntaxKind)> &Predicate,
+    size_t Index) -> std::optional<std::shared_ptr<SyntaxNode>> {
+  size_t I = 0;
   for (auto &Child : Children) {
-    if (Predicate(Child->getSyntaxKind()))
-      return Child;
+    if (Predicate(Child->getSyntaxKind())) {
+      if (I == Index)
+        return Child;
+      I++;
+    }
   }
   return std::nullopt;
 }

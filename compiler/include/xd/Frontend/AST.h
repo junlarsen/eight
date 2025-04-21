@@ -12,6 +12,7 @@
 #include "xd/Basic/Location.h"
 #include "xd/Frontend/Syntax.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/ErrorHandling.h"
 
 namespace xd {
 class ASTDecl;
@@ -162,6 +163,153 @@ public:
     if (!isExprSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
       return std::nullopt;
     return std::make_shared<ASTExpr>(SN);
+  }
+};
+
+enum class ASTUnaryOperator {
+  Not,
+  Minus,
+  Plus,
+  Deref,
+  AddrOf,
+};
+
+inline auto getUnaryOperator(SyntaxKind SK) -> ASTUnaryOperator {
+  switch (SK) {
+  case SyntaxKind::UnaryNotExpr:
+    return ASTUnaryOperator::Not;
+  case SyntaxKind::UnaryMinusExpr:
+    return ASTUnaryOperator::Minus;
+  case SyntaxKind::UnaryPlusExpr:
+    return ASTUnaryOperator::Plus;
+  case SyntaxKind::UnaryDerefExpr:
+    return ASTUnaryOperator::Deref;
+  case SyntaxKind::UnaryAddrOfExpr:
+    return ASTUnaryOperator::AddrOf;
+  default:
+    llvm_unreachable("invalid unary operator");
+  }
+}
+
+/// Represent a unary operation.
+class ASTUnaryExpr : public ASTExpr {
+public:
+  explicit ASTUnaryExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  /// Get the operator kind.
+  ///
+  /// This does not return an optional node, because the UnaryExpr in the AST
+  /// represents all possible UnaryExpr syntax kinds in the red tree.
+  auto getOperator() const -> ASTUnaryOperator {
+    return getUnaryOperator(SN->getSyntaxKind());
+  }
+
+  /// Get the left-hand side operand.
+  auto getOperand() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto Operand = SN->findChild(isExprSyntaxKind); Operand.has_value())
+      return ASTExpr::cast(*Operand);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return isUnaryExprSyntaxKind(Node->getSyntaxKind());
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTUnaryExpr>> {
+    if (!isUnaryExprSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTUnaryExpr>(SN);
+  }
+};
+
+enum class ASTBinaryOperator {
+  LogicalAnd,
+  LogicalOr,
+  Assign,
+  Equality,
+  Inequality,
+  LessThan,
+  GreaterThan,
+  LessThanEqual,
+  GreaterThanEqual,
+  Add,
+  Sub,
+  Mul,
+  Div,
+  Modulus,
+};
+
+inline auto getBinaryOperator(SyntaxKind SK) -> ASTBinaryOperator {
+  switch (SK) {
+  case SyntaxKind::BinaryLogicalAndExpr:
+    return ASTBinaryOperator::LogicalAnd;
+  case SyntaxKind::BinaryLogicalOrExpr:
+    return ASTBinaryOperator::LogicalOr;
+  case SyntaxKind::BinaryAssignExpr:
+    return ASTBinaryOperator::Assign;
+  case SyntaxKind::BinaryEqualityExpr:
+    return ASTBinaryOperator::Equality;
+  case SyntaxKind::BinaryInequalityExpr:
+    return ASTBinaryOperator::Inequality;
+  case SyntaxKind::BinaryLessThanExpr:
+    return ASTBinaryOperator::LessThan;
+  case SyntaxKind::BinaryGreaterThanExpr:
+    return ASTBinaryOperator::GreaterThan;
+  case SyntaxKind::BinaryLessThanEqualExpr:
+    return ASTBinaryOperator::LessThanEqual;
+  case SyntaxKind::BinaryGreaterThanEqualExpr:
+    return ASTBinaryOperator::GreaterThanEqual;
+  case SyntaxKind::BinaryAddExpr:
+    return ASTBinaryOperator::Add;
+  case SyntaxKind::BinarySubExpr:
+    return ASTBinaryOperator::Sub;
+  case SyntaxKind::BinaryMulExpr:
+    return ASTBinaryOperator::Mul;
+  case SyntaxKind::BinaryDivExpr:
+    return ASTBinaryOperator::Div;
+  case SyntaxKind::BinaryModulusExpr:
+    return ASTBinaryOperator::Modulus;
+  default:
+    llvm_unreachable("invalid binary operator");
+  }
+}
+
+class ASTBinaryExpr : public ASTExpr {
+public:
+  explicit ASTBinaryExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  /// Get the operator kind.
+  ///
+  /// This does not return an optional node, because the BinaryExpr in the AST
+  /// represents all possible BinaryExpr syntax kinds in the red tree.
+  auto getOperator() const -> ASTBinaryOperator {
+    return getBinaryOperator(SN->getSyntaxKind());
+  }
+
+  /// Get the left-hand side of the operation.
+  ///
+  /// This is fixed as thr 1st Expr syntax kind node child.
+  auto getLHS() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto LHS = SN->findChildAtIndex(isExprSyntaxKind, 0); LHS.has_value())
+      return ASTExpr::cast(*LHS);
+    return std::nullopt;
+  }
+
+  /// Get the right-hand side of the operation.
+  ///
+  /// This is fixed as the 2nd Expr syntax kind node child.
+  auto getRHS() const -> std::optional<std::shared_ptr<ASTExpr>> {
+    if (auto RHS = SN->findChildAtIndex(isExprSyntaxKind, 1); RHS.has_value())
+      return ASTExpr::cast(*RHS);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return isBinaryExprSyntaxKind(Node->getSyntaxKind());
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTBinaryExpr>> {
+    if (!isBinaryExprSyntaxKind(SN->getSyntaxKind()) || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTBinaryExpr>(SN);
   }
 };
 

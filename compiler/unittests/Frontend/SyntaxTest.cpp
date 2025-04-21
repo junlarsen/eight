@@ -7,8 +7,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/Syntax.h"
+#include "xd/Frontend/AST.h"
+#include "xd/Frontend/Lexer.h"
+#include "xd/Frontend/Parser.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include <gtest/gtest.h>
-#include <xd/Frontend/AST.h>
 
 using namespace llvm;
 using namespace xd;
@@ -73,4 +76,58 @@ TEST(SyntaxTest, CastIntoSyntaxTree) {
   auto Ident = NamedType.getName();
   ASSERT_TRUE(Ident.has_value());
   ASSERT_EQ((*Ident)->getName(), "int");
+}
+
+struct Context {
+  std::unique_ptr<MemoryBuffer> Buf;
+  std::unique_ptr<DiagnosticManager> DM;
+  Lexer L;
+  Parser P;
+};
+
+static auto getParser(const StringRef Input) -> std::unique_ptr<Context> {
+  auto Buf = MemoryBuffer::getMemBuffer(Input);
+  auto DM = std::make_unique<DiagnosticManager>();
+  auto Lex = Lexer(Buf->getBufferStart());
+  auto P = Parser(*DM, std::move(Lex.drain()));
+  return std::make_unique<Context>(std::move(Buf), std::move(DM), Lex,
+                                   std::move(P));
+}
+
+TEST(SyntaxTest, ParseBinaryExprIntoTree) {
+  auto Ctx = getParser("1 + 5 * 2");
+  Ctx->P.parseExpr();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Expr));
+  ASSERT_TRUE(isa<ASTBinaryExpr>(**Expr));
+  auto BinExpr = cast<ASTBinaryExpr>(**Expr);
+  ASSERT_EQ(BinExpr.getOperator(), ASTBinaryOperator::Add);
+  auto RHS = BinExpr.getRHS();
+  ASSERT_TRUE(RHS.has_value());
+  ASSERT_TRUE(isa<ASTBinaryExpr>(**RHS));
+  auto RHSExpr = cast<ASTBinaryExpr>(**RHS);
+  ASSERT_EQ(RHSExpr.getOperator(), ASTBinaryOperator::Mul);
+}
+
+TEST(SyntaxTest, ParseUnaryExprIntoTree) {
+  auto Ctx = getParser("-*x");
+  Ctx->P.parseExpr();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Expr));
+  ASSERT_TRUE(isa<ASTUnaryExpr>(**Expr));
+  auto UnaryExpr = cast<ASTUnaryExpr>(**Expr);
+  ASSERT_EQ(UnaryExpr.getOperator(), ASTUnaryOperator::Minus);
+  auto Operand = UnaryExpr.getOperand();
+  ASSERT_TRUE(Operand.has_value());
+  ASSERT_TRUE(isa<ASTUnaryExpr>(**Operand));
+  auto OperandExpr = cast<ASTUnaryExpr>(**Operand);
+  ASSERT_EQ(OperandExpr.getOperator(), ASTUnaryOperator::Deref);
 }

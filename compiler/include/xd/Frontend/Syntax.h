@@ -160,6 +160,13 @@ enum class SyntaxKind : uint8_t {
 inline auto isExprSyntaxKind(SyntaxKind SK) -> bool {
   return SK >= SyntaxKind::Expr && SK <= SyntaxKind::ConstructionExpr;
 }
+inline auto isUnaryExprSyntaxKind(SyntaxKind SK) -> bool {
+  return SK >= SyntaxKind::UnaryNotExpr && SK <= SyntaxKind::UnaryAddrOfExpr;
+}
+inline auto isBinaryExprSyntaxKind(SyntaxKind SK) -> bool {
+  return SK >= SyntaxKind::BinaryLogicalAndExpr &&
+         SK <= SyntaxKind::BinaryModulusExpr;
+}
 inline auto isDeclSyntaxKind(SyntaxKind SK) -> bool {
   return SK >= SyntaxKind::Decl && SK <= SyntaxKind::Instance;
 }
@@ -410,10 +417,18 @@ public:
 
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
 
-  /// Find a direct child with the given syntax kind.
-  auto findChild(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>>;
+  auto findChild(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>> {
+    return findChildAtIndex(SK, 0);
+  }
   auto findChild(const std::function<bool(SyntaxKind)> &Predicate)
+      -> std::optional<std::shared_ptr<SyntaxNode>> {
+    return findChildAtIndex(Predicate, 0);
+  }
+  auto findChildAtIndex(SyntaxKind SK, size_t Index)
       -> std::optional<std::shared_ptr<SyntaxNode>>;
+  auto
+  findChildAtIndex(const std::function<bool(SyntaxKind)> &Predicate,
+                   size_t Index) -> std::optional<std::shared_ptr<SyntaxNode>>;
 
   /// Find all direct children with the given syntax kind.
   ///
