@@ -22,6 +22,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "<end of file>";
 
     // Syntax nodes
+  case SyntaxKind::Decl:
+    return "Decl";
   case SyntaxKind::TranslationUnit:
     return "TranslationUnit";
   case SyntaxKind::IntrinsicFunction:
@@ -306,6 +308,15 @@ auto SyntaxNode::findChild(SyntaxKind SK)
     -> std::optional<std::shared_ptr<SyntaxNode>> {
   for (auto &Child : Children) {
     if (Child->getSyntaxKind() == SK)
+      return Child;
+  }
+  return std::nullopt;
+}
+
+auto SyntaxNode::findChild(const std::function<bool(SyntaxKind)> &Predicate)
+    -> std::optional<std::shared_ptr<SyntaxNode>> {
+  for (auto &Child : Children) {
+    if (Predicate(Child->getSyntaxKind()))
       return Child;
   }
   return std::nullopt;

@@ -16,6 +16,7 @@
 #include "xd/Basic/DiagnosticManager.h"
 #include "xd/Basic/Location.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/Casting.h"
 #include "llvm/Support/raw_ostream.h"
 #include <bitset>
 #include <cstdint>
@@ -78,43 +79,19 @@ enum class SyntaxKind : uint8_t {
   Error,
   Eof,
   // Nodes
+  Decl,
   TranslationUnit,
   IntrinsicFunction,
   Function,
-  FunctionTypeParameterList,
-  FunctionTypeParameter,
-  FunctionParameterList,
-  FunctionParameter,
-  FunctionReturnType,
-  FunctionBody,
-
   Struct,
-  StructMemberList,
-  StructMember,
-
   IntrinsicType,
-
   Trait,
-  TraitTypeParameterList,
-  TraitTypeParameter,
-  TraitMemberList,
-  TraitFunctionMember,
-
   Instance,
-  InstanceTypeArgumentList,
-  InstanceMemberList,
 
   Stmt,
   LetStmt,
   IfStmt,
-  IfCondition,
-  IfThenBody,
-  IfElseBody,
   ForStmt,
-  ForInitializer,
-  ForCondition,
-  ForIncrement,
-  ForBody,
   ReturnStmt,
   ContinueStmt,
   BreakStmt,
@@ -127,8 +104,7 @@ enum class SyntaxKind : uint8_t {
   GroupExpr,
   ConstantIndexExpr,
   CallExpr,
-  CallExprArgumentList,
-  CallExprTypeArgumentList,
+
   UnaryNotExpr,
   UnaryMinusExpr,
   UnaryPlusExpr,
@@ -149,12 +125,56 @@ enum class SyntaxKind : uint8_t {
   BinaryDivExpr,
   BinaryModulusExpr,
   ConstructionExpr,
-  ConstructionExprMember,
 
   Type,
   NamedType,
   PointerType,
+
+  // Fragments
+  FunctionTypeParameterList,
+  FunctionTypeParameter,
+  FunctionParameterList,
+  FunctionParameter,
+  FunctionReturnType,
+  FunctionBody,
+  StructMemberList,
+  StructMember,
+  TraitTypeParameterList,
+  TraitTypeParameter,
+  TraitMemberList,
+  TraitFunctionMember,
+  InstanceTypeArgumentList,
+  InstanceMemberList,
+  ForInitializer,
+  ForCondition,
+  ForIncrement,
+  ForBody,
+  IfCondition,
+  IfThenBody,
+  IfElseBody,
+  CallExprArgumentList,
+  CallExprTypeArgumentList,
+  ConstructionExprMember,
 };
+
+inline auto isExprSyntaxKind(SyntaxKind SK) -> bool {
+  return SK >= SyntaxKind::Expr && SK <= SyntaxKind::ConstructionExpr;
+}
+inline auto isDeclSyntaxKind(SyntaxKind SK) -> bool {
+  return SK >= SyntaxKind::Decl && SK <= SyntaxKind::Instance;
+}
+inline auto isStmtSyntaxKind(SyntaxKind SK) -> bool {
+  return SK >= SyntaxKind::Stmt && SK <= SyntaxKind::ExprStmt;
+}
+inline auto isTypeSyntaxKind(SyntaxKind SK) -> bool {
+  return SK >= SyntaxKind::Type && SK <= SyntaxKind::PointerType;
+}
+
+/// Is the given syntax kind representing a unique AST Node?
+inline auto isNodeSyntaxKind(SyntaxKind SK) -> bool {
+  return isTypeSyntaxKind(SK) || isExprSyntaxKind(SK) || isDeclSyntaxKind(SK) ||
+         isStmtSyntaxKind(SK);
+}
 
 inline uint64_t operator<<(uint64_t LHS, SyntaxKind RHS) {
   return LHS << static_cast<uint64_t>(RHS);
@@ -383,10 +403,17 @@ public:
   auto front() -> decltype(Children.front()) { return Children.front(); }
   auto back() -> decltype(Children.back()) { return Children.back(); }
   auto getLocation() -> SourceLocation;
+
+  auto isToken() const -> bool { return llvm::isa<GreenToken>(Green.get()); }
+  auto isNode() const -> bool { return llvm::isa<GreenNode>(Green.get()); }
+  auto isError() const -> bool { return llvm::isa<GreenError>(Green.get()); }
+
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
 
   /// Find a direct child with the given syntax kind.
   auto findChild(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>>;
+  auto findChild(const std::function<bool(SyntaxKind)> &Predicate)
+      -> std::optional<std::shared_ptr<SyntaxNode>>;
 
   /// Find all direct children with the given syntax kind.
   ///

@@ -8,6 +8,7 @@
 
 #include "xd/Frontend/Syntax.h"
 #include <gtest/gtest.h>
+#include <xd/Frontend/AST.h>
 
 using namespace llvm;
 using namespace xd;
@@ -38,4 +39,38 @@ TEST(SyntaxTest, GraphSearching) {
   // Because Function was registered before struct, it should be the first child
   ASSERT_EQ(Members->front(), FunctionChild);
   ASSERT_EQ(Members->back(), StructChild);
+}
+
+TEST(SyntaxTest, CastIntoSyntaxTree) {
+  auto IdentifierNode = SyntaxNode::getRoot(
+      std::make_shared<GreenToken>(SyntaxKind::Identifier, "bar"));
+  auto F = Identifier::cast(IdentifierNode);
+  ASSERT_TRUE(F.has_value());
+  ASSERT_EQ((*F)->getName(), "bar");
+  ASSERT_EQ((*F)->getLocation(), SourceLocation(0, 3));
+
+  // PointerType should be able to llvm::dyn_cast its inner type. Here we
+  // construct a *int.
+  auto TypeRoot = SyntaxNode::getRoot(
+      std::make_shared<GreenNode>(SyntaxKind::PointerType, 4));
+  auto InnerNode = SyntaxNode::get(
+      TypeRoot, std::make_shared<GreenNode>(SyntaxKind::NamedType, 3), 0, 0);
+  auto Name = SyntaxNode::get(
+      InnerNode, std::make_shared<GreenToken>(SyntaxKind::Identifier, "int"), 0,
+      0);
+
+  auto PtrType = ASTPointerType::cast(TypeRoot);
+  ASSERT_TRUE(PtrType.has_value());
+  ASSERT_TRUE(isa<ASTPointerType>(**PtrType));
+  ASSERT_TRUE(isa<ASTType>(**PtrType));
+  ASSERT_TRUE(isa<ASTNode>(**PtrType));
+  auto InnerType = (*PtrType)->getInnerType();
+  ASSERT_TRUE(InnerType.has_value());
+  ASSERT_TRUE(isa<ASTNamedType>(**InnerType));
+  ASSERT_TRUE(isa<ASTType>(**InnerType));
+  ASSERT_TRUE(isa<ASTNode>(**InnerType));
+  auto NamedType = cast<ASTNamedType>(**InnerType);
+  auto Ident = NamedType.getName();
+  ASSERT_TRUE(Ident.has_value());
+  ASSERT_EQ((*Ident)->getName(), "int");
 }
