@@ -812,6 +812,7 @@ auto Parser::parseConstructionExpr() -> CloseCheckpoint {
   if (atTypeStart())
     parseType();
   if (eat(SyntaxKind::LeftBrace)) {
+    auto CC = open();
     while (!eof() && !at(SyntaxKind::RightBrace)) {
       if (at(SyntaxKind::Identifier)) {
         parseConstructionExprMember();
@@ -824,6 +825,7 @@ auto Parser::parseConstructionExpr() -> CloseCheckpoint {
       }
     }
     expect(SyntaxKind::RightBrace);
+    close(CC, SyntaxKind::ConstructionExprMemberList);
   }
   return close(C, SyntaxKind::ConstructionExpr);
 }

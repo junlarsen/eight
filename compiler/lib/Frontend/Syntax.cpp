@@ -156,6 +156,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "BinaryModulusExpr";
   case SyntaxKind::ConstructionExpr:
     return "ConstructionExpr";
+  case SyntaxKind::ConstructionExprMemberList:
+    return "ConstructionExprMemberList";
   case SyntaxKind::ConstructionExprMember:
     return "ConstructionExprMember";
 

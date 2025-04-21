@@ -154,6 +154,7 @@ enum class SyntaxKind : uint8_t {
   IfElseBody,
   CallExprArgumentList,
   CallExprTypeArgumentList,
+  ConstructionExprMemberList,
   ConstructionExprMember,
 };
 

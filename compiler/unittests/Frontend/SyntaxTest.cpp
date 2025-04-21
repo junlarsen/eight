@@ -262,3 +262,32 @@ TEST(SyntaxTest, ParseCallExprIntoTree) {
     ASSERT_EQ(Args->size(), 0);
   }
 }
+
+TEST(SyntaxTest, ParseConstructionExprIntoTree) {
+  auto Ctx = test::getParser("new Vec2D { x = 1, y = 2 }");
+  Ctx->P.parseExpr();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_TRUE(Expr.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Expr));
+  ASSERT_TRUE(isa<ASTConstructionExpr>(**Expr));
+  auto ConstructionExpr = cast<ASTConstructionExpr>(**Expr);
+
+  auto Type = ConstructionExpr.getConstructorType();
+  ASSERT_TRUE(Type.has_value());
+  ASSERT_TRUE(isa<ASTNamedType>(**Type));
+
+  auto Members = ConstructionExpr.getMemberList();
+  ASSERT_TRUE(Members.has_value());
+  auto MemberList = (*Members)->getMembers();
+  ASSERT_TRUE(MemberList.has_value());
+  ASSERT_EQ(MemberList->size(), 2);
+
+  auto XMember = MemberList->at(0);
+  ASSERT_TRUE(XMember->getName().has_value());
+  ASSERT_EQ(XMember->getName()->get()->getName(), "x");
+  ASSERT_TRUE(XMember->getValue().has_value());
+  ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(XMember->getValue()->get()));
+}

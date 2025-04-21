@@ -528,6 +528,98 @@ public:
   }
 };
 
+class ASTConstructionExpr : public ASTExpr {
+public:
+  /// Member class representing a single member. This is here because each
+  /// member is a tuple of (name, value) and cannot be represented like an atom
+  /// in the same way CallExpr arguments can.
+  class ConstructionMember {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit ConstructionMember(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the member name
+    auto getName() const -> std::optional<std::shared_ptr<Identifier>> {
+      if (auto Name = SN->findChild(SyntaxKind::Identifier); Name.has_value())
+        return Identifier::cast(*Name);
+      return std::nullopt;
+    }
+
+    /// Get the value
+    auto getValue() const -> std::optional<std::shared_ptr<ASTExpr>> {
+      if (auto Value = SN->findChild(isExprSyntaxKind); Value.has_value())
+        return ASTExpr::cast(*Value);
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<ConstructionMember>> {
+      if (SN->getSyntaxKind() != SyntaxKind::ConstructionExprMember ||
+          !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<ConstructionMember>(SN);
+    }
+  };
+
+  /// Member class representing the set of values being initialized into the
+  /// struct.
+  class ConstructionMemberList {
+    std::shared_ptr<SyntaxNode> SN;
+
+  public:
+    explicit ConstructionMemberList(std::shared_ptr<SyntaxNode> SN) : SN(SN) {}
+    /// Get the members.
+    auto getMembers() const
+        -> std::optional<std::vector<std::shared_ptr<ConstructionMember>>> {
+      if (auto Members = SN->findChildren(SyntaxKind::ConstructionExprMember);
+          Members.has_value()) {
+        std::vector<std::shared_ptr<ConstructionMember>> Result;
+        for (auto Member : *Members) {
+          if (auto M = ConstructionMember::cast(Member); M.has_value())
+            Result.push_back(*M);
+        }
+        return Result;
+      }
+      return std::nullopt;
+    }
+
+    static auto cast(std::shared_ptr<SyntaxNode> SN)
+        -> std::optional<std::shared_ptr<ConstructionMemberList>> {
+      if (SN->getSyntaxKind() != SyntaxKind::ConstructionExprMemberList ||
+          !SN->isNode())
+        return std::nullopt;
+      return std::make_shared<ConstructionMemberList>(SN);
+    }
+  };
+
+  explicit ASTConstructionExpr(std::shared_ptr<SyntaxNode> SN) : ASTExpr(SN) {}
+  /// Get the construction initializer member list.
+  auto getMemberList() const
+      -> std::optional<std::shared_ptr<ConstructionMemberList>> {
+    if (auto ML = SN->findChild(SyntaxKind::ConstructionExprMemberList);
+        ML.has_value())
+      return ConstructionMemberList::cast(*ML);
+    return std::nullopt;
+  }
+
+  /// Get the type being constructed
+  auto getConstructorType() const -> std::optional<std::shared_ptr<ASTType>> {
+    if (auto CT = SN->findChild(isTypeSyntaxKind); CT.has_value())
+      return ASTType::cast(*CT);
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ConstructionExpr;
+  }
+  static auto cast(std::shared_ptr<SyntaxNode> SN)
+      -> std::optional<std::shared_ptr<ASTConstructionExpr>> {
+    if (SN->getSyntaxKind() != SyntaxKind::ConstructionExpr || !SN->isNode())
+      return std::nullopt;
+    return std::make_shared<ASTConstructionExpr>(SN);
+  }
+};
+
 class ASTStmt : public ASTNode {
 public:
   explicit ASTStmt(std::shared_ptr<SyntaxNode> SN) : ASTNode(SN) {}
