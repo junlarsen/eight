@@ -73,8 +73,6 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "LetStmt";
   case SyntaxKind::IfStmt:
     return "IfStmt";
-  case SyntaxKind::IfCondition:
-    return "IfCondition";
   case SyntaxKind::IfThenBody:
     return "IfThenBody";
   case SyntaxKind::IfElseBody:

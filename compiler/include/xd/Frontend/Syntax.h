@@ -149,7 +149,6 @@ enum class SyntaxKind : uint8_t {
   ForCondition,
   ForIncrement,
   ForBody,
-  IfCondition,
   IfThenBody,
   IfElseBody,
   CallExprArgumentList,

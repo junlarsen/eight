@@ -547,7 +547,8 @@ auto Parser::parseLetStmt() -> void {
   expect(SyntaxKind::KeywordLet);
   expect(SyntaxKind::Identifier);
   if (eat(SyntaxKind::Colon)) {
-    parseType();
+    if (atTypeStart())
+      parseType();
   }
   expect(SyntaxKind::Equal);
   if (atExprStart()) {
@@ -563,17 +564,14 @@ auto Parser::parseIfStmt() -> void {
   expect(SyntaxKind::KeywordIf);
   expect(SyntaxKind::LeftParen);
   if (atExprStart()) {
-    auto CC = open();
     parseExpr();
-    close(CC, SyntaxKind::IfCondition);
   }
   expect(SyntaxKind::RightParen);
   if (at(SyntaxKind::LeftBrace))
     parseBlock(SyntaxKind::IfThenBody);
-  if (at(SyntaxKind::KeywordElse)) {
-    expect(SyntaxKind::KeywordElse);
+  if (eat(SyntaxKind::KeywordElse)) {
     if (at(SyntaxKind::LeftBrace)) {
-      parseBlock(SyntaxKind::IfThenBody);
+      parseBlock(SyntaxKind::IfElseBody);
     }
   }
   close(C, SyntaxKind::IfStmt);

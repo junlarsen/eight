@@ -291,3 +291,70 @@ TEST(SyntaxTest, ParseConstructionExprIntoTree) {
   ASSERT_TRUE(XMember->getValue().has_value());
   ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(XMember->getValue()->get()));
 }
+
+TEST(SyntaxTest, ParseLetStmtIntoTree) {
+  auto Ctx = test::getParser("let f: i32 = 0;");
+  Ctx->P.parseStmt();
+  auto GreenTree = Ctx->P.build();
+  auto RedTree =
+      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto Stmt = ASTStmt::cast(RedTree);
+  ASSERT_TRUE(Stmt.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Stmt));
+  ASSERT_TRUE(isa<ASTLetStmt>(**Stmt));
+  auto LetStmt = cast<ASTLetStmt>(**Stmt);
+
+  auto Name = LetStmt.getName();
+  ASSERT_TRUE(Name.has_value());
+  ASSERT_EQ(Name->get()->getName(), "f");
+
+  auto TypeAnnotation = LetStmt.getTypeAnnotation();
+  ASSERT_TRUE(TypeAnnotation.has_value());
+  ASSERT_TRUE(isa<ASTNamedType>(**TypeAnnotation));
+
+  auto InitializerExpr = LetStmt.getInitializerExpr();
+  ASSERT_TRUE(InitializerExpr.has_value());
+  ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(**InitializerExpr));
+}
+
+TEST(SyntaxTest, ParseIfStmtIntoTree) {
+  {
+    auto Ctx = test::getParser("if (true) { } else { let b = 1; }");
+    Ctx->P.parseStmt();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_TRUE(Stmt.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Stmt));
+    ASSERT_TRUE(isa<ASTIfStmt>(**Stmt));
+    auto IfStmt = cast<ASTIfStmt>(**Stmt);
+
+    auto ThenBody = IfStmt.getThenBody();
+    ASSERT_TRUE(ThenBody.has_value());
+    auto ThenStmts = (*ThenBody)->getStmtList();
+    ASSERT_TRUE(ThenStmts.has_value());
+    ASSERT_EQ(ThenStmts->size(), 0);
+
+    auto ElseBody = IfStmt.getElseBody();
+    ASSERT_TRUE(ElseBody.has_value());
+    auto ElseStmts = (*ElseBody)->getStmtList();
+    ASSERT_TRUE(ElseStmts.has_value());
+    ASSERT_EQ(ElseStmts->size(), 1);
+  }
+  {
+    auto Ctx = test::getParser("if (true) { }");
+    Ctx->P.parseStmt();
+    auto GreenTree = Ctx->P.build();
+    auto RedTree =
+        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_TRUE(Stmt.has_value());
+    ASSERT_TRUE(isa<ASTNode>(**Stmt));
+    ASSERT_TRUE(isa<ASTIfStmt>(**Stmt));
+    auto IfStmt = cast<ASTIfStmt>(**Stmt);
+
+    auto ElseBody = IfStmt.getElseBody();
+    ASSERT_FALSE(ElseBody.has_value());
+  }
+}
