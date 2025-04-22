@@ -16,40 +16,26 @@ using namespace xd;
 namespace {
 cl::opt<std::string> InputFile(cl::Positional, cl::desc("<input file>"),
                                cl::init("-"));
-
-auto getInputSource() -> std::unique_ptr<MemoryBuffer> {
-  if (InputFile == "-") {
-    auto Buf = MemoryBuffer::getSTDIN();
-    if (auto E = Buf.getError()) {
-      errs() << E.message() << "\n";
-      std::exit(1);
-    }
-    return std::move(*Buf);
-  }
-  auto Buf = MemoryBuffer::getFile(InputFile);
-  if (auto E = Buf.getError()) {
-    errs() << E.message() << "\n";
-    std::exit(1);
-  }
-  return std::move(*Buf);
-}
 } // namespace
 
 auto main(int argc, char **argv) -> int {
   cl::ParseCommandLineOptions(argc, argv);
   auto CI = CompilerInstance();
-  auto Buf = getInputSource();
-  auto FD = CI.addSource(InputFile, std::move(Buf));
-  auto Root = CI.getSyntaxTree(FD);
-
-  Root->debug(errs());
-
-  if (!CI.hasDiagnostics())
-    return 0;
-
-  errs() << "Compiler diagnostics:" << "\n";
-  for (auto &Diag : *CI.diagnostics()) {
-    Diag->emit(errs());
+  if (InputFile == "-") {
+    errs() << "stdin input not supported at this time\n";
+    return 1;
   }
-  return 1;
+  auto EntryID =
+      CI.addFilesystemSource(std::string(InputFile), std::string(InputFile));
+  if (auto EC = EntryID.getError()) {
+    errs() << "Error reading input file '" << EC.message() << "'\n";
+    return 1;
+  }
+  auto TU = CI.buildModuleGraph(*EntryID);
+  if (!TU.has_value()) {
+    errs() << "Error building TU\n";
+    return 1;
+  }
+  (*TU)->debug(errs());
+  return 0;
 }

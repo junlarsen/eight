@@ -1,3 +1,3 @@
 llvm_map_components_to_libnames(LLVMLibs Support)
 
-add_xd_library(XDFrontend SOURCES Lexer.cpp ModuleGraph.cpp Parser.cpp Syntax.cpp LIBS XDBasic ${LLVMLibs})
+add_xd_library(XDFrontend SOURCES AST.cpp Lexer.cpp ModuleGraph.cpp Parser.cpp Syntax.cpp LIBS XDBasic ${LLVMLibs})

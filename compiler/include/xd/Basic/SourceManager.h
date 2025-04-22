@@ -13,6 +13,7 @@
 #include "llvm/ADT/StringMap.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include <cstdint>
+#include <filesystem>
 
 namespace xd {
 /// Represent the reference to a single input source file.
@@ -41,9 +42,12 @@ public:
 };
 
 class SourceManager {
-  llvm::StringMap<SourceFileID> FilesInverse;
+  llvm::StringMap<SourceFileID> FileIDReverse;
   llvm::DenseMap<SourceFileID, std::string, SourceFileID::DenseMapKeyInfo>
-      Files;
+      FileNames;
+  llvm::DenseMap<SourceFileID, std::filesystem::path,
+                 SourceFileID::DenseMapKeyInfo>
+      RealFilePaths;
   llvm::DenseMap<SourceFileID, std::unique_ptr<llvm::MemoryBuffer>,
                  SourceFileID::DenseMapKeyInfo>
       FileBuffers;
@@ -54,8 +58,12 @@ public:
   ///
   /// This takes ownership of the memory buffer.
   auto
-  addNamedSource(const llvm::StringRef &Name,
-                 std::unique_ptr<llvm::MemoryBuffer> Buffer) -> SourceFileID;
+  addFileSource(const llvm::StringRef &Name, const std::filesystem::path &Path,
+                std::unique_ptr<llvm::MemoryBuffer> Buffer) -> SourceFileID;
+
+  auto
+  addVirtualSource(const llvm::StringRef &Name,
+                   std::unique_ptr<llvm::MemoryBuffer> Buffer) -> SourceFileID;
 
   auto hasNamedSource(const llvm::StringRef &Name) const -> bool;
 
@@ -64,6 +72,12 @@ public:
   /// The caller must ensure the buffer exist, otherwise an assertion will fail
   /// here.
   auto getSourceBuffer(SourceFileID SourceFile) const -> llvm::MemoryBuffer *;
+
+  /// Get the filesystem path for the source file.
+  ///
+  /// Returns nullopt if the source was not synthesized from a file.
+  auto getSourcePath(SourceFileID SourceFile) const
+      -> std::optional<std::filesystem::path>;
 };
 } // namespace xd
 

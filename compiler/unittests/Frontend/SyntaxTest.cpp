@@ -650,8 +650,8 @@ TEST(SyntaxTest, ParseModuleDeclIntoTree) {
   auto Decl = ASTDecl::cast(RedTree);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
-  ASSERT_TRUE(isa<ModuleDecl>(**Decl));
-  auto Module = cast<ModuleDecl>(**Decl);
+  ASSERT_TRUE(isa<ASTModuleDecl>(**Decl));
+  auto Module = cast<ASTModuleDecl>(**Decl);
 
   ASSERT_TRUE(Module.getImportDeclarations().has_value());
   ASSERT_EQ(Module.getImportDeclarations()->size(), 1);

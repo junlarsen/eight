@@ -32,9 +32,19 @@ public:
   ///
   /// If any of the edges in the given edges causes a cycle in the module graph,
   /// the offending node will be returned.
+  ///
+  /// Calling addFileDependencies with the same Entry multiple times is not
+  /// allowed. The caller should use hasModule() to determine whether to call
+  /// this or not. Partly the reason for this is that addFileDependencies
+  /// effectively runs DFS.
   auto addFileDependencies(SourceFileID Entry,
                            llvm::SmallVector<SourceFileID, 8> &Edges)
       -> std::optional<SourceFileID>;
+
+  /// Has the given module been registered to the graph?
+  auto hasModule(SourceFileID Entry) const -> bool {
+    return Graph.contains(Entry);
+  }
 };
 } // namespace xd
 

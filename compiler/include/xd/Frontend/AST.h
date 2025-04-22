@@ -10,12 +10,15 @@
 #define XD_FRONTEND_AST_H
 
 #include "xd/Basic/Location.h"
+#include "xd/Basic/SourceManager.h"
 #include "xd/Frontend/Syntax.h"
+#include "llvm/ADT/APInt.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/ErrorHandling.h"
 
 namespace xd {
-class ModuleDecl;
+class ASTModuleDecl;
 class ASTDecl;
 class ASTImportDecl;
 class ASTFunctionDecl;
@@ -1130,9 +1133,9 @@ public:
   }
 };
 
-class ModuleDecl : public ASTDecl {
+class ASTModuleDecl : public ASTDecl {
 public:
-  explicit ModuleDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
+  explicit ASTModuleDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
   /// Get the import declarations for the module.
   auto getImportDeclarations() const {
     return findMany<ASTImportDecl>(SyntaxKind::ImportDecl);
@@ -1163,12 +1166,41 @@ public:
     return findMany<ASTInstanceDecl>(SyntaxKind::InstanceDecl);
   }
 
+  /// Get all the dependency paths this module refers through its import
+  /// declarations.
+  auto getReferencedDependencyPaths() const -> std::vector<std::string>;
+
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ModuleDecl;
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
-    return from<ModuleDecl>(SN, SyntaxKind::ModuleDecl);
+    return from<ASTModuleDecl>(SN, SyntaxKind::ModuleDecl);
   }
+};
+
+/// Represent a translation unit at the AST/Frontend stage.
+///
+/// This is not directly parsable, but is instead intended to be built using a
+/// ModuleGraph where each child module was parsed individually.
+class ASTTranslationUnit {
+  llvm::DenseMap<SourceFileID, std::shared_ptr<ASTModuleDecl>,
+                 SourceFileID::DenseMapKeyInfo>
+      Modules;
+
+public:
+  explicit ASTTranslationUnit() {}
+
+  /// Add the given module to the translation unit.
+  ///
+  /// It is assumed that this module has been "validated" through the module
+  /// graph, meaning the file id has not been inserted here before. The function
+  /// will assert this invariant on its own too.
+  auto addModule(SourceFileID FileID,
+                 const std::shared_ptr<ASTModuleDecl> &M) -> void {
+    Modules.insert(std::make_pair(FileID, M));
+  }
+
+  auto debug(llvm::raw_ostream &OS) const -> void;
 };
 } // namespace xd
 
