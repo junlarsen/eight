@@ -636,3 +636,33 @@ TEST(SyntaxTest, ParseImportDeclIntoTree) {
   ASSERT_EQ((*ImportedNames)[1]->getName(), "bar");
   ASSERT_EQ((*ImportedNames)[2]->getName(), "baz");
 }
+
+TEST(SyntaxTest, ParseModuleDeclIntoTree) {
+  auto CI = CompilerInstance();
+  auto FD =
+      CI.addInlineSource("test.xd", "import { spawn } from \"xd:proc\"\n"
+                                    "fn id[T](el: T) -> T { return el; }\n"
+                                    "struct Vec2D { x: i32, y: i32 }\n"
+                                    "intrinsic_type bool;\n"
+                                    "trait Add[T, R] {}\n"
+                                    "instance Add[i32, i32] for i32 {}\n");
+  auto RedTree = CI.getSyntaxTree(FD);
+  auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_TRUE(Decl.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Decl));
+  ASSERT_TRUE(isa<ModuleDecl>(**Decl));
+  auto Module = cast<ModuleDecl>(**Decl);
+
+  ASSERT_TRUE(Module.getImportDeclarations().has_value());
+  ASSERT_EQ(Module.getImportDeclarations()->size(), 1);
+  ASSERT_TRUE(Module.getFunctionDeclarations().has_value());
+  ASSERT_EQ(Module.getFunctionDeclarations()->size(), 1);
+  ASSERT_TRUE(Module.getStructDeclarations().has_value());
+  ASSERT_EQ(Module.getStructDeclarations()->size(), 1);
+  ASSERT_TRUE(Module.getIntrinsicTypeDeclarations().has_value());
+  ASSERT_EQ(Module.getIntrinsicTypeDeclarations()->size(), 1);
+  ASSERT_TRUE(Module.getTraitDeclarations().has_value());
+  ASSERT_EQ(Module.getTraitDeclarations()->size(), 1);
+  ASSERT_TRUE(Module.getInstanceDeclarations().has_value());
+  ASSERT_EQ(Module.getInstanceDeclarations()->size(), 1);
+}

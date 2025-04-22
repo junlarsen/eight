@@ -15,6 +15,7 @@
 #include "llvm/Support/ErrorHandling.h"
 
 namespace xd {
+class ModuleDecl;
 class ASTDecl;
 class ASTImportDecl;
 class ASTFunctionDecl;
@@ -1126,6 +1127,47 @@ public:
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
     return from<ASTInstanceDecl>(SN, SyntaxKind::InstanceDecl);
+  }
+};
+
+class ModuleDecl : public ASTDecl {
+public:
+  explicit ModuleDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
+  /// Get the import declarations for the module.
+  auto getImportDeclarations() const {
+    return findMany<ASTImportDecl>(SyntaxKind::ImportDecl);
+  }
+
+  /// Get the function declarations for the module.
+  auto getFunctionDeclarations() const {
+    return findMany<ASTFunctionDecl>(SyntaxKind::FunctionDecl);
+  }
+
+  /// Get the struct declarations for the module.
+  auto getStructDeclarations() const {
+    return findMany<ASTStructDecl>(SyntaxKind::StructDecl);
+  }
+
+  /// Get the intrinsic type declarations for the module.
+  auto getIntrinsicTypeDeclarations() const {
+    return findMany<ASTIntrinsicTypeDecl>(SyntaxKind::IntrinsicTypeDecl);
+  }
+
+  /// Get the trait declarations for the module.
+  auto getTraitDeclarations() const {
+    return findMany<ASTTraitDecl>(SyntaxKind::TraitDecl);
+  }
+
+  /// Get the instance declarations for the module.
+  auto getInstanceDeclarations() const {
+    return findMany<ASTInstanceDecl>(SyntaxKind::InstanceDecl);
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ModuleDecl;
+  }
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
+    return from<ModuleDecl>(SN, SyntaxKind::ModuleDecl);
   }
 };
 } // namespace xd
