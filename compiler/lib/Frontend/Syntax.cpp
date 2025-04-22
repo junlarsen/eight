@@ -372,7 +372,7 @@ auto SyntaxNode::findSibling(const std::function<bool(SyntaxKind)> &Predicate)
 }
 
 static auto
-buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
+buildChildTree(const std::shared_ptr<SyntaxNode> &Parent, uint32_t Index,
                uint32_t Offset, std::shared_ptr<GreenElement> Elem,
                DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode> {
   auto Self = SyntaxNode::get(Parent, Elem, Offset, Index);
@@ -396,7 +396,7 @@ buildChildTree(std::shared_ptr<SyntaxNode> Parent, uint32_t Index,
   return Self;
 }
 
-auto xd::buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot,
+auto xd::buildSyntaxTree(const std::shared_ptr<GreenNode> &GreenRoot,
                          DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode> {
   auto Root = SyntaxNode::getRoot(GreenRoot);
   auto Offset = 0;

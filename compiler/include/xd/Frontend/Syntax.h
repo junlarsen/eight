@@ -360,7 +360,7 @@ public:
   auto getSyntaxKind() const -> SyntaxKind override { return SK; };
   auto getTextLength() const -> size_t override { return Length; };
   auto setLength(size_t Length) -> void { this->Length = Length; }
-  auto addChild(std::shared_ptr<GreenElement> Child) -> void {
+  auto addChild(const std::shared_ptr<GreenElement> &Child) -> void {
     Children.push_back(Child);
   }
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) const -> void;
@@ -397,7 +397,8 @@ public:
 
   auto getTextLength() const -> uint32_t { return Green->getTextLength(); }
   auto getSyntaxKind() const -> SyntaxKind { return Green->getSyntaxKind(); }
-  auto addChild(uint32_t Index, std::shared_ptr<SyntaxNode> Child) -> void {
+  auto addChild(uint32_t Index,
+                const std::shared_ptr<SyntaxNode> &Child) -> void {
     Children.insert(Children.begin() + Index, Child);
   }
   auto getOffset() const -> uint32_t { return Offset; }
@@ -466,7 +467,7 @@ public:
 };
 
 /// Turn a Green tree into a red tree.
-auto buildSyntaxTree(std::shared_ptr<GreenNode> GreenRoot,
+auto buildSyntaxTree(const std::shared_ptr<GreenNode> &GreenRoot,
                      DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode>;
 } // namespace xd
 
