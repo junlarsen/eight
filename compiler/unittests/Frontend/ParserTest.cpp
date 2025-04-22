@@ -68,11 +68,11 @@ TEST(ParserTest, TreeBuilder) {
   ASSERT_TRUE(P.eat(SyntaxKind::Identifier));
   ASSERT_TRUE(P.eat(SyntaxKind::RightBrace));
   P.close(Block, SyntaxKind::FunctionBody);
-  P.close(FN, SyntaxKind::Function);
-  P.close(TU, SyntaxKind::TranslationUnit);
+  P.close(FN, SyntaxKind::FunctionDecl);
+  P.close(TU, SyntaxKind::ModuleDecl);
 
   GreenNode T = P.build();
   ASSERT_TRUE(P.getDebugTreeBuilderComplete());
-  ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::TranslationUnit);
+  ASSERT_EQ(T.getSyntaxKind(), SyntaxKind::ModuleDecl);
   ASSERT_EQ(T.getTextLength(), 25);
 }

@@ -19,21 +19,21 @@ using namespace xd;
 
 TEST(SyntaxTest, GraphSearching) {
   auto Root = SyntaxNode::getRoot(
-      std::make_shared<GreenNode>(SyntaxKind::TranslationUnit, 20));
+      std::make_shared<GreenNode>(SyntaxKind::ModuleDecl, 20));
   auto FunctionChild = SyntaxNode::get(
-      Root, std::make_shared<GreenNode>(SyntaxKind::Function, 10), 0, 0);
+      Root, std::make_shared<GreenNode>(SyntaxKind::FunctionDecl, 10), 0, 0);
   auto StructChild = SyntaxNode::get(
-      Root, std::make_shared<GreenNode>(SyntaxKind::Struct, 10), 10, 1);
+      Root, std::make_shared<GreenNode>(SyntaxKind::StructDecl, 10), 10, 1);
   ASSERT_EQ(FunctionChild->getParent(), Root);
   ASSERT_EQ(StructChild->getParent(), Root);
   ASSERT_EQ(Root->getParent(), std::nullopt);
 
-  auto FoundFn = Root->findChild(SyntaxKind::Function);
+  auto FoundFn = Root->findChild(SyntaxKind::FunctionDecl);
   ASSERT_EQ(FoundFn, FunctionChild);
-  auto FoundStruct = Root->findChild(SyntaxKind::Struct);
+  auto FoundStruct = Root->findChild(SyntaxKind::StructDecl);
   ASSERT_EQ(FoundStruct, StructChild);
 
-  auto SiblingStruct = FunctionChild->findSibling(SyntaxKind::Struct);
+  auto SiblingStruct = FunctionChild->findSibling(SyntaxKind::StructDecl);
   ASSERT_EQ(SiblingStruct, StructChild);
 
   auto Members = Root->findChildren(isDeclSyntaxKind);

@@ -24,12 +24,12 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     // Syntax nodes
   case SyntaxKind::Decl:
     return "Decl";
-  case SyntaxKind::TranslationUnit:
-    return "TranslationUnit";
-  case SyntaxKind::IntrinsicFunction:
-    return "IntrinsicFunction";
-  case SyntaxKind::Function:
-    return "Function";
+  case SyntaxKind::ModuleDecl:
+    return "ModuleDecl";
+  case SyntaxKind::IntrinsicFunctionDecl:
+    return "IntrinsicFunctionDecl";
+  case SyntaxKind::FunctionDecl:
+    return "FunctionDecl";
   case SyntaxKind::FunctionTypeParameterList:
     return "FunctionTypeParameterList";
   case SyntaxKind::FunctionTypeParameter:
@@ -40,16 +40,16 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "FunctionParameterList";
   case SyntaxKind::FunctionBody:
     return "FunctionBody";
-  case SyntaxKind::IntrinsicType:
-    return "IntrinsicType";
-  case SyntaxKind::Struct:
-    return "Struct";
+  case SyntaxKind::IntrinsicTypeDecl:
+    return "IntrinsicTypeDecl";
+  case SyntaxKind::StructDecl:
+    return "StructDecl";
   case SyntaxKind::StructMemberList:
     return "StructMemberList";
   case SyntaxKind::StructMember:
     return "StructMember";
-  case SyntaxKind::Trait:
-    return "Trait";
+  case SyntaxKind::TraitDecl:
+    return "TraitDecl";
   case SyntaxKind::TraitTypeParameterList:
     return "TraitTypeParameterList";
   case SyntaxKind::TraitTypeParameter:
@@ -58,8 +58,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "TraitMemberList";
   case SyntaxKind::TraitFunctionMember:
     return "TraitIntrinsicFunctionMember";
-  case SyntaxKind::Instance:
-    return "Instance";
+  case SyntaxKind::InstanceDecl:
+    return "InstanceDecl";
   case SyntaxKind::InstanceTypeArgumentList:
     return "InstanceTypeArgumentList";
   case SyntaxKind::InstanceMemberList:

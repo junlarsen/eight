@@ -178,7 +178,7 @@ public:
     return at(TSStatementStart) || atExprStart();
   }
 
-  auto parseTranslationUnit() -> void;
+  auto parseModuleDecl() -> void;
   auto parseDecl() -> void;
   auto parseFunctionDecl() -> void;
   auto parseFunctionTypeParameterList() -> void;

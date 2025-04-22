@@ -80,13 +80,13 @@ enum class SyntaxKind : uint8_t {
   Eof,
   // Nodes
   Decl,
-  TranslationUnit,
-  IntrinsicFunction,
-  Function,
-  Struct,
-  IntrinsicType,
-  Trait,
-  Instance,
+  ModuleDecl,
+  IntrinsicFunctionDecl,
+  FunctionDecl,
+  StructDecl,
+  IntrinsicTypeDecl,
+  TraitDecl,
+  InstanceDecl,
 
   Stmt,
   LetStmt,
@@ -167,7 +167,7 @@ inline auto isBinaryExprSyntaxKind(SyntaxKind SK) -> bool {
          SK <= SyntaxKind::BinaryModulusExpr;
 }
 inline auto isDeclSyntaxKind(SyntaxKind SK) -> bool {
-  return SK >= SyntaxKind::Decl && SK <= SyntaxKind::Instance;
+  return SK >= SyntaxKind::Decl && SK <= SyntaxKind::InstanceDecl;
 }
 inline auto isStmtSyntaxKind(SyntaxKind SK) -> bool {
   return SK >= SyntaxKind::Stmt && SK <= SyntaxKind::ExprStmt;

@@ -874,16 +874,16 @@ public:
 
   /// Is this function intrinsic?
   auto isIntrinsic() const -> bool {
-    return getSyntaxKind() == SyntaxKind::IntrinsicFunction;
+    return getSyntaxKind() == SyntaxKind::IntrinsicFunctionDecl;
   }
 
   static bool classof(const ASTNode *Node) {
-    return Node->getSyntaxKind() == SyntaxKind::Function ||
-           Node->getSyntaxKind() == SyntaxKind::IntrinsicFunction;
+    return Node->getSyntaxKind() == SyntaxKind::FunctionDecl ||
+           Node->getSyntaxKind() == SyntaxKind::IntrinsicFunctionDecl;
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
     return from<ASTFunctionDecl>(SN, [](SyntaxKind SK) {
-      return SK == SyntaxKind::IntrinsicFunction || SK == SyntaxKind::Function;
+      return SK == SyntaxKind::IntrinsicFunctionDecl || SK == SyntaxKind::FunctionDecl;
     });
   }
 };
@@ -936,10 +936,10 @@ public:
   }
 
   static bool classof(const ASTNode *Node) {
-    return Node->getSyntaxKind() == SyntaxKind::Struct;
+    return Node->getSyntaxKind() == SyntaxKind::StructDecl;
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
-    return from<ASTStructDecl>(SN, SyntaxKind::Struct);
+    return from<ASTStructDecl>(SN, SyntaxKind::StructDecl);
   }
 };
 
@@ -953,10 +953,10 @@ public:
   }
 
   static bool classof(const ASTNode *Node) {
-    return Node->getSyntaxKind() == SyntaxKind::IntrinsicType;
+    return Node->getSyntaxKind() == SyntaxKind::IntrinsicTypeDecl;
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
-    return from<ASTIntrinsicTypeDecl>(SN, SyntaxKind::IntrinsicType);
+    return from<ASTIntrinsicTypeDecl>(SN, SyntaxKind::IntrinsicTypeDecl);
   }
 };
 
@@ -1031,10 +1031,10 @@ public:
   }
 
   static bool classof(const ASTNode *Node) {
-    return Node->getSyntaxKind() == SyntaxKind::Trait;
+    return Node->getSyntaxKind() == SyntaxKind::TraitDecl;
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
-    return from<ASTTraitDecl>(SN, SyntaxKind::Trait);
+    return from<ASTTraitDecl>(SN, SyntaxKind::TraitDecl);
   }
 };
 
@@ -1047,8 +1047,8 @@ public:
     /// Get all regular function members.
     auto getFunctionMembers() const {
       return findMany<ASTFunctionDecl>([](SyntaxKind SK) {
-        return SK == SyntaxKind::Function ||
-               SK == SyntaxKind::IntrinsicFunction;
+        return SK == SyntaxKind::FunctionDecl ||
+               SK == SyntaxKind::IntrinsicFunctionDecl;
       });
     }
 
@@ -1081,10 +1081,10 @@ public:
   }
 
   static bool classof(const ASTNode *Node) {
-    return Node->getSyntaxKind() == SyntaxKind::Instance;
+    return Node->getSyntaxKind() == SyntaxKind::InstanceDecl;
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
-    return from<ASTInstanceDecl>(SN, SyntaxKind::Instance);
+    return from<ASTInstanceDecl>(SN, SyntaxKind::InstanceDecl);
   }
 };
 } // namespace xd

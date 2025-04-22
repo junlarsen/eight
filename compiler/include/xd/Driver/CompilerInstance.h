@@ -51,12 +51,11 @@ public:
 
   /// Get the red tree for the given source file.
   ///
-  /// Will attempt to parse the source file as a translation unit. This can be
-  /// changed with the other overload of getSyntaxTree.
+  /// Will attempt to parse the source file as a module. This can be changed
+  /// with the other overload of getSyntaxTree.
   auto
   getSyntaxTree(SourceFileID SourceFile) const -> std::shared_ptr<SyntaxNode> {
-    return getSyntaxTree(SourceFile,
-                         [](Parser &P) { P.parseTranslationUnit(); });
+    return getSyntaxTree(SourceFile, [](Parser &P) { P.parseModuleDecl(); });
   }
 };
 } // namespace xd

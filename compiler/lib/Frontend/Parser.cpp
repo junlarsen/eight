@@ -147,7 +147,7 @@ auto Parser::build() -> GreenNode {
   return Root;
 }
 
-auto Parser::parseTranslationUnit() -> void {
+auto Parser::parseModuleDecl() -> void {
   auto TU = open();
   while (!eof()) {
     if (atDeclStart()) {
@@ -159,7 +159,7 @@ auto Parser::parseTranslationUnit() -> void {
                                         getSyntaxKindName(get()));
     }
   }
-  close(TU, SyntaxKind::TranslationUnit);
+  close(TU, SyntaxKind::ModuleDecl);
 }
 
 auto Parser::parseDecl() -> void {
@@ -213,7 +213,8 @@ auto Parser::parseFunctionDecl() -> void {
       parseBlock(SyntaxKind::FunctionBody);
   }
   // Pick the node type based on whether we parsed an intrinsic function or not
-  close(C, IsIntrinsic ? SyntaxKind::IntrinsicFunction : SyntaxKind::Function);
+  close(C, IsIntrinsic ? SyntaxKind::IntrinsicFunctionDecl
+                       : SyntaxKind::FunctionDecl);
 }
 
 auto Parser::parseFunctionTypeParameterList() -> void {
@@ -287,7 +288,7 @@ auto Parser::parseIntrinsicTypeDecl() -> void {
   expect(SyntaxKind::KeywordIntrinsicType);
   expect(SyntaxKind::Identifier);
   expect(SyntaxKind::Semicolon);
-  close(C, SyntaxKind::IntrinsicType);
+  close(C, SyntaxKind::IntrinsicTypeDecl);
 }
 
 auto Parser::parseStructDecl() -> void {
@@ -298,7 +299,7 @@ auto Parser::parseStructDecl() -> void {
   expect(SyntaxKind::Identifier);
   if (at(SyntaxKind::LeftBrace))
     parseStructMemberList();
-  close(C, SyntaxKind::Struct);
+  close(C, SyntaxKind::StructDecl);
 }
 
 auto Parser::parseStructMemberList() -> void {
@@ -344,7 +345,7 @@ auto Parser::parseTraitDecl() -> void {
     parseTraitTypeParameterList();
   if (at(SyntaxKind::LeftBrace))
     parseTraitMemberList();
-  close(C, SyntaxKind::Trait);
+  close(C, SyntaxKind::TraitDecl);
 }
 
 auto Parser::parseTraitTypeParameterList() -> void {
@@ -441,7 +442,7 @@ auto Parser::parseInstanceDecl() -> void {
     parseType();
   if (at(SyntaxKind::LeftBrace))
     parseInstanceMemberList();
-  close(C, SyntaxKind::Instance);
+  close(C, SyntaxKind::InstanceDecl);
 }
 
 auto Parser::parseInstanceTypeArgumentList() -> void {
