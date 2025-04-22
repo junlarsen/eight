@@ -16,6 +16,7 @@
 
 namespace xd {
 class ASTDecl;
+class ASTImportDecl;
 class ASTFunctionDecl;
 class ASTIntrinsicTypeDecl;
 class ASTStructDecl;
@@ -439,6 +440,24 @@ public:
   }
 };
 
+class ASTStringLiteralExpr : public ASTExpr {
+public:
+  explicit ASTStringLiteralExpr(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTExpr(SN) {}
+  auto getValue() const -> std::optional<llvm::StringRef> {
+    if (auto Lit = SN->findChild(SyntaxKind::StringLiteral); Lit.has_value())
+      return llvm::cast<GreenToken>((*Lit)->getGreen().get())->getText();
+    return std::nullopt;
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::StringLiteralExpr;
+  }
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
+    return from<ASTStringLiteralExpr>(SN, SyntaxKind::StringLiteralExpr);
+  }
+};
+
 class ASTCallExpr : public ASTExpr {
 public:
   /// Member class representing the argument list to the call expression.
@@ -772,6 +791,27 @@ public:
   }
 };
 
+class ASTImportDecl : public ASTDecl {
+public:
+  explicit ASTImportDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
+  /// Get the source the import is from.
+  auto getSource() const {
+    return findSingle<ASTStringLiteralExpr>(SyntaxKind::StringLiteralExpr);
+  }
+
+  /// Get the name this declaration imports into scope.
+  auto getImportedNames() const {
+    return findMany<Identifier>(SyntaxKind::Identifier);
+  }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::ImportDecl;
+  }
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
+    return from<ASTImportDecl>(SN, SyntaxKind::ImportDecl);
+  }
+};
+
 /// Member class for a single type parameter.
 template <SyntaxKind ChildKind>
 class ASTTypeParameterFragment : public ASTNode {
@@ -883,7 +923,8 @@ public:
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
     return from<ASTFunctionDecl>(SN, [](SyntaxKind SK) {
-      return SK == SyntaxKind::IntrinsicFunctionDecl || SK == SyntaxKind::FunctionDecl;
+      return SK == SyntaxKind::IntrinsicFunctionDecl ||
+             SK == SyntaxKind::FunctionDecl;
     });
   }
 };

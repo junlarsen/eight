@@ -613,3 +613,26 @@ TEST(SyntaxTest, ParseInstanceDeclIntoTree) {
   auto IntrinsicFunctionMember = (*MemberList)->getFunctionMembers()->at(1);
   ASSERT_TRUE(IntrinsicFunctionMember->isIntrinsic());
 }
+
+TEST(SyntaxTest, ParseImportDeclIntoTree) {
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd",
+                               "import { foo, bar, baz } from \"xd:base\";");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseImportDecl(); });
+  auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_TRUE(Decl.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Decl));
+  ASSERT_TRUE(isa<ASTImportDecl>(**Decl));
+  auto ImportDecl = cast<ASTImportDecl>(**Decl);
+
+  ASSERT_TRUE(ImportDecl.getSource().has_value());
+  ASSERT_TRUE((*ImportDecl.getSource())->getValue().has_value());
+  ASSERT_EQ((*ImportDecl.getSource())->getValue(), StringRef("\"xd:base\""));
+
+  auto ImportedNames = ImportDecl.getImportedNames();
+  ASSERT_TRUE(ImportedNames.has_value());
+  ASSERT_EQ(ImportedNames->size(), 3);
+  ASSERT_EQ((*ImportedNames)[0]->getName(), "foo");
+  ASSERT_EQ((*ImportedNames)[1]->getName(), "bar");
+  ASSERT_EQ((*ImportedNames)[2]->getName(), "baz");
+}

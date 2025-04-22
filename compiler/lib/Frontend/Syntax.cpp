@@ -24,6 +24,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     // Syntax nodes
   case SyntaxKind::Decl:
     return "Decl";
+  case SyntaxKind::ImportDecl:
+    return "ImportDecl";
   case SyntaxKind::ModuleDecl:
     return "ModuleDecl";
   case SyntaxKind::IntrinsicFunctionDecl:
@@ -100,6 +102,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "IntegerLiteralExpr";
   case SyntaxKind::BooleanLiteralExpr:
     return "BooleanLiteralExpr";
+  case SyntaxKind::StringLiteralExpr:
+    return "StringLiteralExpr";
   case SyntaxKind::ReferenceExpr:
     return "ReferenceExpr";
   case SyntaxKind::GroupExpr:
@@ -193,6 +197,10 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "for";
   case SyntaxKind::KeywordNew:
     return "new";
+  case SyntaxKind::KeywordImport:
+    return "import";
+  case SyntaxKind::KeywordFrom:
+    return "from";
   case SyntaxKind::Identifier:
     return "<identifier>";
   case SyntaxKind::IntegerLiteral:
@@ -201,6 +209,8 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
     return "true";
   case SyntaxKind::FalseLiteral:
     return "false";
+  case SyntaxKind::StringLiteral:
+    return "<string literal>";
   case SyntaxKind::Comment:
     return "<comment>";
   case SyntaxKind::Whitespace:

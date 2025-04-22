@@ -179,6 +179,7 @@ public:
   }
 
   auto parseModuleDecl() -> void;
+  auto parseImportDecl() -> void;
   auto parseDecl() -> void;
   auto parseFunctionDecl() -> void;
   auto parseFunctionTypeParameterList() -> void;
@@ -213,6 +214,7 @@ public:
   auto parsePrimaryExpr() -> CloseCheckpoint;
   auto parseIntegerLiteralExpr() -> CloseCheckpoint;
   auto parseBooleanLiteralExpr() -> CloseCheckpoint;
+  auto parseStringLiteralExpr() -> CloseCheckpoint;
   auto parseGroupExpr() -> CloseCheckpoint;
   auto parseReferenceExpr() -> CloseCheckpoint;
   auto parseConstructionExpr() -> CloseCheckpoint;

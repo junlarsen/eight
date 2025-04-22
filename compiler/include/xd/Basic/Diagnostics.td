@@ -69,3 +69,7 @@ def ExpectedInstanceTypeArgument
 def ExpectedInstanceMember
     : Diagnostic<"expected instance member, but received {0}",
                  [DiagnosticArg<"Token", StringArg>]>;
+
+def ExpectedImportListName
+    : Diagnostic<"expected import list name, but received {0}",
+                 [DiagnosticArg<"Token", StringArg>]>;

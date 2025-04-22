@@ -52,6 +52,8 @@ auto Lexer::getKeywordOrIdentifierToken(char InitialCharacter) -> GreenToken {
                   .Case("instance", SyntaxKind::KeywordInstance)
                   .Case("intrinsic_def", SyntaxKind::KeywordIntrinsicFn)
                   .Case("intrinsic_typdef", SyntaxKind::KeywordIntrinsicType)
+                  .Case("import", SyntaxKind::KeywordImport)
+                  .Case("from", SyntaxKind::KeywordFrom)
                   .Default(SyntaxKind::Identifier);
   return GreenToken(Kind, Keyword);
 }
@@ -63,6 +65,22 @@ auto Lexer::getIntegerLiteralToken(char InitialCharacter) -> GreenToken {
     Value += advance();
   }
   return GreenToken(SyntaxKind::IntegerLiteral, Value);
+}
+
+auto Lexer::getStringLiteralToken(char Character) -> GreenToken {
+  // TODO: Support escape sequences? Maybe not important until we have actual
+  // strings in the language.
+  llvm::SmallString<8> Value;
+  Value += Character;
+  while (hasNext() && peek() != '"') {
+    Value += advance();
+  }
+  if (peek() == '"') {
+    Value += advance();
+    return GreenToken(SyntaxKind::StringLiteral, Value);
+  }
+  // Unterminated string literal
+  return GreenToken(SyntaxKind::Error, Value);
 }
 
 auto Lexer::getTokenForNewline(char Character) -> GreenToken {
@@ -183,6 +201,8 @@ auto Lexer::getNextToken() -> GreenToken {
         return getTokenForNewline(C);
       if (isWhitespace(C))
         return getTokenForWhitespace(C);
+      if (C == '"')
+        return getStringLiteralToken(C);
 
       // We've encountered a character that isn't recognized by the lexer at
       // all. Here we should report an error token, make its text available to

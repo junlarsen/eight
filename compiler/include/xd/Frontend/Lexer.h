@@ -46,6 +46,7 @@ private:
   auto getCommentToken() -> GreenToken;
   auto getKeywordOrIdentifierToken(char Character) -> GreenToken;
   auto getIntegerLiteralToken(char Character) -> GreenToken;
+  auto getStringLiteralToken(char Character) -> GreenToken;
   auto getTokenForWhitespace(char Character) -> GreenToken;
   auto getTokenForNewline(char Character) -> GreenToken;
   auto getTokenForBang() -> GreenToken;
