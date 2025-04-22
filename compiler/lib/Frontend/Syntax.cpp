@@ -268,11 +268,11 @@ auto xd::getSyntaxKindName(SyntaxKind SK) -> StringRef {
   }
 }
 
-auto GreenNode::debug(raw_ostream &OS, size_t Indent) -> void {
+auto GreenNode::debug(raw_ostream &OS, size_t Indent) const -> void {
   // We don't quote this, because node is always a node kind
   OS << std::string(Indent, ' ') << "* " << getSyntaxKindName(getSyntaxKind())
      << " len=" << getTextLength() << " children=" << Children.size() << "\n";
-  for (auto &Child : getChildren()) {
+  for (auto &Child : Children) {
     if (const auto *GT = dyn_cast<GreenToken>(Child.get())) {
       OS << std::string(Indent + 2, ' ') << "| " << "Token '"
          << getSyntaxKindName(GT->getSyntaxKind()) << "'"
@@ -288,11 +288,11 @@ auto GreenNode::debug(raw_ostream &OS, size_t Indent) -> void {
   }
 }
 
-auto SyntaxNode::getLocation() -> SourceLocation {
+auto SyntaxNode::getLocation() const -> SourceLocation {
   return SourceLocation(Offset, Offset + getTextLength());
 }
 
-auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
+auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) const -> void {
   OS << std::string(Indent, ' ') << "SyntaxNode '"
      << getSyntaxKindName(Green->getSyntaxKind()) << "' (" << Children.size()
      << ") " << getLocation().getStart() << ".." << getLocation().getEnd()
@@ -302,7 +302,7 @@ auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) -> void {
   }
 }
 
-auto SyntaxNode::findChildAtIndex(SyntaxKind SK, size_t Index)
+auto SyntaxNode::findChildAtIndex(SyntaxKind SK, size_t Index) const
     -> std::optional<std::shared_ptr<SyntaxNode>> {
   size_t I = 0;
   for (auto &Child : Children) {
@@ -317,7 +317,7 @@ auto SyntaxNode::findChildAtIndex(SyntaxKind SK, size_t Index)
 
 auto SyntaxNode::findChildAtIndex(
     const std::function<bool(SyntaxKind)> &Predicate,
-    size_t Index) -> std::optional<std::shared_ptr<SyntaxNode>> {
+    size_t Index) const -> std::optional<std::shared_ptr<SyntaxNode>> {
   size_t I = 0;
   for (auto &Child : Children) {
     if (Predicate(Child->getSyntaxKind())) {

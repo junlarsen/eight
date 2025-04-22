@@ -363,7 +363,7 @@ public:
   auto addChild(std::shared_ptr<GreenElement> Child) -> void {
     Children.push_back(Child);
   }
-  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
+  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) const -> void;
   auto hasChild(SyntaxKind SK) const -> bool {
     for (auto &Child : Children) {
       if (Child->getSyntaxKind() == SK)
@@ -408,30 +408,32 @@ public:
   }
   auto front() -> decltype(Children.front()) { return Children.front(); }
   auto back() -> decltype(Children.back()) { return Children.back(); }
-  auto getLocation() -> SourceLocation;
+  auto getLocation() const -> SourceLocation;
 
   auto isToken() const -> bool { return llvm::isa<GreenToken>(Green.get()); }
   auto isNode() const -> bool { return llvm::isa<GreenNode>(Green.get()); }
   auto isError() const -> bool { return llvm::isa<GreenError>(Green.get()); }
 
-  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) -> void;
+  auto debug(llvm::raw_ostream &OS, size_t Indent = 0) const -> void;
 
   /// Find a child with the given syntax kind.
-  auto findChild(SyntaxKind SK) -> std::optional<std::shared_ptr<SyntaxNode>> {
+  auto
+  findChild(SyntaxKind SK) const -> std::optional<std::shared_ptr<SyntaxNode>> {
     return findChildAtIndex(SK, 0);
   }
   /// Find a child whose syntax kind matches the predicate.
-  auto findChild(const std::function<bool(SyntaxKind)> &Predicate)
+  auto findChild(const std::function<bool(SyntaxKind)> &Predicate) const
       -> std::optional<std::shared_ptr<SyntaxNode>> {
     return findChildAtIndex(Predicate, 0);
   }
   /// Find the nth child with the given syntax kind.
-  auto findChildAtIndex(SyntaxKind SK, size_t Index)
+  auto findChildAtIndex(SyntaxKind SK, size_t Index) const
       -> std::optional<std::shared_ptr<SyntaxNode>>;
   auto
   /// Find the nth child whose syntax kind matches the predicate.
   findChildAtIndex(const std::function<bool(SyntaxKind)> &Predicate,
-                   size_t Index) -> std::optional<std::shared_ptr<SyntaxNode>>;
+                   size_t Index) const
+      -> std::optional<std::shared_ptr<SyntaxNode>>;
 
   /// Find all children with the given syntax kind.
   auto findChildren(SyntaxKind SK) const
