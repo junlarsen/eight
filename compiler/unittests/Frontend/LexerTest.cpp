@@ -79,7 +79,7 @@ TEST(LexerTest, ParseCommentLiteral) {
 }
 
 TEST(LexerTest, ParseIdentifier) {
-  auto Buf = MemoryBuffer::getMemBuffer("abc a1_cd");
+  auto Buf = MemoryBuffer::getMemBuffer("abc a1_cd __malloc");
   auto Lex = Lexer(Buf->getBufferStart());
 
   auto TK1 = Lex.getNextToken();
@@ -96,6 +96,16 @@ TEST(LexerTest, ParseIdentifier) {
   ASSERT_EQ(TK3.getSyntaxKind(), SyntaxKind::Identifier);
   ASSERT_EQ(TK3.getText(), "a1_cd");
   ASSERT_EQ(TK3.getTextLength(), 5);
+
+  auto TK4 = Lex.getNextToken();
+  ASSERT_EQ(TK4.getSyntaxKind(), SyntaxKind::Whitespace);
+  ASSERT_EQ(TK4.getText(), " ");
+  ASSERT_EQ(TK4.getTextLength(), 1);
+
+  auto TK5 = Lex.getNextToken();
+  ASSERT_EQ(TK5.getSyntaxKind(), SyntaxKind::Identifier);
+  ASSERT_EQ(TK5.getText(), "__malloc");
+  ASSERT_EQ(TK5.getTextLength(), 8);
 }
 
 TEST(LexerTest, ParseSingularOperators) {

@@ -35,6 +35,9 @@ public:
   };
 
   explicit SourceFileID(uint8_t ID) : ID(ID) {}
+
+  /// Cast to uint32_t.
+  operator uint32_t() const { return ID; }
 };
 
 class SourceManager {

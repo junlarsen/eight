@@ -60,10 +60,10 @@ private:
   auto getTokenForGreater() -> GreenToken;
 
   static auto isIdentifierStart(char C) -> bool {
-    return (C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z');
+    return (C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z') || C == '_';
   }
   static auto isIdentifierContinuation(char C) -> bool {
-    return isIdentifierStart(C) || C == '_' || (C >= '0' && C <= '9');
+    return isIdentifierStart(C) || (C >= '0' && C <= '9');
   }
   static auto isWhitespace(char C) -> bool { return C == ' ' || C == '\t'; }
   static auto isNewline(char C) -> bool { return C == '\n' || C == '\r'; }
