@@ -6,11 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "xd/Frontend/Lexer.h"
-#include "xd/Frontend/Parser.h"
+#include "xd/Driver/CompilerInstance.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include <cstdlib>
 
 using namespace llvm;
 using namespace xd;
@@ -39,22 +37,18 @@ auto getInputSource() -> std::unique_ptr<MemoryBuffer> {
 
 auto main(int argc, char **argv) -> int {
   cl::ParseCommandLineOptions(argc, argv);
+  auto CI = CompilerInstance();
   auto Buf = getInputSource();
-  auto DM = DiagnosticManager();
-  auto Lex = Lexer(Buf->getBufferStart());
-  auto P = Parser(DM, std::move(Lex.drain()));
-  P.parseTranslationUnit();
-  GreenNode Tree = P.build();
-  Tree.debug(errs());
+  auto FD = CI.addSource(InputFile, std::move(Buf));
+  auto Root = CI.getSyntaxTree(FD);
 
-  auto Root = buildSyntaxTree(std::make_shared<GreenNode>(Tree), DM);
   Root->debug(errs());
 
-  if (DM.isEmpty())
+  if (!CI.hasDiagnostics())
     return 0;
 
   errs() << "Compiler diagnostics:" << "\n";
-  for (auto &Diag : *DM.diagnostics()) {
+  for (auto &Diag : *CI.diagnostics()) {
     Diag->emit(errs());
   }
   return 1;

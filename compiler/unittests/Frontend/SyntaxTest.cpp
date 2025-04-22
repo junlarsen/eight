@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/Syntax.h"
-#include "Support.h"
+#include "xd/Driver/CompilerInstance.h"
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/Lexer.h"
 #include "xd/Frontend/Parser.h"
@@ -80,11 +80,9 @@ TEST(SyntaxTest, CastIntoSyntaxTree) {
 }
 
 TEST(SyntaxTest, ParseBinaryExprIntoTree) {
-  auto Ctx = test::getParser("1 + 5 * 2");
-  Ctx->P.parseExpr();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "1 + 5 * 2");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -99,11 +97,9 @@ TEST(SyntaxTest, ParseBinaryExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseUnaryExprIntoTree) {
-  auto Ctx = test::getParser("-*x");
-  Ctx->P.parseExpr();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "-*x");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -118,11 +114,9 @@ TEST(SyntaxTest, ParseUnaryExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseGroupExprIntoTree) {
-  auto Ctx = test::getParser("((a))");
-  Ctx->P.parseExpr();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "((a))");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -134,11 +128,9 @@ TEST(SyntaxTest, ParseGroupExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseReferenceExprIntoTree) {
-  auto Ctx = test::getParser("aa");
-  Ctx->P.parseExpr();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "aa");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -150,11 +142,9 @@ TEST(SyntaxTest, ParseReferenceExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseConstantIndexExprIntoTree) {
-  auto Ctx = test::getParser("a.b");
-  Ctx->P.parseExpr();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "a.b");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -169,11 +159,9 @@ TEST(SyntaxTest, ParseConstantIndexExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseIntegerLiteralExprIntoTree) {
-  auto Ctx = test::getParser("100");
-  Ctx->P.parseExpr();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "100");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -184,11 +172,9 @@ TEST(SyntaxTest, ParseIntegerLiteralExprIntoTree) {
 
 TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
   {
-    auto Ctx = test::getParser("true");
-    Ctx->P.parseExpr();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "true");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -197,11 +183,9 @@ TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
     ASSERT_EQ(BooleanLiteralExpr.getValue(), true);
   }
   {
-    auto Ctx = test::getParser("false");
-    Ctx->P.parseExpr();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "false");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -213,11 +197,9 @@ TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
 
 TEST(SyntaxTest, ParseCallExprIntoTree) {
   {
-    auto Ctx = test::getParser("f[int](1, 2, 3)");
-    Ctx->P.parseExpr();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "f[int](1, 2, 3)");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -241,11 +223,9 @@ TEST(SyntaxTest, ParseCallExprIntoTree) {
     ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(Args->at(2).get()));
   }
   {
-    auto Ctx = test::getParser("f()");
-    Ctx->P.parseExpr();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "f()");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -264,11 +244,9 @@ TEST(SyntaxTest, ParseCallExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseConstructionExprIntoTree) {
-  auto Ctx = test::getParser("new Vec2D { x = 1, y = 2 }");
-  Ctx->P.parseExpr();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "new Vec2D { x = 1, y = 2 }");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
@@ -293,11 +271,9 @@ TEST(SyntaxTest, ParseConstructionExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseLetStmtIntoTree) {
-  auto Ctx = test::getParser("let f: i32 = 0;");
-  Ctx->P.parseStmt();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "let f: i32 = 0;");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
   ASSERT_TRUE(Stmt.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -319,11 +295,10 @@ TEST(SyntaxTest, ParseLetStmtIntoTree) {
 
 TEST(SyntaxTest, ParseIfStmtIntoTree) {
   {
-    auto Ctx = test::getParser("if (true) { } else { let b = 1; }");
-    Ctx->P.parseStmt();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD =
+        CI.addInlineSource("test.xd", "if (true) { } else { let b = 1 ; }");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -343,11 +318,9 @@ TEST(SyntaxTest, ParseIfStmtIntoTree) {
     ASSERT_EQ(ElseStmts->size(), 1);
   }
   {
-    auto Ctx = test::getParser("if (true) { }");
-    Ctx->P.parseStmt();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "if (true) { }");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -361,12 +334,10 @@ TEST(SyntaxTest, ParseIfStmtIntoTree) {
 
 TEST(SyntaxTest, ParseForStmtIntoTree) {
   {
-    auto Ctx =
-        test::getParser("for (let i = 0; i < 10; i = i + 1) { let x = 0; }");
-    Ctx->P.parseStmt();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource(
+        "test.xd", "for (let i = 0; i < 10; i = i + 1 { let x = 0; ");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -399,11 +370,9 @@ TEST(SyntaxTest, ParseForStmtIntoTree) {
     ASSERT_EQ(ForBody->get()->getStmtList()->size(), 1);
   }
   {
-    auto Ctx = test::getParser("for (;;) {}");
-    Ctx->P.parseStmt();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "for (;;) {}");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -417,11 +386,9 @@ TEST(SyntaxTest, ParseForStmtIntoTree) {
 }
 
 TEST(SyntaxTest, ParseBreakStmtIntoTree) {
-  auto Ctx = test::getParser("break;");
-  Ctx->P.parseStmt();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "break;");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
   ASSERT_TRUE(Stmt.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -429,11 +396,9 @@ TEST(SyntaxTest, ParseBreakStmtIntoTree) {
 }
 
 TEST(SyntaxTest, ParseContinueStmtIntoTree) {
-  auto Ctx = test::getParser("continue;");
-  Ctx->P.parseStmt();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "continue;");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
   ASSERT_TRUE(Stmt.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -442,11 +407,9 @@ TEST(SyntaxTest, ParseContinueStmtIntoTree) {
 
 TEST(SyntaxTest, ParseReturnStmtIntoTree) {
   {
-    auto Ctx = test::getParser("return;");
-    Ctx->P.parseStmt();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "return;");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -455,11 +418,9 @@ TEST(SyntaxTest, ParseReturnStmtIntoTree) {
     ASSERT_FALSE(ReturnStmt.getReturnExpr().has_value());
   }
   {
-    auto Ctx = test::getParser("return 1;");
-    Ctx->P.parseStmt();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "return 1;");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -473,11 +434,9 @@ TEST(SyntaxTest, ParseReturnStmtIntoTree) {
 }
 
 TEST(SyntaxTest, ParseExprStmtIntoTree) {
-  auto Ctx = test::getParser("1 + 1;");
-  Ctx->P.parseStmt();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "1 + 1;");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
   ASSERT_TRUE(Stmt.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
@@ -491,11 +450,10 @@ TEST(SyntaxTest, ParseExprStmtIntoTree) {
 
 TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
   {
-    auto Ctx = test::getParser("fn id[T](el: T) -> T { return el; }");
-    Ctx->P.parseDecl();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD =
+        CI.addInlineSource("test.xd", "fn id[T](el: T) -> T { return el; }");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
     auto Decl = ASTDecl::cast(RedTree);
     ASSERT_TRUE(Decl.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Decl));
@@ -530,11 +488,9 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
     ASSERT_EQ(Body->get()->getStmtList().value().size(), 1);
   }
   {
-    auto Ctx = test::getParser("intrinsic_fn eat();");
-    Ctx->P.parseDecl();
-    auto GreenTree = Ctx->P.build();
-    auto RedTree =
-        buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+    auto CI = CompilerInstance();
+    auto FD = CI.addInlineSource("test.xd", "intrinsic_fn eat();");
+    auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
     auto Decl = ASTDecl::cast(RedTree);
     ASSERT_TRUE(Decl.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Decl));
@@ -547,11 +503,9 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseStructDeclIntoTree) {
-  auto Ctx = test::getParser("struct Vec2D { x: i32, y: i32 }");
-  Ctx->P.parseDecl();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "struct Vec2D { x: i32, y: i32 }");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
@@ -574,11 +528,9 @@ TEST(SyntaxTest, ParseStructDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseIntrinsicTypeDeclIntoTree) {
-  auto Ctx = test::getParser("intrinsic_type i32;");
-  Ctx->P.parseDecl();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "intrinsic_type i32;");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
@@ -590,12 +542,10 @@ TEST(SyntaxTest, ParseIntrinsicTypeDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseTraitDeclIntoTree) {
-  auto Ctx =
-      test::getParser("trait Add[T, R] { fn add(self: Self, other: T) -> R; }");
-  Ctx->P.parseDecl();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD = CI.addInlineSource(
+      "test.xd", "trait Add[T, R] { fn add(self: Self, other: T) -> R; }");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
@@ -633,12 +583,11 @@ TEST(SyntaxTest, ParseTraitDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseInstanceDeclIntoTree) {
-  auto Ctx = test::getParser("instance Add[i32, i32] for i32 { fn add() {} "
-                             "intrinsic_fn add_fast(); }");
-  Ctx->P.parseDecl();
-  auto GreenTree = Ctx->P.build();
-  auto RedTree =
-      buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *Ctx->DM);
+  auto CI = CompilerInstance();
+  auto FD =
+      CI.addInlineSource("test.xd", "instance Add[i32, i32] for i32 { fn add() "
+                                    "{} intrinsic_fn add_fast(); }");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));

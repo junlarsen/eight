@@ -1,4 +1,3 @@
 llvm_map_components_to_libnames(LLVMLibs Support)
 
-add_xd_test(FrontendTests SOURCES LexerTest.cpp ParserTest.cpp SyntaxTest.cpp LIBS XDFrontend ${LLVMLibs})
-target_include_directories(FrontendTests PRIVATE .)
+add_xd_test(FrontendTests SOURCES LexerTest.cpp ParserTest.cpp SyntaxTest.cpp LIBS XDFrontend XDDriver ${LLVMLibs})
