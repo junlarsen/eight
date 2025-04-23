@@ -18,8 +18,7 @@ using namespace llvm;
 
 auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
     -> std::optional<std::unique_ptr<ASTTranslationUnit>> {
-  auto TU = std::make_unique<ASTTranslationUnit>();
-  auto MG = ModuleGraph();
+  auto TU = std::make_unique<ASTTranslationUnit>(ModuleGraph());
   auto WorkQueue = SmallVector<SourceFileID, 16>();
   // Build the entire module graph, starting at the entrypoint node. This is
   // effectively BFS, with the ModuleGraph holding the list over files visited.
@@ -28,13 +27,14 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
     auto File = WorkQueue.back();
     WorkQueue.pop_back();
     // If we've already seen this file, we keep going.
-    if (MG.hasModule(File))
+    if (TU->getModuleGraph().hasNode(File))
       continue;
     // Parse the file and install it into the translation unit
     auto ModuleDecl = getModuleDeclaration(File);
     TU->addModule(File, ModuleDecl);
     auto Dependents = ModuleDecl->getReferencedDependencyPaths();
     // Visit all neighbors using BFS.
+    SmallVector<SourceFileID, 8> DependentIDs;
     for (auto Dep : Dependents) {
       auto SourcePath = SM->getSourcePath(File);
       assert(SourcePath.has_value() && "tried to import virtual file?");
@@ -54,7 +54,9 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
         continue;
       }
       WorkQueue.emplace_back(*DepID);
+      DependentIDs.push_back(*DepID);
     }
+    TU->getModuleGraph().addFileDependencies(File, DependentIDs);
   }
 
   return std::move(TU);

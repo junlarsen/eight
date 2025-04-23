@@ -25,7 +25,7 @@ public:
   struct DenseMapKeyInfo {
     static SourceFileID getEmptyKey() {
       return SourceFileID(std::numeric_limits<uint8_t>::max());
-    };
+    }
     static SourceFileID getTombstoneKey() {
       return SourceFileID(std::numeric_limits<uint8_t>::max());
     }
@@ -35,11 +35,18 @@ public:
     }
   };
 
+  /// Sentinel value, do whatever you want with it.
+  ///
+  /// Users are allowed to assume this doesn't point to a valid source file id.
+
   explicit SourceFileID(uint8_t ID) : ID(ID) {}
 
   /// Cast to uint32_t.
   operator uint32_t() const { return ID; }
 };
+
+const inline auto SourceFileIDSentinel =
+    SourceFileID(std::numeric_limits<uint8_t>::max());
 
 class SourceManager {
   llvm::StringMap<SourceFileID> FileIDReverse;

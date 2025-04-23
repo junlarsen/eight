@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/ModuleGraph.h"
+#include "xd/Frontend/Syntax.h"
 #include "llvm/ADT/SmallSet.h"
 
 using namespace xd;
@@ -20,29 +21,45 @@ auto ModuleGraph::addFileDependencies(SourceFileID Entry,
   if (Edges.empty())
     return std::nullopt;
   // It shouldn't be possible to add the same file twice. It would effectively
-  // be a no-op. The caller is responsible for maintaining this invariant.
-  assert(!Graph.contains(Entry) &&
-         "Entry is being attempted to be registered twice");
-  Graph.insert(std::make_pair(Entry, Edges));
+  // be a no-op. The caller is responsible for maintaining this invariant. Here,
+  // we still add all nodes to the graph with empty lists, because this gives us
+  // really easy node count.
+  if (!hasNode(Entry))
+    Graph.insert(std::make_shared<ModuleGraphNode>(Entry));
+  auto InsertionPoint = getNode(Entry);
+  assert(InsertionPoint->getEdgeCount() == 0 &&
+         "trying to add a file once more");
+  for (auto Edge : Edges) {
+    if (!hasNode(Edge))
+      Graph.insert(std::make_shared<ModuleGraphNode>(Edge));
+    InsertionPoint->addEdge(getNode(Edge));
+  }
 
-  SmallSet<uint32_t, 8> Visited;
-  SmallSet<uint32_t, 8> Queue;
+  // If this is the first registration, we assign entry as the entire graph's
+  // entry node.
+  if (EntryFile == nullptr)
+    EntryFile = InsertionPoint;
+
+  SmallSet<SourceFileID, 8> Visited;
+  SmallSet<SourceFileID, 8> Queue;
 
   std::function<std::optional<SourceFileID>(SourceFileID)> DepthFirstSearch =
       [&](SourceFileID FileID) -> std::optional<SourceFileID> {
     Visited.insert(FileID);
     Queue.insert(FileID);
     // If this file exists in the graph, then we check all its neighbors.
-    if (Graph.contains(FileID)) {
-      for (auto Neighbor : Graph[FileID]) {
+    auto Node = getNode(FileID);
+    if (Node != nullptr) {
+      for (auto I : Node->edges()) {
+        auto NeighborID = I->getFileID();
         // If the recursion stack has the neighbor, then there's a cycle.
-        if (Queue.contains(Neighbor))
-          return Neighbor;
+        if (Queue.contains(NeighborID))
+          return NeighborID;
 
         // If we haven't already visited the neighbour, perform DFS.
-        if (!Visited.contains(Neighbor))
-          if (auto NeighborFault = DepthFirstSearch(Neighbor); NeighborFault)
-            return Neighbor;
+        if (!Visited.contains(NeighborID))
+          if (auto NeighborFault = DepthFirstSearch(NeighborID); NeighborFault)
+            return NeighborID;
       }
     }
     Queue.erase(FileID);

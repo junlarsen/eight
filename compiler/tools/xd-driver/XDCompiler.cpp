@@ -8,7 +8,7 @@
 
 #include "xd/Driver/CompilerInstance.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/GraphWriter.h"
 
 using namespace llvm;
 using namespace xd;
@@ -16,6 +16,10 @@ using namespace xd;
 namespace {
 cl::opt<std::string> InputFile(cl::Positional, cl::desc("<input file>"),
                                cl::init("-"));
+
+cl::opt<bool> EmitModuleGraph("emit-module-graph",
+                              cl::desc("emit the module graph as graphviz dot"),
+                              cl::init(false));
 } // namespace
 
 auto main(int argc, char **argv) -> int {
@@ -37,5 +41,6 @@ auto main(int argc, char **argv) -> int {
     return 1;
   }
   (*TU)->debug(errs());
+
   return 0;
 }

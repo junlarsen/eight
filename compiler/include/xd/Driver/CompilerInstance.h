@@ -15,6 +15,7 @@
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/Parser.h"
 #include "xd/Frontend/Syntax.h"
+#include "xd/Frontend/TranslationUnit.h"
 #include <filesystem>
 
 namespace xd {

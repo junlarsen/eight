@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/AST.h"
+#include "xd/Frontend/TranslationUnit.h"
 
 using namespace xd;
 using namespace llvm;
@@ -28,6 +29,7 @@ auto ASTModuleDecl::getReferencedDependencyPaths() const
   return Result;
 }
 
+// TODO: Probably move this definition into somewhere else
 auto ASTTranslationUnit::debug(raw_ostream &OS) const -> void {
   OS << "ASTTranslationUnit with " << Modules.size() << " modules";
 }
