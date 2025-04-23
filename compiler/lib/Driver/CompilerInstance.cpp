@@ -7,9 +7,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Driver/CompilerInstance.h"
+#include "xd/Driver/Workspace.h"
 #include "xd/Frontend/Lexer.h"
 #include "xd/Frontend/ModuleGraph.h"
 #include "xd/Frontend/Parser.h"
+#include <string>
 
 using namespace xd;
 using namespace llvm;
@@ -19,7 +21,8 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
   auto TU = std::make_unique<ASTTranslationUnit>();
   auto MG = ModuleGraph();
   auto WorkQueue = SmallVector<SourceFileID, 16>();
-  // Build the entire module graph, starting at the entrypoint node.
+  // Build the entire module graph, starting at the entrypoint node. This is
+  // effectively BFS, with the ModuleGraph holding the list over files visited.
   WorkQueue.emplace_back(Entrypoint);
   while (!WorkQueue.empty()) {
     auto File = WorkQueue.back();
@@ -31,22 +34,23 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
     auto ModuleDecl = getModuleDeclaration(File);
     TU->addModule(File, ModuleDecl);
     auto Dependents = ModuleDecl->getReferencedDependencyPaths();
-    // Crawl all of the dependents
+    // Visit all neighbors using BFS.
     for (auto Dep : Dependents) {
       auto SourcePath = SM->getSourcePath(File);
       assert(SourcePath.has_value() && "tried to import virtual file?");
-      auto RelativePath = getResolvedPath(*SourcePath, Dep);
-      if (!RelativePath.has_value()) {
-        // TODO: Error handling
-        errs() << "could not resolve path " << RelativePath.value() << "\n";
+      auto DependencyPath =
+          WS->getRelativeToRootFromRelative(std::string(*SourcePath), Dep);
+      if (auto E = DependencyPath.getError(); E) {
+        errs() << "failed to resolve path relative to root: "
+               << SourcePath->string() << ":" << E.message() << "\n";
         continue;
       }
-      auto DepID =
-          addFilesystemSource(RelativePath->string(), RelativePath->string());
+      auto DepID = addFilesystemSource(DependencyPath->string(),
+                                       DependencyPath->string());
       if (auto E = DepID.getError()) {
         // TODO: Error handling
-        errs() << "could not add file " << RelativePath << ": " << E.message()
-               << "\n";
+        errs() << "could not add file " << DependencyPath->string() << ": "
+               << E.message() << "\n";
         continue;
       }
       WorkQueue.emplace_back(*DepID);
@@ -54,17 +58,6 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
   }
 
   return std::move(TU);
-}
-
-auto CompilerInstance::getResolvedPath(const std::filesystem::path &SourcePath,
-                                       const StringRef &Path) const
-    -> std::optional<std::filesystem::path> {
-  std::error_code EC;
-  auto RelativePath = relative(SourcePath, Path.str(), EC);
-  // There is no such path
-  if (EC)
-    return std::nullopt;
-  return RelativePath;
 }
 
 auto CompilerInstance::addInlineSource(const StringRef &SourceName,

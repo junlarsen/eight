@@ -11,6 +11,7 @@
 
 #include "xd/Basic/DiagnosticManager.h"
 #include "xd/Basic/SourceManager.h"
+#include "xd/Driver/Workspace.h"
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/Parser.h"
 #include "xd/Frontend/Syntax.h"
@@ -20,15 +21,17 @@ namespace xd {
 class CompilerInstance {
   std::unique_ptr<DiagnosticManager> DM;
   std::unique_ptr<SourceManager> SM;
-  std::filesystem::path ModuleResolutionRoot;
+  std::unique_ptr<Workspace> WS;
 
 public:
   explicit CompilerInstance()
       : DM(std::make_unique<DiagnosticManager>()),
         SM(std::make_unique<SourceManager>()) {
     // TODO: Handle the potential error here
-    ModuleResolutionRoot = std::filesystem::current_path();
+    WS = std::make_unique<Workspace>(std::filesystem::current_path());
   }
+
+  auto getWorkspace() const -> Workspace & { return *WS; }
 
   auto hasDiagnostics() const -> bool { return !DM->isEmpty(); }
   auto diagnostics() const { return DM->diagnostics(); }
@@ -56,15 +59,6 @@ public:
   /// dependency graph.
   auto buildModuleGraph(SourceFileID Entrypoint) const
       -> std::optional<std::unique_ptr<ASTTranslationUnit>>;
-
-  /// Get the resolved filesystem path for a given import.
-  ///
-  /// This is assuming the current file resides at SourcePath.
-  ///
-  /// TODO: Consider not silently failing here.
-  auto getResolvedPath(const std::filesystem::path &SourcePath,
-                       const llvm::StringRef &Path) const
-      -> std::optional<std::filesystem::path>;
 
   /// Get the red tree for the given source file.
   ///

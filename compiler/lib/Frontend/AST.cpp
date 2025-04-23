@@ -21,7 +21,9 @@ auto ASTModuleDecl::getReferencedDependencyPaths() const
     auto DependencyName = ImportDecl->getSource();
     if (!DependencyName.has_value())
       continue;
-    Result.push_back((*DependencyName)->getValue()->str());
+    auto Path = (*DependencyName)->getValue()->str();
+    // StringLiteralExpr also contains the quotes. We strip them here.
+    Result.push_back(Path.substr(1, Path.size() - 2));
   }
   return Result;
 }

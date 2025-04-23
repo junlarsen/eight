@@ -306,7 +306,8 @@ auto Parser::parseFunctionParameter() -> void {
   auto C = open();
   expect(SyntaxKind::Identifier);
   expect(SyntaxKind::Colon);
-  parseType();
+  if (atTypeStart())
+    parseType();
   if (!at(SyntaxKind::RightParen)) {
     eat(SyntaxKind::Comma);
   }
