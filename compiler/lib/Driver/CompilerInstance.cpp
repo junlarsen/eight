@@ -45,8 +45,8 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
                << SourcePath->string() << ":" << E.message() << "\n";
         continue;
       }
-      auto DepID = addFilesystemSource(DependencyPath->string(),
-                                       DependencyPath->string());
+      auto DepID =
+          addFilesystemSource(DependencyPath->string(), *DependencyPath);
       if (auto E = DepID.getError()) {
         // TODO: Error handling
         errs() << "could not add file " << DependencyPath->string() << ": "

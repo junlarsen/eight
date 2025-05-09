@@ -22,5 +22,9 @@ auto Workspace::getRelativeToRootFromRelative(
           .parent_path();
   if (EC)
     return EC;
-  return WorkspaceRelativeToSource.append(Target.str());
+  auto Canonical =
+      canonical(WorkspaceRelativeToSource.append(Target.str()), EC);
+  if (EC)
+    return EC;
+  return Canonical;
 }
