@@ -26,8 +26,11 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
   while (!WorkQueue.empty()) {
     auto File = WorkQueue.back();
     WorkQueue.pop_back();
-    // If we've already seen this file, we keep going.
-    if (TU->getModuleGraph().hasNode(File))
+    // If we've already seen this file, we keep going. A file is only deemed as
+    // seen if it has any edges. This is because the code will add the node
+    // whenever it's seen as an edge.
+    auto Node = TU->getModuleGraph().getNode(File);
+    if (Node != nullptr && Node->getEdgeCount() > 0)
       continue;
     // Parse the file and install it into the translation unit
     auto ModuleDecl = getModuleDeclaration(File);
