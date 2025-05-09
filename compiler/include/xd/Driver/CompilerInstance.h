@@ -33,6 +33,7 @@ public:
   }
 
   auto getWorkspace() const -> Workspace & { return *WS; }
+  auto getSourceManager() const -> SourceManager & { return *SM; }
 
   auto hasDiagnostics() const -> bool { return !DM->isEmpty(); }
   auto diagnostics() const { return DM->diagnostics(); }

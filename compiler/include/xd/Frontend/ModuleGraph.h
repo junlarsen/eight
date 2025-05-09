@@ -34,7 +34,7 @@ public:
   auto getEdgeCount() const { return Edges.size(); }
   auto begin() { return Edges.begin(); }
   auto end() { return Edges.end(); }
-  auto edges() { return Edges; }
+  auto edges() { return &Edges; }
 };
 
 class ModuleGraph {
@@ -110,6 +110,8 @@ public:
       return nullptr;
     return *Node;
   }
+
+  auto debug(llvm::raw_ostream &OS, SourceManager &SM) const -> void;
 };
 } // namespace xd
 

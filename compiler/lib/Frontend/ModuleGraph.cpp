@@ -50,7 +50,7 @@ auto ModuleGraph::addFileDependencies(SourceFileID Entry,
     // If this file exists in the graph, then we check all its neighbors.
     auto Node = getNode(FileID);
     if (Node != nullptr) {
-      for (auto I : Node->edges()) {
+      for (auto I : *Node->edges()) {
         auto NeighborID = I->getFileID();
         // If the recursion stack has the neighbor, then there's a cycle.
         if (Queue.contains(NeighborID))
@@ -66,4 +66,20 @@ auto ModuleGraph::addFileDependencies(SourceFileID Entry,
     return std::nullopt;
   };
   return DepthFirstSearch(Entry);
+}
+
+auto ModuleGraph::debug(raw_ostream &OS, SourceManager &SM) const -> void {
+  OS << "ModuleGraph output: \n";
+  for (auto &Node : Graph) {
+    auto *Edges = Node->edges();
+    auto Name = SM.getSourcePath(Node->getFileID());
+    OS << "Node " << *Name << " has " << Edges->size() << " edges\n";
+    if (Edges->size() == 0)
+      continue;
+    for (auto &Edge : *Edges) {
+      auto NeighborID = Edge->getFileID();
+      auto Neighbor = SM.getSourcePath(NeighborID);
+      OS << "  " << *Neighbor << "\n";
+    }
+  }
 }

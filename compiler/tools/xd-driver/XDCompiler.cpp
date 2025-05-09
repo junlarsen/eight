@@ -7,8 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Driver/CompilerInstance.h"
+#include "xd/Frontend/ModuleGraph.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/GraphWriter.h"
 
 using namespace llvm;
 using namespace xd;
@@ -41,6 +41,7 @@ auto main(int argc, char **argv) -> int {
     return 1;
   }
   (*TU)->debug(errs());
+  (*TU)->getModuleGraph().debug(errs(), CI.getSourceManager());
 
   return 0;
 }
