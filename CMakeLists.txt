@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(XD VERSION 0.1.0)
 
-set(XD_LLVM_INSTALL_PREFIX "/usr/lib/llvm-20" CACHE STRING "LLVM 20.1.0 install directory")
+set(XD_LLVM_INSTALL_PREFIX "/usr/lib" CACHE STRING "LLVM install directory")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,7 +21,7 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -stdlib=libc++ -L${X
 
 cmake_policy(SET CMP0135 NEW)
 
-find_package(LLVM 20.1.0 REQUIRED CONFIG PATHS "${XD_LLVM_INSTALL_PREFIX}/")
+find_package(LLVM 21 REQUIRED CONFIG PATHS "${XD_LLVM_INSTALL_PREFIX}/")
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} in directory ${LLVM_DIR}")
 
 include(FetchContent)

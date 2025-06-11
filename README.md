@@ -44,24 +44,25 @@ fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {
 ## Building
 
 The project is built using the LLVM toolchain and is not tested against
-gcc/libstdc++. We require a build of LLVM 20.1.0 that has been built with
+gcc/libstdc++. We require a build of LLVM 21 that has been built with
 LLVM libc++. In addition, we use LLVM and MLIR libraries.
 
-- XD_LLVM_INSTALL_PREFIX: This is the location where LLVM 20.1.0 is expected to
-  be available on the system. This defaults to `/usr/lib/llvm-20`. Read the next
-  section on how to build a compatible LLVM 20.1.0 build.
+- XD_LLVM_INSTALL_PREFIX: This is the location where LLVM 21 is expected to
+  be available on the system. This defaults to `/usr/lib`. Read the next
+  section on how to build a compatible LLVM build.
 
 <details>
 <summary>Building a compatible LLVM distribution</summary>
 
 ```bash
-# Assuming llvm/llvm-project checked out at tag llvmorg-20.1.0
+# Assuming llvm/llvm-project from trunk
 cmake \
   -G "Ninja" \
-  -DCMAKE_INSTALL_PREFIX="/usr/lib/llvm-20" \
+  -DCMAKE_INSTALL_PREFIX="/some/directory" \
   -DCMAKE_BUILD_TYPE="Release" \
   -DCMAKE_CXX_COMPILER="clang++-18" \
   -DCMAKE_C_COMPILER="clang-18" \
+  -DCMAKE_CXX_FLAGS="-stdlib=c++" \
   -DLLVM_ENABLE_LIBCXX="ON" \
   -DLLVM_USE_LINKER="/usr/lib/llvm-18/bin/ld.lld" \
   -DLLVM_CCACHE_BUILD="ON" \
