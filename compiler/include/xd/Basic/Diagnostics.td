@@ -26,8 +26,9 @@ def UnrecognizedCharacter
     : Diagnostic<"Found unrecognized character {0}",
                  [DiagnosticArg<"Character", CharacterArg>]>;
 
-def UnexpectedToken : Diagnostic<"encountered unexpected token {0}",
-                                 [DiagnosticArg<"Token", StringArg>]>;
+def UnexpectedToken
+    : Diagnostic<"encountered unexpected token {0}", [DiagnosticArg<
+                                                         "Token", StringArg>]>;
 
 def UnexpectedEndOfFile : Diagnostic<"did not expect end of file", []>;
 
