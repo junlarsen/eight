@@ -51,6 +51,9 @@ public:
                            const std::filesystem::path &Path) const
       -> llvm::ErrorOr<SourceFileID>;
 
+  auto findFilesystemSource(const llvm::StringRef &SourceName) const
+      -> std::optional<SourceFileID>;
+
   /// Add STDIN as a source.
   auto addStdinSource(std::unique_ptr<llvm::MemoryBuffer> Buf) const
       -> SourceFileID;

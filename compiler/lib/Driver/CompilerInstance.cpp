@@ -48,13 +48,18 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
                << SourcePath->string() << ":" << E.message() << "\n";
         continue;
       }
-      auto DepID =
-          addFilesystemSource(DependencyPath->string(), *DependencyPath);
-      if (auto E = DepID.getError()) {
-        // TODO: Error handling
-        errs() << "could not add file " << DependencyPath->string() << ": "
-               << E.message() << "\n";
-        continue;
+      // We take the source path ID if it exists, or add it.
+      auto DepID = findFilesystemSource(DependencyPath->string());
+      if (!DepID.has_value()) {
+        auto Dependency =
+            addFilesystemSource(DependencyPath->string(), *DependencyPath);
+        if (auto E = Dependency.getError()) {
+          // TODO: Error handling
+          errs() << "could not add file " << DependencyPath->string() << ": "
+                 << E.message() << "\n";
+          continue;
+        }
+        DepID = Dependency.get();
       }
       WorkQueue.emplace_back(*DepID);
       DependentIDs.push_back(*DepID);
@@ -79,6 +84,11 @@ auto CompilerInstance::addFilesystemSource(
   if (auto E = Buffer.getError())
     return std::move(E);
   return SM->addFileSource(SourceName, Path, std::move(Buffer.get()));
+}
+
+auto CompilerInstance::findFilesystemSource(const StringRef &SourceName) const
+    -> std::optional<SourceFileID> {
+  return SM->findNamedSource(SourceName);
 }
 
 auto CompilerInstance::addStdinSource(std::unique_ptr<MemoryBuffer> Buf) const

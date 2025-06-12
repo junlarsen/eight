@@ -15,6 +15,13 @@ auto SourceManager::hasNamedSource(const StringRef &Name) const -> bool {
   return FileIDReverse.contains(Name);
 }
 
+auto SourceManager::findNamedSource(const StringRef &Name) const
+    -> std::optional<SourceFileID> {
+  if (FileIDReverse.contains(Name))
+    return FileIDReverse.at(Name);
+  return std::nullopt;
+}
+
 auto SourceManager::addFileSource(const StringRef &Name,
                                   const std::filesystem::path &Path,
                                   std::unique_ptr<MemoryBuffer> Buffer)

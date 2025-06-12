@@ -69,6 +69,8 @@ public:
       -> SourceFileID;
 
   auto hasNamedSource(const llvm::StringRef &Name) const -> bool;
+  auto findNamedSource(const llvm::StringRef &Name) const
+      -> std::optional<SourceFileID>;
 
   /// Get the given memory buffer.
   ///
