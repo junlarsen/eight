@@ -299,7 +299,7 @@ auto GreenNode::debug(raw_ostream &OS, size_t Indent) const -> void {
 }
 
 auto SyntaxNode::getLocation() const -> SourceLocation {
-  return SourceLocation(Offset, Offset + getTextLength());
+  return SourceLocation(Offset, Offset + getTextLength(), FileID);
 }
 
 auto SyntaxNode::debug(raw_ostream &OS, size_t Indent) const -> void {
@@ -384,9 +384,9 @@ auto SyntaxNode::findSibling(const std::function<bool(SyntaxKind)> &Predicate)
 static auto buildChildTree(const std::shared_ptr<SyntaxNode> &Parent,
                            uint32_t Index, uint32_t Offset,
                            std::shared_ptr<GreenElement> Elem,
-                           DiagnosticManager &DM)
+                           DiagnosticManager &DM, SourceFileID FileID)
     -> std::shared_ptr<SyntaxNode> {
-  auto Self = SyntaxNode::get(Parent, Elem, Offset, Index);
+  auto Self = SyntaxNode::get(Parent, Elem, Offset, Index, FileID);
 
   // If this is an error node, then we can propagate the location to the diag
   // itself.
@@ -397,7 +397,7 @@ static auto buildChildTree(const std::shared_ptr<SyntaxNode> &Parent,
   if (auto *GN = dyn_cast<GreenNode>(Elem.get())) {
     auto NextOffset = Offset;
     for (uint32_t I = 0; auto &C : GN->getChildren()) {
-      auto Child = buildChildTree(Self, I, NextOffset, C, DM);
+      auto Child = buildChildTree(Self, I, NextOffset, C, DM, FileID);
       // Do not duplicate offsets for errors
       if (!isa<GreenError>(Child->getGreen().get()))
         NextOffset += Child->getTextLength();
@@ -408,11 +408,12 @@ static auto buildChildTree(const std::shared_ptr<SyntaxNode> &Parent,
 }
 
 auto xd::buildSyntaxTree(const std::shared_ptr<GreenNode> &GreenRoot,
-                         DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode> {
-  auto Root = SyntaxNode::getRoot(GreenRoot);
+                         DiagnosticManager &DM, SourceFileID FileID)
+    -> std::shared_ptr<SyntaxNode> {
+  auto Root = SyntaxNode::getRoot(GreenRoot, FileID);
   auto Offset = 0;
   for (uint32_t I = 0; auto &C : GreenRoot->getChildren()) {
-    auto Child = buildChildTree(Root, I, Offset, C, DM);
+    auto Child = buildChildTree(Root, I, Offset, C, DM, FileID);
     // Do not duplicate offsets for errors
     if (!isa<GreenError>(Child->getGreen().get()))
       Offset += Child->getTextLength();

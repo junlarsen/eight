@@ -18,12 +18,17 @@ using namespace llvm;
 using namespace xd;
 
 TEST(SyntaxTest, GraphSearching) {
+  auto SM = SourceManager();
+  auto FileID =
+      SM.addVirtualSource("<stdin>", MemoryBuffer::getMemBuffer("bar"));
   auto Root = SyntaxNode::getRoot(
-      std::make_shared<GreenNode>(SyntaxKind::ModuleDecl, 20));
+      std::make_shared<GreenNode>(SyntaxKind::ModuleDecl, 20), FileID);
   auto FunctionChild = SyntaxNode::get(
-      Root, std::make_shared<GreenNode>(SyntaxKind::FunctionDecl, 10), 0, 0);
+      Root, std::make_shared<GreenNode>(SyntaxKind::FunctionDecl, 10), 0, 0,
+      FileID);
   auto StructChild = SyntaxNode::get(
-      Root, std::make_shared<GreenNode>(SyntaxKind::StructDecl, 10), 10, 1);
+      Root, std::make_shared<GreenNode>(SyntaxKind::StructDecl, 10), 10, 1,
+      FileID);
   ASSERT_EQ(FunctionChild->getParent(), Root);
   ASSERT_EQ(StructChild->getParent(), Root);
   ASSERT_EQ(Root->getParent(), std::nullopt);
@@ -46,22 +51,26 @@ TEST(SyntaxTest, GraphSearching) {
 }
 
 TEST(SyntaxTest, CastIntoSyntaxTree) {
+  auto SM = SourceManager();
+  auto FileID =
+      SM.addVirtualSource("<stdin>", MemoryBuffer::getMemBuffer("bar"));
   auto IdentifierNode = SyntaxNode::getRoot(
-      std::make_shared<GreenToken>(SyntaxKind::Identifier, "bar"));
+      std::make_shared<GreenToken>(SyntaxKind::Identifier, "bar"), FileID);
   auto F = Identifier::cast(IdentifierNode);
   ASSERT_TRUE(F.has_value());
   ASSERT_EQ((*F)->getName(), "bar");
-  ASSERT_EQ((*F)->getLocation(), SourceLocation(0, 3));
+  ASSERT_EQ((*F)->getLocation(), SourceLocation(0, 3, FileID));
 
   // PointerType should be able to llvm::dyn_cast its inner type. Here we
   // construct a *int.
   auto TypeRoot = SyntaxNode::getRoot(
-      std::make_shared<GreenNode>(SyntaxKind::PointerType, 4));
+      std::make_shared<GreenNode>(SyntaxKind::PointerType, 4), FileID);
   auto InnerNode = SyntaxNode::get(
-      TypeRoot, std::make_shared<GreenNode>(SyntaxKind::NamedType, 3), 0, 0);
+      TypeRoot, std::make_shared<GreenNode>(SyntaxKind::NamedType, 3), 0, 0,
+      FileID);
   auto Name = SyntaxNode::get(
       InnerNode, std::make_shared<GreenToken>(SyntaxKind::Identifier, "int"), 0,
-      0);
+      0, FileID);
 
   auto PtrType = ASTPointerType::cast(TypeRoot);
   ASSERT_TRUE(PtrType.has_value());

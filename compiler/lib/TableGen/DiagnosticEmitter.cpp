@@ -96,9 +96,12 @@ auto DiagnosticEmitter::emitDiagnosticClass(const Record &R, raw_ostream &OS)
      << ";" << "\n";
   OS << "  }" << "\n";
   // Add emit error to stderr
-  OS << "  auto emit(llvm::raw_ostream &OS) const -> void {" << "\n";
+  OS << "  auto emit(llvm::raw_ostream &OS, xd::SourceManager &SM) const -> "
+        "void {"
+     << "\n";
   OS << "    OS << \"" << ClassName
-     << "\" << \" at \" << Loc.getStart() << \"..\" << Loc.getEnd() << \"\\n\";"
+     << "\" << \" in file \" << SM.getSourcePath(Loc.getFileID()) << \" at \" "
+        "<< Loc.getStart() << \"..\" << Loc.getEnd() << \"\\n\";"
      << "\n";
   OS << "  }" << "\n";
   // End the class definition

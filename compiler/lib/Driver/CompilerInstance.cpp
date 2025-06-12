@@ -94,5 +94,6 @@ auto CompilerInstance::getSyntaxTree(
   auto Parse = Parser(*DM, std::move(Lex.drain()));
   Fn(Parse);
   auto GreenTree = Parse.build();
-  return buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *DM);
+  return buildSyntaxTree(std::make_shared<GreenNode>(GreenTree), *DM,
+                         SourceFile);
 }

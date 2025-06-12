@@ -9,6 +9,7 @@
 #ifndef XD_BASIC_LOCATION_H
 #define XD_BASIC_LOCATION_H
 
+#include "xd/Basic/SourceManager.h"
 #include <cstdint>
 
 namespace xd {
@@ -19,15 +20,18 @@ namespace xd {
 class SourceLocation {
   uint32_t Start;
   uint32_t End;
+  SourceFileID FileID;
 
 public:
-  SourceLocation(uint32_t Start, uint32_t End) : Start(Start), End(End) {}
+  SourceLocation(uint32_t Start, uint32_t End, SourceFileID FileID)
+      : Start(Start), End(End), FileID(FileID) {}
   bool operator==(const SourceLocation &Other) const {
-    return Start == Other.Start && End == Other.End;
+    return Start == Other.Start && End == Other.End && FileID == Other.FileID;
   }
 
   auto getStart() const { return Start; }
   auto getEnd() const { return End; }
+  auto getFileID() const { return FileID; }
 };
 } // namespace xd
 

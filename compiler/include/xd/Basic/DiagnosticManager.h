@@ -46,7 +46,7 @@ public:
   }
 
   /// Get a debug (not pretty) list of the diagnostics for early debugging.
-  void debug(llvm::raw_ostream &OS) const;
+  void debug(llvm::raw_ostream &OS, SourceManager &SM) const;
 };
 } // namespace xd
 

@@ -38,6 +38,6 @@ auto main(int argc, char **argv) -> int {
   auto TU = CI.buildModuleGraph(*EntryID);
   TU->debug(errs());
   TU->getModuleGraph().debug(errs(), CI.getSourceManager());
-  CI.getDiagnosticManager().debug(errs());
+  CI.getDiagnosticManager().debug(errs(), CI.getSourceManager());
   return 0;
 }

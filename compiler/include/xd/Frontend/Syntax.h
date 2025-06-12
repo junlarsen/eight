@@ -399,13 +399,14 @@ class SyntaxNode {
   uint32_t Offset;
   uint32_t Length;
   uint32_t Index;
+  SourceFileID FileID;
 
 public:
   explicit SyntaxNode(std::optional<std::shared_ptr<SyntaxNode>> Parent,
                       std::shared_ptr<GreenElement> Green, uint32_t Offset,
-                      uint32_t Index)
+                      uint32_t Index, SourceFileID FileID)
       : Parent(std::move(Parent)), Green(Green), Offset(Offset), Length(0),
-        Index(Index), Children({}) {}
+        Index(Index), Children({}), FileID(FileID) {}
 
   auto getTextLength() const -> uint32_t { return Green->getTextLength(); }
   auto getSyntaxKind() const -> SyntaxKind { return Green->getSyntaxKind(); }
@@ -463,16 +464,18 @@ public:
       -> std::optional<std::shared_ptr<SyntaxNode>>;
 
   /// Create a root node.
-  static auto getRoot(std::shared_ptr<GreenElement> Green)
+  static auto getRoot(std::shared_ptr<GreenElement> Green, SourceFileID FileID)
       -> std::shared_ptr<SyntaxNode> {
-    return std::make_shared<SyntaxNode>(std::nullopt, Green, 0, 0);
+    return std::make_shared<SyntaxNode>(std::nullopt, Green, 0, 0, FileID);
   }
 
   /// Create a child node.
   static auto get(std::shared_ptr<SyntaxNode> Parent,
                   std::shared_ptr<GreenElement> Green, uint32_t Offset,
-                  uint32_t Index) -> std::shared_ptr<SyntaxNode> {
-    auto Self = std::make_shared<SyntaxNode>(Parent, Green, Offset, Index);
+                  uint32_t Index, SourceFileID FileID)
+      -> std::shared_ptr<SyntaxNode> {
+    auto Self =
+        std::make_shared<SyntaxNode>(Parent, Green, Offset, Index, FileID);
     Parent->addChild(Index, Self);
     return Self;
   }
@@ -480,7 +483,8 @@ public:
 
 /// Turn a Green tree into a red tree.
 auto buildSyntaxTree(const std::shared_ptr<GreenNode> &GreenRoot,
-                     DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode>;
+                     DiagnosticManager &DM, SourceFileID FileID)
+    -> std::shared_ptr<SyntaxNode>;
 } // namespace xd
 
 #endif // XD_FRONTEND_SYNTAX_H

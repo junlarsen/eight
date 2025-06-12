@@ -14,14 +14,19 @@
 class Diagnostic {
 protected:
   DiagnosticKind Kind;
+  /// The primary source location of the diagnostic. Helper spans may be added
+  /// by child classes, but this is the location the diagnostic will point to in
+  /// the source code.
   SourceLocation Loc;
 
 public:
   virtual ~Diagnostic() = default;
   /// Create a Diagnostic without location information. Note that the location
   /// info will have to be attached later in order to become printable.
+  ///
+  /// TODO: Consider using another value than 0 for missing sentinel
   explicit Diagnostic(DiagnosticKind Kind)
-      : Kind(Kind), Loc(SourceLocation(0, 0)) {}
+      : Kind(Kind), Loc(SourceLocation(0, 0, SourceFileID(0))) {}
   explicit Diagnostic(DiagnosticKind Kind, SourceLocation Loc)
       : Kind(Kind), Loc(Loc) {}
 
@@ -32,5 +37,5 @@ public:
     return Diag->getKind() >= FirstDiagnosticKind &&
            Diag->getKind() <= LastDiagnosticKind;
   }
-  virtual auto emit(llvm::raw_ostream &OS) const -> void = 0;
+  virtual auto emit(llvm::raw_ostream &OS, SourceManager &SM) const -> void = 0;
 };

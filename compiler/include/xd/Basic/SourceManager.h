@@ -12,7 +12,6 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include <cstdint>
 #include <filesystem>
 
 namespace xd {
@@ -34,10 +33,6 @@ public:
       return LHS.ID == RHS.ID;
     }
   };
-
-  /// Sentinel value, do whatever you want with it.
-  ///
-  /// Users are allowed to assume this doesn't point to a valid source file id.
 
   explicit SourceFileID(uint8_t ID) : ID(ID) {}
 
