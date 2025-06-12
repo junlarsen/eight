@@ -93,6 +93,7 @@ TEST(SyntaxTest, ParseBinaryExprIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "1 + 5 * 2");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
   ASSERT_TRUE(isa<ASTBinaryExpr>(**Expr));
@@ -110,6 +111,7 @@ TEST(SyntaxTest, ParseUnaryExprIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "-*x");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
   ASSERT_TRUE(isa<ASTUnaryExpr>(**Expr));
@@ -127,6 +129,7 @@ TEST(SyntaxTest, ParseGroupExprIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "((a))");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
   ASSERT_TRUE(isa<ASTGroupExpr>(**Expr));
@@ -141,6 +144,7 @@ TEST(SyntaxTest, ParseReferenceExprIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "aa");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
   ASSERT_TRUE(isa<ASTReferenceExpr>(**Expr));
@@ -155,6 +159,7 @@ TEST(SyntaxTest, ParseConstantIndexExprIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "a.b");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
   ASSERT_TRUE(isa<ASTConstantIndexExpr>(**Expr));
@@ -172,6 +177,7 @@ TEST(SyntaxTest, ParseIntegerLiteralExprIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "100");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
   ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(**Expr));
@@ -185,6 +191,7 @@ TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "true");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
     ASSERT_TRUE(isa<ASTBooleanLiteralExpr>(**Expr));
@@ -196,6 +203,7 @@ TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "false");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
     ASSERT_TRUE(isa<ASTBooleanLiteralExpr>(**Expr));
@@ -210,6 +218,7 @@ TEST(SyntaxTest, ParseCallExprIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "f[int](1, 2, 3)");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
     ASSERT_TRUE(isa<ASTCallExpr>(**Expr));
@@ -236,6 +245,7 @@ TEST(SyntaxTest, ParseCallExprIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "f()");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Expr.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Expr));
     ASSERT_TRUE(isa<ASTCallExpr>(**Expr));
@@ -257,6 +267,7 @@ TEST(SyntaxTest, ParseConstructionExprIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "new Vec2D { x = 1, y = 2 }");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Expr.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Expr));
   ASSERT_TRUE(isa<ASTConstructionExpr>(**Expr));
@@ -284,6 +295,7 @@ TEST(SyntaxTest, ParseLetStmtIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "let f: i32 = 0;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Stmt.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
   ASSERT_TRUE(isa<ASTLetStmt>(**Stmt));
@@ -309,6 +321,7 @@ TEST(SyntaxTest, ParseIfStmtIntoTree) {
         CI.addInlineSource("test.xd", "if (true) { } else { let b = 1 ; }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
     ASSERT_TRUE(isa<ASTIfStmt>(**Stmt));
@@ -331,6 +344,7 @@ TEST(SyntaxTest, ParseIfStmtIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "if (true) { }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
     ASSERT_TRUE(isa<ASTIfStmt>(**Stmt));
@@ -345,9 +359,10 @@ TEST(SyntaxTest, ParseForStmtIntoTree) {
   {
     auto CI = CompilerInstance();
     auto FD = CI.addInlineSource(
-        "test.xd", "for (let i = 0; i < 10; i = i + 1 { let x = 0; ");
+        "test.xd", "for (let i = 0; i < 10; i = i + 1) { let x = 0; }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
     ASSERT_TRUE(isa<ASTForStmt>(**Stmt));
@@ -383,6 +398,7 @@ TEST(SyntaxTest, ParseForStmtIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "for (;;) {}");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
     ASSERT_TRUE(isa<ASTForStmt>(**Stmt));
@@ -399,6 +415,7 @@ TEST(SyntaxTest, ParseBreakStmtIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "break;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Stmt.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
   ASSERT_TRUE(isa<ASTBreakStmt>(**Stmt));
@@ -409,6 +426,7 @@ TEST(SyntaxTest, ParseContinueStmtIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "continue;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Stmt.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Stmt));
   ASSERT_TRUE(isa<ASTContinueStmt>(**Stmt));
@@ -420,6 +438,7 @@ TEST(SyntaxTest, ParseReturnStmtIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "return;");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
     ASSERT_TRUE(isa<ASTReturnStmt>(**Stmt));
@@ -431,6 +450,7 @@ TEST(SyntaxTest, ParseReturnStmtIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "return 1;");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Stmt.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Stmt));
     ASSERT_TRUE(isa<ASTReturnStmt>(**Stmt));
@@ -464,6 +484,7 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
         CI.addInlineSource("test.xd", "fn id[T](el: T) -> T { return el; }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
     auto Decl = ASTDecl::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Decl.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Decl));
     ASSERT_TRUE(isa<ASTFunctionDecl>(**Decl));
@@ -501,6 +522,7 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
     auto FD = CI.addInlineSource("test.xd", "intrinsic_fn eat();");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
     auto Decl = ASTDecl::cast(RedTree);
+    ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
     ASSERT_TRUE(Decl.has_value());
     ASSERT_TRUE(isa<ASTNode>(**Decl));
     ASSERT_TRUE(isa<ASTFunctionDecl>(**Decl));
@@ -516,6 +538,7 @@ TEST(SyntaxTest, ParseStructDeclIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "struct Vec2D { x: i32, y: i32 }");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
   ASSERT_TRUE(isa<ASTStructDecl>(**Decl));
@@ -541,6 +564,7 @@ TEST(SyntaxTest, ParseIntrinsicTypeDeclIntoTree) {
   auto FD = CI.addInlineSource("test.xd", "intrinsic_type i32;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
   ASSERT_TRUE(isa<ASTIntrinsicTypeDecl>(**Decl));
@@ -556,6 +580,7 @@ TEST(SyntaxTest, ParseTraitDeclIntoTree) {
       "test.xd", "trait Add[T, R] { fn add(self: Self, other: T) -> R; }");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
   ASSERT_TRUE(isa<ASTTraitDecl>(**Decl));
@@ -598,6 +623,7 @@ TEST(SyntaxTest, ParseInstanceDeclIntoTree) {
                                     "{} intrinsic_fn add_fast(); }");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
   ASSERT_TRUE(isa<ASTInstanceDecl>(**Decl));
@@ -629,6 +655,7 @@ TEST(SyntaxTest, ParseImportDeclIntoTree) {
                                "import { foo, bar, baz } from \"xd:base\";");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseImportDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
   ASSERT_TRUE(isa<ASTImportDecl>(**Decl));
@@ -649,7 +676,7 @@ TEST(SyntaxTest, ParseImportDeclIntoTree) {
 TEST(SyntaxTest, ParseModuleDeclIntoTree) {
   auto CI = CompilerInstance();
   auto FD =
-      CI.addInlineSource("test.xd", "import { spawn } from \"xd:proc\"\n"
+      CI.addInlineSource("test.xd", "import { spawn } from \"xd:proc\";\n"
                                     "fn id[T](el: T) -> T { return el; }\n"
                                     "struct Vec2D { x: i32, y: i32 }\n"
                                     "intrinsic_type bool;\n"
@@ -657,6 +684,7 @@ TEST(SyntaxTest, ParseModuleDeclIntoTree) {
                                     "instance Add[i32, i32] for i32 {}\n");
   auto RedTree = CI.getSyntaxTree(FD);
   auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
   ASSERT_TRUE(isa<ASTModuleDecl>(**Decl));
