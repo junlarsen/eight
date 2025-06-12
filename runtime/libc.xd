@@ -1,0 +1,18 @@
+import { reinterpret_cast, sizeof } from "./convert.xd";
+
+intrinsic_fn __libc_malloc(size: i32) -> ptr;
+intrinsic_fn __libc_free(ptr: ptr) -> void;
+intrinsic_fn __libc_exit(code: i32) -> void;
+
+fn malloc[T]() -> *T {
+  let buf = __libc_malloc(sizeof[T]());
+  return reinterpret_cast[ptr, *T](buf);
+}
+
+fn free[T](ptr: *T) -> void {
+  __libc_free(reinterpret_cast[*T, ptr](ptr));
+}
+
+fn exit(code: i32) -> void {
+  __libc_exit(code);
+}

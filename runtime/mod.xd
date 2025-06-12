@@ -1,0 +1,4 @@
+// Module declaration for the `std` runtime module.
+
+import { malloc, free, exit } from "./libc.xd";
+import { reinterpret_cast, sizeof } from "./convert.xd";
