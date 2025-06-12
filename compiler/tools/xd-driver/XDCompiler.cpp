@@ -36,12 +36,8 @@ auto main(int argc, char **argv) -> int {
     return 1;
   }
   auto TU = CI.buildModuleGraph(*EntryID);
-  if (!TU.has_value()) {
-    errs() << "Error building TU\n";
-    return 1;
-  }
-  (*TU)->debug(errs());
-  (*TU)->getModuleGraph().debug(errs(), CI.getSourceManager());
-
+  TU->debug(errs());
+  TU->getModuleGraph().debug(errs(), CI.getSourceManager());
+  CI.getDiagnosticManager().debug(errs());
   return 0;
 }

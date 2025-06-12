@@ -326,8 +326,8 @@ auto SyntaxNode::findChildAtIndex(SyntaxKind SK, size_t Index) const
 }
 
 auto SyntaxNode::findChildAtIndex(
-    const std::function<bool(SyntaxKind)> &Predicate,
-    size_t Index) const -> std::optional<std::shared_ptr<SyntaxNode>> {
+    const std::function<bool(SyntaxKind)> &Predicate, size_t Index) const
+    -> std::optional<std::shared_ptr<SyntaxNode>> {
   size_t I = 0;
   for (auto &Child : Children) {
     if (Predicate(Child->getSyntaxKind())) {
@@ -381,10 +381,11 @@ auto SyntaxNode::findSibling(const std::function<bool(SyntaxKind)> &Predicate)
   return P->get()->findChild(Predicate);
 }
 
-static auto
-buildChildTree(const std::shared_ptr<SyntaxNode> &Parent, uint32_t Index,
-               uint32_t Offset, std::shared_ptr<GreenElement> Elem,
-               DiagnosticManager &DM) -> std::shared_ptr<SyntaxNode> {
+static auto buildChildTree(const std::shared_ptr<SyntaxNode> &Parent,
+                           uint32_t Index, uint32_t Offset,
+                           std::shared_ptr<GreenElement> Elem,
+                           DiagnosticManager &DM)
+    -> std::shared_ptr<SyntaxNode> {
   auto Self = SyntaxNode::get(Parent, Elem, Offset, Index);
 
   // If this is an error node, then we can propagate the location to the diag

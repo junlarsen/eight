@@ -64,13 +64,14 @@ public:
   /// Add a named source to the source manager.
   ///
   /// This takes ownership of the memory buffer.
-  auto
-  addFileSource(const llvm::StringRef &Name, const std::filesystem::path &Path,
-                std::unique_ptr<llvm::MemoryBuffer> Buffer) -> SourceFileID;
+  auto addFileSource(const llvm::StringRef &Name,
+                     const std::filesystem::path &Path,
+                     std::unique_ptr<llvm::MemoryBuffer> Buffer)
+      -> SourceFileID;
 
-  auto
-  addVirtualSource(const llvm::StringRef &Name,
-                   std::unique_ptr<llvm::MemoryBuffer> Buffer) -> SourceFileID;
+  auto addVirtualSource(const llvm::StringRef &Name,
+                        std::unique_ptr<llvm::MemoryBuffer> Buffer)
+      -> SourceFileID;
 
   auto hasNamedSource(const llvm::StringRef &Name) const -> bool;
 

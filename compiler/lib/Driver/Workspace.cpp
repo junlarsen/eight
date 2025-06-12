@@ -13,8 +13,8 @@ using namespace xd;
 using namespace llvm;
 
 auto Workspace::getRelativeToRootFromRelative(
-    const std::filesystem::path &Source,
-    const StringRef &Target) const -> ErrorOr<std::filesystem::path> {
+    const std::filesystem::path &Source, const StringRef &Target) const
+    -> ErrorOr<std::filesystem::path> {
   std::error_code EC;
   // TODO: Check all the error kinds
   auto WorkspaceRelativeToSource =

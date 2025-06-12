@@ -56,8 +56,8 @@ auto DiagnosticEmitter::emit(raw_ostream &OS) -> bool {
   return false;
 }
 
-auto DiagnosticEmitter::emitDiagnosticClass(const Record &R,
-                                            raw_ostream &OS) -> void {
+auto DiagnosticEmitter::emitDiagnosticClass(const Record &R, raw_ostream &OS)
+    -> void {
   std::string ClassName = (R.getName() + "Diagnostic").str();
   OS << "\n";
   OS << "class " << ClassName << " : public Diagnostic {" << "\n";

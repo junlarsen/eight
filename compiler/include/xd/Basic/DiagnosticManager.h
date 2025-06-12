@@ -44,6 +44,9 @@ public:
   auto diagnostics() const -> const std::vector<std::unique_ptr<Diagnostic>> * {
     return &Diagnostics;
   }
+
+  /// Get a debug (not pretty) list of the diagnostics for early debugging.
+  void debug(llvm::raw_ostream &OS) const;
 };
 } // namespace xd
 

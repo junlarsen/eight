@@ -49,8 +49,8 @@ auto Parser::open() -> OpenCheckpoint {
   return OpenCheckpoint(Checkpoint);
 }
 
-auto Parser::close(OpenCheckpoint Checkpoint,
-                   SyntaxKind SK) -> CloseCheckpoint {
+auto Parser::close(OpenCheckpoint Checkpoint, SyntaxKind SK)
+    -> CloseCheckpoint {
   auto &E = Events.at(Checkpoint.ID);
   assert(
       isa<ParseOpenEvent>(*E) &&

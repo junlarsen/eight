@@ -15,9 +15,10 @@ auto SourceManager::hasNamedSource(const StringRef &Name) const -> bool {
   return FileIDReverse.contains(Name);
 }
 
-auto SourceManager::addFileSource(
-    const StringRef &Name, const std::filesystem::path &Path,
-    std::unique_ptr<MemoryBuffer> Buffer) -> SourceFileID {
+auto SourceManager::addFileSource(const StringRef &Name,
+                                  const std::filesystem::path &Path,
+                                  std::unique_ptr<MemoryBuffer> Buffer)
+    -> SourceFileID {
   auto ID = addVirtualSource(Name, std::move(Buffer));
   RealFilePaths.insert(std::make_pair(ID, Path));
   return ID;

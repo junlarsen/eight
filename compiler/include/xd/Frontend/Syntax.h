@@ -409,8 +409,8 @@ public:
 
   auto getTextLength() const -> uint32_t { return Green->getTextLength(); }
   auto getSyntaxKind() const -> SyntaxKind { return Green->getSyntaxKind(); }
-  auto addChild(uint32_t Index,
-                const std::shared_ptr<SyntaxNode> &Child) -> void {
+  auto addChild(uint32_t Index, const std::shared_ptr<SyntaxNode> &Child)
+      -> void {
     Children.insert(Children.begin() + Index, Child);
   }
   auto getOffset() const -> uint32_t { return Offset; }
@@ -430,8 +430,8 @@ public:
   auto debug(llvm::raw_ostream &OS, size_t Indent = 0) const -> void;
 
   /// Find a child with the given syntax kind.
-  auto
-  findChild(SyntaxKind SK) const -> std::optional<std::shared_ptr<SyntaxNode>> {
+  auto findChild(SyntaxKind SK) const
+      -> std::optional<std::shared_ptr<SyntaxNode>> {
     return findChildAtIndex(SK, 0);
   }
   /// Find a child whose syntax kind matches the predicate.
@@ -463,8 +463,8 @@ public:
       -> std::optional<std::shared_ptr<SyntaxNode>>;
 
   /// Create a root node.
-  static auto
-  getRoot(std::shared_ptr<GreenElement> Green) -> std::shared_ptr<SyntaxNode> {
+  static auto getRoot(std::shared_ptr<GreenElement> Green)
+      -> std::shared_ptr<SyntaxNode> {
     return std::make_shared<SyntaxNode>(std::nullopt, Green, 0, 0);
   }
 

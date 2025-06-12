@@ -34,6 +34,7 @@ public:
 
   auto getWorkspace() const -> Workspace & { return *WS; }
   auto getSourceManager() const -> SourceManager & { return *SM; }
+  auto getDiagnosticManager() const -> DiagnosticManager & { return *DM; }
 
   auto hasDiagnostics() const -> bool { return !DM->isEmpty(); }
   auto diagnostics() const { return DM->diagnostics(); }
@@ -51,8 +52,8 @@ public:
       -> llvm::ErrorOr<SourceFileID>;
 
   /// Add STDIN as a source.
-  auto
-  addStdinSource(std::unique_ptr<llvm::MemoryBuffer> Buf) const -> SourceFileID;
+  auto addStdinSource(std::unique_ptr<llvm::MemoryBuffer> Buf) const
+      -> SourceFileID;
 
   /// Completely traverse the module graph taking the given file as the
   /// entrypoint.
@@ -60,7 +61,7 @@ public:
   /// This will return nullopt if the module graph detects a cycle in the
   /// dependency graph.
   auto buildModuleGraph(SourceFileID Entrypoint) const
-      -> std::optional<std::unique_ptr<ASTTranslationUnit>>;
+      -> std::unique_ptr<ASTTranslationUnit>;
 
   /// Get the red tree for the given source file.
   ///
@@ -74,8 +75,8 @@ public:
   ///
   /// Will attempt to parse the source file as a module. This can be changed
   /// with the other overload of getSyntaxTree.
-  auto
-  getSyntaxTree(SourceFileID SourceFile) const -> std::shared_ptr<SyntaxNode> {
+  auto getSyntaxTree(SourceFileID SourceFile) const
+      -> std::shared_ptr<SyntaxNode> {
     return getSyntaxTree(SourceFile, [](Parser &P) { P.parseModuleDecl(); });
   }
 

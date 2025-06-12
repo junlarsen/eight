@@ -18,8 +18,8 @@ class DiagnosticEmitter {
 public:
   explicit DiagnosticEmitter(const llvm::RecordKeeper &RK) : RK(RK) {}
   auto emit(llvm::raw_ostream &OS) -> bool;
-  auto emitDiagnosticClass(const llvm::Record &R,
-                           llvm::raw_ostream &OS) -> void;
+  auto emitDiagnosticClass(const llvm::Record &R, llvm::raw_ostream &OS)
+      -> void;
 };
 } // namespace xd
 

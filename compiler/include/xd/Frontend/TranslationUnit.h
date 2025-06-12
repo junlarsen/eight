@@ -31,8 +31,8 @@ public:
   /// It is assumed that this module has been "validated" through the module
   /// graph, meaning the file id has not been inserted here before. The function
   /// will assert this invariant on its own too.
-  auto addModule(SourceFileID FileID,
-                 const std::shared_ptr<ASTModuleDecl> &M) -> void {
+  auto addModule(SourceFileID FileID, const std::shared_ptr<ASTModuleDecl> &M)
+      -> void {
     Modules.insert(std::make_pair(FileID, M));
   }
   auto getModuleGraph() -> ModuleGraph & { return MG; }

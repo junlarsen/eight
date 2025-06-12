@@ -102,8 +102,8 @@ public:
   }
 
   template <class T>
-  static auto from(const std::shared_ptr<SyntaxNode> &SN,
-                   SyntaxKind SK) -> std::optional<std::shared_ptr<T>> {
+  static auto from(const std::shared_ptr<SyntaxNode> &SN, SyntaxKind SK)
+      -> std::optional<std::shared_ptr<T>> {
     return from<T>(SN, [&](SyntaxKind M) { return M == SK; });
   }
 

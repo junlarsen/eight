@@ -8,3 +8,14 @@
 
 #include "xd/Basic/DiagnosticManager.h"
 #include "xd/Basic/Location.h"
+
+using namespace xd;
+using namespace llvm;
+
+void DiagnosticManager::debug(raw_ostream &OS) const {
+  OS << "Diagnostic Manager has " << Diagnostics.size() << " diagnostics."
+     << "\n";
+  for (auto &Diagnostic : Diagnostics) {
+    Diagnostic->emit(OS);
+  }
+}

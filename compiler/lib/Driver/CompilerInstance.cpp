@@ -17,7 +17,7 @@ using namespace xd;
 using namespace llvm;
 
 auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
-    -> std::optional<std::unique_ptr<ASTTranslationUnit>> {
+    -> std::unique_ptr<ASTTranslationUnit> {
   auto TU = std::make_unique<ASTTranslationUnit>(ModuleGraph());
   auto WorkQueue = SmallVector<SourceFileID, 16>();
   // Build the entire module graph, starting at the entrypoint node. This is
@@ -61,7 +61,6 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
     }
     TU->getModuleGraph().addFileDependencies(File, DependentIDs);
   }
-
   return std::move(TU);
 }
 
@@ -73,8 +72,8 @@ auto CompilerInstance::addInlineSource(const StringRef &SourceName,
 }
 
 auto CompilerInstance::addFilesystemSource(
-    const StringRef &SourceName,
-    const std::filesystem::path &Path) const -> ErrorOr<SourceFileID> {
+    const StringRef &SourceName, const std::filesystem::path &Path) const
+    -> ErrorOr<SourceFileID> {
   // TODO: Maybe do some more extensive checking here on our own...
   auto Buffer = MemoryBuffer::getFile(Path.string());
   if (auto E = Buffer.getError())
@@ -87,9 +86,9 @@ auto CompilerInstance::addStdinSource(std::unique_ptr<MemoryBuffer> Buf) const
   return SM->addVirtualSource("<stdin>", std::move(Buf));
 }
 
-auto CompilerInstance::getSyntaxTree(SourceFileID SourceFile,
-                                     const std::function<void(Parser &)> &Fn)
-    const -> std::shared_ptr<SyntaxNode> {
+auto CompilerInstance::getSyntaxTree(
+    SourceFileID SourceFile, const std::function<void(Parser &)> &Fn) const
+    -> std::shared_ptr<SyntaxNode> {
   auto *Buf = SM->getSourceBuffer(SourceFile);
   auto Lex = Lexer(Buf->getBufferStart());
   auto Parse = Parser(*DM, std::move(Lex.drain()));
