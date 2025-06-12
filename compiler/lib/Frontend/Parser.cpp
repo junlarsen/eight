@@ -723,7 +723,7 @@ auto Parser::parseExpr(uint32_t Current) -> void {
             report<ExpectedCallExpressionTypeArgumentDiagnostic>(
                 getTokenLength(), getSyntaxKindName(get()));
           }
-          if (!at(SyntaxKind::RightParen)) {
+          if (!at(SyntaxKind::RightBracket)) {
             eat(SyntaxKind::Comma);
           }
         }
