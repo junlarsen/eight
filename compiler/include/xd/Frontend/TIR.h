@@ -91,6 +91,8 @@ enum class TIRNodeKind : uint8_t {
   BooleanType,
   /// The empty type, which is used to represent no return value.
   VoidType,
+  /// The special-cased `Self` type available for trait methods.
+  SelfType,
   /// A type variable to be instantiated during type checking.
   ///
   /// Indexed using de Bruijn indices of (depth, index) pairs. This is used to
@@ -206,6 +208,15 @@ public:
       : TIRType(TIRNodeKind::VoidType, Loc) {}
   static bool classof(const TIRNode *N) {
     return N->getKind() == TIRNodeKind::VoidType;
+  }
+};
+
+class TIRSelfType : public TIRType {
+public:
+  explicit TIRSelfType(SourceLocation Loc)
+      : TIRType(TIRNodeKind::SelfType, Loc) {}
+  static bool classof(const TIRNode *N) {
+    return N->getKind() == TIRNodeKind::SelfType;
   }
 };
 
