@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Driver/CompilerInstance.h"
-#include "xd/Driver/Workspace.h"
+#include "xd/Driver/Package.h"
 #include "xd/Frontend/Lexer.h"
 #include "xd/Frontend/ModuleGraph.h"
 #include "xd/Frontend/Parser.h"
@@ -16,7 +16,8 @@
 using namespace xd;
 using namespace llvm;
 
-auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
+auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint,
+                                        Package P) const
     -> std::unique_ptr<ASTTranslationUnit> {
   auto TU = std::make_unique<ASTTranslationUnit>(ModuleGraph());
   auto WorkQueue = SmallVector<SourceFileID, 16>();
@@ -41,11 +42,10 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
     for (auto Dep : Dependents) {
       auto SourcePath = SM->getSourcePath(File);
       assert(SourcePath.has_value() && "tried to import virtual file?");
-      auto DependencyPath =
-          WS->getRelativeToRootFromRelative(std::string(*SourcePath), Dep);
-      if (auto E = DependencyPath.getError(); E) {
+      auto DependencyPath = P.getAbsolutePath(Dep);
+      if (auto E = DependencyPath.takeError(); E) {
         errs() << "failed to resolve path relative to root: "
-               << SourcePath->string() << ":" << E.message() << "\n";
+               << SourcePath->string() << ":" << E << "\n";
         continue;
       }
       // We take the source path ID if it exists, or add it.
@@ -67,6 +67,17 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint) const
     TU->getModuleGraph().addFileDependencies(File, DependentIDs);
   }
   return std::move(TU);
+}
+
+auto CompilerInstance::getRootPackage() const -> Package & {
+  assert(RootPackage != nullptr && "Root package is not set");
+  return *RootPackage;
+}
+
+auto CompilerInstance::setRootPackage(const std::filesystem::path &Root,
+                                      PackageManifest MF) -> void {
+  assert(RootPackage == nullptr && "Attempted to re-set the root package");
+  RootPackage = std::make_unique<Package>(Root, std::move(MF));
 }
 
 auto CompilerInstance::addInlineSource(const StringRef &SourceName,

@@ -11,7 +11,7 @@
 
 #include "xd/Basic/DiagnosticManager.h"
 #include "xd/Basic/SourceManager.h"
-#include "xd/Driver/Workspace.h"
+#include "xd/Driver/Package.h"
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/Parser.h"
 #include "xd/Frontend/Syntax.h"
@@ -22,17 +22,23 @@ namespace xd {
 class CompilerInstance {
   std::unique_ptr<DiagnosticManager> DM;
   std::unique_ptr<SourceManager> SM;
-  std::unique_ptr<Workspace> WS;
+  std::unique_ptr<Package> RootPackage;
 
 public:
   explicit CompilerInstance()
       : DM(std::make_unique<DiagnosticManager>()),
-        SM(std::make_unique<SourceManager>()) {
-    // TODO: Handle the potential error here
-    WS = std::make_unique<Workspace>(std::filesystem::current_path());
-  }
+        SM(std::make_unique<SourceManager>()), RootPackage(nullptr) {}
 
-  auto getWorkspace() const -> Workspace & { return *WS; }
+  /// Get the root package of the compiler instance.
+  ///
+  /// This function asserts that the root package is set, so it should only be
+  /// called if the root package is guaranteed to be set.
+  auto getRootPackage() const -> Package &;
+
+  /// Set the root package of the compiler instance. This can only be done once
+  auto setRootPackage(const std::filesystem::path &Root, PackageManifest MF)
+      -> void;
+
   auto getSourceManager() const -> SourceManager & { return *SM; }
   auto getDiagnosticManager() const -> DiagnosticManager & { return *DM; }
 
@@ -63,7 +69,11 @@ public:
   ///
   /// This will return nullopt if the module graph detects a cycle in the
   /// dependency graph.
-  auto buildModuleGraph(SourceFileID Entrypoint) const
+  auto buildRootModuleGraph(SourceFileID Entrypoint) const
+      -> std::unique_ptr<ASTTranslationUnit> {
+    return buildModuleGraph(Entrypoint, getRootPackage());
+  }
+  auto buildModuleGraph(SourceFileID Entrypoint, Package P) const
       -> std::unique_ptr<ASTTranslationUnit>;
 
   /// Get the red tree for the given source file.

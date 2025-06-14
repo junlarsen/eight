@@ -14,8 +14,8 @@ using namespace llvm;
 using namespace xd;
 
 namespace {
-cl::opt<std::string> InputFile(cl::Positional, cl::desc("<input file>"),
-                               cl::init("-"));
+cl::opt<std::string> PackageRoot(cl::Positional, cl::desc("<package root>"),
+                                 cl::init("."));
 
 cl::opt<bool> EmitModuleGraph("emit-module-graph",
                               cl::desc("emit the module graph as graphviz dot"),
@@ -24,20 +24,37 @@ cl::opt<bool> EmitModuleGraph("emit-module-graph",
 
 auto main(int argc, char **argv) -> int {
   cl::ParseCommandLineOptions(argc, argv);
-  auto CI = CompilerInstance();
-  if (InputFile == "-") {
-    errs() << "stdin input not supported at this time\n";
+  if (PackageRoot.empty()) {
+    errs() << "Package not found\n";
     return 1;
   }
-  auto EntryID =
-      CI.addFilesystemSource(std::string(InputFile), std::string(InputFile));
+
+  auto Compiler = CompilerInstance();
+  // TODO: Handle the errors
+  auto RootPath = std::filesystem::canonical(
+      std::filesystem::relative(std::filesystem::path(PackageRoot.data()),
+                                std::filesystem::current_path()));
+  auto Manifest =
+      tryParsePackageManifest(RootPath, Compiler.getDiagnosticManager());
+  if (auto Err = Manifest.takeError()) {
+    errs() << Err;
+    return 1;
+  }
+  Compiler.setRootPackage(RootPath, *Manifest);
+  auto Entrypoint = Compiler.getRootPackage().getEntrypoint();
+  auto EntrypointPath = Compiler.getRootPackage().getAbsolutePath(Entrypoint);
+  if (auto E = EntrypointPath.takeError()) {
+    errs() << "Failed to resolve entrypoint path: " << E << "\n";
+    return 1;
+  }
+  auto EntryID = Compiler.addFilesystemSource(Entrypoint, *EntrypointPath);
   if (auto EC = EntryID.getError()) {
     errs() << "Error reading input file '" << EC.message() << "'\n";
     return 1;
   }
-  auto TU = CI.buildModuleGraph(*EntryID);
+  auto TU = Compiler.buildRootModuleGraph(*EntryID);
   TU->debug(errs());
-  TU->getModuleGraph().debug(errs(), CI.getSourceManager());
-  CI.getDiagnosticManager().debug(errs(), CI.getSourceManager());
+  TU->getModuleGraph().debug(errs(), Compiler.getSourceManager());
+  Compiler.getDiagnosticManager().debug(errs(), Compiler.getSourceManager());
   return 0;
 }

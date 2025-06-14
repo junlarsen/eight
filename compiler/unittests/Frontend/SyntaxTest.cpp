@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Frontend/Syntax.h"
+#include "TestUtils.h"
 #include "xd/Driver/CompilerInstance.h"
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/Lexer.h"
@@ -89,7 +90,7 @@ TEST(SyntaxTest, CastIntoSyntaxTree) {
 }
 
 TEST(SyntaxTest, ParseBinaryExprIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "1 + 5 * 2");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
@@ -107,7 +108,7 @@ TEST(SyntaxTest, ParseBinaryExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseUnaryExprIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "-*x");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
@@ -125,7 +126,7 @@ TEST(SyntaxTest, ParseUnaryExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseGroupExprIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "((a))");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
@@ -140,7 +141,7 @@ TEST(SyntaxTest, ParseGroupExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseReferenceExprIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "aa");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
@@ -155,7 +156,7 @@ TEST(SyntaxTest, ParseReferenceExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseConstantIndexExprIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "a.b");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
@@ -173,7 +174,7 @@ TEST(SyntaxTest, ParseConstantIndexExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseIntegerLiteralExprIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "100");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
@@ -187,7 +188,7 @@ TEST(SyntaxTest, ParseIntegerLiteralExprIntoTree) {
 
 TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "true");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
@@ -199,7 +200,7 @@ TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
     ASSERT_EQ(BooleanLiteralExpr.getValue(), true);
   }
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "false");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
@@ -214,7 +215,7 @@ TEST(SyntaxTest, ParseBooleanLiteralExprIntoTree) {
 
 TEST(SyntaxTest, ParseCallExprIntoTree) {
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "f[int](1, 2, 3)");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
@@ -241,7 +242,7 @@ TEST(SyntaxTest, ParseCallExprIntoTree) {
     ASSERT_TRUE(isa<ASTIntegerLiteralExpr>(Args->at(2).get()));
   }
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "f()");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
     auto Expr = ASTExpr::cast(RedTree);
@@ -263,7 +264,7 @@ TEST(SyntaxTest, ParseCallExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseConstructionExprIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "new Vec2D { x = 1, y = 2 }");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseExpr(); });
   auto Expr = ASTExpr::cast(RedTree);
@@ -291,7 +292,7 @@ TEST(SyntaxTest, ParseConstructionExprIntoTree) {
 }
 
 TEST(SyntaxTest, ParseLetStmtIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "let f: i32 = 0;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
@@ -316,7 +317,7 @@ TEST(SyntaxTest, ParseLetStmtIntoTree) {
 
 TEST(SyntaxTest, ParseIfStmtIntoTree) {
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD =
         CI.addInlineSource("test.xd", "if (true) { } else { let b = 1 ; }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
@@ -340,7 +341,7 @@ TEST(SyntaxTest, ParseIfStmtIntoTree) {
     ASSERT_EQ(ElseStmts->size(), 1);
   }
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "if (true) { }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
@@ -357,7 +358,7 @@ TEST(SyntaxTest, ParseIfStmtIntoTree) {
 
 TEST(SyntaxTest, ParseForStmtIntoTree) {
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource(
         "test.xd", "for (let i = 0; i < 10; i = i + 1) { let x = 0; }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
@@ -394,7 +395,7 @@ TEST(SyntaxTest, ParseForStmtIntoTree) {
     ASSERT_EQ(ForBody->get()->getStmtList()->size(), 1);
   }
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "for (;;) {}");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
@@ -411,7 +412,7 @@ TEST(SyntaxTest, ParseForStmtIntoTree) {
 }
 
 TEST(SyntaxTest, ParseBreakStmtIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "break;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
@@ -422,7 +423,7 @@ TEST(SyntaxTest, ParseBreakStmtIntoTree) {
 }
 
 TEST(SyntaxTest, ParseContinueStmtIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "continue;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
@@ -434,7 +435,7 @@ TEST(SyntaxTest, ParseContinueStmtIntoTree) {
 
 TEST(SyntaxTest, ParseReturnStmtIntoTree) {
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "return;");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
@@ -446,7 +447,7 @@ TEST(SyntaxTest, ParseReturnStmtIntoTree) {
     ASSERT_FALSE(ReturnStmt.getReturnExpr().has_value());
   }
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "return 1;");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
     auto Stmt = ASTStmt::cast(RedTree);
@@ -463,7 +464,7 @@ TEST(SyntaxTest, ParseReturnStmtIntoTree) {
 }
 
 TEST(SyntaxTest, ParseExprStmtIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "1 + 1;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseStmt(); });
   auto Stmt = ASTStmt::cast(RedTree);
@@ -479,7 +480,7 @@ TEST(SyntaxTest, ParseExprStmtIntoTree) {
 
 TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD =
         CI.addInlineSource("test.xd", "fn id[T](el: T) -> T { return el; }");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
@@ -518,7 +519,7 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
     ASSERT_EQ(Body->get()->getStmtList().value().size(), 1);
   }
   {
-    auto CI = CompilerInstance();
+    auto CI = createTestCompilerInstance();
     auto FD = CI.addInlineSource("test.xd", "intrinsic_fn eat();");
     auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
     auto Decl = ASTDecl::cast(RedTree);
@@ -534,7 +535,7 @@ TEST(SyntaxTest, ParseFunctionDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseStructDeclIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "struct Vec2D { x: i32, y: i32 }");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
@@ -560,7 +561,7 @@ TEST(SyntaxTest, ParseStructDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseIntrinsicTypeDeclIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd", "intrinsic_type i32;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
@@ -575,7 +576,7 @@ TEST(SyntaxTest, ParseIntrinsicTypeDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseTraitDeclIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource(
       "test.xd", "trait Add[T, R] { fn add(self: Self, other: T) -> R; }");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseDecl(); });
@@ -617,7 +618,7 @@ TEST(SyntaxTest, ParseTraitDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseInstanceDeclIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD =
       CI.addInlineSource("test.xd", "instance Add[i32, i32] for i32 { fn add() "
                                     "{} intrinsic_fn add_fast(); }");
@@ -650,7 +651,7 @@ TEST(SyntaxTest, ParseInstanceDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseImportDeclIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD = CI.addInlineSource("test.xd",
                                "import { foo, bar, baz } from \"xd:base\";");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseImportDecl(); });
@@ -674,7 +675,7 @@ TEST(SyntaxTest, ParseImportDeclIntoTree) {
 }
 
 TEST(SyntaxTest, ParseModuleDeclIntoTree) {
-  auto CI = CompilerInstance();
+  auto CI = createTestCompilerInstance();
   auto FD =
       CI.addInlineSource("test.xd", "import { spawn } from \"xd:proc\";\n"
                                     "fn id[T](el: T) -> T { return el; }\n"
