@@ -409,9 +409,10 @@ public:
   /// Get the integer value.
   auto getValue() const -> std::optional<llvm::APInt> {
     if (auto Lit = SN->findChild(SyntaxKind::IntegerLiteral); Lit.has_value()) {
-      auto LitTok = llvm::dyn_cast<GreenToken>((*Lit)->getGreen().get());
+      auto *LitTok = llvm::dyn_cast<GreenToken>((*Lit)->getGreen().get());
       assert(LitTok != nullptr && "integer literal node was not a token");
-      return llvm::APInt(32, LitTok->getText(), 10);
+      // TODO: Assume bit size based on potential type suffix.
+      return llvm::APInt(64, LitTok->getText(), 10);
     }
     return std::nullopt;
   }

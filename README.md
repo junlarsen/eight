@@ -12,13 +12,13 @@ The language is a cruel mix of Rust & Scala syntax, C semantics, and a
 Hindley-Milner type system with typeclasses.
 
 ```scala
-intrinsic_fn malloc[T](size: i32) -> *T;
+intrinsic_fn malloc[T](size: i64) -> *T;
 
 // Naive O(MKN) matrix-matrix multiplication
 struct Matrix {
-  r: i32,
-  c: i32,
-  buf: *i32,
+  r: i64,
+  c: i64,
+  buf: *i64,
 }
 
 fn matrix_matrix_multiply(a: Matrix, b: Matrix) -> Matrix {

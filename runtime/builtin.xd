@@ -1,0 +1,46 @@
+intrinsic_fn __xdrt_sizeof[T]() -> i64;
+intrinsic_fn __xdrt_reinterpret_cast[F, T](ptr: *F) -> *T;
+
+fn sizeof[T]() -> i64 {
+  return __xdrt_sizeof[T]();
+}
+
+fn reinterpret_cast[F, T](ptr: *F) -> *T {
+  return __xdrt_reinterpret_cast[F, T](ptr);
+}
+
+// Pointer arithmetic is implemented as functions until we support generic
+// trait instances.
+fn ptr_add[T](ptr: *T, offset: i64) -> *T {
+  let pointer = reinterpret_cast[*T, i64](ptr);
+  pointer = pointer + offset;
+  return reinterpret_cast[i64, *T](pointer);
+}
+
+fn ptr_sub[T](ptr: *T, offset: i64) -> *T {
+  let pointer = reinterpret_cast[*T, i64](ptr);
+  pointer = pointer - offset;
+  return reinterpret_cast[i64, *T](pointer);
+}
+
+intrinsic_type Self;
+intrinsic_type ptr;
+intrinsic_type i64;
+intrinsic_type bool;
+intrinsic_type void;
+
+trait Add[T, R] {
+  fn add(self: Self, other: T) -> R;
+}
+
+instance Add[i64, i64] for i64 {
+  intrinsic_fn add(self: i64, other: i64) -> i64;
+}
+
+trait Sub[T, R] {
+  fn sub(self: Self, other: T) -> R;
+}
+
+instance Sub[i64, i64] for i64 {
+  intrinsic_fn sub(self: i64, other: i64) -> i64;
+}

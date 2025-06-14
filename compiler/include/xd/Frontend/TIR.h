@@ -50,11 +50,6 @@ enum class TIRNodeKind : uint8_t {
   Name,
   // Declaration nodes
   Decl,
-  /// The module declaration node.
-  ///
-  /// It corresponds to a single AST translation unit. The entire AST
-  /// translation unit is effectively flattened into a single TIR module.
-  ModuleDecl,
   FunctionDecl,
   TypeDecl,
   StructDecl,
@@ -87,7 +82,7 @@ enum class TIRNodeKind : uint8_t {
   NamedType,
   /// A pointer to another type.
   PointerType,
-  Integer32Type,
+  Integer64Type,
   BooleanType,
   /// The empty type, which is used to represent no return value.
   VoidType,
@@ -184,12 +179,12 @@ public:
   }
 };
 
-class TIRInteger32Type : public TIRType {
+class TIRInteger64Type : public TIRType {
 public:
-  explicit TIRInteger32Type(SourceLocation Loc)
-      : TIRType(TIRNodeKind::Integer32Type, Loc) {}
+  explicit TIRInteger64Type(SourceLocation Loc)
+      : TIRType(TIRNodeKind::Integer64Type, Loc) {}
   static bool classof(const TIRNode *N) {
-    return N->getKind() == TIRNodeKind::Integer32Type;
+    return N->getKind() == TIRNodeKind::Integer64Type;
   }
 };
 
