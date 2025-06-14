@@ -52,14 +52,60 @@ public:
 
 /// A pass that lowers a single AST translation unit into a single untyped TIR
 /// module.
+///
+/// This pass runs in two phases, one for forward declaration and legality check
+/// of declarations, and another for the actual lowering of the translation
+/// unit.
+///
+/// It is up to each `enterXXXDecl` function to determine whether the
+/// declaration is valid and can be (partially or fully) lowered, or if it lacks
+/// enough information.
+///
+/// A broken FunctionDecl parsed from the code `fn` cannot be used, because
+/// there is no name to refer to it, but `fn foo(` can be used and forward
+/// declared to `FunctionDecl` with a name foo, zero arguments, and an error
+/// return type.
+///
+/// This is all sound because the code generator will never run if there are
+/// frontend errors in the diagnostic manager after type checking. A single
+/// error type in the tree will signal that the translation unit is malformed.
+///
+/// All of this effort is done so that the end programmer can write broken or
+/// partial code, and still get both syntax, type, and semantic errors from the
+/// compiler and into their editor.
 class ASTLoweringPass {
   ScopeStack<std::string, int> Scopes;
-  ASTTranslationUnit &TU;
 
 public:
-  explicit ASTLoweringPass(ASTTranslationUnit &TU) : TU(TU) {}
+  explicit ASTLoweringPass() = default;
 
-  auto run() -> std::unique_ptr<TIRModule>;
+  /// Run the lowering pass on the translation unit, returning a TIR module.
+  auto run(ASTTranslationUnit &TU) -> std::unique_ptr<TIRModule>;
+
+  auto visitTranslationUnit(ASTTranslationUnit &TU, TIRModule &Module) -> void;
+  auto enterDecl(ASTDecl &D, TIRModule &Module) -> void;
+  auto enterModuleDecl(ASTModuleDecl &MD, TIRModule &Module) -> void;
+  auto enterImportDecl(ASTImportDecl &ID, TIRModule &Module) -> void;
+  auto enterFunctionDecl(ASTFunctionDecl &FD, TIRModule &Module) -> void;
+  auto enterStructDecl(ASTStructDecl &SD, TIRModule &Module) -> void;
+  auto enterIntrinsicTypeDecl(ASTIntrinsicTypeDecl &ITD, TIRModule &Module)
+      -> void;
+  auto enterTraitDecl(ASTTraitDecl &TD, TIRModule &Module) -> void;
+  auto enterInstanceDecl(ASTInstanceDecl &ID, TIRModule &Module) -> void;
+
+  auto leaveDecl(ASTDecl &D, TIRModule &Module) -> void;
+  auto leaveModuleDecl(ASTModuleDecl &MD, TIRModule &Module) -> void;
+  auto leaveImportDecl(ASTImportDecl &ID, TIRModule &Module) -> void;
+  auto leaveFunctionDecl(ASTFunctionDecl &FD, TIRModule &Module) -> void;
+  auto leaveStructDecl(ASTStructDecl &SD, TIRModule &Module) -> void;
+  auto leaveIntrinsicTypeDecl(ASTIntrinsicTypeDecl &ITD, TIRModule &Module)
+      -> void;
+  auto leaveTraitDecl(ASTTraitDecl &TD, TIRModule &Module) -> void;
+  auto leaveInstanceDecl(ASTInstanceDecl &ID, TIRModule &Module) -> void;
+
+  auto visitStmt(ASTStmt &S, TIRModule &Module) -> void;
+  auto visitType(ASTType &T, TIRModule &Module) -> void;
+  auto visitExpr(ASTExpr &E, TIRModule &Module) -> void;
 };
 } // namespace xd
 
