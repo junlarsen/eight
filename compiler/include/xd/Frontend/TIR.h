@@ -519,8 +519,8 @@ public:
   static bool classof(const TIRNode *N) {
     return N->getKind() == TIRNodeKind::ReturnStmt;
   }
-  auto getReturnValue() const -> std::optional<TIRExpr &> {
-    return **ReturnValue;
+  auto getReturnValue() -> std::optional<std::unique_ptr<TIRExpr>> & {
+    return ReturnValue;
   }
 };
 
