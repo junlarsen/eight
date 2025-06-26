@@ -10,21 +10,16 @@
 #define XD_FRONTEND_TRANSLATIONUNIT_H
 
 #include "xd/Frontend/AST.h"
-#include "xd/Frontend/ModuleGraph.h"
 
 namespace xd {
 /// Represent a translation unit at the AST/Frontend stage.
-///
-/// This is not directly parsable, but is instead intended to be built using a
-/// ModuleGraph where each child module was parsed individually.
 class ASTTranslationUnit {
   llvm::DenseMap<SourceFileID, std::shared_ptr<ASTModuleDecl>,
                  SourceFileID::DenseMapKeyInfo>
       Modules;
-  ModuleGraph MG;
 
 public:
-  explicit ASTTranslationUnit(ModuleGraph MG) : MG(MG) {}
+  explicit ASTTranslationUnit() : Modules({}) {}
 
   /// Add the given module to the translation unit.
   ///
@@ -35,8 +30,6 @@ public:
       -> void {
     Modules.insert(std::make_pair(FileID, M));
   }
-  auto getModuleGraph() -> ModuleGraph & { return MG; }
-
   auto debug(llvm::raw_ostream &OS) const -> void;
 };
 } // namespace xd

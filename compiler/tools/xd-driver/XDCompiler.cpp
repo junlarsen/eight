@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Driver/CompilerInstance.h"
-#include "xd/Frontend/ModuleGraph.h"
 #include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
@@ -16,10 +15,6 @@ using namespace xd;
 namespace {
 cl::opt<std::string> PackageRoot(cl::Positional, cl::desc("<package root>"),
                                  cl::init("."));
-
-cl::opt<bool> EmitModuleGraph("emit-module-graph",
-                              cl::desc("emit the module graph as graphviz dot"),
-                              cl::init(false));
 } // namespace
 
 auto main(int argc, char **argv) -> int {
@@ -41,20 +36,7 @@ auto main(int argc, char **argv) -> int {
     return 1;
   }
   Compiler.setRootPackage(RootPath, *Manifest);
-  auto Entrypoint = Compiler.getRootPackage().getEntrypoint();
-  auto EntrypointPath = Compiler.getRootPackage().getAbsolutePath(Entrypoint);
-  if (auto E = EntrypointPath.takeError()) {
-    errs() << "Failed to resolve entrypoint path: " << E << "\n";
-    return 1;
-  }
-  auto EntryID = Compiler.addFilesystemSource(Entrypoint, *EntrypointPath);
-  if (auto EC = EntryID.getError()) {
-    errs() << "Error reading input file '" << EC.message() << "'\n";
-    return 1;
-  }
-  auto TU = Compiler.buildRootModuleGraph(*EntryID);
-  TU->debug(errs());
-  TU->getModuleGraph().debug(errs(), Compiler.getSourceManager());
+  Compiler.buildTranslationUnitGraph(Compiler.getRootPackage());
   Compiler.getDiagnosticManager().debug(errs(), Compiler.getSourceManager());
   return 0;
 }

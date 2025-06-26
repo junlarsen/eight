@@ -1,4 +1,5 @@
-import { reinterpret_cast, sizeof } from "./builtin.xd";
+import std.sizeof;
+import std.reinterpret_cast;
 
 intrinsic_fn __libc_malloc(size: i64) -> ptr;
 intrinsic_fn __libc_free(ptr: ptr) -> void;

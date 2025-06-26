@@ -35,28 +35,6 @@ TEST(LexerTest, ParseIntegerLiteral) {
   ASSERT_FALSE(Lex.hasNext());
 }
 
-TEST(LexerTest, ParseStringLiteral) {
-  {
-    auto Buf = MemoryBuffer::getMemBuffer("\"a\"");
-    auto Lex = Lexer(Buf->getBufferStart());
-    auto TK = Lex.getNextToken();
-    ASSERT_EQ(TK.getSyntaxKind(), SyntaxKind::StringLiteral);
-    ASSERT_EQ(TK.getText(), "\"a\"");
-    ASSERT_EQ(TK.getTextLength(), 3);
-    ASSERT_FALSE(Lex.hasNext());
-  }
-  {
-    // Unterminated string
-    auto Buf = MemoryBuffer::getMemBuffer("\"abc");
-    auto Lex = Lexer(Buf->getBufferStart());
-    auto TK = Lex.getNextToken();
-    ASSERT_EQ(TK.getSyntaxKind(), SyntaxKind::Error);
-    ASSERT_EQ(TK.getText(), "\"abc");
-    ASSERT_EQ(TK.getTextLength(), 4);
-    ASSERT_FALSE(Lex.hasNext());
-  }
-}
-
 TEST(LexerTest, ParseCommentLiteral) {
   auto Buf = MemoryBuffer::getMemBuffer("// this is a comment\nidentifier");
   auto Lex = Lexer(Buf->getBufferStart());

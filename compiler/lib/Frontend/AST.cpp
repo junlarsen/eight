@@ -12,23 +12,6 @@
 using namespace xd;
 using namespace llvm;
 
-auto ASTModuleDecl::getReferencedDependencyPaths() const
-    -> std::vector<std::string> {
-  auto ImportDecls = getImportDeclarations();
-  if (!ImportDecls.has_value() || ImportDecls->empty())
-    return {};
-  std::vector<std::string> Result;
-  for (auto &ImportDecl : *ImportDecls) {
-    auto DependencyName = ImportDecl->getSource();
-    if (!DependencyName.has_value())
-      continue;
-    auto Path = (*DependencyName)->getValue()->str();
-    // StringLiteralExpr also contains the quotes. We strip them here.
-    Result.push_back(Path.substr(1, Path.size() - 2));
-  }
-  return Result;
-}
-
 // TODO: Probably move this definition into somewhere else
 auto ASTTranslationUnit::debug(raw_ostream &OS) const -> void {
   OS << "ASTTranslationUnit with " << Modules.size() << " modules";

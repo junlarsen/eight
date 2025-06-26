@@ -16,7 +16,7 @@ namespace xd {
 inline auto createTestCompilerInstance() -> CompilerInstance {
   CompilerInstance CI;
   CI.setRootPackage(std::filesystem::current_path(),
-                    PackageManifest("test", "0.1.0", "test.xd"));
+                    PackageManifest("test", "0.1.0", {"test.xd"}));
   return CI;
 }
 } // namespace xd

@@ -149,6 +149,8 @@ auto Parser::build() -> GreenNode {
 
 auto Parser::parseModuleDecl() -> void {
   auto TU = open();
+  if (at(SyntaxKind::KeywordPackage))
+    parsePackageDecl();
   // Import always go to the top of the file.
   while (!eof() && at(SyntaxKind::KeywordImport)) {
     parseImportDecl();
@@ -166,29 +168,31 @@ auto Parser::parseModuleDecl() -> void {
   close(TU, SyntaxKind::ModuleDecl);
 }
 
+auto Parser::parsePackageDecl() -> void {
+  assert(at(SyntaxKind::KeywordPackage) &&
+         "called parsePackageDecl without 'package'");
+  auto C = open();
+  expect(SyntaxKind::KeywordPackage);
+  while (!eof() && at(SyntaxKind::Identifier)) {
+    expect(SyntaxKind::Identifier);
+    if (!at(SyntaxKind::Semicolon)) {
+      eat(SyntaxKind::Dot);
+    }
+  }
+  expect(SyntaxKind::Semicolon);
+  close(C, SyntaxKind::PackageDecl);
+}
+
 auto Parser::parseImportDecl() -> void {
   assert(at(SyntaxKind::KeywordImport) &&
          "called parseImportDecl without 'import'");
   auto C = open();
   expect(SyntaxKind::KeywordImport);
-  if (eat(SyntaxKind::LeftBrace)) {
-    while (!eof() && !at(SyntaxKind::RightBrace)) {
-      if (at(SyntaxKind::Identifier)) {
-        expect(SyntaxKind::Identifier);
-      } else {
-        if (at(TSImportListRecovery)) {
-          break;
-        }
-        report<ExpectedImportListNameDiagnostic>(getTokenLength(),
-                                                 getSyntaxKindName(get()));
-      }
-      if (!at(SyntaxKind::RightBrace))
-        eat(SyntaxKind::Comma);
+  while (!eof() && at(SyntaxKind::Identifier)) {
+    expect(SyntaxKind::Identifier);
+    if (!at(SyntaxKind::Semicolon)) {
+      eat(SyntaxKind::Dot);
     }
-    expect(SyntaxKind::RightBrace);
-    expect(SyntaxKind::KeywordFrom);
-    if (at(SyntaxKind::StringLiteral))
-      parseStringLiteralExpr();
   }
   expect(SyntaxKind::Semicolon);
   close(C, SyntaxKind::ImportDecl);
@@ -811,15 +815,6 @@ auto Parser::parseBooleanLiteralExpr() -> CloseCheckpoint {
   auto C = open();
   advance();
   return close(C, SyntaxKind::BooleanLiteralExpr);
-}
-
-// TODO: Enable this rule in parsePrimaryExpression when strings are supported.
-auto Parser::parseStringLiteralExpr() -> CloseCheckpoint {
-  assert(at(SyntaxKind::StringLiteral) &&
-         "called parseStringLiteral without string literal");
-  auto C = open();
-  advance();
-  return close(C, SyntaxKind::StringLiteralExpr);
 }
 
 auto Parser::parseGroupExpr() -> CloseCheckpoint {

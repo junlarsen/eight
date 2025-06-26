@@ -39,13 +39,12 @@ enum class SyntaxKind : uint8_t {
   KeywordFor,
   KeywordNew,
   KeywordImport,
-  KeywordFrom,
+  KeywordPackage,
   // Textual tokens
   Identifier,
   IntegerLiteral,
   TrueLiteral,
   FalseLiteral,
-  StringLiteral,
   Comment,
   Whitespace,
   Newline,
@@ -83,6 +82,7 @@ enum class SyntaxKind : uint8_t {
   Eof,
   // Nodes
   Decl,
+  PackageDecl,
   ImportDecl,
   ModuleDecl,
   IntrinsicFunctionDecl,
@@ -104,7 +104,6 @@ enum class SyntaxKind : uint8_t {
   Expr,
   IntegerLiteralExpr,
   BooleanLiteralExpr,
-  StringLiteralExpr,
   ReferenceExpr,
   GroupExpr,
   ConstantIndexExpr,
@@ -243,11 +242,9 @@ static const TokenSet TSDeclRecovery =
     1 << SyntaxKind::KeywordIntrinsicType |
     1 << SyntaxKind::KeywordIntrinsicFn | 1 << SyntaxKind::KeywordImport;
 
-/// The import list can recover at `from`, the path, or the semicolon.
+/// The import list can recover at the semicolon.
 static const TokenSet TSImportListRecovery =
-    TSDeclRecovery |
-    TokenSet(1 << SyntaxKind::KeywordFrom | 1 << SyntaxKind::StringLiteral |
-             1 << SyntaxKind::Semicolon);
+    TSDeclRecovery | TokenSet(1 << SyntaxKind::Semicolon);
 
 /// The parameter list can either recover on the '->' used for the return type,
 /// or the '{' used for the body.

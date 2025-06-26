@@ -9,64 +9,37 @@
 #include "xd/Driver/CompilerInstance.h"
 #include "xd/Driver/Package.h"
 #include "xd/Frontend/Lexer.h"
-#include "xd/Frontend/ModuleGraph.h"
 #include "xd/Frontend/Parser.h"
 #include <string>
 
 using namespace xd;
 using namespace llvm;
 
-auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint,
-                                        Package P) const
-    -> std::unique_ptr<ASTTranslationUnit> {
-  auto TU = std::make_unique<ASTTranslationUnit>(ModuleGraph());
-  auto WorkQueue = SmallVector<SourceFileID, 16>();
-  // Build the entire module graph, starting at the entrypoint node. This is
-  // effectively BFS, with the ModuleGraph holding the list over files visited.
-  WorkQueue.emplace_back(Entrypoint);
-  while (!WorkQueue.empty()) {
-    auto File = WorkQueue.back();
-    WorkQueue.pop_back();
-    // If we've already seen this file, we keep going. A file is only deemed as
-    // seen if it has any edges. This is because the code will add the node
-    // whenever it's seen as an edge.
-    auto Node = TU->getModuleGraph().getNode(File);
-    if (Node != nullptr && Node->getEdgeCount() > 0)
+auto CompilerInstance::buildTranslationUnitGraph(const Package &P) -> void {
+  auto TU = std::make_shared<ASTTranslationUnit>();
+  for (auto &M : P.getModules()) {
+    // This is a help check in case somebody listed the same file multiple times
+    auto DepID = findFilesystemSource(M);
+    if (DepID.has_value()) {
+      // TODO: Report this as a compiler diagnostic
+      errs() << "Duplicate module entry source for: " << M << "\n";
       continue;
-    // Parse the file and install it into the translation unit
-    auto ModuleDecl = getModuleDeclaration(File);
-    TU->addModule(File, ModuleDecl);
-    auto Dependents = ModuleDecl->getReferencedDependencyPaths();
-    // Visit all neighbors using BFS.
-    SmallVector<SourceFileID, 8> DependentIDs;
-    for (auto Dep : Dependents) {
-      auto SourcePath = SM->getSourcePath(File);
-      assert(SourcePath.has_value() && "tried to import virtual file?");
-      auto DependencyPath = P.getAbsolutePath(Dep);
-      if (auto E = DependencyPath.takeError(); E) {
-        errs() << "failed to resolve path relative to root: "
-               << SourcePath->string() << ":" << E << "\n";
-        continue;
-      }
-      // We take the source path ID if it exists, or add it.
-      auto DepID = findFilesystemSource(DependencyPath->string());
-      if (!DepID.has_value()) {
-        auto Dependency =
-            addFilesystemSource(DependencyPath->string(), *DependencyPath);
-        if (auto E = Dependency.getError()) {
-          // TODO: Error handling
-          errs() << "could not add file " << DependencyPath->string() << ": "
-                 << E.message() << "\n";
-          continue;
-        }
-        DepID = Dependency.get();
-      }
-      WorkQueue.emplace_back(*DepID);
-      DependentIDs.push_back(*DepID);
     }
-    TU->getModuleGraph().addFileDependencies(File, DependentIDs);
+    // We try to add the source file to the source manager, and then try parse
+    // its contents as a separate module which will be mapped into an AST
+    // translation unit.
+    auto Source = addFilesystemSource(M, P.getRoot() / M);
+    if (auto E = Source.getError()) {
+      // TODO: Report this as a compiler diagnostic
+      errs() << "Failed to add source file " << M << ": " << E.message()
+             << "\n";
+      continue;
+    }
+    auto SourceFileID = Source.get();
+    auto ModuleDecl = getModuleDeclaration(SourceFileID);
+    TU->addModule(SourceFileID, ModuleDecl);
+    TranslationUnits.emplace_back(TU);
   }
-  return std::move(TU);
 }
 
 auto CompilerInstance::getRootPackage() const -> Package & {

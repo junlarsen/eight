@@ -11,7 +11,6 @@
 
 #include "xd/Basic/Location.h"
 #include "xd/Basic/SourceManager.h"
-#include "xd/Frontend/ModuleGraph.h"
 #include "xd/Frontend/Syntax.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
@@ -21,6 +20,7 @@
 namespace xd {
 class ASTModuleDecl;
 class ASTDecl;
+class ASTPackageDecl;
 class ASTImportDecl;
 class ASTFunctionDecl;
 class ASTIntrinsicTypeDecl;
@@ -446,24 +446,6 @@ public:
   }
 };
 
-class ASTStringLiteralExpr : public ASTExpr {
-public:
-  explicit ASTStringLiteralExpr(const std::shared_ptr<SyntaxNode> &SN)
-      : ASTExpr(SN) {}
-  auto getValue() const -> std::optional<llvm::StringRef> {
-    if (auto Lit = SN->findChild(SyntaxKind::StringLiteral); Lit.has_value())
-      return llvm::cast<GreenToken>((*Lit)->getGreen().get())->getText();
-    return std::nullopt;
-  }
-
-  static bool classof(const ASTNode *Node) {
-    return Node->getSyntaxKind() == SyntaxKind::StringLiteralExpr;
-  }
-  static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
-    return from<ASTStringLiteralExpr>(SN, SyntaxKind::StringLiteralExpr);
-  }
-};
-
 class ASTCallExpr : public ASTExpr {
 public:
   /// Member class representing the argument list to the call expression.
@@ -797,16 +779,26 @@ public:
   }
 };
 
+class ASTPackageDecl : public ASTDecl {
+public:
+  explicit ASTPackageDecl(const std::shared_ptr<SyntaxNode> &SN)
+      : ASTDecl(SN) {}
+  /// Get the name of the package.
+  auto getName() const { return findMany<Identifier>(SyntaxKind::Identifier); }
+
+  static bool classof(const ASTNode *Node) {
+    return Node->getSyntaxKind() == SyntaxKind::PackageDecl;
+  }
+  static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
+    return from<ASTPackageDecl>(SN, SyntaxKind::PackageDecl);
+  }
+};
+
 class ASTImportDecl : public ASTDecl {
 public:
   explicit ASTImportDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
-  /// Get the source the import is from.
-  auto getSource() const {
-    return findSingle<ASTStringLiteralExpr>(SyntaxKind::StringLiteralExpr);
-  }
-
   /// Get the name this declaration imports into scope.
-  auto getImportedNames() const {
+  auto getImportedName() const {
     return findMany<Identifier>(SyntaxKind::Identifier);
   }
 
@@ -1138,6 +1130,11 @@ public:
 class ASTModuleDecl : public ASTDecl {
 public:
   explicit ASTModuleDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
+  /// Get the package name of the module.
+  auto getPackageName() const {
+    return findSingle<ASTPackageDecl>(SyntaxKind::PackageDecl);
+  }
+
   /// Get the import declarations for the module.
   auto getImportDeclarations() const {
     return findMany<ASTImportDecl>(SyntaxKind::ImportDecl);
@@ -1167,10 +1164,6 @@ public:
   auto getInstanceDeclarations() const {
     return findMany<ASTInstanceDecl>(SyntaxKind::InstanceDecl);
   }
-
-  /// Get all the dependency paths this module refers through its import
-  /// declarations.
-  auto getReferencedDependencyPaths() const -> std::vector<std::string>;
 
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ModuleDecl;

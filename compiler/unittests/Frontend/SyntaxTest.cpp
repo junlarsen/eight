@@ -652,8 +652,7 @@ TEST(SyntaxTest, ParseInstanceDeclIntoTree) {
 
 TEST(SyntaxTest, ParseImportDeclIntoTree) {
   auto CI = createTestCompilerInstance();
-  auto FD = CI.addInlineSource("test.xd",
-                               "import { foo, bar, baz } from \"xd:base\";");
+  auto FD = CI.addInlineSource("test.xd", "import std.bar;");
   auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parseImportDecl(); });
   auto Decl = ASTDecl::cast(RedTree);
   ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
@@ -662,22 +661,35 @@ TEST(SyntaxTest, ParseImportDeclIntoTree) {
   ASSERT_TRUE(isa<ASTImportDecl>(**Decl));
   auto ImportDecl = cast<ASTImportDecl>(**Decl);
 
-  ASSERT_TRUE(ImportDecl.getSource().has_value());
-  ASSERT_TRUE((*ImportDecl.getSource())->getValue().has_value());
-  ASSERT_EQ((*ImportDecl.getSource())->getValue(), StringRef("\"xd:base\""));
+  auto ImportedName = ImportDecl.getImportedName();
+  ASSERT_TRUE(ImportedName.has_value());
+  ASSERT_EQ(ImportedName->size(), 2);
+  ASSERT_EQ((*ImportedName)[0]->getName(), "std");
+  ASSERT_EQ((*ImportedName)[1]->getName(), "bar");
+}
 
-  auto ImportedNames = ImportDecl.getImportedNames();
-  ASSERT_TRUE(ImportedNames.has_value());
-  ASSERT_EQ(ImportedNames->size(), 3);
-  ASSERT_EQ((*ImportedNames)[0]->getName(), "foo");
-  ASSERT_EQ((*ImportedNames)[1]->getName(), "bar");
-  ASSERT_EQ((*ImportedNames)[2]->getName(), "baz");
+TEST(SyntaxTest, ParsePackageDeclIntoTree) {
+  auto CI = createTestCompilerInstance();
+  auto FD = CI.addInlineSource("test.xd", "package std.bar;");
+  auto RedTree = CI.getSyntaxTree(FD, [](Parser &P) { P.parsePackageDecl(); });
+  auto Decl = ASTDecl::cast(RedTree);
+  ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
+  ASSERT_TRUE(Decl.has_value());
+  ASSERT_TRUE(isa<ASTNode>(**Decl));
+  ASSERT_TRUE(isa<ASTPackageDecl>(**Decl));
+  auto PackageDecl = cast<ASTPackageDecl>(**Decl);
+  auto PackageName = PackageDecl.getName();
+  ASSERT_TRUE(PackageName.has_value());
+  ASSERT_EQ(PackageName->size(), 2);
+  ASSERT_EQ((*PackageName)[0]->getName(), "std");
+  ASSERT_EQ((*PackageName)[1]->getName(), "bar");
 }
 
 TEST(SyntaxTest, ParseModuleDeclIntoTree) {
   auto CI = createTestCompilerInstance();
   auto FD =
-      CI.addInlineSource("test.xd", "import { spawn } from \"xd:proc\";\n"
+      CI.addInlineSource("test.xd", "package std;\n"
+                                    "import std.bar;\n"
                                     "fn id[T](el: T) -> T { return el; }\n"
                                     "struct Vec2D { x: i32, y: i32 }\n"
                                     "intrinsic_type bool;\n"
@@ -690,6 +702,9 @@ TEST(SyntaxTest, ParseModuleDeclIntoTree) {
   ASSERT_TRUE(isa<ASTNode>(**Decl));
   ASSERT_TRUE(isa<ASTModuleDecl>(**Decl));
   auto Module = cast<ASTModuleDecl>(**Decl);
+
+  ASSERT_TRUE(Module.getPackageName().has_value());
+  ASSERT_EQ((*Module.getPackageName())->getName()->size(), 1);
 
   ASSERT_TRUE(Module.getImportDeclarations().has_value());
   ASSERT_EQ(Module.getImportDeclarations()->size(), 1);

@@ -23,6 +23,7 @@ class CompilerInstance {
   std::unique_ptr<DiagnosticManager> DM;
   std::unique_ptr<SourceManager> SM;
   std::unique_ptr<Package> RootPackage;
+  std::vector<std::shared_ptr<ASTTranslationUnit>> TranslationUnits;
 
 public:
   explicit CompilerInstance()
@@ -34,6 +35,7 @@ public:
   /// This function asserts that the root package is set, so it should only be
   /// called if the root package is guaranteed to be set.
   auto getRootPackage() const -> Package &;
+  auto buildTranslationUnitGraph(const Package &P) -> void;
 
   /// Set the root package of the compiler instance. This can only be done once
   auto setRootPackage(const std::filesystem::path &Root, PackageManifest MF)
@@ -63,18 +65,6 @@ public:
   /// Add STDIN as a source.
   auto addStdinSource(std::unique_ptr<llvm::MemoryBuffer> Buf) const
       -> SourceFileID;
-
-  /// Completely traverse the module graph taking the given file as the
-  /// entrypoint.
-  ///
-  /// This will return nullopt if the module graph detects a cycle in the
-  /// dependency graph.
-  auto buildRootModuleGraph(SourceFileID Entrypoint) const
-      -> std::unique_ptr<ASTTranslationUnit> {
-    return buildModuleGraph(Entrypoint, getRootPackage());
-  }
-  auto buildModuleGraph(SourceFileID Entrypoint, Package P) const
-      -> std::unique_ptr<ASTTranslationUnit>;
 
   /// Get the red tree for the given source file.
   ///

@@ -24,21 +24,23 @@ namespace xd {
 class PackageManifest {
   std::string Package;
   std::string Version;
-  std::string Entrypoint;
+  std::vector<std::string> Modules;
 
   // Give LLVM YAML traits access to assigning the private members.
   friend class llvm::yaml::MappingTraits<PackageManifest>;
 
 public:
   explicit PackageManifest(std::string Package, std::string Version,
-                           std::string Entrypoint)
+                           std::vector<std::string> Modules)
       : Package(std::move(Package)), Version(std::move(Version)),
-        Entrypoint(std::move(Entrypoint)) {}
+        Modules(Modules) {}
   explicit PackageManifest() = default;
 
   auto getPackage() const -> const std::string & { return Package; }
   auto getVersion() const -> const std::string & { return Version; }
-  auto getEntrypoint() const -> const std::string & { return Entrypoint; }
+  auto getModules() const -> const std::vector<std::string> & {
+    return Modules;
+  }
 };
 
 /// A single package used by a program.
@@ -51,8 +53,8 @@ public:
       : PackageRoot(Root), Manifest(Manifest) {}
 
   auto getRoot() const -> const std::filesystem::path & { return PackageRoot; }
-  auto getEntrypoint() const -> const std::string & {
-    return Manifest.getEntrypoint();
+  auto getModules() const -> const std::vector<std::string> & {
+    return Manifest.getModules();
   }
   auto getName() const -> const std::string & { return Manifest.getPackage(); }
   auto getVersion() const -> const std::string & {
@@ -73,7 +75,7 @@ template <> struct llvm::yaml::MappingTraits<xd::PackageManifest> {
   static void mapping(IO &IO, xd::PackageManifest &Manifest) {
     IO.mapRequired("package", Manifest.Package);
     IO.mapRequired("version", Manifest.Version);
-    IO.mapRequired("entrypoint", Manifest.Entrypoint);
+    IO.mapRequired("modules", Manifest.Modules);
   }
 };
 

@@ -1,3 +1,5 @@
+package std;
+
 intrinsic_fn __xdrt_sizeof[T]() -> i64;
 intrinsic_fn __xdrt_reinterpret_cast[F, T](ptr: *F) -> *T;
 
