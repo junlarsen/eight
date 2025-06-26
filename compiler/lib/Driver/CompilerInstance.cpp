@@ -17,9 +17,9 @@ using namespace xd;
 using namespace llvm;
 
 auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint,
-                                        Package P) const
+                                        const std::shared_ptr<Package> &P) const
     -> std::unique_ptr<ASTTranslationUnit> {
-  auto TU = std::make_unique<ASTTranslationUnit>(ModuleGraph());
+  auto TU = std::make_unique<ASTTranslationUnit>(P);
   auto WorkQueue = SmallVector<SourceFileID, 16>();
   // Build the entire module graph, starting at the entrypoint node. This is
   // effectively BFS, with the ModuleGraph holding the list over files visited.
@@ -34,15 +34,15 @@ auto CompilerInstance::buildModuleGraph(SourceFileID Entrypoint,
     if (Node != nullptr && Node->getEdgeCount() > 0)
       continue;
     // Parse the file and install it into the translation unit
-    auto ModuleDecl = getModuleDeclaration(File);
-    TU->addModule(File, ModuleDecl);
-    auto Dependents = ModuleDecl->getReferencedDependencyPaths();
+    auto ModuleDecl = parseFile(File);
+    TU->addFileDecl(File, ModuleDecl);
+    auto Dependents = ModuleDecl->getDirectDependencies();
     // Visit all neighbors using BFS.
     SmallVector<SourceFileID, 8> DependentIDs;
     for (auto Dep : Dependents) {
       auto SourcePath = SM->getSourcePath(File);
       assert(SourcePath.has_value() && "tried to import virtual file?");
-      auto DependencyPath = P.getAbsolutePath(Dep);
+      auto DependencyPath = P->getAbsolutePath(Dep);
       if (auto E = DependencyPath.takeError(); E) {
         errs() << "failed to resolve path relative to root: "
                << SourcePath->string() << ":" << E << "\n";
@@ -100,11 +100,6 @@ auto CompilerInstance::addFilesystemSource(
 auto CompilerInstance::findFilesystemSource(const StringRef &SourceName) const
     -> std::optional<SourceFileID> {
   return SM->findNamedSource(SourceName);
-}
-
-auto CompilerInstance::addStdinSource(std::unique_ptr<MemoryBuffer> Buf) const
-    -> SourceFileID {
-  return SM->addVirtualSource("<stdin>", std::move(Buf));
 }
 
 auto CompilerInstance::getSyntaxTree(

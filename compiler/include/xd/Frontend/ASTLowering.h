@@ -74,38 +74,41 @@ public:
 /// partial code, and still get both syntax, type, and semantic errors from the
 /// compiler and into their editor.
 class ASTLoweringPass {
-  ScopeStack<std::string, int> Scopes;
+  SourceManager &SM;
+
+  ScopeStack<std::string, TIRName> Scopes;
+  std::unique_ptr<TIRModule> Module;
 
 public:
-  explicit ASTLoweringPass() = default;
+  explicit ASTLoweringPass(SourceManager &SM)
+      : SM(SM), Scopes({}), Module(std::make_unique<TIRModule>()) {}
 
   /// Run the lowering pass on the translation unit, returning a TIR module.
   auto run(ASTTranslationUnit &TU) -> std::unique_ptr<TIRModule>;
 
-  auto visitTranslationUnit(ASTTranslationUnit &TU, TIRModule &Module) -> void;
-  auto enterDecl(ASTDecl &D, TIRModule &Module) -> void;
-  auto enterModuleDecl(ASTModuleDecl &MD, TIRModule &Module) -> void;
-  auto enterImportDecl(ASTImportDecl &ID, TIRModule &Module) -> void;
-  auto enterFunctionDecl(ASTFunctionDecl &FD, TIRModule &Module) -> void;
-  auto enterStructDecl(ASTStructDecl &SD, TIRModule &Module) -> void;
-  auto enterIntrinsicTypeDecl(ASTIntrinsicTypeDecl &ITD, TIRModule &Module)
+  auto visitTranslationUnit(ASTTranslationUnit &TU) -> void;
+  auto enterDecl(ASTDecl &D, ModuleGraphNode &MGN) -> void;
+  auto enterFileDecl(ASTFileDecl &MD, ModuleGraphNode &MGN) -> void;
+  auto enterImportDecl(ASTImportDecl &ID, ModuleGraphNode &MGN) -> void;
+  auto enterFunctionDecl(ASTFunctionDecl &FD, ModuleGraphNode &MGN) -> void;
+  auto enterStructDecl(ASTStructDecl &SD, ModuleGraphNode &MGN) -> void;
+  auto enterIntrinsicTypeDecl(ASTIntrinsicTypeDecl &ITD, ModuleGraphNode &MGN)
       -> void;
-  auto enterTraitDecl(ASTTraitDecl &TD, TIRModule &Module) -> void;
-  auto enterInstanceDecl(ASTInstanceDecl &ID, TIRModule &Module) -> void;
+  auto enterTraitDecl(ASTTraitDecl &TD) -> void;
+  auto enterInstanceDecl(ASTInstanceDecl &ID) -> void;
 
-  auto leaveDecl(ASTDecl &D, TIRModule &Module) -> void;
-  auto leaveModuleDecl(ASTModuleDecl &MD, TIRModule &Module) -> void;
-  auto leaveImportDecl(ASTImportDecl &ID, TIRModule &Module) -> void;
-  auto leaveFunctionDecl(ASTFunctionDecl &FD, TIRModule &Module) -> void;
-  auto leaveStructDecl(ASTStructDecl &SD, TIRModule &Module) -> void;
-  auto leaveIntrinsicTypeDecl(ASTIntrinsicTypeDecl &ITD, TIRModule &Module)
-      -> void;
-  auto leaveTraitDecl(ASTTraitDecl &TD, TIRModule &Module) -> void;
-  auto leaveInstanceDecl(ASTInstanceDecl &ID, TIRModule &Module) -> void;
+  auto leaveDecl(ASTDecl &D) -> void;
+  auto leaveFileDecl(ASTFileDecl &MD) -> void;
+  auto leaveImportDecl(ASTImportDecl &ID) -> void;
+  auto leaveFunctionDecl(ASTFunctionDecl &FD) -> void;
+  auto leaveStructDecl(ASTStructDecl &SD) -> void;
+  auto leaveIntrinsicTypeDecl(ASTIntrinsicTypeDecl &ITD) -> void;
+  auto leaveTraitDecl(ASTTraitDecl &TD) -> void;
+  auto leaveInstanceDecl(ASTInstanceDecl &ID) -> void;
 
-  auto visitStmt(ASTStmt &S, TIRModule &Module) -> void;
-  auto visitType(ASTType &T, TIRModule &Module) -> void;
-  auto visitExpr(ASTExpr &E, TIRModule &Module) -> void;
+  auto visitStmt(ASTStmt &S) -> void;
+  auto visitType(ASTType &T) -> void;
+  auto visitExpr(ASTExpr &E) -> void;
 };
 } // namespace xd
 

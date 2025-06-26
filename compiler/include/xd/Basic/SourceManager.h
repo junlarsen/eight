@@ -53,19 +53,23 @@ class SourceManager {
   llvm::DenseMap<SourceFileID, std::unique_ptr<llvm::MemoryBuffer>,
                  SourceFileID::DenseMapKeyInfo>
       FileBuffers;
+  llvm::DenseMap<SourceFileID, std::string> Packages;
+  llvm::DenseMap<SourceFileID, std::string> PackagePaths;
 
 public:
-  explicit SourceManager() {}
+  explicit SourceManager() = default;
   /// Add a named source to the source manager.
   ///
   /// This takes ownership of the memory buffer.
   auto addFileSource(const llvm::StringRef &Name,
                      const std::filesystem::path &Path,
-                     std::unique_ptr<llvm::MemoryBuffer> Buffer)
+                     std::unique_ptr<llvm::MemoryBuffer> Buffer,
+                        const llvm::StringRef &Package, const llvm::StringRef &PackagePath)
       -> SourceFileID;
 
   auto addVirtualSource(const llvm::StringRef &Name,
-                        std::unique_ptr<llvm::MemoryBuffer> Buffer)
+                        std::unique_ptr<llvm::MemoryBuffer> Buffer,
+                        const llvm::StringRef &Package, const llvm::StringRef &PackagePath)
       -> SourceFileID;
 
   auto hasNamedSource(const llvm::StringRef &Name) const -> bool;
@@ -83,6 +87,8 @@ public:
   /// Returns nullopt if the source was not synthesized from a file.
   auto getSourcePath(SourceFileID SourceFile) const
       -> std::optional<std::filesystem::path>;
+
+  auto debug(llvm::raw_ostream &OS) const -> void;
 };
 } // namespace xd
 

@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "xd/Basic/SourceManager.h"
+#include "llvm/Support/raw_ostream.h"
 
 using namespace xd;
 using namespace llvm;
@@ -24,15 +25,19 @@ auto SourceManager::findNamedSource(const StringRef &Name) const
 
 auto SourceManager::addFileSource(const StringRef &Name,
                                   const std::filesystem::path &Path,
-                                  std::unique_ptr<MemoryBuffer> Buffer)
+                                  std::unique_ptr<MemoryBuffer> Buffer,
+                                  const StringRef &Package,
+                                  const StringRef &PackagePath)
     -> SourceFileID {
-  auto ID = addVirtualSource(Name, std::move(Buffer));
+  auto ID = addVirtualSource(Name, std::move(Buffer), Package, PackagePath);
   RealFilePaths.insert(std::make_pair(ID, Path));
   return ID;
 }
 
 auto SourceManager::addVirtualSource(const StringRef &Name,
-                                     std::unique_ptr<MemoryBuffer> Buffer)
+                                     std::unique_ptr<MemoryBuffer> Buffer,
+                                     const StringRef &Package,
+                                     const StringRef &PackagePath)
     -> SourceFileID {
   assert(!hasNamedSource(Name) && "attempted to add existing named source");
   // We offset by one so that <stdin> can always be ID 0. This does not have
@@ -42,6 +47,8 @@ auto SourceManager::addVirtualSource(const StringRef &Name,
   FileNames.insert(std::make_pair(ID, Name.str()));
   FileIDReverse.insert(std::make_pair(Name, ID));
   FileBuffers.insert(std::make_pair(ID, std::move(Buffer)));
+  Packages.insert(std::make_pair(ID, Package.str()));
+  PackagePaths.insert(std::make_pair(ID, PackagePath.str()));
   // Sanity check to ensure size invariant is maintained
   assert(FileNames.size() == FileIDReverse.size() &&
          "size of maps have diverged");
@@ -60,4 +67,14 @@ auto SourceManager::getSourcePath(SourceFileID SourceFile) const
   if (RealFilePaths.contains(SourceFile))
     return RealFilePaths.at(SourceFile);
   return std::nullopt;
+}
+
+auto SourceManager::debug(raw_ostream &OS) const -> void {
+  OS << "SourceManager with " << FileNames.size() << " files:\n";
+  for (const auto &[ID, Name] : FileNames) {
+    auto Package = Packages.at(ID);
+    auto PackagePath = PackagePaths.at(ID);
+    OS << "  " << Name << " (ID: " << ID
+       << ", Package: " << Package << ", Path: " << PackagePath << ")\n";
+  }
 }

@@ -19,7 +19,7 @@
 #include "llvm/Support/ErrorHandling.h"
 
 namespace xd {
-class ASTModuleDecl;
+class ASTFileDecl;
 class ASTDecl;
 class ASTImportDecl;
 class ASTFunctionDecl;
@@ -1135,48 +1135,49 @@ public:
   }
 };
 
-class ASTModuleDecl : public ASTDecl {
+class ASTFileDecl : public ASTDecl {
 public:
-  explicit ASTModuleDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
-  /// Get the import declarations for the module.
+  explicit ASTFileDecl(const std::shared_ptr<SyntaxNode> &SN) : ASTDecl(SN) {}
+
+  /// Get the import declarations for the file.
   auto getImportDeclarations() const {
     return findMany<ASTImportDecl>(SyntaxKind::ImportDecl);
   }
 
-  /// Get the function declarations for the module.
+  /// Get the function declarations for the file.
   auto getFunctionDeclarations() const {
     return findMany<ASTFunctionDecl>(SyntaxKind::FunctionDecl);
   }
 
-  /// Get the struct declarations for the module.
+  /// Get the struct declarations for the file.
   auto getStructDeclarations() const {
     return findMany<ASTStructDecl>(SyntaxKind::StructDecl);
   }
 
-  /// Get the intrinsic type declarations for the module.
+  /// Get the intrinsic type declarations for the file.
   auto getIntrinsicTypeDeclarations() const {
     return findMany<ASTIntrinsicTypeDecl>(SyntaxKind::IntrinsicTypeDecl);
   }
 
-  /// Get the trait declarations for the module.
+  /// Get the trait declarations for the file.
   auto getTraitDeclarations() const {
     return findMany<ASTTraitDecl>(SyntaxKind::TraitDecl);
   }
 
-  /// Get the instance declarations for the module.
+  /// Get the instance declarations for the file.
   auto getInstanceDeclarations() const {
     return findMany<ASTInstanceDecl>(SyntaxKind::InstanceDecl);
   }
 
-  /// Get all the dependency paths this module refers through its import
+  /// Get all the dependency paths this file refers through its direct import
   /// declarations.
-  auto getReferencedDependencyPaths() const -> std::vector<std::string>;
+  auto getDirectDependencies() const -> std::vector<std::string>;
 
   static bool classof(const ASTNode *Node) {
     return Node->getSyntaxKind() == SyntaxKind::ModuleDecl;
   }
   static auto cast(const std::shared_ptr<SyntaxNode> &SN) {
-    return from<ASTModuleDecl>(SN, SyntaxKind::ModuleDecl);
+    return from<ASTFileDecl>(SN, SyntaxKind::ModuleDecl);
   }
 };
 } // namespace xd

@@ -9,6 +9,7 @@
 #ifndef XD_FRONTEND_TRANSLATIONUNIT_H
 #define XD_FRONTEND_TRANSLATIONUNIT_H
 
+#include "xd/Driver/Package.h"
 #include "xd/Frontend/AST.h"
 #include "xd/Frontend/ModuleGraph.h"
 
@@ -18,22 +19,24 @@ namespace xd {
 /// This is not directly parsable, but is instead intended to be built using a
 /// ModuleGraph where each child module was parsed individually.
 class ASTTranslationUnit {
-  llvm::DenseMap<SourceFileID, std::shared_ptr<ASTModuleDecl>,
+  llvm::DenseMap<SourceFileID, std::shared_ptr<ASTFileDecl>,
                  SourceFileID::DenseMapKeyInfo>
       Modules;
   ModuleGraph MG;
+  std::shared_ptr<Package> OwningPackage;
 
 public:
-  explicit ASTTranslationUnit(ModuleGraph MG) : MG(MG) {}
+  explicit ASTTranslationUnit(const std::shared_ptr<Package> &OwningPackage)
+      : MG(ModuleGraph()), OwningPackage(std::move(OwningPackage)) {}
 
   /// Add the given module to the translation unit.
   ///
   /// It is assumed that this module has been "validated" through the module
   /// graph, meaning the file id has not been inserted here before. The function
   /// will assert this invariant on its own too.
-  auto addModule(SourceFileID FileID, const std::shared_ptr<ASTModuleDecl> &M)
+  auto addFileDecl(SourceFileID FileID, const std::shared_ptr<ASTFileDecl> &F)
       -> void {
-    Modules.insert(std::make_pair(FileID, M));
+    Modules.insert(std::make_pair(FileID, F));
   }
   auto getModuleGraph() -> ModuleGraph & { return MG; }
 
@@ -41,4 +44,4 @@ public:
 };
 } // namespace xd
 
-#endif // XD_FRONTEND_TRANSLATIONUNIT_H
+#endif

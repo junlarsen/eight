@@ -47,7 +47,14 @@ namespace xd {
 ///   own node types. The rest of the unary and binary operators are rewritten
 ///   into call expressions onto the respective built-in traits.
 enum class TIRNodeKind : uint8_t {
+  /// A node that doesn't represent any specific syntax, but is used to
+  /// represent "sub-objects" of a node. For example the type parameters of a
+  /// function.
+  Ambient,
+
   Name,
+  QualifiedName,
+  LocalName,
   // Declaration nodes
   Decl,
   FunctionDecl,
@@ -124,26 +131,53 @@ public:
       : Kind(Kind), Loc(Loc) {}
   auto getKind() const -> TIRNodeKind { return Kind; }
   static bool classof(const TIRNode *N) {
-    return N->getKind() >= TIRNodeKind::Name &&
+    return N->getKind() >= TIRNodeKind::Decl &&
            N->getKind() <= TIRNodeKind::ErrorType;
   }
 
   auto getLocation() const -> SourceLocation { return Loc; }
 };
 
+class TIRName : public TIRNode {
+public:
+  explicit TIRName(TIRNodeKind Kind, SourceLocation Loc) : TIRNode(Kind, Loc) {}
+  static bool classof(const TIRNode *N) {
+    return N->getKind() >= TIRNodeKind::Name &&
+           N->getKind() <= TIRNodeKind::LocalName;
+  }
+};
+
 /// A name that was written by the programmer.
 ///
 /// This effectively corresponds to the identifier in the AST.
-class TIRName : public TIRNode {
+class TIRLocalName : public TIRNode {
   std::string Name;
 
 public:
-  explicit TIRName(std::string Name, SourceLocation Loc)
-      : TIRNode(TIRNodeKind::Name, Loc), Name(std::move(Name)) {}
+  explicit TIRLocalName(std::string Name, SourceLocation Loc)
+      : TIRNode(TIRNodeKind::LocalName, Loc), Name(std::move(Name)) {}
   auto getName() const -> const std::string & { return Name; }
-  static bool classof(const TIRNode *N) {
-    return N->getKind() == TIRNodeKind::Name;
+  static bool classof(const TIRNode *N) { return false; }
+};
+
+class TIRQualifiedName : public TIRName {
+  std::string PackageName;
+  llvm::SmallVector<std::string, 4> Segments;
+  TIRLocalName Name;
+
+public:
+  explicit TIRQualifiedName(std::string PackageName,
+                            llvm::SmallVector<std::string, 4> Segments,
+                            TIRLocalName Name, SourceLocation Loc)
+      : TIRName(TIRNodeKind::QualifiedName, Loc),
+        PackageName(std::move(PackageName)), Segments(std::move(Segments)),
+        Name(std::move(Name)) {}
+  static bool classof(const TIRNode *N) { return false; }
+  auto getPackageName() const -> const std::string & { return PackageName; }
+  auto getSegments() const -> const llvm::SmallVector<std::string, 4> & {
+    return Segments;
   }
+  auto getName() const -> const TIRLocalName & { return Name; }
 };
 
 class TIRType : public TIRNode {
@@ -156,12 +190,13 @@ public:
 };
 
 class TIRNamedType : public TIRType {
-  std::unique_ptr<TIRName> Name;
+  std::unique_ptr<TIRQualifiedName> Name;
 
 public:
-  explicit TIRNamedType(std::unique_ptr<TIRName> Name, SourceLocation Loc)
+  explicit TIRNamedType(std::unique_ptr<TIRQualifiedName> Name,
+                        SourceLocation Loc)
       : TIRType(TIRNodeKind::NamedType, Loc), Name(std::move(Name)) {}
-  auto getName() const -> const TIRName & { return *Name; }
+  auto getName() const -> const TIRQualifiedName & { return *Name; }
   static bool classof(const TIRNode *N) {
     return N->getKind() == TIRNodeKind::NamedType;
   }
@@ -329,6 +364,8 @@ public:
 };
 
 class TIRReferenceExpr : public TIRExpr {
+  /// The call reference could either be a local variable, or a qualified name
+  /// imported from another module or declared in this module.
   std::unique_ptr<TIRName> Name;
 
 public:
@@ -344,10 +381,10 @@ public:
 };
 
 class TIRConstantIndexExpr : public TIRExpr {
-  std::unique_ptr<TIRName> Index;
+  std::unique_ptr<TIRLocalName> Index;
 
 public:
-  explicit TIRConstantIndexExpr(std::unique_ptr<TIRName> Index,
+  explicit TIRConstantIndexExpr(std::unique_ptr<TIRLocalName> Index,
                                 SourceLocation Loc,
                                 std::unique_ptr<TIRType> Type)
       : TIRExpr(TIRNodeKind::ConstantIndexExpr, Loc, std::move(Type)),
@@ -356,7 +393,7 @@ public:
     return N->getKind() == TIRNodeKind::ConstantIndexExpr;
   }
 
-  auto getIndex() const -> const TIRName & { return *Index; }
+  auto getIndex() const -> const TIRLocalName & { return *Index; }
 };
 
 class TIRCallExpr : public TIRExpr {
@@ -419,26 +456,26 @@ public:
 class TIRConstructionExpr : public TIRExpr {
 public:
   class Member : public TIRNode {
-    std::unique_ptr<TIRName> Name;
+    std::unique_ptr<TIRLocalName> Name;
     std::unique_ptr<TIRExpr> Value;
 
   public:
-    explicit Member(std::unique_ptr<TIRName> Name,
+    explicit Member(std::unique_ptr<TIRLocalName> Name,
                     std::unique_ptr<TIRExpr> Value, SourceLocation Loc)
-        : TIRNode(TIRNodeKind::Name, Loc), Name(std::move(Name)),
+        : TIRNode(TIRNodeKind::Ambient, Loc), Name(std::move(Name)),
           Value(std::move(Value)) {}
     static bool classof(const TIRNode *N) { return false; }
 
-    auto getName() const -> const TIRName & { return *Name; }
+    auto getName() const -> const TIRLocalName & { return *Name; }
     auto getValue() const -> const TIRExpr & { return *Value; }
   };
 
 protected:
-  std::unique_ptr<TIRName> Constructor;
+  std::unique_ptr<TIRType> Constructor;
   std::vector<std::unique_ptr<Member>> Members;
 
 public:
-  explicit TIRConstructionExpr(std::unique_ptr<TIRName> Constructor,
+  explicit TIRConstructionExpr(std::unique_ptr<TIRType> Constructor,
                                std::vector<std::unique_ptr<Member>> Members,
                                SourceLocation Loc,
                                std::unique_ptr<TIRType> Type)
@@ -448,7 +485,7 @@ public:
     return N->getKind() == TIRNodeKind::ConstructionExpr;
   }
 
-  auto getConstructor() const -> const TIRName & { return *Constructor; }
+  auto getConstructor() const -> const TIRType & { return *Constructor; }
   auto getArguments() const -> const std::vector<std::unique_ptr<Member>> & {
     return Members;
   }
@@ -566,16 +603,16 @@ public:
 class TIRFunctionDecl : public TIRDecl {
 public:
   class Parameter : public TIRNode {
-    std::unique_ptr<TIRName> Name;
+    std::unique_ptr<TIRLocalName> Name;
     std::unique_ptr<TIRType> Type;
 
   public:
-    explicit Parameter(std::unique_ptr<TIRName> Name,
+    explicit Parameter(std::unique_ptr<TIRLocalName> Name,
                        std::unique_ptr<TIRType> Type, SourceLocation Loc)
-        : TIRNode(TIRNodeKind::Name, Loc), Name(std::move(Name)),
+        : TIRNode(TIRNodeKind::Ambient, Loc), Name(std::move(Name)),
           Type(std::move(Type)) {}
     static bool classof(const TIRNode *N) { return false; }
-    auto getName() const -> const TIRName & { return *Name; }
+    auto getName() const -> const TIRLocalName & { return *Name; }
     auto getType() const -> const TIRType & { return *Type; }
   };
 
@@ -584,14 +621,14 @@ public:
 
   public:
     explicit TypeParameter(std::unique_ptr<TIRType> Type, SourceLocation Loc)
-        : TIRNode(TIRNodeKind::Name, Loc), Type(std::move(Type)) {}
+        : TIRNode(TIRNodeKind::Ambient, Loc), Type(std::move(Type)) {}
     static bool classof(const TIRNode *N) { return false; }
     auto getType() const -> const TIRType & { return *Type; }
   };
 
 protected:
   bool IsIntrinsic;
-  std::unique_ptr<TIRName> Name;
+  std::unique_ptr<TIRQualifiedName> Name;
   std::vector<std::unique_ptr<TypeParameter>> TypeParameters;
   std::vector<std::unique_ptr<Parameter>> Parameters;
   std::unique_ptr<TIRType> ReturnType;
@@ -599,7 +636,7 @@ protected:
 
 public:
   explicit TIRFunctionDecl(
-      bool IsIntrinsic, std::unique_ptr<TIRName> Name,
+      bool IsIntrinsic, std::unique_ptr<TIRQualifiedName> Name,
       std::vector<std::unique_ptr<TypeParameter>> TypeParameters,
       std::vector<std::unique_ptr<Parameter>> Parameters,
       std::unique_ptr<TIRType> ReturnType,
@@ -612,7 +649,7 @@ public:
     return N->getKind() == TIRNodeKind::FunctionDecl;
   }
   auto isIntrinsic() const -> bool { return IsIntrinsic; }
-  auto getName() const -> const TIRName & { return *Name; }
+  auto getName() const -> const TIRQualifiedName & { return *Name; }
   auto getTypeParameters() const
       -> const std::vector<std::unique_ptr<TypeParameter>> & {
     return TypeParameters;
@@ -628,39 +665,40 @@ public:
 };
 
 class TIRTypeDecl : public TIRDecl {
-  std::unique_ptr<TIRName> Name;
+  std::unique_ptr<TIRQualifiedName> Name;
 
 public:
-  explicit TIRTypeDecl(std::unique_ptr<TIRName> Name, SourceLocation Loc)
+  explicit TIRTypeDecl(std::unique_ptr<TIRQualifiedName> Name,
+                       SourceLocation Loc)
       : TIRDecl(TIRNodeKind::TypeDecl, Loc), Name(std::move(Name)) {}
   static bool classof(const TIRNode *N) {
     return N->getKind() == TIRNodeKind::TypeDecl;
   }
-  auto getName() const -> const TIRName & { return *Name; }
+  auto getName() const -> const TIRQualifiedName & { return *Name; }
 };
 
 class TIRStructDecl : public TIRDecl {
 public:
   class Member : public TIRNode {
-    std::unique_ptr<TIRName> Name;
+    std::unique_ptr<TIRLocalName> Name;
     std::unique_ptr<TIRType> Type;
 
   public:
-    explicit Member(std::unique_ptr<TIRName> Name,
+    explicit Member(std::unique_ptr<TIRLocalName> Name,
                     std::unique_ptr<TIRType> Type, SourceLocation Loc)
-        : TIRNode(TIRNodeKind::Name, Loc), Name(std::move(Name)),
+        : TIRNode(TIRNodeKind::Ambient, Loc), Name(std::move(Name)),
           Type(std::move(Type)) {}
     static bool classof(const TIRNode *N) { return false; }
-    auto getName() const -> const TIRName & { return *Name; }
+    auto getName() const -> const TIRLocalName & { return *Name; }
     auto getType() const -> const TIRType & { return *Type; }
   };
 
 protected:
-  std::unique_ptr<TIRName> Name;
+  std::unique_ptr<TIRQualifiedName> Name;
   std::vector<std::unique_ptr<Member>> Members;
 
 public:
-  explicit TIRStructDecl(std::unique_ptr<TIRName> Name,
+  explicit TIRStructDecl(std::unique_ptr<TIRQualifiedName> Name,
                          std::vector<std::unique_ptr<Member>> Members,
                          SourceLocation Loc)
       : TIRDecl(TIRNodeKind::StructDecl, Loc), Name(std::move(Name)),
@@ -668,7 +706,7 @@ public:
   static bool classof(const TIRNode *N) {
     return N->getKind() == TIRNodeKind::StructDecl;
   }
-  auto getName() const -> const TIRName & { return *Name; }
+  auto getName() const -> const TIRQualifiedName & { return *Name; }
   auto getMembers() const -> const std::vector<std::unique_ptr<Member>> & {
     return Members;
   }
@@ -677,23 +715,24 @@ public:
 class TIRTraitDecl : public TIRDecl {
 public:
   class TypeParameter : public TIRNode {
-    std::unique_ptr<TIRName> Name;
+    std::unique_ptr<TIRLocalName> Name;
 
   public:
-    explicit TypeParameter(std::unique_ptr<TIRName> Name, SourceLocation Loc)
-        : TIRNode(TIRNodeKind::Name, Loc), Name(std::move(Name)) {}
+    explicit TypeParameter(std::unique_ptr<TIRLocalName> Name,
+                           SourceLocation Loc)
+        : TIRNode(TIRNodeKind::Ambient, Loc), Name(std::move(Name)) {}
     static bool classof(const TIRNode *N) { return false; }
-    auto getName() const -> const TIRName & { return *Name; }
+    auto getName() const -> const TIRLocalName & { return *Name; }
   };
 
 protected:
-  std::unique_ptr<TIRName> Name;
+  std::unique_ptr<TIRQualifiedName> Name;
   std::vector<std::unique_ptr<TypeParameter>> TypeParameters;
   std::vector<std::unique_ptr<TIRFunctionDecl>> Methods;
 
 public:
   explicit TIRTraitDecl(
-      std::unique_ptr<TIRName> Name,
+      std::unique_ptr<TIRQualifiedName> Name,
       std::vector<std::unique_ptr<TypeParameter>> TypeParameters,
       std::vector<std::unique_ptr<TIRFunctionDecl>> Methods, SourceLocation Loc)
       : TIRDecl(TIRNodeKind::TraitDecl, Loc), Name(std::move(Name)),
@@ -702,7 +741,7 @@ public:
   static bool classof(const TIRNode *N) {
     return N->getKind() == TIRNodeKind::TraitDecl;
   }
-  auto getName() const -> const TIRName & { return *Name; }
+  auto getName() const -> const TIRQualifiedName & { return *Name; }
   auto getTypeParameters() const
       -> const std::vector<std::unique_ptr<TypeParameter>> & {
     return TypeParameters;
@@ -714,14 +753,14 @@ public:
 };
 
 class TIRInstanceDecl : public TIRDecl {
-  std::unique_ptr<TIRName> Name;
+  std::unique_ptr<TIRQualifiedName> Name;
   std::vector<std::unique_ptr<TIRType>> TypeArguments;
   std::unique_ptr<TIRType> SelfType;
   std::vector<std::unique_ptr<TIRFunctionDecl>> Methods;
 
 public:
   explicit TIRInstanceDecl(
-      std::unique_ptr<TIRName> Name,
+      std::unique_ptr<TIRQualifiedName> Name,
       std::vector<std::unique_ptr<TIRType>> TypeArguments,
       std::unique_ptr<TIRType> SelfType,
       std::vector<std::unique_ptr<TIRFunctionDecl>> Methods, SourceLocation Loc)
@@ -731,7 +770,7 @@ public:
   static bool classof(const TIRNode *N) {
     return N->getKind() == TIRNodeKind::InstanceDecl;
   }
-  auto getName() const -> const TIRName & { return *Name; }
+  auto getName() const -> const TIRQualifiedName & { return *Name; }
   auto getTypeArguments() const
       -> const std::vector<std::unique_ptr<TIRType>> & {
     return TypeArguments;

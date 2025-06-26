@@ -688,19 +688,19 @@ TEST(SyntaxTest, ParseModuleDeclIntoTree) {
   ASSERT_EQ(CI.getDiagnosticManager().diagnostics()->size(), 0);
   ASSERT_TRUE(Decl.has_value());
   ASSERT_TRUE(isa<ASTNode>(**Decl));
-  ASSERT_TRUE(isa<ASTModuleDecl>(**Decl));
-  auto Module = cast<ASTModuleDecl>(**Decl);
+  ASSERT_TRUE(isa<ASTFileDecl>(**Decl));
+  auto File = cast<ASTFileDecl>(**Decl);
 
-  ASSERT_TRUE(Module.getImportDeclarations().has_value());
-  ASSERT_EQ(Module.getImportDeclarations()->size(), 1);
-  ASSERT_TRUE(Module.getFunctionDeclarations().has_value());
-  ASSERT_EQ(Module.getFunctionDeclarations()->size(), 1);
-  ASSERT_TRUE(Module.getStructDeclarations().has_value());
-  ASSERT_EQ(Module.getStructDeclarations()->size(), 1);
-  ASSERT_TRUE(Module.getIntrinsicTypeDeclarations().has_value());
-  ASSERT_EQ(Module.getIntrinsicTypeDeclarations()->size(), 1);
-  ASSERT_TRUE(Module.getTraitDeclarations().has_value());
-  ASSERT_EQ(Module.getTraitDeclarations()->size(), 1);
-  ASSERT_TRUE(Module.getInstanceDeclarations().has_value());
-  ASSERT_EQ(Module.getInstanceDeclarations()->size(), 1);
+  ASSERT_TRUE(File.getImportDeclarations().has_value());
+  ASSERT_EQ(File.getImportDeclarations()->size(), 1);
+  ASSERT_TRUE(File.getFunctionDeclarations().has_value());
+  ASSERT_EQ(File.getFunctionDeclarations()->size(), 1);
+  ASSERT_TRUE(File.getStructDeclarations().has_value());
+  ASSERT_EQ(File.getStructDeclarations()->size(), 1);
+  ASSERT_TRUE(File.getIntrinsicTypeDeclarations().has_value());
+  ASSERT_EQ(File.getIntrinsicTypeDeclarations()->size(), 1);
+  ASSERT_TRUE(File.getTraitDeclarations().has_value());
+  ASSERT_EQ(File.getTraitDeclarations()->size(), 1);
+  ASSERT_TRUE(File.getInstanceDeclarations().has_value());
+  ASSERT_EQ(File.getInstanceDeclarations()->size(), 1);
 }

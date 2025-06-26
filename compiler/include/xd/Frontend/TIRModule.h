@@ -26,12 +26,12 @@ class TIRModule {
 public:
   explicit TIRModule() = default;
 
-  auto addFunction(std::unique_ptr<TIRFunctionDecl> Func) -> void;
-  auto addType(std::unique_ptr<TIRTypeDecl> Type) -> void;
-  auto addTrait(std::unique_ptr<TIRTraitDecl> Trait) -> void;
-  auto addInstance(std::string Trait, std::unique_ptr<TIRInstanceDecl> Instance)
+  auto addFunction(TIRQualifiedName& QN, std::unique_ptr<TIRFunctionDecl> Func) -> void;
+  auto addType(TIRQualifiedName &QN, std::unique_ptr<TIRTypeDecl> Type) -> void;
+  auto addTrait(TIRQualifiedName &QN, std::unique_ptr<TIRTraitDecl> Trait) -> void;
+  auto addInstance(TIRQualifiedName &QN, std::string Trait, std::unique_ptr<TIRInstanceDecl> Instance)
       -> void;
-  auto addStruct(std::unique_ptr<TIRStructDecl> Struct) -> void;
+  auto addStruct(TIRQualifiedName &QN, std::unique_ptr<TIRStructDecl> Struct) -> void;
 };
 } // namespace xd
 

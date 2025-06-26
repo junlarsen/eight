@@ -11,6 +11,10 @@
 using namespace xd;
 using namespace llvm;
 
-auto ASTLoweringPass::run() -> std::unique_ptr<TIRModule> {
+auto ASTLoweringPass::run(ASTTranslationUnit &TU)
+    -> std::unique_ptr<TIRModule> {
   return std::make_unique<TIRModule>();
 }
+
+auto ASTLoweringPass::enterFileDecl(ASTFileDecl &MD, TIRModule &Module,
+                                    ModuleGraphNode &MGN) -> void {}

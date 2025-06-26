@@ -53,6 +53,7 @@ auto main(int argc, char **argv) -> int {
     return 1;
   }
   auto TU = Compiler.buildRootModuleGraph(*EntryID);
+  Compiler.getSourceManager().debug(errs());
   TU->debug(errs());
   TU->getModuleGraph().debug(errs(), Compiler.getSourceManager());
   Compiler.getDiagnosticManager().debug(errs(), Compiler.getSourceManager());

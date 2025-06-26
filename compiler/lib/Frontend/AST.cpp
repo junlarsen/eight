@@ -12,8 +12,7 @@
 using namespace xd;
 using namespace llvm;
 
-auto ASTModuleDecl::getReferencedDependencyPaths() const
-    -> std::vector<std::string> {
+auto ASTFileDecl::getDirectDependencies() const -> std::vector<std::string> {
   auto ImportDecls = getImportDeclarations();
   if (!ImportDecls.has_value() || ImportDecls->empty())
     return {};

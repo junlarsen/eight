@@ -22,7 +22,7 @@ namespace xd {
 class CompilerInstance {
   std::unique_ptr<DiagnosticManager> DM;
   std::unique_ptr<SourceManager> SM;
-  std::unique_ptr<Package> RootPackage;
+  std::shared_ptr<Package> RootPackage;
 
 public:
   explicit CompilerInstance()
@@ -60,10 +60,6 @@ public:
   auto findFilesystemSource(const llvm::StringRef &SourceName) const
       -> std::optional<SourceFileID>;
 
-  /// Add STDIN as a source.
-  auto addStdinSource(std::unique_ptr<llvm::MemoryBuffer> Buf) const
-      -> SourceFileID;
-
   /// Completely traverse the module graph taking the given file as the
   /// entrypoint.
   ///
@@ -71,9 +67,10 @@ public:
   /// dependency graph.
   auto buildRootModuleGraph(SourceFileID Entrypoint) const
       -> std::unique_ptr<ASTTranslationUnit> {
-    return buildModuleGraph(Entrypoint, getRootPackage());
+    return buildModuleGraph(Entrypoint, RootPackage);
   }
-  auto buildModuleGraph(SourceFileID Entrypoint, Package P) const
+  auto buildModuleGraph(SourceFileID Entrypoint,
+                        const std::shared_ptr<Package> &P) const
       -> std::unique_ptr<ASTTranslationUnit>;
 
   /// Get the red tree for the given source file.
@@ -94,12 +91,12 @@ public:
   }
 
   /// Get the module declaration for a source file.
-  auto getModuleDeclaration(SourceFileID SourceFile) const
-      -> std::shared_ptr<ASTModuleDecl> {
+  auto parseFile(SourceFileID SourceFile) const
+      -> std::shared_ptr<ASTFileDecl> {
     auto ST = getSyntaxTree(SourceFile);
-    auto Module = ASTModuleDecl::cast(ST);
-    assert(Module.has_value() && "getSyntaxTree did not return a ModuleDecl");
-    return *Module;
+    auto File = ASTFileDecl::cast(ST);
+    assert(File.has_value() && "getSyntaxTree did not return a ModuleDecl");
+    return *File;
   }
 };
 } // namespace xd
